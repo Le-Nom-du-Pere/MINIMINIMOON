@@ -22,6 +22,8 @@ python3 -c "import embedding_model; print('Embedding model build successful')"
 python3 -m py_compile teoria_cambio.py
 # Responsibility detection components
 python3 -m py_compile responsibility_detector.py
+# DECALOGO_INDUSTRIAL loader components
+python3 -m py_compile decalogo_loader.py
 ```
 
 ### Lint
@@ -34,6 +36,8 @@ python3 -m py_compile text_processor.py utils.py test_unicode_normalization.py d
 python3 -m py_compile teoria_cambio.py
 # Responsibility detection components
 python3 -m py_compile responsibility_detector.py test_responsibility_detector.py
+# DECALOGO_INDUSTRIAL loader components
+python3 -m py_compile decalogo_loader.py test_decalogo_loader.py
 ```
 
 ### Test
@@ -42,6 +46,8 @@ python3 -m py_compile responsibility_detector.py test_responsibility_detector.py
 python3 -m pytest test_embedding_model.py -v
 # Responsibility detection tests
 python3 -m pytest test_responsibility_detector.py -v
+# DECALOGO_INDUSTRIAL loader tests
+python3 -m pytest test_decalogo_loader.py -v
 # Additional tests if available
 python3 test_unicode_normalization.py 2>/dev/null || echo "Text processing tests not available"
 python3 test_dag_validation.py 2>/dev/null || echo "DAG validation tests not available"
@@ -54,6 +60,8 @@ python3 validate.py 2>/dev/null || echo "Full validation suite not available"
 python3 example_usage.py
 # Responsibility detection demo
 python3 responsibility_detector.py
+# DECALOGO_INDUSTRIAL loader demo
+python3 -c "from decalogo_loader import get_decalogo_industrial; print(get_decalogo_industrial())"
 # Additional demos if available
 python3 demo_unicode_comparison.py 2>/dev/null || echo "Text processing demo not available"
 python3 dag_validation.py 2>/dev/null || echo "DAG validation demo not available"
@@ -61,7 +69,7 @@ python3 dag_validation.py 2>/dev/null || echo "DAG validation demo not available
 
 ## Tech Stack
 - **Language**: Python 3.7+
-- **Framework**: sentence-transformers, scikit-learn, numpy for embedding models; spaCy for NER; standard library for text processing
+- **Framework**: sentence-transformers, scikit-learn, numpy for embedding models; spaCy for NER; standard library for text processing and atomic file operations
 - **Package Manager**: pip
 - **Testing**: pytest and unittest
 
@@ -91,6 +99,18 @@ responsibility_detector.py      # spaCy NER + lexical pattern matching for respo
 
 test_responsibility_detector.py # Comprehensive test suite for responsibility detection
 
+# DECALOGO_INDUSTRIAL Template Loading Components
+decalogo_loader.py             # Atomic file operations with fallback template loading
+├── load_decalogo_industrial() # Core loading function with atomic write + fallback
+├── get_decalogo_industrial()  # Convenience wrapper with caching
+├── DECALOGO_INDUSTRIAL_TEMPLATE # Hardcoded template for fallback
+├── Atomic file operations     # Temporary file + rename for safety
+├── Exception handling         # PermissionError, OSError, IOError handling
+├── Fallback mechanism         # In-memory template on write failures
+└── Logging integration        # Debug info for deployment issues
+
+test_decalogo_loader.py        # Comprehensive test suite for template loading
+
 # Text Processing Components (if available)
 text_processor.py              # Core text processing with Unicode normalization
 utils.py                       # Utility classes and functions
@@ -118,3 +138,4 @@ teoria_cambio.py               # TeoriaCambio class with cached causal graph con
 - Robust exception handling for model initialization
 - Automatic fallback mechanisms for reliability
 - Statistical interpretation warnings to prevent misuse
+- Atomic file operations for deployment safety
