@@ -6,4 +6,5 @@ numpy>=1.21.0
 # Testing dependencies
 pytest>=7.0.0
 
+# Note: Factibilidad scoring module uses only Python standard library
 # Note: Text processing and DAG validation components (if present) use only Python standard library

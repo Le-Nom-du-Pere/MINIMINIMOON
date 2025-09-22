@@ -1,10 +1,11 @@
 # Multi-Component Python Suite
 
-This project combines multiple complementary components for text processing, graph validation, and embedding models:
+This project combines multiple complementary components for text processing, graph validation, embedding models, and Spanish pattern detection:
 
 1. **Embedding Model with Fallback Mechanism** - Robust embedding model with automatic MPNet->MiniLM fallback
-2. **Unicode Normalization for Regex Matching** - Text processing with Unicode normalization (if available)
-3. **Deterministic Monte Carlo DAG Validation** - Statistical validation of causal graphs (if available)
+2. **Factibilidad Scoring Module** - Spanish pattern detection for baseline, target, and timeframe indicators
+3. **Unicode Normalization for Regex Matching** - Text processing with Unicode normalization (if available)
+4. **Deterministic Monte Carlo DAG Validation** - Statistical validation of causal graphs (if available)
 
 ## Embedding Model Component
 
@@ -38,6 +39,39 @@ print(f"Using fallback: {info['is_fallback']}")
 embeddings = model.encode(["Hello world", "Embedding test"])
 ```
 
+## Factibilidad Scoring Component
+
+A Python module for detecting and scoring text segments based on the presence of baseline, target, and timeframe patterns in Spanish text.
+
+### Files
+- **factibilidad/pattern_detector.py** - Core pattern detection logic
+- **factibilidad/scoring.py** - Scoring algorithms and analysis
+- **test_factibilidad.py** - Test cases and examples
+
+### Features
+- **Pattern Detection**: Identifies three types of patterns in Spanish text:
+  - Baseline indicators (línea base, situación inicial, punto de partida, etc.)
+  - Target indicators (meta, objetivo, alcanzar, lograr, etc.)
+  - Timeframe indicators (dates, quarters, relative time expressions)
+- **Proximity-Based Clustering**: Groups patterns that appear within a configurable distance window
+- **Factibilidad Scoring**: Calculates scores based on individual pattern presence, complete pattern clusters, proximity bonuses, and pattern density bonuses
+
+### Usage
+```python
+from factibilidad import PatternDetector, FactibilidadScorer
+
+# Basic pattern detection
+detector = PatternDetector()
+matches = detector.detect_patterns(text)
+
+# Calculate factibilidad scores
+scorer = FactibilidadScorer(proximity_window=500)
+result = scorer.score_text(text)
+
+print(f"Score: {result['total_score']}")
+print(f"Clusters found: {result['cluster_scores']['count']}")
+```
+
 ## Text Processing Component (if available)
 
 Implements Unicode normalization using `unicodedata.normalize("NFKC", text)` before applying regex patterns to ensure consistent character representation.
@@ -68,72 +102,6 @@ result = validator.calculate_acyclicity_pvalue("plan_name", iterations=1000)
 ## Installation
 
 ```bash
-<<<<<<< HEAD
-pip install -r requirements.txt
-```
-
-## Testing
-
-Run individual test suites:
-```bash
-python3 test_unicode_normalization.py  # Text processing tests
-python3 test_dag_validation.py         # DAG validation tests
-```
-
-Run complete validation:
-```bash
-python3 validate.py  # Full validation suite
-```
-
-## Statistical Interpretation (DAG Validation)
-
-⚠️ **Important**: DAG validation tests structural acyclicity, not causal validity.
-
-- **P-value**: Probability of observing acyclic structure in random subgraphs under the null hypothesis
-- **Lower p-values**: Suggest the observed acyclicity is unlikely to occur by chance alone
-- **Higher p-values**: Indicate the structure could reasonably arise from random processes
-
-### Limitations
-1. **Not a causal test**: Validates graph structure, not causal relationships
-2. **Domain expertise required**: Statistical significance ≠ causal validity
-3. **Interpretation context**: Results must be interpreted within domain knowledge
-4. **Subgraph sampling**: Tests random subsets, not the full graph structure
-
-## Example Outputs
-
-### Text Processing Demo
-```
-Decomposed characters:
-Original text: café vs café
-Text length: 13 characters
-Normalized:   café vs café  
-Normalized length: 12 characters
-Character differences detected:
-  Position 11: 'e' (U+0065) -> 'é' (U+00E9)
-```
-
-### DAG Validation Demo
-```
-Testing reproducibility for plan: teoria_cambio_educacion_2024
-Reproducible: True
-
-Monte Carlo Results:
-Plan: teoria_cambio_educacion_2024
-Seed: 2175693273
-Total iterations: 1000
-Acyclic count: 1000
-P-value: 1.0000
-Average subgraph size: 5.4
-
-Graph Statistics:
-Total nodes: 8
-Total edges: 8
-```
-
-## Architecture
-
-Both components use Python standard library only, ensuring minimal dependencies and maximum compatibility. The text processing component handles Unicode normalization challenges, while the DAG validation component provides statistical tools for causal graph analysis with guaranteed reproducibility.
-=======
 # Create virtual environment
 python3 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
@@ -142,8 +110,24 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-## Quick Start
+## Testing
 
+Run individual test suites:
+```bash
+python3 -m pytest test_embedding_model.py -v  # Embedding model tests
+python3 test_factibilidad.py                  # Factibilidad pattern tests
+python3 test_unicode_normalization.py 2>/dev/null || echo "Text processing tests not available"
+python3 test_dag_validation.py 2>/dev/null || echo "DAG validation tests not available"
+```
+
+Run complete validation:
+```bash
+python3 validate.py 2>/dev/null || echo "Full validation suite not available"
+```
+
+## Quick Start Examples
+
+### Embedding Model
 ```python
 from embedding_model import create_embedding_model
 
@@ -162,97 +146,30 @@ embeddings = model.encode(sentences)
 print(f"Embeddings shape: {embeddings.shape}")
 ```
 
-## API Reference
-
-### EmbeddingModel Class
-
-#### Initialization
-- `EmbeddingModel(force_fallback=False)`: Initialize with optional fallback forcing
-
-#### Methods
-- `encode(sentences, batch_size=None, show_progress_bar=False, normalize_embeddings=True)`: Encode text to embeddings
-- `similarity(embeddings1, embeddings2)`: Calculate cosine similarity
-- `get_model_info()`: Get current model information
-- `get_embedding_dimension()`: Get embedding dimension
-
-#### Factory Function
-- `create_embedding_model(force_fallback=False)`: Create model instance
-
-## Model Configuration
-
-### Primary Model (MPNet)
-- **Model**: `sentence-transformers/all-mpnet-base-v2`
-- **Dimensions**: 768
-- **Optimal Batch Size**: 16
-
-### Fallback Model (MiniLM)
-- **Model**: `sentence-transformers/all-MiniLM-L6-v2` 
-- **Dimensions**: 384
-- **Optimal Batch Size**: 32
-
-## Exception Handling
-
-The fallback mechanism handles various loading failures:
-- Network connectivity issues
-- Insufficient disk space
-- Corrupted model files
-- CUDA/device compatibility problems
-- Memory constraints
-
-## Examples
-
-### Basic Usage
+### Factibilidad Scoring
 ```python
-model = create_embedding_model()
-embeddings = model.encode(["Sample text"])
+from factibilidad import FactibilidadScorer
+
+scorer = FactibilidadScorer()
+text = "La línea base actual muestra 100 usuarios. Nuestro objetivo es alcanzar 500 usuarios para diciembre de 2024."
+result = scorer.score_text(text)
+print(f"Factibilidad Score: {result['total_score']:.1f}")
 ```
 
-### Force Fallback
-```python
-model = create_embedding_model(force_fallback=True)  # Skip MPNet, use MiniLM
-```
+## Statistical Interpretation (DAG Validation)
 
-### Batch Processing
-```python
-large_text_list = ["Text " + str(i) for i in range(1000)]
-embeddings = model.encode(large_text_list, batch_size=32, show_progress_bar=True)
-```
+⚠️ **Important**: DAG validation tests structural acyclicity, not causal validity.
 
-### Similarity Calculation
-```python
-text1_embeddings = model.encode(["First text"])
-text2_embeddings = model.encode(["Second text"]) 
-similarity = model.similarity(text1_embeddings, text2_embeddings)
-```
+- **P-value**: Probability of observing acyclic structure in random subgraphs under the null hypothesis
+- **Lower p-values**: Suggest the observed acyclicity is unlikely to occur by chance alone
+- **Higher p-values**: Indicate the structure could reasonably arise from random processes
 
-## Testing
+### Limitations
+1. **Not a causal test**: Validates graph structure, not causal relationships
+2. **Domain expertise required**: Statistical significance ≠ causal validity
+3. **Interpretation context**: Results must be interpreted within domain knowledge
+4. **Subgraph sampling**: Tests random subsets, not the full graph structure
 
-Run the comprehensive test suite:
+## Architecture
 
-```bash
-python3 -m pytest test_embedding_model.py -v
-```
-
-The tests cover:
-- Primary model loading success
-- Fallback mechanism triggering
-- Both models failing scenario
-- Force fallback functionality
-- Encoding operations
-- Batch size optimization
-- Model information retrieval
-- Similarity calculations
-
-## Running Examples
-
-```bash
-python3 example_usage.py
-```
-
-This demonstrates:
-- Model initialization with fallback
-- Sentence encoding
-- Similarity matrix computation
-- Batch size testing
-- Fallback scenario testing
->>>>>>> fa1edfd (Add fallback mechanism from MPNet to MiniLM model for embedding initialization)
+The suite combines multiple components with minimal dependencies. The embedding model requires sentence-transformers and scikit-learn, while the factibilidad scoring module uses only Python standard library. Text processing and DAG validation components (if available) also use standard library only, ensuring maximum compatibility.

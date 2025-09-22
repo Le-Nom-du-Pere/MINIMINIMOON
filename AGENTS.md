@@ -2,24 +2,35 @@
 
 ## Commands
 
+<<<<<<< HEAD
 ### Setup
 ```bash
 # Python project with embedding models and text processing components
 python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt
+=======
+### Initial Setup
+```bash
+# Setup commands will be added once project structure is established
+>>>>>>> 24d20b7 (Implement pattern detection and proximity scoring for baseline, target, and timeframe indicators in factibilidad module)
 ```
 
 ### Build
 ```bash
+<<<<<<< HEAD
 # Text processing components
 python3 -c "import text_processor, utils; print('Text processing build successful')" || echo "Text processing components not available"
 # DAG validation components  
 python3 -c "import dag_validation; print('DAG validation build successful')" || echo "DAG validation components not available"
 # Embedding model components
 python3 -c "import embedding_model; print('Embedding model build successful')"
+=======
+# Build command to be determined based on tech stack
+>>>>>>> 24d20b7 (Implement pattern detection and proximity scoring for baseline, target, and timeframe indicators in factibilidad module)
 ```
 
 ### Lint
 ```bash
+<<<<<<< HEAD
 # Code follows PEP 8 conventions
 python3 -m py_compile embedding_model.py test_embedding_model.py example_usage.py
 # Additional components if available
@@ -34,10 +45,19 @@ python3 -m pytest test_embedding_model.py -v
 python3 test_unicode_normalization.py 2>/dev/null || echo "Text processing tests not available"
 python3 test_dag_validation.py 2>/dev/null || echo "DAG validation tests not available"
 python3 validate.py 2>/dev/null || echo "Full validation suite not available"
+=======
+# Linting command to be determined based on tech stack
+```
+
+### Tests
+```bash
+# Test command to be determined based on tech stack
+>>>>>>> 24d20b7 (Implement pattern detection and proximity scoring for baseline, target, and timeframe indicators in factibilidad module)
 ```
 
 ### Dev Server
 ```bash
+<<<<<<< HEAD
 # Embedding model demo
 python3 example_usage.py
 # Additional demos if available
@@ -83,3 +103,13 @@ validate.py                    # Complete validation orchestrator
 - Robust exception handling for model initialization
 - Automatic fallback mechanisms for reliability
 - Statistical interpretation warnings to prevent misuse
+=======
+# Dev server command to be determined based on tech stack
+```
+
+## Tech Stack & Architecture
+- Tech stack to be documented once project is initialized
+
+## Code Style & Conventions
+- Code style guidelines to be established based on project requirements
+>>>>>>> 24d20b7 (Implement pattern detection and proximity scoring for baseline, target, and timeframe indicators in factibilidad module)
