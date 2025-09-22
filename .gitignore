@@ -1,2 +1,8 @@
 *.pyc
 __pycache__/
+*.pyo
+*.pyd
+.Python
+*.so
+.coverage
+.pytest_cache/
