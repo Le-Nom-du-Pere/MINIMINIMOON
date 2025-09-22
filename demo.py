@@ -150,6 +150,36 @@ def main():
     print("\n[... documentation continues ...]")
     print(f"\nTotal documentation length: {len(docs)} characters")
 
+    print(f"\n{'='*60}")
+    print("ATOMIC REPORT GENERATION EXAMPLE")
+    print("=" * 60)
+    
+    # Test atomic report generation
+    test_indicators_for_report = [
+        'Incrementar la línea base de 65% de cobertura educativa a una meta de 85% para el año 2025',
+        'Mejorar desde la situación inicial hasta el objetivo propuesto con incremento del 20%',
+        'Partir de la línea base para alcanzar el objetivo',
+        'Aumentar el acceso a servicios de salud en la región'
+    ]
+    
+    print("\nGenerating sample report with atomic file operations...")
+    
+    try:
+        report_path = "sample_feasibility_report.md"
+        scorer.generate_report(test_indicators_for_report, report_path)
+        print(f"✓ Report successfully generated: {report_path}")
+        
+        # Show first few lines of the generated report
+        with open(report_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()[:15]
+            print("\nFirst 15 lines of generated report:")
+            print("".join(lines))
+            if len(lines) >= 15:
+                print("...")
+                
+    except Exception as e:
+        print(f"✗ Error generating report: {e}")
+
 
 if __name__ == "__main__":
     main()

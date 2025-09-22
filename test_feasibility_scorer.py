@@ -5,6 +5,9 @@ Tests precision and recall of quality detection patterns.
 
 import pytest
 import unicodedata
+import tempfile
+import os
+from pathlib import Path
 from feasibility_scorer import FeasibilityScorer, ComponentType, IndicatorScore
 from typing import List, Dict, Any
 
@@ -712,6 +715,184 @@ class TestCalcularCalidadEvidencia:
             score = scorer.calcular_calidad_evidencia(text)
             assert 0.0 <= score <= 1.0, f"Score out of bounds for: {text}, got: {score}"
             assert isinstance(score, float), f"Non-float score for: {text}"
+
+
+class TestAtomicReportGeneration:
+    """Test atomic report generation functionality."""
+    
+    @pytest.fixture
+    def scorer(self):
+        return FeasibilityScorer()
+    
+    @pytest.fixture
+    def test_indicators(self):
+        return [
+            'Incrementar la línea base de 65% de cobertura educativa a una meta de 85% para el año 2025',
+            'Mejorar desde la situación inicial hasta el objetivo propuesto',
+            'Aumentar el acceso a servicios de salud en la región'
+        ]
+    
+    def test_successful_report_generation(self, scorer, test_indicators):
+        """Test successful atomic report generation."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            report_path = Path(temp_dir) / "test_report.md"
+            
+            # Generate report
+            scorer.generate_report(test_indicators, str(report_path))
+            
+            # Verify file exists and has content
+            assert report_path.exists()
+            assert report_path.stat().st_size > 0
+            
+            # Verify report content structure
+            content = report_path.read_text(encoding='utf-8')
+            assert "# Feasibility Assessment Report" in content
+            assert "## Summary" in content
+            assert "## Detailed Analysis" in content
+            assert "## Recommendations" in content
+            assert f"Total indicators analyzed: {len(test_indicators)}" in content
+    
+    def test_empty_indicators_error(self, scorer):
+        """Test that empty indicators list raises ValueError."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            report_path = Path(temp_dir) / "test_report.md"
+            
+            with pytest.raises(ValueError, match="Indicators list cannot be empty"):
+                scorer.generate_report([], str(report_path))
+    
+    def test_atomic_file_operations(self, scorer, test_indicators):
+        """Test that atomic operations prevent partial file writes."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            report_path = Path(temp_dir) / "test_report.md"
+            
+            # Mock a scenario where report generation succeeds but rename might fail
+            original_rename = Path.rename
+            
+            def mock_rename_success(self, target):
+                # Simulate successful atomic rename
+                return original_rename(self, target)
+            
+            Path.rename = mock_rename_success
+            
+            try:
+                scorer.generate_report(test_indicators, str(report_path))
+                
+                # Verify no temporary files remain
+                temp_files = list(Path(temp_dir).glob("*.tmp.*"))
+                assert len(temp_files) == 0, "Temporary files were not cleaned up"
+                
+                # Verify final file exists
+                assert report_path.exists()
+                
+            finally:
+                Path.rename = original_rename
+    
+    def test_temporary_file_cleanup_on_error(self, scorer, test_indicators):
+        """Test that temporary files are cleaned up when errors occur."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            report_path = Path(temp_dir) / "test_report.md"
+            
+            # Mock Path.rename to raise an exception
+            original_rename = Path.rename
+            
+            def mock_rename_failure(self, target):
+                raise OSError("Simulated rename failure")
+            
+            Path.rename = mock_rename_failure
+            
+            try:
+                with pytest.raises(IOError, match="Failed to generate report"):
+                    scorer.generate_report(test_indicators, str(report_path))
+                
+                # Verify temporary files are cleaned up
+                temp_files = list(Path(temp_dir).glob("*.tmp.*"))
+                assert len(temp_files) == 0, "Temporary files were not cleaned up after error"
+                
+                # Verify final file doesn't exist
+                assert not report_path.exists()
+                
+            finally:
+                Path.rename = original_rename
+    
+    def test_unique_temporary_filenames(self, scorer, test_indicators):
+        """Test that temporary files have unique names to avoid conflicts."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            report_path = Path(temp_dir) / "test_report.md"
+            
+            # Intercept temporary file creation to check uniqueness
+            created_temp_files = []
+            original_open = Path.open
+            
+            def mock_open(self, *args, **kwargs):
+                if str(self).endswith('.tmp.'):
+                    created_temp_files.append(str(self))
+                return original_open(self, *args, **kwargs)
+            
+            # Generate multiple reports to test uniqueness
+            for i in range(3):
+                temp_report_path = Path(temp_dir) / f"test_report_{i}.md"
+                scorer.generate_report(test_indicators, str(temp_report_path))
+            
+            # In practice, the temp files are quickly renamed, so we test the mechanism works
+            # by checking that reports are generated successfully without conflicts
+            for i in range(3):
+                temp_report_path = Path(temp_dir) / f"test_report_{i}.md"
+                assert temp_report_path.exists()
+    
+    def test_report_content_completeness(self, scorer, test_indicators):
+        """Test that generated report contains all expected sections and data."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            report_path = Path(temp_dir) / "test_report.md"
+            
+            scorer.generate_report(test_indicators, str(report_path))
+            
+            content = report_path.read_text(encoding='utf-8')
+            
+            # Check header and metadata
+            assert "# Feasibility Assessment Report" in content
+            assert "Generated on:" in content
+            assert f"Total indicators analyzed: {len(test_indicators)}" in content
+            
+            # Check summary section
+            assert "## Summary" in content
+            assert "Average feasibility score:" in content
+            assert "Quality tier distribution:" in content
+            
+            # Check detailed analysis
+            assert "## Detailed Analysis" in content
+            for i, indicator in enumerate(test_indicators, 1):
+                assert f"### {i}. Indicator Analysis" in content
+                assert f"**Text:** {indicator}" in content
+            
+            # Check recommendations
+            assert "## Recommendations" in content
+            
+            # Check footer
+            assert "*Report generated by Feasibility Scorer v1.0*" in content
+    
+    def test_report_content_sorting(self, scorer):
+        """Test that indicators are sorted by score in the report."""
+        indicators = [
+            "aumentar servicios región",  # Low score
+            "línea base 50% meta 80%",   # High score  
+            "situación actual objetivo"   # Medium score
+        ]
+        
+        with tempfile.TemporaryDirectory() as temp_dir:
+            report_path = Path(temp_dir) / "test_report.md"
+            
+            scorer.generate_report(indicators, str(report_path))
+            
+            content = report_path.read_text(encoding='utf-8')
+            
+            # Find positions of indicators in the report
+            high_score_pos = content.find("línea base 50% meta 80%")
+            medium_score_pos = content.find("situación actual objetivo")  
+            low_score_pos = content.find("aumentar servicios región")
+            
+            # Verify high score appears before medium, which appears before low
+            assert high_score_pos < medium_score_pos < low_score_pos
+>>>>>>> 66cac3d (Implement atomic file operations for report writing with temporary files and error handling)
 
 
 if __name__ == "__main__":

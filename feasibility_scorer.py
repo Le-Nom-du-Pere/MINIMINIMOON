@@ -10,6 +10,8 @@ import re
 import datetime
 import time
 import unicodedata
+import uuid
+from pathlib import Path
 from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass
 from enum import Enum
@@ -668,3 +670,131 @@ The feasibility scorer evaluates indicator quality by detecting three core compo
         
         # Apply penalty if title-like without values
         return 1.0 if not has_values else 0.0
+    
+    def generate_report(self, indicators: List[str], output_path: str) -> None:
+        """
+        Generate a comprehensive feasibility report and save it to file using atomic operations.
+        
+        Uses atomic file operations to prevent corrupted output files if the process is 
+        interrupted during report generation. This is achieved by:
+        1. Writing the complete report content to a temporary file in the same directory
+        2. Using Path.rename() to atomically move the temporary file to the final destination
+        
+        Note: Atomicity may not be guaranteed on some remote filesystems (NFS, SMB) due to
+        their implementation of rename operations. For local filesystems (ext4, NTFS, APFS),
+        the rename operation is atomic.
+        
+        Args:
+            indicators: List of indicator texts to analyze
+            output_path: Path where the report should be saved
+            
+        Raises:
+            IOError: If file operations fail
+            ValueError: If indicators list is empty
+        """
+        if not indicators:
+            raise ValueError("Indicators list cannot be empty")
+        
+        output_file = Path(output_path)
+        
+        # Create a unique temporary file in the same directory as the target
+        temp_file = output_file.parent / f"{output_file.name}.tmp.{uuid.uuid4().hex[:8]}"
+        
+        try:
+            # Generate the complete report content
+            report_content = self._generate_report_content(indicators)
+            
+            # Write to temporary file first
+            with temp_file.open('w', encoding='utf-8') as f:
+                f.write(report_content)
+                f.flush()  # Ensure all content is written to disk
+            
+            # Atomically move temporary file to final destination
+            temp_file.rename(output_file)
+            
+        except Exception as e:
+            # Clean up temporary file if it exists
+            if temp_file.exists():
+                try:
+                    temp_file.unlink()
+                except OSError:
+                    pass  # Ignore cleanup errors
+            raise IOError(f"Failed to generate report: {e}") from e
+    
+    def _generate_report_content(self, indicators: List[str]) -> str:
+        """Generate the complete report content for the given indicators."""
+        results = self.batch_score(indicators)
+        
+        # Generate timestamp
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        # Build report content
+        content_parts = []
+        content_parts.append("# Feasibility Assessment Report")
+        content_parts.append(f"Generated on: {timestamp}")
+        content_parts.append(f"Total indicators analyzed: {len(indicators)}")
+        content_parts.append("")
+        
+        # Summary statistics
+        scores = [result.feasibility_score for result in results]
+        avg_score = sum(scores) / len(scores) if scores else 0
+        
+        tier_counts = {}
+        for result in results:
+            tier = result.quality_tier
+            tier_counts[tier] = tier_counts.get(tier, 0) + 1
+        
+        content_parts.append("## Summary")
+        content_parts.append(f"Average feasibility score: {avg_score:.3f}")
+        content_parts.append("Quality tier distribution:")
+        for tier, count in sorted(tier_counts.items()):
+            percentage = (count / len(results)) * 100
+            content_parts.append(f"  - {tier}: {count} ({percentage:.1f}%)")
+        content_parts.append("")
+        
+        # Detailed results
+        content_parts.append("## Detailed Analysis")
+        content_parts.append("")
+        
+        # Sort results by score (highest first)
+        sorted_results = list(zip(indicators, results))
+        sorted_results.sort(key=lambda x: x[1].feasibility_score, reverse=True)
+        
+        for i, (indicator, result) in enumerate(sorted_results, 1):
+            content_parts.append(f"### {i}. Indicator Analysis")
+            content_parts.append(f"**Text:** {indicator}")
+            content_parts.append(f"**Score:** {result.feasibility_score:.3f}")
+            content_parts.append(f"**Quality Tier:** {result.quality_tier}")
+            content_parts.append(f"**Quantitative Baseline:** {'Yes' if result.has_quantitative_baseline else 'No'}")
+            content_parts.append(f"**Quantitative Target:** {'Yes' if result.has_quantitative_target else 'No'}")
+            
+            if result.components_detected:
+                content_parts.append(f"**Components Detected:** {', '.join(c.value for c in result.components_detected)}")
+            
+            if result.detailed_matches:
+                content_parts.append("**Pattern Matches:**")
+                for match in result.detailed_matches:
+                    content_parts.append(f"  - {match.component_type.value}: '{match.matched_text}' (confidence: {match.confidence:.2f})")
+            
+            content_parts.append("")
+        
+        # Recommendations
+        content_parts.append("## Recommendations")
+        
+        low_quality_count = sum(1 for result in results if result.feasibility_score < 0.5)
+        if low_quality_count > 0:
+            content_parts.append(f"- {low_quality_count} indicators have scores below 0.5 and need improvement")
+            content_parts.append("- Focus on adding quantitative baselines and targets")
+            content_parts.append("- Include specific time horizons where missing")
+        
+        insufficient_count = sum(1 for result in results if result.quality_tier == 'insufficient')
+        if insufficient_count > 0:
+            content_parts.append(f"- {insufficient_count} indicators are missing core components (baseline or target)")
+            content_parts.append("- These require fundamental restructuring to be measurable")
+        
+        content_parts.append("")
+        content_parts.append("---")
+        content_parts.append("*Report generated by Feasibility Scorer v1.0*")
+        
+        return "\n".join(content_parts)
+>>>>>>> 66cac3d (Implement atomic file operations for report writing with temporary files and error handling)
