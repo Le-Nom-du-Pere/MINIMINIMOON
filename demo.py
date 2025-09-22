@@ -72,22 +72,37 @@ def main():
                     print(f"     - {match.component_type.value}: '{match.matched_text}' (confidence: {match.confidence:.2f})")
     
     print(f"\n{'='*60}")
-    print("BATCH SCORING EXAMPLE")
+    print("BATCH SCORING WITH MONITORING")
     print("=" * 60)
     
     batch_indicators = [
         "línea base 50% meta 80% año 2025",
         "situación actual mejorar objetivo general", 
         "aumentar servicios salud región",
-        "baseline 30% target 60% by 2024"
+        "baseline 30% target 60% by 2024",
+        "Incrementar desde línea base 45% hasta meta 75% en horizonte 2023-2026",
+        "Partir del valor inicial de 2 millones para alcanzar objetivo de 5 millones",
+        "Current baseline shows 12% coverage with target of 35% by December 2025",
+        "Improve quality from initial situation to established goal",
+        "Reduce poverty from 18.5% baseline to 10% target within 5 years",
+        "Enhance education access in rural areas"
     ]
     
     # Test both sequential and parallel processing
     batch_results = scorer.batch_score(batch_indicators)
     batch_results_parallel = scorer.batch_score(batch_indicators, use_parallel=True)
     
-    print("\nBatch Results (sorted by score):")
-    scored_indicators = list(zip(batch_indicators, batch_results))
+    # Use monitoring version
+    batch_monitoring_results = scorer.batch_score_with_monitoring(batch_indicators)
+    
+    print(f"\nBatch Processing Results:")
+    print(f"- Total indicators: {batch_monitoring_results.total_indicators}")
+    print(f"- Execution time: {batch_monitoring_results.execution_time}")
+    print(f"- Duration (seconds): {batch_monitoring_results.duracion_segundos:.4f}s")
+    print(f"- Processing rate: {batch_monitoring_results.planes_por_minuto:.1f} planes/minute")
+    
+    print("\nScored Results (sorted by feasibility score):")
+    scored_indicators = list(zip(batch_indicators, batch_monitoring_results.scores))
     scored_indicators.sort(key=lambda x: x[1].feasibility_score, reverse=True)
     
     for indicator, result in scored_indicators:

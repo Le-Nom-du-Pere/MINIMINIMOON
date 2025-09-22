@@ -8,6 +8,7 @@ based on the presence of baseline values, targets/goals, and time horizons.
 import os
 import re
 import datetime
+import time
 import unicodedata
 from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass
@@ -38,6 +39,15 @@ class IndicatorScore:
     has_quantitative_baseline: bool
     has_quantitative_target: bool
     quality_tier: str
+
+
+@dataclass
+class BatchScoreResult:
+    scores: List[IndicatorScore]
+    total_indicators: int
+    execution_time: str
+    duracion_segundos: float
+    planes_por_minuto: float
 
 
 class FeasibilityScorer:
@@ -309,6 +319,41 @@ class FeasibilityScorer:
                 pass
         
         return [self.calculate_feasibility_score(indicator) for indicator in indicators]
+    
+    def batch_score_with_monitoring(self, indicators: List[str]) -> BatchScoreResult:
+        """Score multiple indicators with execution monitoring."""
+        start_time = time.time()
+        
+        scores = []
+        for indicator in indicators:
+            scores.append(self.calculate_feasibility_score(indicator))
+        
+        end_time = time.time()
+        duracion_segundos = end_time - start_time
+        
+        # Calculate processing rate (plans per minute)
+        if duracion_segundos > 0:
+            planes_por_minuto = (len(indicators) / duracion_segundos) * 60
+        else:
+            planes_por_minuto = 0.0
+        
+        # Format human-readable time
+        if duracion_segundos < 1:
+            execution_time = f"{duracion_segundos * 1000:.1f}ms"
+        elif duracion_segundos < 60:
+            execution_time = f"{duracion_segundos:.2f}s"
+        else:
+            minutes = int(duracion_segundos // 60)
+            seconds = duracion_segundos % 60
+            execution_time = f"{minutes}m {seconds:.1f}s"
+        
+        return BatchScoreResult(
+            scores=scores,
+            total_indicators=len(indicators),
+            execution_time=execution_time,
+            duracion_segundos=duracion_segundos,
+            planes_por_minuto=planes_por_minuto
+        )
     
     def get_detection_rules_documentation(self) -> str:
         """Return comprehensive documentation of detection rules."""

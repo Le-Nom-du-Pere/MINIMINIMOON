@@ -6,7 +6,7 @@ Tests the feasibility scorer functionality.
 
 import sys
 import traceback
-from feasibility_scorer import FeasibilityScorer, ComponentType
+from feasibility_scorer import FeasibilityScorer, ComponentType, BatchScoreResult
 
 
 class TestRunner:
@@ -182,6 +182,36 @@ def test_batch_scoring():
     runner.assert_equal(results[2].feasibility_score, 0.0, "Third should be insufficient")
 
 
+def test_batch_scoring_with_monitoring():
+    scorer = FeasibilityScorer()
+    runner = TestRunner()
+    
+    indicators = [
+        "línea base 50% meta 80% año 2025",
+        "baseline 30% target 60% by 2024",
+        "aumentar servicios región"
+    ]
+    
+    result = scorer.batch_score_with_monitoring(indicators)
+    
+    # Check result structure
+    runner.assert_equal(len(result.scores), 3, "Should return 3 scores")
+    runner.assert_equal(result.total_indicators, 3, "Should count 3 indicators")
+    runner.assert_true(result.duracion_segundos >= 0, "Duration should be non-negative")
+    runner.assert_true(result.planes_por_minuto >= 0, "Rate should be non-negative")
+    runner.assert_true(isinstance(result.execution_time, str), "Execution time should be string")
+    
+    # Check that scores match regular batch_score
+    regular_results = scorer.batch_score(indicators)
+    for i, (monitoring_score, regular_score) in enumerate(zip(result.scores, regular_results)):
+        runner.assert_equal(monitoring_score.feasibility_score, regular_score.feasibility_score, 
+                           f"Score {i} should match between methods")
+    
+    # Performance validation - should process at reasonable rate
+    if result.duracion_segundos > 0:
+        runner.assert_true(result.planes_por_minuto > 0, "Should have positive processing rate")
+
+
 def test_quantitative_components():
     scorer = FeasibilityScorer()
     runner = TestRunner()
@@ -225,6 +255,7 @@ def main():
     runner.run_test(test_date_detection, "Date Detection")
     runner.run_test(test_insufficient_indicators, "Insufficient Indicators")
     runner.run_test(test_batch_scoring, "Batch Scoring")
+    runner.run_test(test_batch_scoring_with_monitoring, "Batch Scoring with Monitoring")
     runner.run_test(test_quantitative_components, "Quantitative Components")
     runner.run_test(test_documentation, "Documentation")
     
