@@ -7,6 +7,7 @@ based on the presence of baseline values, targets/goals, and time horizons.
 
 import re
 import datetime
+import unicodedata
 from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass
 from enum import Enum
@@ -354,3 +355,244 @@ The feasibility scorer evaluates indicator quality by detecting three core compo
 - ✗ No quantitative elements
 """
         return doc
+    
+    def calcular_calidad_evidencia(self, fragment: str) -> float:
+        """
+        Calculate evidence quality score for text fragments (0.0 to 1.0).
+        
+        Higher scores for fragments containing:
+        - Numerical values with monetary amounts (COP, $, millones)
+        - Dates (YYYY format, quarters Q1-Q4, months)
+        - Measurement terminology (baseline, meta, periodicidad)
+        
+        Penalties applied for:
+        - Indicators appearing only in titles/bullet points without values
+        - Empty or malformed content
+        
+        Args:
+            fragment (str): Text fragment to analyze
+            
+        Returns:
+            float: Quality score between 0.0 and 1.0
+        """
+        if not fragment or not fragment.strip():
+            return 0.0
+        
+        # Normalize Unicode text using NFKC
+        normalized_text = unicodedata.normalize('NFKC', fragment.strip())
+        text_lower = normalized_text.lower()
+        
+        # Initialize scoring components
+        scores = {
+            'monetary': 0.0,
+            'dates': 0.0,
+            'terminology': 0.0,
+            'structure_penalty': 0.0
+        }
+        
+        # Weights for different scoring components
+        weights = {
+            'monetary': 0.35,
+            'dates': 0.25,
+            'terminology': 0.25,
+            'structure_penalty': -0.15
+        }
+        
+        # 1. Monetary amount detection
+        scores['monetary'] = self._detect_monetary_values(text_lower)
+        
+        # 2. Date detection  
+        scores['dates'] = self._detect_temporal_indicators(text_lower)
+        
+        # 3. Measurement terminology detection
+        scores['terminology'] = self._detect_measurement_terminology(text_lower)
+        
+        # 4. Structure penalty for title-only indicators
+        scores['structure_penalty'] = self._calculate_structure_penalty(normalized_text)
+        
+        # Calculate weighted final score
+        final_score = sum(scores[component] * weights[component] 
+                         for component in scores.keys())
+        
+        # Ensure score is between 0.0 and 1.0
+        return max(0.0, min(1.0, final_score))
+    
+    def _detect_monetary_values(self, text: str) -> float:
+        """Detect monetary amounts and return normalized score."""
+        monetary_patterns = [
+            # Colombian pesos with COP
+            r'cop\s*[\$]?\s*[\d,.\s]+(?:millones?|mil|thousands?|millions?)?',
+            
+            # Dollar amounts with various formats
+            r'[\$]\s*[\d,.\s]+(?:millones?|mil|thousands?|millions?)?',
+            r'[\d,.\s]+\s*(?:dollars?|dolares?|usd)',
+            
+            # Millions/thousands indicators in Spanish/English
+            r'[\d,.\s]+\s*(?:millones?|millions?)\s*(?:de\s*)?(?:pesos?|cop|[\$])?',
+            r'[\d,.\s]+\s*mil(?:es)?\s*(?:pesos?|cop|[\$])?',
+            
+            # Percentage with monetary context
+            r'[\d,.\s]+\s*%\s*(?:del\s*)?(?:presupuesto|budget|recursos?)',
+            
+            # Investment/cost terminology
+            r'(?:inversion|investment|costo|cost|gasto|expense).*?[\d,.\s]+',
+            r'[\d,.\s]+.*?(?:inversion|investment|costo|cost)'
+        ]
+        
+        matches = []
+        for pattern in monetary_patterns:
+            matches.extend(re.finditer(pattern, text, re.IGNORECASE))
+        
+        if not matches:
+            return 0.0
+        
+        # Score based on number and quality of monetary references
+        base_score = min(len(matches) * 0.3, 1.0)
+        
+        # Bonus for high-precision monetary values
+        precision_bonus = 0.0
+        for match in matches:
+            match_text = match.group()
+            # Look for decimal places or specific amounts
+            if re.search(r'[\d]+[.,][\d]{1,3}', match_text):
+                precision_bonus += 0.1
+            # Look for currency symbols
+            if re.search(r'[\$]|cop|usd', match_text):
+                precision_bonus += 0.1
+        
+        return min(base_score + precision_bonus, 1.0)
+    
+    def _detect_temporal_indicators(self, text: str) -> float:
+        """Detect dates and temporal indicators."""
+        temporal_patterns = [
+            # Year patterns (YYYY)
+            r'\b(?:20[0-9]{2}|19[0-9]{2})\b',
+            
+            # Quarter patterns (Q1-Q4)
+            r'q[1-4](?:\s+20[0-9]{2})?',
+            r'(?:trimestre|quarter)\s*[1-4]',
+            r'(?:primer|segundo|tercer|cuarto)\s*trimestre',
+            
+            # Month patterns in Spanish
+            r'(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)(?:\s+(?:de\s+)?20[0-9]{2})?',
+            
+            # Month patterns in English  
+            r'(?:january|february|march|april|may|june|july|august|september|october|november|december)(?:\s+20[0-9]{2})?',
+            
+            # Date formats
+            r'\b\d{1,2}[-/]\d{1,2}[-/](?:20[0-9]{2}|\d{2})\b',
+            r'\b\d{4}[-/]\d{1,2}[-/]\d{1,2}\b',
+            
+            # Relative temporal references
+            r'(?:periodicidad|periodicity|frequency).*?(?:anual|annual|mensual|monthly|trimestral|quarterly)',
+            r'(?:cada|every)\s+(?:\d+\s+)?(?:años?|years?|meses?|months?|trimestres?|quarters?)',
+            
+            # Time horizons
+            r'(?:para|by|hasta|until|en)\s+(?:el\s+)?(?:año\s+)?20[0-9]{2}',
+            r'(?:horizon|horizonte).*?(?:20[0-9]{2}|\d+\s+años?)'
+        ]
+        
+        matches = []
+        for pattern in temporal_patterns:
+            matches.extend(re.finditer(pattern, text, re.IGNORECASE))
+        
+        if not matches:
+            return 0.0
+        
+        # Score based on temporal precision
+        score = 0.0
+        for match in matches:
+            match_text = match.group()
+            # Higher score for specific dates
+            if re.search(r'20[0-9]{2}', match_text):
+                score += 0.4
+            elif re.search(r'q[1-4]|trimestre|quarter', match_text):
+                score += 0.3
+            elif re.search(r'enero|febrero|january|february', match_text):
+                score += 0.25
+            else:
+                score += 0.15
+        
+        return min(score, 1.0)
+    
+    def _detect_measurement_terminology(self, text: str) -> float:
+        """Detect measurement and evaluation terminology."""
+        terminology_patterns = [
+            # Baseline terminology
+            r'(?:baseline|línea\s+base|valor\s+inicial|situación\s+inicial)',
+            r'(?:punto\s+de\s+partida|referencia\s+inicial|estado\s+actual)',
+            
+            # Target/goal terminology  
+            r'(?:meta|objetivo|target|goal|propósito)',
+            r'(?:alcanzar|lograr|achieve|reach)',
+            
+            # Measurement concepts
+            r'(?:periodicidad|periodicity|frecuencia|frequency)',
+            r'(?:indicador|indicator|métrica|metric|medición|measurement)',
+            r'(?:monitoreo|monitoring|seguimiento|tracking)',
+            
+            # Performance terminology
+            r'(?:desempeño|performance|resultado|result|impacto|impact)',
+            r'(?:evaluación|evaluation|assessment|valoración)',
+            
+            # Quantitative terms
+            r'(?:incremento|aumento|reducción|mejora|improvement)',
+            r'(?:porcentaje|percentage|proporción|proportion|ratio)',
+            
+            # Comparative terms
+            r'(?:comparado\s+con|compared\s+to|respecto\s+a|versus)',
+            r'(?:mayor\s+que|menor\s+que|igual\s+a|greater\s+than|less\s+than)'
+        ]
+        
+        matches = []
+        for pattern in terminology_patterns:
+            matches.extend(re.finditer(pattern, text, re.IGNORECASE))
+        
+        if not matches:
+            return 0.0
+        
+        # Score based on terminology richness
+        unique_matches = set(match.group().lower() for match in matches)
+        richness_score = min(len(unique_matches) * 0.2, 1.0)
+        
+        # Bonus for measurement-specific terminology
+        measurement_bonus = 0.0
+        measurement_terms = ['periodicidad', 'periodicity', 'indicador', 'indicator', 
+                           'monitoreo', 'monitoring', 'evaluación', 'evaluation']
+        
+        for term in measurement_terms:
+            if term in text:
+                measurement_bonus += 0.15
+        
+        return min(richness_score + measurement_bonus, 1.0)
+    
+    def _calculate_structure_penalty(self, text: str) -> float:
+        """Calculate penalty for indicators in titles/bullets without values."""
+        # Check for title/bullet point patterns
+        title_patterns = [
+            r'^[-•*]\s+',  # Bullet points
+            r'^#{1,6}\s+', # Markdown headers
+            r'^[A-Z\s]+:$', # All caps titles with colon
+            r'^[^\w]*(?:[A-Z][^.]*[^.]|[A-Z\s]+)$'  # Title-like structure
+        ]
+        
+        is_title_like = any(re.match(pattern, text, re.MULTILINE) 
+                           for pattern in title_patterns)
+        
+        if not is_title_like:
+            return 0.0
+        
+        # Check if title has associated quantitative values
+        value_patterns = [
+            r'\d+(?:[.,]\d+)?(?:\s*%|\s*millones?|\s*mil)',
+            r'[\$][\d,.\s]+',
+            r'cop\s*[\d,.\s]+',
+            r'\d{4}',  # Years
+            r'q[1-4]'  # Quarters
+        ]
+        
+        has_values = any(re.search(pattern, text, re.IGNORECASE) 
+                        for pattern in value_patterns)
+        
+        # Apply penalty if title-like without values
+        return 1.0 if not has_values else 0.0

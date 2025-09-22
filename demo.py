@@ -92,6 +92,29 @@ def main():
         print(f"- {result.feasibility_score:.2f} | {result.quality_tier:>12} | \"{indicator}\"")
     
     print(f"\n{'='*60}")
+    print("EVIDENCE QUALITY ANALYSIS")
+    print("=" * 60)
+    
+    # Test the new calcular_calidad_evidencia method
+    evidence_fragments = [
+        'Línea base: COP $5.2 millones en 2023, meta $8.5 millones para Q4 2025 con monitoreo trimestral',
+        'Investment of $2.3 million USD baseline for 2024 target achievement',  
+        'Indicador de desempeño con periodicidad anual desde enero 2024',
+        '• Mejora del sistema educativo',
+        'Presupuesto de 15,000 millones de pesos para el baseline del proyecto',
+        'Evaluación trimestral Q1 2024 con metas específicas',
+        'Simple text without specific indicators'
+    ]
+    
+    print("\nEvidence Quality Scores:")
+    for i, fragment in enumerate(evidence_fragments, 1):
+        score = scorer.calcular_calidad_evidencia(fragment)
+        quality_level = "High" if score >= 0.7 else "Medium" if score >= 0.4 else "Low"
+        
+        display_text = fragment[:50] + "..." if len(fragment) > 50 else fragment
+        print(f"{i}. Score: {score:.3f} ({quality_level:>6}) | {display_text}")
+
+    print(f"\n{'='*60}")
     print("DOCUMENTATION EXAMPLE")
     print("=" * 60)
     

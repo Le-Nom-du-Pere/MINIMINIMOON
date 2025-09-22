@@ -334,5 +334,248 @@ class TestFeasibilityScorer:
         assert len(docs) > 1000  # Ensure comprehensive documentation
 
 
+class TestCalcularCalidadEvidencia:
+    """Test suite for calcular_calidad_evidencia method."""
+    
+    @pytest.fixture
+    def scorer(self):
+        return FeasibilityScorer()
+    
+    def test_empty_and_edge_cases(self, scorer):
+        """Test handling of empty and edge case inputs."""
+        # Empty string
+        assert scorer.calcular_calidad_evidencia("") == 0.0
+        
+        # Whitespace only
+        assert scorer.calcular_calidad_evidencia("   ") == 0.0
+        
+        # None-like content
+        assert scorer.calcular_calidad_evidencia("   \n\t  ") == 0.0
+    
+    def test_monetary_value_detection(self, scorer):
+        """Test detection of monetary amounts."""
+        # Colombian pesos
+        high_monetary = [
+            "COP $2.5 millones invertidos en el proyecto",
+            "Presupuesto de $15,000 millones de pesos",
+            "Inversión de COP 3.2 millones",
+            "Costo total: $1,500 mil pesos"
+        ]
+        
+        for text in high_monetary:
+            score = scorer.calcular_calidad_evidencia(text)
+            assert score >= 0.3, f"Low monetary score for: {text}"
+        
+        # USD amounts
+        usd_texts = [
+            "Investment of $2.3 million USD",
+            "Budget allocation: 5.7 million dollars",
+            "Total cost $850,000 dollars"
+        ]
+        
+        for text in usd_texts:
+            score = scorer.calcular_calidad_evidencia(text)
+            assert score >= 0.25, f"Low USD score for: {text}"
+        
+        # No monetary content
+        no_money = "Mejora general del sistema educativo"
+        assert scorer.calcular_calidad_evidencia(no_money) <= 0.5
+    
+    def test_temporal_indicator_detection(self, scorer):
+        """Test detection of dates and temporal indicators."""
+        # Years
+        year_texts = [
+            "Metas para el año 2025",
+            "Implementación en 2024",
+            "Evaluación 2023-2025"
+        ]
+        
+        for text in year_texts:
+            score = scorer.calcular_calidad_evidencia(text)
+            assert score >= 0.1, f"Low year score for: {text}"
+        
+        # Quarters
+        quarter_texts = [
+            "Revisión trimestral Q1 2024",
+            "Evaluación primer trimestre",
+            "Resultados Q3",
+            "Quarter 4 assessment"
+        ]
+        
+        for text in quarter_texts:
+            score = scorer.calcular_calidad_evidencia(text)
+            assert score >= 0.08, f"Low quarter score for: {text}"
+        
+        # Months
+        month_texts = [
+            "Entrega en enero 2024",
+            "Evaluación febrero de 2025",
+            "Review in March 2024",
+            "December assessment"
+        ]
+        
+        for text in month_texts:
+            score = scorer.calcular_calidad_evidencia(text)
+            assert score >= 0.06, f"Low month score for: {text}"
+        
+        # Periodicity
+        periodicity_texts = [
+            "Monitoreo con periodicidad anual",
+            "Evaluación mensual frequency",
+            "Revisión cada 6 meses",
+            "Quarterly monitoring system"
+        ]
+        
+        for text in periodicity_texts:
+            score = scorer.calcular_calidad_evidencia(text)
+            assert score >= 0.05, f"Low periodicity score for: {text}"
+    
+    def test_measurement_terminology_detection(self, scorer):
+        """Test detection of measurement and evaluation terms."""
+        # Baseline terminology
+        baseline_texts = [
+            "Establecer línea base para el indicador",
+            "Current baseline assessment shows",
+            "Valor inicial de referencia",
+            "Punto de partida del proyecto"
+        ]
+        
+        for text in baseline_texts:
+            score = scorer.calcular_calidad_evidencia(text)
+            assert score >= 0.1, f"Low baseline score for: {text}"
+        
+        # Target/goal terminology
+        target_texts = [
+            "Meta establecida para el proyecto",
+            "Objetivo principal del programa",
+            "Target achievement expected",
+            "Goal setting methodology"
+        ]
+        
+        for text in target_texts:
+            score = scorer.calcular_calidad_evidencia(text)
+            assert score >= 0.08, f"Low target score for: {text}"
+        
+        # Measurement concepts
+        measurement_texts = [
+            "Indicador de desempeño clave",
+            "Performance metric established",
+            "Sistema de monitoreo y evaluación",
+            "Measurement framework development"
+        ]
+        
+        for text in measurement_texts:
+            score = scorer.calcular_calidad_evidencia(text)
+            assert score >= 0.12, f"Low measurement score for: {text}"
+    
+    def test_structure_penalty(self, scorer):
+        """Test penalty for title/bullet indicators without values."""
+        # Title-like without values (should get penalty)
+        title_without_values = [
+            "• Mejora del sistema educativo",
+            "# Fortalecimiento institucional", 
+            "DESARROLLO RURAL SOSTENIBLE:",
+            "- Acceso a servicios de salud"
+        ]
+        
+        for text in title_without_values:
+            score = scorer.calcular_calidad_evidencia(text)
+            # Should get structure penalty, reducing overall score
+            assert score <= 0.4, f"High score despite title penalty for: {text}"
+        
+        # Title-like with values (should avoid penalty)
+        title_with_values = [
+            "• Incrementar cobertura en 25% para 2024",
+            "# Inversión: COP $2.5 millones",
+            "DESARROLLO RURAL: meta 80% cobertura",
+            "- Beneficiarios: 15,000 personas Q1 2024"
+        ]
+        
+        for text in title_with_values:
+            score = scorer.calcular_calidad_evidencia(text)
+            # Should avoid penalty and score higher
+            assert score >= 0.3, f"Low score despite values for: {text}"
+    
+    def test_combined_scoring(self, scorer):
+        """Test scoring with multiple quality indicators."""
+        # High quality: monetary + temporal + terminology
+        high_quality = [
+            "Línea base: COP $5.2 millones en 2023, meta $8.5 millones para Q4 2025 con monitoreo trimestral",
+            "Baseline investment $3.1 million, target $4.8 million by December 2024, quarterly evaluation",
+            "Indicador: incrementar presupuesto de 2.5 millones a 4.2 millones pesos durante 2024-2025"
+        ]
+        
+        for text in high_quality:
+            score = scorer.calcular_calidad_evidencia(text)
+            assert score >= 0.7, f"Low combined score for high quality text: {text}"
+        
+        # Medium quality: some indicators
+        medium_quality = [
+            "Evaluación anual del proyecto en 2024",
+            "Meta de $2 millones establecida",
+            "Monitoreo trimestral con indicadores clave"
+        ]
+        
+        for text in medium_quality:
+            score = scorer.calcular_calidad_evidencia(text)
+            assert 0.2 <= score <= 0.7, f"Score out of medium range for: {text}"
+        
+        # Low quality: minimal indicators
+        low_quality = [
+            "Mejora general del proyecto",
+            "Desarrollo de capacidades institucionales",
+            "Fortalecimiento del sector"
+        ]
+        
+        for text in low_quality:
+            score = scorer.calcular_calidad_evidencia(text)
+            assert score <= 0.3, f"High score for low quality text: {text}"
+    
+    def test_unicode_normalization(self, scorer):
+        """Test Unicode normalization handling."""
+        # Unicode variations that should normalize to same result
+        unicode_variants = [
+            "Inversión: $2.5 millones",  # Regular
+            "Inversión: $2.5 millones",  # With combining characters
+            "Inversión: $2.５ millones"   # Full-width characters
+        ]
+        
+        scores = [scorer.calcular_calidad_evidencia(text) for text in unicode_variants]
+        
+        # Scores should be similar after normalization
+        for i in range(1, len(scores)):
+            assert abs(scores[0] - scores[i]) <= 0.1, f"Unicode normalization failed: {scores}"
+    
+    def test_malformed_numbers(self, scorer):
+        """Test handling of malformed monetary/numeric values."""
+        malformed_texts = [
+            "Presupuesto: $..5 millones",
+            "Inversión de COP ,, pesos",
+            "Meta: % incremento",
+            "Año: 20XX evaluación"
+        ]
+        
+        for text in malformed_texts:
+            score = scorer.calcular_calidad_evidencia(text)
+            # Should handle gracefully, not crash
+            assert isinstance(score, float)
+            assert 0.0 <= score <= 1.0
+    
+    def test_score_boundaries(self, scorer):
+        """Test that scores are always within [0.0, 1.0] bounds."""
+        test_texts = [
+            "",  # Empty
+            "COP $50 millones baseline 2023 meta $100 millones 2025 quarterly monitoring evaluation indicator",  # Very high content
+            "texto simple",  # Simple content
+            "• Lista sin valores",  # Title penalty
+            "Investment: $999,999,999 millions by Q4 2099 with monthly baseline indicator assessment"  # Extreme values
+        ]
+        
+        for text in test_texts:
+            score = scorer.calcular_calidad_evidencia(text)
+            assert 0.0 <= score <= 1.0, f"Score out of bounds for: {text}, got: {score}"
+            assert isinstance(score, float), f"Non-float score for: {text}"
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
