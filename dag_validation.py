@@ -285,4 +285,4 @@ if __name__ == "__main__":
     stats = validator.get_graph_stats()
     print(f"\nGraph Statistics:")
     print(f"Total nodes: {stats['total_nodes']}")
-    print(f"Total edges: {stats['total_edges']}")
+    print( f"Total edges: {stats['total_edges']}")

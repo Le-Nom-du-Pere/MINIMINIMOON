@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# coding=utf-8
 """
 Demo script showing Unicode normalization effects on regex matching.
 Compares regex match counts before and after normalization.

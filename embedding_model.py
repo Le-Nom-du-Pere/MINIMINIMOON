@@ -1,3 +1,4 @@
+# coding=utf-8
 """
 Embedding model with fallback mechanism.
 Attempts to load MPNet model first, falls back to MiniLM if loading fails.

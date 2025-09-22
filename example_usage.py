@@ -1,3 +1,4 @@
+# coding=utf-8
 """
 Example usage of the embedding model with fallback mechanism.
 """
