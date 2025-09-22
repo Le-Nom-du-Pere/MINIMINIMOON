@@ -1,3 +1,4 @@
+# coding=utf-8
 """
 Deterministic Monte Carlo sampling for DAG validation.
 

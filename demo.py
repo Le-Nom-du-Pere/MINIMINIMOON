@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# coding=utf-8
 """
 Demonstration script showing the feasibility scorer in action.
 """
