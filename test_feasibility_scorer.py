@@ -4,6 +4,7 @@ Tests precision and recall of quality detection patterns.
 """
 
 import pytest
+import unicodedata
 from feasibility_scorer import FeasibilityScorer, ComponentType, IndicatorScore
 from typing import List, Dict, Any
 
@@ -332,6 +333,132 @@ class TestFeasibilityScorer:
         # Expect high recall (>80%) for core components
         assert baseline_recall >= 0.8, f"Baseline recall too low: {baseline_recall}"
         assert target_recall >= 0.8, f"Target recall too low: {target_recall}"
+    
+    def test_unicode_normalization(self, scorer):
+        """Test Unicode normalization functionality and its impact on pattern matching."""
+        # Test cases with various Unicode characters that should normalize
+        test_cases = [
+            {
+                'original': 'Incrementar la línea base de 65％ a una "meta" de 85％',  # Full-width percent, smart quotes
+                'normalized': 'Incrementar la línea base de 65% a una "meta" de 85%',
+                'description': 'Full-width characters and smart quotes'
+            },
+            {
+                'original': 'Alcanzar objetivo de 1‚500 millones',  # Different comma character
+                'normalized': 'Alcanzar objetivo de 1,500 millones',
+                'description': 'Different comma character'
+            },
+            {
+                'original': 'Meta de año ２０２５',  # Full-width numbers
+                'normalized': 'Meta de año 2025',
+                'description': 'Full-width numbers'
+            },
+            {
+                'original': 'Línea base: café → té',  # Accented characters and arrows
+                'normalized': 'Línea base: café → té',
+                'description': 'Accented characters and special symbols'
+            }
+        ]
+        
+        for case in test_cases:
+            # Test normalization function directly
+            normalized = scorer._normalize_text(case['original'])
+            expected = unicodedata.normalize('NFKC', case['original'])
+            assert normalized == expected, f"Normalization failed for {case['description']}"
+            
+            # Test that both original and normalized text produce similar component detection
+            original_components = scorer.detect_components(case['original'])
+            normalized_components = scorer.detect_components(normalized)
+            
+            # Should detect same number of components after normalization
+            assert len(original_components) == len(normalized_components), \
+                f"Component count differs for {case['description']}: original={len(original_components)}, normalized={len(normalized_components)}"
+    
+    def test_unicode_pattern_matching_improvement(self, scorer):
+        """Test that Unicode normalization improves pattern matching reliability."""
+        # Create test cases with Unicode variants that might cause matching issues
+        unicode_variants = [
+            # Different quote styles
+            ('baseline "50%" target "80%"', 'baseline "50%" target "80%"'),
+            ('baseline "50%" target "80%"', 'baseline "50%" target "80%"'),  # curly quotes
+            
+            # Different dash/hyphen characters  
+            ('2020-2025 timeline', '2020—2025 timeline'),  # em dash vs hyphen
+            
+            # Full-width vs half-width characters
+            ('meta 85％', 'meta 85%'),
+            ('año ２０２５', 'año 2025'),
+            
+            # Ligatures and composed characters
+            ('coeficiente', 'coeﬁciente'),  # fi ligature
+        ]
+        
+        match_improvements = 0
+        total_tests = 0
+        
+        for normalized_text, variant_text in unicode_variants:
+            # Score both versions
+            normalized_score = scorer.calculate_feasibility_score(normalized_text)
+            variant_score = scorer.calculate_feasibility_score(variant_text)
+            
+            # Count components detected
+            normalized_components = len(normalized_score.components_detected)
+            variant_components = len(variant_score.components_detected)
+            
+            total_tests += 1
+            
+            # After normalization, should detect same or more components
+            if variant_components >= normalized_components:
+                match_improvements += 1
+        
+        # Expect that normalization helps in most cases
+        improvement_rate = match_improvements / total_tests
+        assert improvement_rate >= 0.7, f"Unicode normalization improvement rate too low: {improvement_rate}"
+    
+    def test_regex_match_consistency(self, scorer):
+        """Test that regex patterns work consistently after Unicode normalization."""
+        # Test patterns that might be sensitive to Unicode variants
+        sensitive_patterns = [
+            {
+                'text_variants': [
+                    'línea base de 50％',  # Full-width percent
+                    'línea base de 50%',   # Half-width percent  
+                ],
+                'expected_components': [ComponentType.BASELINE, ComponentType.NUMERICAL]
+            },
+            {
+                'text_variants': [
+                    'meta "85%" para ２０２５',  # Mixed width characters
+                    'meta "85%" para 2025',     # Normal characters
+                ],
+                'expected_components': [ComponentType.TARGET, ComponentType.NUMERICAL, ComponentType.DATE]
+            },
+            {
+                'text_variants': [
+                    'incrementar‚ reducir por 30％',  # Different punctuation
+                    'incrementar, reducir por 30%',   # Standard punctuation
+                ],
+                'expected_components': [ComponentType.NUMERICAL]
+            }
+        ]
+        
+        for pattern_test in sensitive_patterns:
+            results = []
+            for variant in pattern_test['text_variants']:
+                result = scorer.calculate_feasibility_score(variant)
+                results.append(result)
+            
+            # All variants should detect same components after normalization
+            first_components = set(results[0].components_detected)
+            for result in results[1:]:
+                current_components = set(result.components_detected)
+                assert first_components == current_components, \
+                    f"Component detection inconsistent across Unicode variants: {pattern_test['text_variants']}"
+                
+                # Verify expected components are present
+                for expected_component in pattern_test['expected_components']:
+                    assert expected_component in current_components, \
+                        f"Expected component {expected_component} missing from variant detection"
     
     def test_documentation_generation(self, scorer):
         """Test documentation generation."""

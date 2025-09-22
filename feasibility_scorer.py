@@ -156,10 +156,16 @@ class FeasibilityScorer:
             ]
         }
     
+    def _normalize_text(self, text: str) -> str:
+        """Normalize text using Unicode NFKC normalization for consistent character representation."""
+        return unicodedata.normalize('NFKC', text)
+    
     def detect_components(self, text: str) -> List[DetectionResult]:
         """Detect all components in the given text using regex patterns."""
         results = []
-        text_lower = text.lower()
+        # Apply Unicode normalization before processing
+        normalized_text = self._normalize_text(text)
+        text_lower = normalized_text.lower()
         
         for component_type, patterns in self.detection_patterns.items():
             for pattern_info in patterns:
@@ -180,7 +186,9 @@ class FeasibilityScorer:
     
     def _has_quantitative_component(self, text: str, component_type: ComponentType) -> bool:
         """Check if a component has quantitative elements nearby."""
-        text_lower = text.lower()
+        # Apply Unicode normalization before processing
+        normalized_text = self._normalize_text(text)
+        text_lower = normalized_text.lower()
         
         # Find component mentions
         component_positions = []
@@ -214,7 +222,9 @@ class FeasibilityScorer:
         - Higher scores for quantitative baselines and targets
         - Bonus for time horizons, numerical values, and dates
         """
-        detected_components = self.detect_components(text)
+        # Apply Unicode normalization at entry point
+        normalized_text = self._normalize_text(text)
+        detected_components = self.detect_components(normalized_text)
         component_types = set(result.component_type for result in detected_components)
         
         # Check mandatory requirements
@@ -237,9 +247,9 @@ class FeasibilityScorer:
             self.weights[ComponentType.TARGET]
         )
         
-        # Check for quantitative components
-        has_quantitative_baseline = self._has_quantitative_component(text, ComponentType.BASELINE)
-        has_quantitative_target = self._has_quantitative_component(text, ComponentType.TARGET)
+        # Check for quantitative components (use normalized text)
+        has_quantitative_baseline = self._has_quantitative_component(normalized_text, ComponentType.BASELINE)
+        has_quantitative_target = self._has_quantitative_component(normalized_text, ComponentType.TARGET)
         
         # Bonus for quantitative elements
         if has_quantitative_baseline:
