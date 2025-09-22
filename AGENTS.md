@@ -4,43 +4,51 @@
 
 ### Setup
 ```bash
-# Python project with Unicode normalization - standard library only
+# Python project combining text processing and DAG validation - standard library only
 # Optional: install pytest for advanced testing
 pip install pytest
 ```
 
 ### Build
 ```bash
-python3 -c "import text_processor, utils; print('Build successful')"
+# Text processing components
+python3 -c "import text_processor, utils; print('Text processing build successful')"
+# DAG validation components
+python3 -c "import dag_validation; print('DAG validation build successful')"
 ```
 
 ### Lint
 ```bash
 # Code follows PEP 8 conventions
-python3 -m py_compile text_processor.py utils.py test_unicode_normalization.py demo_unicode_comparison.py
+python3 -m py_compile text_processor.py utils.py test_unicode_normalization.py demo_unicode_comparison.py dag_validation.py test_dag_validation.py verify_reproducibility.py validate.py
 ```
 
 ### Test
 ```bash
+# Text processing tests
 python3 test_unicode_normalization.py
-# Alternative demo:
-python3 demo_unicode_comparison.py
+# DAG validation tests
+python3 test_dag_validation.py
+# Full validation suite
+python3 validate.py
 ```
 
 ### Dev Server
 ```bash
-# Demo script for interactive testing
-python3 demo_unicode_comparison.py
+# Demo scripts for interactive testing
+python3 demo_unicode_comparison.py  # Text processing demo
+python3 dag_validation.py           # DAG validation demo
 ```
 
 ## Tech Stack
 - **Language**: Python 3.7+
-- **Framework**: Standard library (regex, unicodedata, typing)
+- **Framework**: Standard library (regex, unicodedata, typing, hashlib, random)
 - **Package Manager**: pip (minimal requirements)
-- **Testing**: unittest with custom test cases
+- **Testing**: unittest with comprehensive test suites
 
 ## Architecture
 ```
+# Text Processing Components
 text_processor.py           # Core text processing with Unicode normalization
 ├── normalize_unicode()    # NFKC normalization function
 ├── find_quotes()          # Quote detection with normalization
@@ -52,8 +60,19 @@ utils.py                    # Utility classes and functions
 ├── normalize_text()       # Normalization wrapper
 └── pattern matching       # Various regex patterns with normalization
 
-test_unicode_normalization.py  # Comprehensive test suite
-demo_unicode_comparison.py     # Before/after normalization demo
+# DAG Validation Components
+dag_validation.py           # Deterministic Monte Carlo DAG validation
+├── DAGValidator           # Main validation class
+├── MonteCarloResult       # Results dataclass
+├── deterministic seeding  # SHA-256 based reproducible seeds
+├── acyclicity testing     # Kahn's algorithm implementation
+└── p-value calculation    # Statistical significance testing
+
+test_unicode_normalization.py  # Text processing test suite
+test_dag_validation.py         # DAG validation test suite
+demo_unicode_comparison.py     # Text processing demo
+verify_reproducibility.py      # DAG reproducibility verification
+validate.py                    # Complete validation orchestrator
 ```
 
 ## Code Style
@@ -61,4 +80,5 @@ demo_unicode_comparison.py     # Before/after normalization demo
 - Comprehensive docstrings with examples
 - Type hints using typing module
 - Unicode normalization applied before all regex operations
-- Consistent NFKC normalization prevents overcounting issues
+- Deterministic seeding for reproducible Monte Carlo results
+- Statistical interpretation warnings to prevent misuse

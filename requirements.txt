@@ -1,1 +1,5 @@
+# Optional dependencies for enhanced testing
 pytest>=7.0.0
+
+# Note: Core functionality uses only Python standard library
+# Both text processing and DAG validation components work without external dependencies
