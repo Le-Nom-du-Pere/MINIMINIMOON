@@ -24,6 +24,8 @@ python3 -m py_compile teoria_cambio.py
 python3 -m py_compile responsibility_detector.py
 # DECALOGO_INDUSTRIAL loader components
 python3 -m py_compile decalogo_loader.py
+# SpaCy model loader components
+python3 -m py_compile spacy_loader.py
 ```
 
 ### Lint
@@ -38,6 +40,8 @@ python3 -m py_compile teoria_cambio.py
 python3 -m py_compile responsibility_detector.py test_responsibility_detector.py
 # DECALOGO_INDUSTRIAL loader components
 python3 -m py_compile decalogo_loader.py test_decalogo_loader.py
+# SpaCy model loader components
+python3 -m py_compile spacy_loader.py test_spacy_loader.py
 ```
 
 ### Test
@@ -48,6 +52,8 @@ python3 -m pytest test_embedding_model.py -v
 python3 -m pytest test_responsibility_detector.py -v
 # DECALOGO_INDUSTRIAL loader tests
 python3 -m pytest test_decalogo_loader.py -v
+# SpaCy model loader tests
+python3 -m pytest test_spacy_loader.py -v
 # Additional tests if available
 python3 test_unicode_normalization.py 2>/dev/null || echo "Text processing tests not available"
 python3 test_dag_validation.py 2>/dev/null || echo "DAG validation tests not available"
@@ -62,6 +68,8 @@ python3 example_usage.py
 python3 responsibility_detector.py
 # DECALOGO_INDUSTRIAL loader demo
 python3 -c "from decalogo_loader import get_decalogo_industrial; print(get_decalogo_industrial())"
+# SpaCy model loader demo
+python3 spacy_loader.py
 # Additional demos if available
 python3 demo_unicode_comparison.py 2>/dev/null || echo "Text processing demo not available"
 python3 dag_validation.py 2>/dev/null || echo "DAG validation demo not available"
@@ -111,6 +119,18 @@ decalogo_loader.py             # Atomic file operations with fallback template l
 
 test_decalogo_loader.py        # Comprehensive test suite for template loading
 
+# SpaCy Model Loading Components
+spacy_loader.py                # Robust spaCy model loader with automatic download and fallback
+├── SpacyModelLoader           # Main loader class with retry logic
+├── SafeSpacyProcessor         # Example processor with graceful degradation
+├── Automatic model download   # Uses spacy.cli.download with retry logic
+├── Degraded mode fallback     # Basic text processing when models unavailable
+├── Model caching             # Prevents redundant loading
+├── Error handling            # No SystemExit calls, graceful error handling
+└── Logging integration       # Comprehensive error and warning logging
+
+test_spacy_loader.py           # Comprehensive test suite for spaCy model loading
+
 # Text Processing Components (if available)
 text_processor.py              # Core text processing with Unicode normalization
 utils.py                       # Utility classes and functions
@@ -139,3 +159,4 @@ teoria_cambio.py               # TeoriaCambio class with cached causal graph con
 - Automatic fallback mechanisms for reliability
 - Statistical interpretation warnings to prevent misuse
 - Atomic file operations for deployment safety
+- No SystemExit calls - graceful error handling with degraded mode fallback
