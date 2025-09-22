@@ -3,6 +3,10 @@ sentence-transformers>=2.2.0
 scikit-learn>=1.0.0
 numpy>=1.21.0
 
+# Responsibility detection dependencies
+spacy>=3.4.0
+spacy-transformers>=1.1.0
+
 # Testing dependencies
 pytest>=7.0.0
 

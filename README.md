@@ -1,11 +1,46 @@
 # Multi-Component Python Suite
 
-This project combines multiple complementary components for text processing, graph validation, embedding models, and Spanish pattern detection:
+This project combines multiple complementary components for text processing, graph validation, embedding models, responsibility detection, and Spanish pattern detection:
 
 1. **Embedding Model with Fallback Mechanism** - Robust embedding model with automatic MPNet->MiniLM fallback
-2. **Factibilidad Scoring Module** - Spanish pattern detection for baseline, target, and timeframe indicators
-3. **Unicode Normalization for Regex Matching** - Text processing with Unicode normalization (if available)
-4. **Deterministic Monte Carlo DAG Validation** - Statistical validation of causal graphs (if available)
+2. **Responsibility Detection Module** - spaCy NER + lexical pattern matching for government entity responsibility detection
+3. **Factibilidad Scoring Module** - Spanish pattern detection for baseline, target, and timeframe indicators
+4. **Unicode Normalization for Regex Matching** - Text processing with Unicode normalization (if available)
+5. **Deterministic Monte Carlo DAG Validation** - Statistical validation of causal graphs (if available)
+
+## Responsibility Detection Component
+
+A Python module for detecting responsibility entities in Spanish text using spaCy's Named Entity Recognition (NER) combined with lexical pattern matching.
+
+### Files
+- **responsibility_detector.py** - Core responsibility detection with spaCy NER and pattern matching
+- **test_responsibility_detector.py** - Comprehensive test suite for responsibility detection
+
+### Features
+- **SpaCy NER Integration**: Uses spaCy's pre-trained Spanish models for PERSON and ORGANIZATION entity recognition
+- **Government Entity Priority**: Higher confidence scores for government institutions like "alcaldía", "secretaría", "programa"
+- **Official Position Detection**: Recognizes institutional roles and positions with pattern matching
+- **Lexical Fallbacks**: Comprehensive pattern matching for cases where NER misses institutional language
+- **Confidence Scoring**: Combines NER confidence with lexical pattern strength for final factibility assessment
+- **Overlap Handling**: Merges overlapping entities intelligently, preferring higher confidence and government entities
+
+### Usage
+```python
+from responsibility_detector import ResponsibilityDetector
+
+# Initialize detector
+detector = ResponsibilityDetector()
+
+# Analyze text
+text = "La Alcaldía Municipal coordinará con la Secretaría de Salud el programa de vacunación."
+result = detector.calculate_responsibility_score(text)
+
+print(f"Factibility Score: {result['factibility_score']:.3f}")
+print(f"Government entities detected: {result['has_government_entities']}")
+
+for entity in result['entities']:
+    print(f"- {entity.text} ({entity.entity_type.value}, confidence: {entity.confidence:.3f})")
+```
 
 ## Embedding Model Component
 
@@ -102,6 +137,7 @@ result = validator.calculate_acyclicity_pvalue("plan_name", iterations=1000)
 ## Installation
 
 ```bash
+<<<<<<< HEAD
 # Create virtual environment
 python3 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
@@ -173,3 +209,97 @@ print(f"Factibilidad Score: {result['total_score']:.1f}")
 ## Architecture
 
 The suite combines multiple components with minimal dependencies. The embedding model requires sentence-transformers and scikit-learn, while the factibilidad scoring module uses only Python standard library. Text processing and DAG validation components (if available) also use standard library only, ensuring maximum compatibility.
+=======
+# Install dependencies
+pip install spacy>=3.4.0
+
+# Download Spanish language model
+python -m spacy download es_core_news_sm
+```
+
+## Usage
+
+```python
+from responsibility_detector import ResponsibilityDetector
+
+# Initialize detector
+detector = ResponsibilityDetector()
+
+# Analyze text
+text = "La Alcaldía Municipal coordinará con la Secretaría de Salud el programa de vacunación."
+result = detector.calculate_responsibility_score(text)
+
+print(f"Factibility Score: {result['factibility_score']:.3f}")
+print(f"Government entities detected: {result['has_government_entities']}")
+
+for entity in result['entities']:
+    print(f"- {entity.text} ({entity.entity_type.value}, confidence: {entity.confidence:.3f})")
+```
+
+## Key Components
+
+### Entity Types
+- `PERSON`: Individual names detected by NER
+- `ORGANIZATION`: Generic organizations
+- `GOVERNMENT`: Government institutions (higher priority)
+- `POSITION`: Official roles and positions
+
+### Confidence Scoring Hierarchy
+1. **Government institutions** (highest priority): 0.8-1.0 confidence
+2. **Official positions**: 0.7-0.9 confidence  
+3. **Persons via NER**: 0.6-0.8 confidence
+4. **Generic organizations**: 0.5-0.7 confidence
+
+### Pattern Categories
+
+#### Government Institutions (High Priority)
+- alcaldía, secretaría, programa, ministerio
+- gobernación, municipalidad, ayuntamiento
+- instituto nacional/municipal/departamental
+- dirección, departamento administrativo
+
+#### Official Positions
+- alcalde/alcaldesa, secretario/secretaria
+- ministro/ministra, director/directora
+- coordinador/coordinadora, jefe/jefa
+- responsable, encargado/encargada
+
+#### Fallback Institutional Terms
+- entidad, organización, institución
+- dependencia, oficina, unidad
+
+## Testing
+
+```bash
+python -m pytest test_responsibility_detector.py -v
+```
+
+## Architecture
+
+The module uses a multi-stage approach:
+
+1. **NER Processing**: Extract PERSON and ORG entities using spaCy
+2. **Pattern Matching**: Apply lexical rules for institutional terms
+3. **Entity Merging**: Handle overlaps and duplicates
+4. **Confidence Calculation**: Apply hierarchical scoring based on entity types
+5. **Final Assessment**: Calculate overall factibility score
+
+## Output Format
+
+The `calculate_responsibility_score` method returns:
+
+```python
+{
+    'factibility_score': float,  # 0.0 to 1.0
+    'entities': List[ResponsibilityEntity],
+    'breakdown': {
+        'government_score': float,
+        'position_score': float, 
+        'person_score': float,
+        'organization_score': float,
+        'total_entities': int
+    },
+    'has_government_entities': bool,
+    'has_official_positions': bool
+}
+>>>>>>> c05b231 (Implement spaCy NER and lexical pattern matching for government entity responsibility detection with confidence scoring)

@@ -4,8 +4,10 @@
 
 ### Setup
 ```bash
-# Python project with embedding models and text processing components
+# Python project with embedding models, text processing, and responsibility detection components
 python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt
+# Download spaCy Spanish model for responsibility detection
+python3 -m spacy download es_core_news_sm
 ```
 
 ### Build
@@ -18,6 +20,8 @@ python3 -c "import dag_validation; print('DAG validation build successful')" || 
 python3 -c "import embedding_model; print('Embedding model build successful')"
 # TeoriaCambio class
 python3 -m py_compile teoria_cambio.py
+# Responsibility detection components
+python3 -m py_compile responsibility_detector.py
 ```
 
 ### Lint
@@ -28,12 +32,16 @@ python3 -m py_compile embedding_model.py test_embedding_model.py example_usage.p
 python3 -m py_compile text_processor.py utils.py test_unicode_normalization.py demo_unicode_comparison.py dag_validation.py test_dag_validation.py verify_reproducibility.py validate.py 2>/dev/null || echo "Additional components not available for linting"
 # TeoriaCambio class
 python3 -m py_compile teoria_cambio.py
+# Responsibility detection components
+python3 -m py_compile responsibility_detector.py test_responsibility_detector.py
 ```
 
 ### Test
 ```bash
 # Embedding model tests
 python3 -m pytest test_embedding_model.py -v
+# Responsibility detection tests
+python3 -m pytest test_responsibility_detector.py -v
 # Additional tests if available
 python3 test_unicode_normalization.py 2>/dev/null || echo "Text processing tests not available"
 python3 test_dag_validation.py 2>/dev/null || echo "DAG validation tests not available"
@@ -44,6 +52,8 @@ python3 validate.py 2>/dev/null || echo "Full validation suite not available"
 ```bash
 # Embedding model demo
 python3 example_usage.py
+# Responsibility detection demo
+python3 responsibility_detector.py
 # Additional demos if available
 python3 demo_unicode_comparison.py 2>/dev/null || echo "Text processing demo not available"
 python3 dag_validation.py 2>/dev/null || echo "DAG validation demo not available"
@@ -51,7 +61,7 @@ python3 dag_validation.py 2>/dev/null || echo "DAG validation demo not available
 
 ## Tech Stack
 - **Language**: Python 3.7+
-- **Framework**: sentence-transformers, scikit-learn, numpy for embedding models; standard library for text processing
+- **Framework**: sentence-transformers, scikit-learn, numpy for embedding models; spaCy for NER; standard library for text processing
 - **Package Manager**: pip
 - **Testing**: pytest and unittest
 
@@ -66,6 +76,20 @@ embedding_model.py              # Core embedding model with fallback mechanism
 
 test_embedding_model.py         # Comprehensive test suite for embedding model
 example_usage.py               # Demo and usage examples
+
+# Responsibility Detection Components
+responsibility_detector.py      # spaCy NER + lexical pattern matching for responsibility detection
+├── ResponsibilityDetector     # Main detector class
+├── ResponsibilityEntity       # Entity data structure
+├── EntityType                 # Entity type enumeration
+├── NER integration            # spaCy PERSON/ORG detection
+├── Government patterns        # High-priority institutional patterns
+├── Position patterns          # Official role detection
+├── Institutional patterns     # Generic fallback patterns
+├── Entity merging            # Overlap handling
+└── Confidence scoring        # Hierarchical scoring system
+
+test_responsibility_detector.py # Comprehensive test suite for responsibility detection
 
 # Text Processing Components (if available)
 text_processor.py              # Core text processing with Unicode normalization
