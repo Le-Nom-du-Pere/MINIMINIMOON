@@ -290,9 +290,19 @@ class TestFeasibilityScorer:
             "aumentar servicios región"
         ]
         
-        results = scorer.batch_score(indicators)
-        assert len(results) == 3
-        assert results[0].feasibility_score > results[1].feasibility_score > results[2].feasibility_score
+        # Test sequential processing (default)
+        results_seq = scorer.batch_score(indicators)
+        assert len(results_seq) == 3
+        assert results_seq[0].feasibility_score > results_seq[1].feasibility_score > results_seq[2].feasibility_score
+        
+        # Test parallel processing option
+        results_par = scorer.batch_score(indicators, use_parallel=True)
+        assert len(results_par) == 3
+        
+        # Results should be identical regardless of processing method
+        for seq, par in zip(results_seq, results_par):
+            assert seq.feasibility_score == par.feasibility_score
+            assert seq.quality_tier == par.quality_tier
     
     def test_precision_recall_metrics(self, scorer):
         """Test precision and recall of component detection."""

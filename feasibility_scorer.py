@@ -5,6 +5,7 @@ This module implements a weighted quality assessment system that evaluates indic
 based on the presence of baseline values, targets/goals, and time horizons.
 """
 
+import os
 import re
 import datetime
 import unicodedata
@@ -279,8 +280,24 @@ class FeasibilityScorer:
             quality_tier=quality_tier
         )
     
-    def batch_score(self, indicators: List[str]) -> List[IndicatorScore]:
-        """Score multiple indicators."""
+    def batch_score(self, indicators: List[str], use_parallel: bool = False) -> List[IndicatorScore]:
+        """Score multiple indicators with optional parallel processing."""
+        if use_parallel and len(indicators) > 1:
+            # Set environment variables to prevent thread oversubscription when using joblib
+            os.environ.setdefault('OMP_NUM_THREADS', '1')
+            os.environ.setdefault('MKL_NUM_THREADS', '1') 
+            os.environ.setdefault('OPENBLAS_NUM_THREADS', '1')
+            
+            try:
+                from joblib import Parallel, delayed
+                return Parallel(n_jobs=-1)(
+                    delayed(self.calculate_feasibility_score)(indicator) 
+                    for indicator in indicators
+                )
+            except ImportError:
+                # Fall back to sequential processing if joblib is not available
+                pass
+        
         return [self.calculate_feasibility_score(indicator) for indicator in indicators]
     
     def get_detection_rules_documentation(self) -> str:

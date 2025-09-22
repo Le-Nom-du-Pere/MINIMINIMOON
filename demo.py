@@ -82,7 +82,9 @@ def main():
         "baseline 30% target 60% by 2024"
     ]
     
+    # Test both sequential and parallel processing
     batch_results = scorer.batch_score(batch_indicators)
+    batch_results_parallel = scorer.batch_score(batch_indicators, use_parallel=True)
     
     print("\nBatch Results (sorted by score):")
     scored_indicators = list(zip(batch_indicators, batch_results))
@@ -90,6 +92,10 @@ def main():
     
     for indicator, result in scored_indicators:
         print(f"- {result.feasibility_score:.2f} | {result.quality_tier:>12} | \"{indicator}\"")
+    
+    print("\nParallel processing produces identical results:", 
+          all(seq.feasibility_score == par.feasibility_score 
+              for seq, par in zip(batch_results, batch_results_parallel)))
     
     print(f"\n{'='*60}")
     print("EVIDENCE QUALITY ANALYSIS")
