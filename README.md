@@ -1,76 +1,81 @@
-# Feasibility Scorer
+# Unicode Normalization for Regex Matching
 
-A weighted quality assessment system for evaluating indicators based on the presence of baseline values, targets/goals, and time horizons.
+This project implements Unicode normalization using `unicodedata.normalize("NFKC", text)` before applying regex patterns to ensure consistent character representation and prevent overcounting issues, extending the existing feasibility scorer system.
+
+## Files
+
+- **text_processor.py** - Core text processing functions with Unicode normalization
+- **utils.py** - Utility classes and functions for text analysis with normalization
+- **test_unicode_normalization.py** - Comprehensive test suite
+- **demo_unicode_comparison.py** - Demo showing before/after normalization effects
 
 ## Features
 
-- **Multilingual Support**: Detects Spanish and English indicator patterns
-- **Quality-Based Scoring**: Weighted assessment requiring baseline and target components
-- **Quantitative Detection**: Identifies numerical values, percentages, and dates
-- **Comprehensive Testing**: Manually annotated dataset with precision/recall validation
+### Unicode Normalization Functions
+- `normalize_unicode()` - Normalizes text using NFKC normalization
+- `find_quotes()` - Finds quote characters with normalization
+- `count_words()` - Counts words with normalization
+- `extract_emails()` - Extracts email addresses with normalization
+- `replace_special_chars()` - Replaces special characters with normalization
+- `split_sentences()` - Splits text into sentences with normalization
+- `search_pattern()` - Pattern search with normalization
+- `match_phone_numbers()` - Phone number matching with normalization
+- `highlight_keywords()` - Keyword highlighting with normalization
 
-## Installation
-
-```bash
-pip install -r requirements.txt
-```
+### TextAnalyzer Class
+- Pattern matching for emails, URLs, phone numbers, hashtags, mentions
+- Text cleaning and tokenization
+- Quoted text extraction
+- Unicode punctuation replacement
+- Whitespace normalization
 
 ## Usage
 
 ```python
-from feasibility_scorer import FeasibilityScorer
+from text_processor import normalize_unicode, count_words, find_quotes
+from utils import TextAnalyzer
 
-scorer = FeasibilityScorer()
+# Basic normalization
+text = "café résumé"
+normalized = normalize_unicode(text)
 
-# Score a single indicator
-result = scorer.calculate_feasibility_score(
-    "Incrementar la línea base de 65% de cobertura educativa a una meta de 85% para el año 2025"
-)
+# Word counting with normalization
+count = count_words("Text with—em dashes")
 
-print(f"Score: {result.feasibility_score}")
-print(f"Quality Tier: {result.quality_tier}")
-print(f"Has Quantitative Baseline: {result.has_quantitative_baseline}")
-
-# Batch scoring
-indicators = [
-    "línea base 50% meta 80% año 2025",
-    "mejorar situación actual",
-    "aumentar servicios región"
-]
-results = scorer.batch_score(indicators)
+# Using TextAnalyzer
+analyzer = TextAnalyzer()
+emails = analyzer.find_pattern_matches(text, 'email')
 ```
 
 ## Testing
 
+Run the test suite:
 ```bash
-pytest test_feasibility_scorer.py -v
+python3 test_unicode_normalization.py
 ```
 
-## Quality Assessment Logic
+Run the demo:
+```bash
+python3 demo_unicode_comparison.py
+```
 
-### Minimum Requirements
-- Both **baseline** and **target** components must be present for positive feasibility score
-- Indicators missing either component receive score of 0.0
+## Benefits
 
-### Scoring Components
-- **Baseline** (40% weight): línea base, baseline, valor inicial
-- **Target** (40% weight): meta, objetivo, target, goal  
-- **Time Horizon** (20% weight): horizonte temporal, timeline
-- **Quantitative Bonus**: +20% each for quantitative baseline and target
-- **Additional Elements**: +10% each for numerical patterns and dates
+1. **Consistent Character Representation** - Different Unicode encodings of the same visual character are normalized
+2. **Prevents Overcounting** - Composed vs decomposed characters are treated identically
+3. **Reliable Pattern Matching** - Regex patterns work consistently across different Unicode representations
+4. **Comprehensive Coverage** - Handles quotes, accents, dashes, and other Unicode variants
 
-### Quality Tiers
-- **High** (≥0.8): Complete indicators with quantitative elements
-- **Medium** (≥0.5): Has baseline/target with some quantitative data
-- **Low** (≥0.2): Basic baseline/target, limited quantitative elements
-- **Poor** (<0.2): Very low confidence in detected components
-- **Insufficient** (0.0): Missing baseline or target components
+## Example Output
 
-## Documentation
+The demo shows normalization effects:
 
-Access comprehensive detection rules:
-
-```python
-scorer = FeasibilityScorer()
-print(scorer.get_detection_rules_documentation())
+```
+Decomposed characters:
+Original text: café vs café
+Text length: 13 characters
+Normalized:   café vs café  
+Normalized length: 12 characters
+Character differences detected:
+  Position 11: 'e' (U+0065) -> 'é' (U+00E9)
 ```
