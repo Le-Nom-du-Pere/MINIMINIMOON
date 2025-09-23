@@ -13,5 +13,8 @@ pytest>=7.0.0
 # Parallel processing
 joblib>=1.3.0
 
+# CSV export functionality
+pandas>=1.3.0
+
 # Note: Factibilidad scoring module uses only Python standard library
 # Note: Text processing and DAG validation components (if present) use only Python standard library
