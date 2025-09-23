@@ -4,10 +4,14 @@
 Demonstration script showing the feasibility scorer in action.
 """
 
+import logging
 from feasibility_scorer import FeasibilityScorer, ComponentType
 
 
 def main():
+    # Enable logging to see performance comparisons
+    logging.basicConfig(level=logging.INFO)
+    
     scorer = FeasibilityScorer()
     
     print("=" * 60)
@@ -72,7 +76,7 @@ def main():
                     print(f"     - {match.component_type.value}: '{match.matched_text}' (confidence: {match.confidence:.2f})")
     
     print(f"\n{'='*60}")
-    print("BATCH SCORING WITH MONITORING")
+    print("BATCH SCORING WITH PARALLEL PROCESSING")
     print("=" * 60)
     
     batch_indicators = [
@@ -88,29 +92,21 @@ def main():
         "Enhance education access in rural areas"
     ]
     
-    # Test both sequential and parallel processing
-    batch_results = scorer.batch_score(batch_indicators)
-    batch_results_parallel = scorer.batch_score(batch_indicators, use_parallel=True)
+    # Extend batch for better performance comparison
+    extended_batch = batch_indicators * 4  # 40 indicators total
     
-    # Use monitoring version
-    batch_monitoring_results = scorer.batch_score_with_monitoring(batch_indicators)
+    print("\nPerformance Comparison (40 indicators):")
+    print("-" * 40)
     
-    print(f"\nBatch Processing Results:")
-    print(f"- Total indicators: {batch_monitoring_results.total_indicators}")
-    print(f"- Execution time: {batch_monitoring_results.execution_time}")
-    print(f"- Duration (seconds): {batch_monitoring_results.duracion_segundos:.4f}s")
-    print(f"- Processing rate: {batch_monitoring_results.planes_por_minuto:.1f} planes/minute")
+    # Test with backend comparison
+    batch_results = scorer.batch_score(extended_batch, compare_backends=True)
     
-    print("\nScored Results (sorted by feasibility score):")
-    scored_indicators = list(zip(batch_indicators, batch_monitoring_results.scores))
+    print("\nBatch Results (first 10, sorted by score):")
+    scored_indicators = list(zip(batch_indicators, batch_results[:len(batch_indicators)]))
     scored_indicators.sort(key=lambda x: x[1].feasibility_score, reverse=True)
     
     for indicator, result in scored_indicators:
         print(f"- {result.feasibility_score:.2f} | {result.quality_tier:>12} | \"{indicator}\"")
-    
-    print("\nParallel processing produces identical results:", 
-          all(seq.feasibility_score == par.feasibility_score 
-              for seq, par in zip(batch_results, batch_results_parallel)))
     
     print(f"\n{'='*60}")
     print("EVIDENCE QUALITY ANALYSIS")

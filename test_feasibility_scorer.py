@@ -7,6 +7,7 @@ import pytest
 import unicodedata
 import tempfile
 import os
+import logging
 from pathlib import Path
 from feasibility_scorer import FeasibilityScorer, ComponentType, IndicatorScore
 from typing import List, Dict, Any
@@ -287,18 +288,23 @@ class TestFeasibilityScorer:
         assert result3.has_quantitative_target == True
     
     def test_batch_scoring(self, scorer):
-        """Test batch scoring functionality."""
+        """Test batch scoring functionality with parallel processing."""
         indicators = [
             "línea base 50% meta 80% año 2025",
             "situación actual mejorar objetivo",
             "aumentar servicios región"
         ]
         
+<<<<<<< HEAD
         # Test sequential processing (default)
+=======
+        # Test sequential processing
+>>>>>>> f911a1c (Optimize parallel processing by switching to loky backend with CPU-based job limits and performance comparison logging)
         results_seq = scorer.batch_score(indicators)
         assert len(results_seq) == 3
         assert results_seq[0].feasibility_score > results_seq[1].feasibility_score > results_seq[2].feasibility_score
         
+<<<<<<< HEAD
         # Test parallel processing option
         results_par = scorer.batch_score(indicators, use_parallel=True)
         assert len(results_par) == 3
@@ -307,6 +313,56 @@ class TestFeasibilityScorer:
         for seq, par in zip(results_seq, results_par):
             assert seq.feasibility_score == par.feasibility_score
             assert seq.quality_tier == par.quality_tier
+=======
+        # Test with extended batch for parallel processing comparison
+        extended_indicators = indicators * 5  # 15 total for better parallel testing
+        results_extended = scorer.batch_score(extended_indicators, compare_backends=True)
+        assert len(results_extended) == 15
+        
+        # Test with parallel disabled
+        scorer_no_parallel = FeasibilityScorer(enable_parallel=False)
+        results_no_parallel = scorer_no_parallel.batch_score(indicators)
+        assert len(results_no_parallel) == 3
+
+    def test_parallel_processing_configuration(self):
+        """Test parallel processing configuration and backend selection."""
+        # Test default configuration
+        scorer = FeasibilityScorer()
+        assert scorer.n_jobs <= 8
+        assert scorer.backend == 'loky'
+        
+        # Test custom configuration
+        scorer_custom = FeasibilityScorer(n_jobs=4, backend='threading')
+        assert scorer_custom.n_jobs == 4
+        assert scorer_custom.backend == 'threading'
+        
+        # Test with parallel disabled
+        scorer_disabled = FeasibilityScorer(enable_parallel=False)
+        assert not scorer_disabled.enable_parallel
+
+    def test_picklable_scorer_copy(self, scorer):
+        """Test that scorer can create picklable copies for parallel processing."""
+        import pickle
+        
+        # Test that the main scorer might not be picklable due to logger
+        try:
+            pickle.dumps(scorer)
+            main_picklable = True
+        except:
+            main_picklable = False
+        
+        # Test that the copy is always picklable
+        copy = scorer._create_picklable_copy()
+        pickled = pickle.dumps(copy)
+        unpickled = pickle.loads(pickled)
+        
+        # Verify the copy works correctly
+        test_text = "línea base 50% meta 80%"
+        original_result = scorer.calculate_feasibility_score(test_text)
+        copy_result = unpickled.calculate_feasibility_score(test_text)
+        
+        assert abs(original_result.feasibility_score - copy_result.feasibility_score) < 0.01
+>>>>>>> f911a1c (Optimize parallel processing by switching to loky backend with CPU-based job limits and performance comparison logging)
     
     def test_precision_recall_metrics(self, scorer):
         """Test precision and recall of component detection."""

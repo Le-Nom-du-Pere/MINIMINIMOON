@@ -11,10 +11,17 @@ import datetime
 import time
 import unicodedata
 import uuid
+import logging
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass
 from enum import Enum
+
+try:
+    from joblib import Parallel, delayed
+    JOBLIB_AVAILABLE = True
+except ImportError:
+    JOBLIB_AVAILABLE = False
 
 
 class ComponentType(Enum):
@@ -58,7 +65,7 @@ class FeasibilityScorer:
     using regex patterns and named entity recognition.
     """
     
-    def __init__(self):
+    def __init__(self, enable_parallel=True, n_jobs=None, backend='loky'):
         self.detection_patterns = self._initialize_patterns()
         self.weights = {
             ComponentType.BASELINE: 0.4,
@@ -72,6 +79,26 @@ class FeasibilityScorer:
             'medium': 0.5,
             'low': 0.2
         }
+        
+        # Parallel processing configuration
+        self.enable_parallel = enable_parallel and JOBLIB_AVAILABLE
+        self.n_jobs = n_jobs if n_jobs is not None else min(os.cpu_count() or 1, 8)
+        self.backend = backend
+        
+        # Performance logging setup
+        self.logger = logging.getLogger(__name__)
+        self._setup_logging()
+    
+    def _setup_logging(self):
+        """Setup performance logging."""
+        if not self.logger.handlers:
+            handler = logging.StreamHandler()
+            formatter = logging.Formatter(
+                '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+            )
+            handler.setFormatter(formatter)
+            self.logger.addHandler(handler)
+            self.logger.setLevel(logging.INFO)
     
     def _initialize_patterns(self) -> Dict[ComponentType, List[Dict]]:
         """Initialize regex patterns for detecting indicator components in Spanish and English."""
@@ -302,25 +329,110 @@ class FeasibilityScorer:
             quality_tier=quality_tier
         )
     
-    def batch_score(self, indicators: List[str], use_parallel: bool = False) -> List[IndicatorScore]:
-        """Score multiple indicators with optional parallel processing."""
-        if use_parallel and len(indicators) > 1:
-            # Set environment variables to prevent thread oversubscription when using joblib
-            os.environ.setdefault('OMP_NUM_THREADS', '1')
-            os.environ.setdefault('MKL_NUM_THREADS', '1') 
-            os.environ.setdefault('OPENBLAS_NUM_THREADS', '1')
-            
-            try:
-                from joblib import Parallel, delayed
-                return Parallel(n_jobs=-1)(
-                    delayed(self.calculate_feasibility_score)(indicator) 
-                    for indicator in indicators
-                )
-            except ImportError:
-                # Fall back to sequential processing if joblib is not available
-                pass
+    def _score_single_indicator(self, indicator: str) -> IndicatorScore:
+        """Score a single indicator - helper function for parallel processing."""
+        return self.calculate_feasibility_score(indicator)
+    
+    def batch_score(self, indicators: List[str], compare_backends=False, use_parallel: bool = False) -> List[IndicatorScore]:
+        """
+        Score multiple indicators with optional parallel processing.
         
-        return [self.calculate_feasibility_score(indicator) for indicator in indicators]
+        Args:
+            indicators: List of indicator strings to score
+            compare_backends: If True, compare performance between threading and loky backends
+            use_parallel: Legacy parameter for backward compatibility
+            
+        Returns:
+            List of IndicatorScore results
+        """
+        if not indicators:
+            return []
+            
+        # For small batches, use sequential processing to avoid overhead
+        if len(indicators) < 10 or not self.enable_parallel or not JOBLIB_AVAILABLE:
+            return self._batch_score_sequential(indicators)
+            
+        if compare_backends:
+            return self._batch_score_with_comparison(indicators)
+        else:
+            return self._batch_score_parallel(indicators, self.backend)
+    
+    def _batch_score_sequential(self, indicators: List[str]) -> List[IndicatorScore]:
+        """Sequential batch scoring."""
+        start_time = time.time()
+        results = [self.calculate_feasibility_score(indicator) for indicator in indicators]
+        elapsed = time.time() - start_time
+        
+        self.logger.info(f"Sequential processing: {len(indicators)} indicators in {elapsed:.3f}s "
+                        f"({elapsed/len(indicators)*1000:.1f}ms per indicator)")
+        return results
+    
+    def _batch_score_parallel(self, indicators: List[str], backend: str) -> List[IndicatorScore]:
+        """Parallel batch scoring using specified backend."""
+        if not JOBLIB_AVAILABLE:
+            raise RuntimeError("joblib not available for parallel processing")
+            
+        start_time = time.time()
+        
+        # Create a picklable instance for parallel processing
+        scorer_copy = self._create_picklable_copy()
+        
+        with Parallel(n_jobs=self.n_jobs, backend=backend) as parallel:
+            results = parallel(
+                delayed(scorer_copy._score_single_indicator)(indicator) 
+                for indicator in indicators
+            )
+        
+        elapsed = time.time() - start_time
+        self.logger.info(f"Parallel processing ({backend}): {len(indicators)} indicators in {elapsed:.3f}s "
+                        f"({elapsed/len(indicators)*1000:.1f}ms per indicator, {self.n_jobs} workers)")
+        return results
+    
+    def _batch_score_with_comparison(self, indicators: List[str]) -> List[IndicatorScore]:
+        """Score batch with performance comparison between backends."""
+        if not JOBLIB_AVAILABLE:
+            self.logger.warning("joblib not available, falling back to sequential processing")
+            return self._batch_score_sequential(indicators)
+            
+        self.logger.info("Comparing parallel processing backends...")
+        
+        # Test with threading backend
+        try:
+            threading_results = self._batch_score_parallel(indicators, 'threading')
+        except Exception as e:
+            self.logger.warning(f"Threading backend failed: {e}")
+            threading_results = None
+        
+        # Test with loky backend  
+        try:
+            loky_results = self._batch_score_parallel(indicators, 'loky')
+        except Exception as e:
+            self.logger.warning(f"Loky backend failed: {e}")
+            loky_results = None
+            
+        # Fallback to sequential if both failed
+        if loky_results is None and threading_results is None:
+            self.logger.warning("Both parallel backends failed, falling back to sequential")
+            return self._batch_score_sequential(indicators)
+            
+        # Return loky results if available, otherwise threading results
+        return loky_results if loky_results is not None else threading_results
+    
+    def _create_picklable_copy(self):
+        """Create a copy of the scorer that can be safely pickled for multiprocessing."""
+        # Create new instance with same configuration but fresh logger
+        new_scorer = FeasibilityScorer(
+            enable_parallel=False,  # Disable parallel in workers to avoid recursion
+            n_jobs=self.n_jobs,
+            backend=self.backend
+        )
+        
+        # Copy over the patterns and weights (these are picklable)
+        new_scorer.detection_patterns = self.detection_patterns
+        new_scorer.weights = self.weights
+        new_scorer.quality_thresholds = self.quality_thresholds
+        
+        return new_scorer
     
     def batch_score_with_monitoring(self, indicators: List[str]) -> BatchScoreResult:
         """Score multiple indicators with execution monitoring."""

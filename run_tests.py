@@ -172,14 +172,20 @@ def test_batch_scoring():
         "aumentar servicios región"             # Insufficient
     ]
     
-    results = scorer.batch_score(indicators)
-    runner.assert_equal(len(results), 3, "Should return 3 results")
+    # Test both parallel and sequential modes
+    results_sequential = scorer.batch_score(indicators, compare_backends=False)
+    runner.assert_equal(len(results_sequential), 3, "Should return 3 results")
+    
+    # Test with parallel processing disabled
+    scorer_seq = FeasibilityScorer(enable_parallel=False)
+    results_disabled = scorer_seq.batch_score(indicators)
+    runner.assert_equal(len(results_disabled), 3, "Should work with parallel disabled")
     
     # First should score higher than others
-    runner.assert_true(results[0].feasibility_score > results[1].feasibility_score, "First should score higher than second")
+    runner.assert_true(results_sequential[0].feasibility_score > results_sequential[1].feasibility_score, "First should score higher than second")
     
     # Third should be 0 (insufficient)
-    runner.assert_equal(results[2].feasibility_score, 0.0, "Third should be insufficient")
+    runner.assert_equal(results_sequential[2].feasibility_score, 0.0, "Third should be insufficient")
 
 
 def test_batch_scoring_with_monitoring():
