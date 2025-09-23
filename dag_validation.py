@@ -25,23 +25,22 @@ Statistical Framework:
 """
 
 import hashlib
+import json
+import multiprocessing as mp
 import random
+import time
+from collections import defaultdict, deque
+from concurrent.futures import ProcessPoolExecutor
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum, auto
+from typing import List, Tuple, Dict, Set, Any
+
+import Counter
+import networkx as nx
 import numpy as np
 import scipy.stats as stats
-from typing import List, Tuple, Dict, Set, Optional, Any, Union
-from dataclasses import dataclass, field
-from collections import defaultdict, deque
-import itertools
-import json
-import time
-from datetime import datetime
-import matplotlib.pyplot as plt
 import seaborn as sns
-from pathlib import Path
-import multiprocessing as mp
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
-import networkx as nx
-from enum import Enum, auto
 
 
 class GraphType(Enum):
@@ -138,6 +137,15 @@ class HypothesisTestResult:
     limitations: List[str]
 
 
+def _create_advanced_seed(plan_name: str, salt: str = "") -> int:
+    """Create deterministic seed with salt for additional variability."""
+    combined_string = f"{plan_name}{salt}{datetime.now().strftime('%Y%m%d')}"
+    hash_obj = hashlib.sha512(combined_string.encode('utf-8'))
+    seed_bytes = hash_obj.digest()[:8]  # Use 8 bytes for larger seed space
+    seed = int.from_bytes(seed_bytes, byteorder='big', signed=False)
+    return seed
+
+
 class AdvancedDAGValidator:
     """
     Sophisticated DAG validation with multiple statistical approaches
@@ -201,17 +209,9 @@ class AdvancedDAGValidator:
             weight = weights[i] if i < len(weights) else 1.0
             self.add_edge(pathway[i], pathway[i + 1], weight)
 
-    def _create_advanced_seed(self, plan_name: str, salt: str = "") -> int:
-        """Create deterministic seed with salt for additional variability."""
-        combined_string = f"{plan_name}{salt}{datetime.now().strftime('%Y%m%d')}"
-        hash_obj = hashlib.sha512(combined_string.encode('utf-8'))
-        seed_bytes = hash_obj.digest()[:8]  # Use 8 bytes for larger seed space
-        seed = int.from_bytes(seed_bytes, byteorder='big', signed=False)
-        return seed
-
     def _initialize_advanced_rng(self, plan_name: str, salt: str = "") -> int:
         """Initialize advanced RNG with configurable seeding strategy."""
-        seed = self._create_advanced_seed(plan_name, salt)
+        seed = _create_advanced_seed(plan_name, salt)
         self._rng = random.Random(seed)
         np.random.seed(seed)  # Also set numpy seed for statistical functions
         return seed
