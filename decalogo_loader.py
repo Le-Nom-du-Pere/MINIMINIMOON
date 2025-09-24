@@ -3,6 +3,8 @@ import tempfile
 from pathlib import Path
 from typing import Optional
 
+# Import log configuration to set up environment variable support
+import log_config
 from text_truncation_logger import (
     log_error_with_text,
     log_info_with_text,
