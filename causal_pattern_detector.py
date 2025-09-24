@@ -1,4 +1,3 @@
-# coding=utf-8
 """
 CAUSAL PATTERN DETECTOR
 ======================
@@ -124,7 +123,8 @@ class CausalPatternDetector:
         
         return patterns
 
-    def _compile_false_positive_patterns(self) -> List[re.Pattern]:
+    @staticmethod
+    def _compile_false_positive_patterns() -> List[re.Pattern]:
         """Compile patterns that indicate likely false positives."""
         fp_patterns = [
             # Question contexts - reduce confidence for interrogative sentences
@@ -257,7 +257,8 @@ class CausalPatternDetector:
         
         return max(0.0, min(1.0, adjusted_confidence))
 
-    def _classify_pattern_type(self, connector: str) -> str:
+    @staticmethod
+    def _classify_pattern_type(connector: str) -> str:
         """Classify the type of causal pattern based on connector characteristics."""
         if connector in ['porque', 'debido a', 'a causa de', 'por causa de']:
             return 'direct_causation'
@@ -307,7 +308,8 @@ class CausalPatternDetector:
         filtered_matches.sort(key=lambda x: x.start)
         return filtered_matches
 
-    def _matches_overlap(self, match1: CausalMatch, match2: CausalMatch) -> bool:
+    @staticmethod
+    def _matches_overlap(match1: CausalMatch, match2: CausalMatch) -> bool:
         """Check if two matches overlap in text position."""
         return not (match1.end <= match2.start or match2.end <= match1.start)
 

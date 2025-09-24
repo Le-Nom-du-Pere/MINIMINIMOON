@@ -1,4 +1,3 @@
-# coding=utf-8
 import re
 from typing import List, Dict
 from dataclasses import dataclass
@@ -15,16 +14,44 @@ class PatternMatch:
 
 
 class PatternDetector:
-    """Detects baseline, target, and timeframe patterns in Spanish text."""
+    """Detects baseline, target, and timeframe patterns in Spanish text.
+    
+    This class provides comprehensive pattern detection capabilities for identifying
+    baseline values, targets/objectives, and temporal indicators in Spanish text
+    using compiled regular expressions.
+    
+    Attributes:
+        baseline_patterns: Compiled regex patterns for baseline detection.
+        target_patterns: Compiled regex patterns for target detection.
+        timeframe_patterns: Compiled regex patterns for timeframe detection.
+    """
 
     def __init__(self):
-        self.baseline_patterns = PatternDetector._compile_baseline_patterns()
-        self.target_patterns = PatternDetector._compile_target_patterns()
-        self.timeframe_patterns = PatternDetector._compile_timeframe_patterns()
+        """Initialize the pattern detector with compiled regex patterns."""
+        self.baseline_patterns = self._compile_baseline_patterns()
+        self.target_patterns = self._compile_target_patterns()
+        self.timeframe_patterns = self._compile_timeframe_patterns()
+
+    def _compile_baseline_patterns(self) -> List[re.Pattern]:
+        """Compile regex patterns for baseline indicators.
+        
+        Creates compiled regular expressions for detecting various forms
+        of baseline references in Spanish text.
+        
+        Returns:
+            List of compiled regex pattern objects for baseline detection.
+        """
 
     @staticmethod
     def _compile_baseline_patterns() -> List[re.Pattern]:
-        """Compile regex patterns for baseline indicators."""
+        """Compile regex patterns for baseline indicators.
+        
+        Creates compiled regular expressions for detecting various forms
+        of baseline references in Spanish text.
+        
+        Returns:
+            List of compiled regex pattern objects for baseline detection.
+        """
         patterns = [
             r'\b(?:línea\s+base|linea\s+base|línea\s+de\s+base|linea\s+de\s+base)\b',
             r'\b(?:situación\s+inicial|situacion\s+inicial)\b',
@@ -42,7 +69,14 @@ class PatternDetector:
 
     @staticmethod
     def _compile_target_patterns() -> List[re.Pattern]:
-        """Compile regex patterns for target indicators."""
+        """Compile regex patterns for target indicators.
+        
+        Creates compiled regular expressions for detecting various forms
+        of target, goal, and objective references in Spanish text.
+        
+        Returns:
+            List of compiled regex pattern objects for target detection.
+        """
         patterns = [
             r'\b(?:meta|metas)\b',
             r'\b(?:objetivo|objetivos)\b',
@@ -63,7 +97,15 @@ class PatternDetector:
 
     @staticmethod
     def _compile_timeframe_patterns() -> List[re.Pattern]:
-        """Compile regex patterns for timeframe indicators."""
+        """Compile regex patterns for timeframe indicators.
+        
+        Creates compiled regular expressions for detecting various forms
+        of temporal references including absolute dates, relative time
+        expressions, and administrative periods in Spanish text.
+        
+        Returns:
+            List of compiled regex pattern objects for timeframe detection.
+        """
         patterns = [
             # Absolute years
             r'\b(?:20\d{2})\b',
@@ -95,14 +137,18 @@ class PatternDetector:
         return [re.compile(p, re.IGNORECASE) for p in patterns]
 
     def detect_patterns(self, text: str) -> Dict[str, List[PatternMatch]]:
-        """
-        Detect all pattern types in the given text.
+        """Detect all pattern types in the given text.
+        
+        Analyzes input text to identify baseline, target, and timeframe patterns
+        using the compiled regular expressions.
 
         Args:
-            text: The text to analyze
+            text: The text to analyze for pattern detection.
 
         Returns:
-            Dictionary with pattern types as keys and lists of matches as values
+            Dictionary with pattern types as keys and lists of PatternMatch
+            objects as values, containing detected patterns with position
+            and confidence information.
         """
         return {
             'baseline': PatternDetector._find_matches(text, self.baseline_patterns, 'baseline'),
@@ -112,7 +158,19 @@ class PatternDetector:
 
     @staticmethod
     def _find_matches(text: str, patterns: List[re.Pattern], pattern_type: str) -> List[PatternMatch]:
-        """Find all matches for a specific pattern type."""
+        """Find all matches for a specific pattern type.
+        
+        Applies all patterns of a given type to the text and filters out
+        overlapping matches, preferring longer matches when conflicts occur.
+        
+        Args:
+            text: Text to search for patterns.
+            patterns: List of compiled regex patterns to apply.
+            pattern_type: Type identifier for the patterns being applied.
+            
+        Returns:
+            List of non-overlapping PatternMatch objects found in the text.
+        """
         matches: List[PatternMatch] = []
         for pattern in patterns:
             for m in pattern.finditer(text):
@@ -138,15 +196,20 @@ class PatternDetector:
         return filtered
 
     def find_pattern_clusters(self, text: str, proximity_window: int = 500) -> List[Dict]:
-        """
-        Find text segments where all three pattern types appear within proximity.
+        """Find text segments where all three pattern types appear within proximity.
+        
+        Identifies regions in the text where baseline, target, and timeframe
+        patterns co-occur within a specified character distance, indicating
+        comprehensive indicator descriptions.
 
         Args:
-            text: The text to analyze
+            text: The text to analyze for pattern clustering.
             proximity_window: Maximum character distance between patterns
+                            for them to be considered part of the same cluster.
 
         Returns:
-            List of dictionaries containing cluster information
+            List of dictionaries containing cluster information including
+            start/end positions, extracted text, matches by type, and span length.
         """
         all_matches = self.detect_patterns(text)
         clusters: List[Dict] = []
@@ -183,7 +246,19 @@ class PatternDetector:
 
     @staticmethod
     def _within_proximity(a: PatternMatch, b: PatternMatch, proximity_window: int) -> bool:
-        """Check if two matches are within the specified proximity window."""
+        """Check if two matches are within the specified proximity window.
+        
+        Calculates the minimum distance between two pattern matches and
+        determines if they fall within the specified proximity threshold.
+        
+        Args:
+            a: First pattern match to compare.
+            b: Second pattern match to compare.
+            proximity_window: Maximum distance in characters for proximity.
+            
+        Returns:
+            True if the matches are within the proximity window, False otherwise.
+        """
         distance = min(
             abs(a.start - b.end),
             abs(a.end - b.start),

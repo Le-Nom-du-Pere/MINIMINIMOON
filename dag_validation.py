@@ -1,4 +1,3 @@
-# coding=utf-8
 """
 DETERMINISTIC MONTE CARLO SAMPLING FOR ADVANCED DAG VALIDATION
 ================================================================
@@ -149,12 +148,26 @@ def _create_advanced_seed(plan_name: str, salt: str = "") -> int:
 
 
 class AdvancedDAGValidator:
-    """
-    Sophisticated DAG validation with multiple statistical approaches
-    and advanced graph analysis capabilities.
+    """Sophisticated DAG validation with multiple statistical approaches and advanced graph analysis capabilities.
+    
+    This class provides comprehensive validation for Directed Acyclic Graphs (DAGs) using
+    Monte Carlo methods, Bayesian analysis, and advanced graph metrics for causal inference.
+    
+    Attributes:
+        graph_nodes: Dictionary mapping node names to AdvancedGraphNode objects.
+        graph_type: Type of graph being validated (CAUSAL_DAG, BAYESIAN_NETWORK, etc.).
+        _rng: Random number generator for reproducible sampling.
+        validation_history: List of previous validation results.
+        hypothesis_tests: List of formal statistical hypothesis test results.
+        config: Configuration parameters for validation algorithms.
     """
 
     def __init__(self, graph_type: GraphType = GraphType.CAUSAL_DAG):
+        """Initialize the advanced DAG validator.
+        
+        Args:
+            graph_type: Type of graph structure for analysis (default: CAUSAL_DAG).
+        """
         self.graph_nodes: Dict[str, AdvancedGraphNode] = {}
         self.graph_type = graph_type
         self._rng = None
@@ -176,7 +189,14 @@ class AdvancedDAGValidator:
 
     def add_node(self, name: str, dependencies: Set[str] = None,
                  role: str = "variable", metadata: Dict[str, Any] = None):
-        """Add a node with enhanced metadata and role specification."""
+        """Add a node with enhanced metadata and role specification.
+        
+        Args:
+            name: Unique identifier for the node.
+            dependencies: Set of node names that this node depends on.
+            role: Role of the node in the causal model ('variable', 'intervention', 'outcome', 'mediator').
+            metadata: Additional metadata dictionary for the node.
+        """
         if dependencies is None:
             dependencies = set()
         if metadata is None:
@@ -190,7 +210,13 @@ class AdvancedDAGValidator:
         )
 
     def add_edge(self, from_node: str, to_node: str, weight: float = 1.0):
-        """Add a directed edge with optional weight parameter."""
+        """Add a directed edge with optional weight parameter.
+        
+        Args:
+            from_node: Source node name.
+            to_node: Target node name.
+            weight: Edge weight for causal strength (default: 1.0).
+        """
         if to_node not in self.graph_nodes:
             self.add_node(to_node, role="variable")
         if from_node not in self.graph_nodes:
@@ -203,7 +229,12 @@ class AdvancedDAGValidator:
         self.graph_nodes[to_node].metadata[edge_key] = weight
 
     def add_causal_pathway(self, pathway: List[str], weights: List[float] = None):
-        """Add an entire causal pathway with optional weights."""
+        """Add an entire causal pathway with optional weights.
+        
+        Args:
+            pathway: Ordered list of node names forming a causal pathway.
+            weights: Optional list of weights for each edge in the pathway.
+        """
         if weights is None:
             weights = [1.0] * (len(pathway) - 1)
 
@@ -212,14 +243,34 @@ class AdvancedDAGValidator:
             self.add_edge(pathway[i], pathway[i + 1], weight)
 
     def _initialize_advanced_rng(self, plan_name: str, salt: str = "") -> int:
-        """Initialize advanced RNG with configurable seeding strategy."""
-        seed = AdvancedDAGValidator._create_advanced_seed(plan_name, salt)
+        """Initialize advanced RNG with configurable seeding strategy.
+        
+        Args:
+            plan_name: Name of the plan for deterministic seed generation.
+            salt: Additional salt string for seed variation.
+            
+        Returns:
+            Generated seed value for reproducibility.
+        """
+        seed = _create_advanced_seed(plan_name, salt)
         self._rng = random.Random(seed)
         np.random.seed(seed)  # Also set numpy seed for statistical functions
         return seed
 
-    def _compute_graph_metrics(self, nodes: Dict[str, AdvancedGraphNode]) -> Dict[str, Any]:
-        """Compute comprehensive graph metrics for topological analysis."""
+    @staticmethod
+    def _compute_graph_metrics(nodes: Dict[str, AdvancedGraphNode]) -> Dict[str, Any]:
+        """Compute comprehensive graph metrics for topological analysis.
+        
+        Calculates various graph-theoretic measures including connectivity,
+        centrality, clustering, and path-based metrics using NetworkX.
+        
+        Args:
+            nodes: Dictionary of graph nodes to analyze.
+            
+        Returns:
+            Dictionary containing computed graph metrics, or error information
+            if computation fails.
+        """
         if not nodes:
             return {}
 
@@ -266,7 +317,17 @@ class AdvancedDAGValidator:
 
     @staticmethod
     def _compute_basic_connectivity(nodes: Dict[str, AdvancedGraphNode]) -> Dict[str, Any]:
-        """Fallback connectivity computation without networkx."""
+        """Fallback connectivity computation without networkx.
+        
+        Implements basic graph connectivity analysis using breadth-first search
+        and degree distribution calculation when NetworkX is unavailable.
+        
+        Args:
+            nodes: Dictionary of graph nodes to analyze.
+            
+        Returns:
+            Dictionary containing basic connectivity metrics.
+        """
         # Implement basic graph algorithms
         adjacency = defaultdict(set)
         in_degree = defaultdict(int)
@@ -528,7 +589,7 @@ class AdvancedDAGValidator:
 
         # Effect size and power
         effect_size = AdvancedDAGValidator._calculate_effect_size(acyclic_count, iterations)
-        statistical_power = AdvancedDAGValidator._calculate_statistical_power(acyclic_count, iterations)
+        statistical_power = self._calculate_statistical_power(acyclic_count, iterations)
 
         # Sensitivity analysis
         sensitivity = self.perform_sensitivity_analysis(plan_name, iterations=min(iterations, 200))
@@ -779,7 +840,8 @@ class AdvancedDAGValidator:
 
         return importance
 
-    def _calculate_robustness_score(self, sensitivity_results: Dict[str, Any]) -> float:
+    @staticmethod
+    def _calculate_robustness_score(sensitivity_results: Dict[str, Any]) -> float:
         """Calculate overall robustness score from sensitivity analysis."""
         avg_sensitivity = sensitivity_results.get('average_sensitivity', 0)
         max_sensitivity = sensitivity_results.get('max_sensitivity', 0)
@@ -798,7 +860,8 @@ class AdvancedDAGValidator:
         expected_variance = (acyclic_count / iterations) * (1 - acyclic_count / iterations) / iterations
         return expected_variance < self.config['convergence_threshold']
 
-    def _create_empty_result(self, plan_name: str, seed: int, timestamp: str) -> MonteCarloAdvancedResult:
+    @staticmethod
+    def _create_empty_result(plan_name: str, seed: int, timestamp: str) -> MonteCarloAdvancedResult:
         """Create empty result for empty graph."""
         return MonteCarloAdvancedResult(
             plan_name=plan_name,
@@ -827,7 +890,8 @@ class AdvancedDAGValidator:
             test_parameters={}
         )
 
-    def _aggregate_metrics(self, metrics_list: List[Dict[str, Any]]) -> Dict[str, Any]:
+    @staticmethod
+    def _aggregate_metrics(metrics_list: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Aggregate metrics across multiple iterations."""
         if not metrics_list:
             return {}
@@ -842,7 +906,8 @@ class AdvancedDAGValidator:
 
         return aggregated
 
-    def _combine_graph_metrics(self, metrics_list: List[Dict[str, Any]]) -> Dict[str, Any]:
+    @staticmethod
+    def _combine_graph_metrics(metrics_list: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Combine graph metrics from parallel processes."""
         combined = {}
         for key in metrics_list[0].keys():
@@ -869,7 +934,8 @@ class AdvancedDAGValidator:
         else:
             return self._export_text(result, filename)
 
-    def _export_json(self, result: MonteCarloAdvancedResult, filename: str) -> str:
+    @staticmethod
+    def _export_json(result: MonteCarloAdvancedResult, filename: str) -> str:
         """Export results as JSON."""
         data = {
             'validation_results': {
@@ -895,7 +961,8 @@ class AdvancedDAGValidator:
 
         return filepath
 
-    def _export_html(self, result: MonteCarloAdvancedResult, filename: str) -> str:
+    @staticmethod
+    def _export_html(result: MonteCarloAdvancedResult, filename: str) -> str:
         """Export results as HTML report."""
         html_content = f"""
         <!DOCTYPE html>
@@ -940,7 +1007,8 @@ class AdvancedDAGValidator:
 
         return filepath
 
-    def _export_latex(self, result: MonteCarloAdvancedResult, filename: str) -> str:
+    @staticmethod
+    def _export_latex(result: MonteCarloAdvancedResult, filename: str) -> str:
         """Export results as LaTeX for academic papers."""
         latex_content = f"""
         \\documentclass{{article}}
@@ -981,7 +1049,8 @@ class AdvancedDAGValidator:
 
         return filepath
 
-    def _export_text(self, result: MonteCarloAdvancedResult, filename: str) -> str:
+    @staticmethod
+    def _export_text(result: MonteCarloAdvancedResult, filename: str) -> str:
         """Export results as plain text."""
         text_content = f"""
         DAG VALIDATION REPORT

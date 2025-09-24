@@ -43,9 +43,6 @@ except ImportError:  # pragma: no cover - optional dependency
 
 assert sys.version_info >= (3, 11), "Python 3.11 or higher is required"
 
-# Importar componentes del sistema industrial principal
-# from sistema_industrial.componentes import ...
-
 LOGGER = logging.getLogger("DecatalogoEvaluatorFull")
 
 DECALOGO_CONTEXT: DecalogoContext = obtener_decalogo_contexto()
@@ -314,7 +311,8 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
         }
         for _, score in indicadores_evaluados:
             for deteccion in score.detailed_matches:
-                detecciones_por_tipo[deteccion.component_type].append(deteccion)
+                detecciones_por_tipo[deteccion.component_type].append(
+                    deteccion)
 
         responsabilidades: List[ResponsibilityEntity] = []
         for texto in self._extraer_textos(evidencia, "responsables"):
@@ -322,7 +320,8 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
                 self.responsibility_detector.detect_entities(texto)
             )
 
-        detecciones_por_tipo = {k: v for k, v in detecciones_por_tipo.items() if v}
+        detecciones_por_tipo = {k: v for k,
+                                v in detecciones_por_tipo.items() if v}
 
         return AnalisisEvidenciaDecalogo(
             indicador_scores=indicador_scores,
@@ -457,7 +456,6 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
 
         responsable_ratio = min(
             1.0, len(analisis.responsabilidades) / max(1, len(dimension.eslabones))
-        )
         resource_ratio = min(1.0, analisis.recursos / max(1, len(dimension.eslabones)))
         plazo_ratio = min(1.0, analisis.plazos / max(1, len(dimension.eslabones)))
         riesgo_evidencia_ratio = min(
@@ -670,156 +668,6 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
         puntaje_final = self._clamp(
             puntaje_base * (matriz_causal["riesgo_factor"] or 1.0)
         )
-
-        return EvaluacionDimensionPunto(
-            punto_id=punto_id,
-            dimension="DE-1",
-            evaluaciones_preguntas=evaluaciones,
-            puntaje_dimension=puntaje_final * 100,
-            matriz_causal=matriz_causal,
-        )
-
-    def evaluar_dimension_de1(
-        self,
-        analisis: AnalisisEvidenciaDecalogo,
-        evidencia: Dict[str, List[Any]],
-        punto_id: int,
-    ) -> EvaluacionDimensionPunto:
-        evaluaciones: List[EvaluacionPregunta] = []
-        max_score = analisis.max_score
-        baseline_dets = analisis.detecciones(ComponentType.BASELINE)
-        target_dets = analisis.detecciones(ComponentType.TARGET)
-        timeframe_dets = analisis.detecciones(ComponentType.TIME_HORIZON)
-        numerical_dets = analisis.detecciones(ComponentType.NUMERICAL)
-        date_dets = analisis.detecciones(ComponentType.DATE)
-
-        mejor_numerico = self._seleccionar_mejor_deteccion(numerical_dets)
-        evaluaciones.append(
-            self._crear_evaluacion(
-                "Q1",
-                "DE-1",
-                punto_id,
-                max_score if mejor_numerico else 0.0,
-                self._formatear_deteccion(mejor_numerico),
-                self.preguntas_de1["Q1"],
-            )
-        )
-
-        mejor_responsable = self._seleccionar_mejor_responsable(
-            analisis.responsabilidades
-        )
-        valor_q2 = self._clamp(0.6 + 0.4 * max_score) if mejor_responsable else 0.0
-        evaluaciones.append(
-            self._crear_evaluacion(
-                "Q2",
-                "DE-1",
-                punto_id,
-                valor_q2,
-                self._formatear_responsable(mejor_responsable),
-                self.preguntas_de1["Q2"],
-            )
-        )
-
-        indicadores_cobertura = [
-            bool(baseline_dets),
-            bool(target_dets),
-            bool(timeframe_dets),
-        ]
-        cobertura = (
-            sum(indicadores_cobertura) / len(indicadores_cobertura)
-            if indicadores_cobertura
-            else 0.0
-        )
-        evidencia_q3 = " | ".join(
-            filter(
-                None,
-                [
-                    self._formatear_deteccion(
-                        self._seleccionar_mejor_deteccion(baseline_dets)
-                    ),
-                    self._formatear_deteccion(
-                        self._seleccionar_mejor_deteccion(target_dets)
-                    ),
-                    self._formatear_deteccion(
-                        self._seleccionar_mejor_deteccion(timeframe_dets)
-                    ),
-                ],
-            )
-        )
-        evaluaciones.append(
-            self._crear_evaluacion(
-                "Q3",
-                "DE-1",
-                punto_id,
-                max_score * cobertura,
-                evidencia_q3,
-                self.preguntas_de1["Q3"],
-            )
-        )
-
-        factor_responsable = 1.0 if mejor_responsable else 0.0
-        factor_recursos = 1.0 if analisis.recursos else 0.0
-        valor_q4 = self._clamp(
-            0.4 * cobertura
-            + 0.3 * max_score
-            + 0.2 * factor_responsable
-            + 0.1 * factor_recursos
-        )
-        evidencia_q4 = "; ".join(
-            filter(None, [evidencia_q3, self._formatear_responsable(mejor_responsable)])
-        )
-        evaluaciones.append(
-            self._crear_evaluacion(
-                "Q4",
-                "DE-1",
-                punto_id,
-                valor_q4,
-                evidencia_q4,
-                self.preguntas_de1["Q4"],
-            )
-        )
-
-        mejor_impacto = self._seleccionar_mejor_deteccion(target_dets + date_dets)
-        valor_q5 = self._clamp(
-            max_score if mejor_impacto else (max_score * 0.5 if target_dets else 0.0)
-        )
-        evaluaciones.append(
-            self._crear_evaluacion(
-                "Q5",
-                "DE-1",
-                punto_id,
-                valor_q5,
-                self._formatear_deteccion(mejor_impacto),
-                self.preguntas_de1["Q5"],
-            )
-        )
-
-        valor_q6 = self._clamp((valor_q4 + max_score + cobertura) / 3)
-        evaluaciones.append(
-            self._crear_evaluacion(
-                "Q6",
-                "DE-1",
-                punto_id,
-                valor_q6,
-                evidencia_q4 or evidencia_q3,
-                self.preguntas_de1["Q6"],
-            )
-        )
-
-        puntaje_base = (
-            sum(e.puntaje for e in evaluaciones) / len(evaluaciones)
-            if evaluaciones
-            else 0.0
-        )
-        matriz_causal = {
-            "C1": "Sí" if baseline_dets else "No",
-            "C2": "Sí" if target_dets else "No",
-            "C3": "Sí" if timeframe_dets else "No",
-            "C4": "Sí" if mejor_responsable else "No",
-            "Puntaje_Causalidad_Total": round(puntaje_base * 100, 2),
-            "Factor_Causal": round(0.5 + (cobertura / 2), 2),
-        }
-        puntaje_final = self._clamp(puntaje_base * matriz_causal["Factor_Causal"])
 
         return EvaluacionDimensionPunto(
             punto_id=punto_id,
@@ -1903,13 +1751,17 @@ def integrar_evaluador_decatalogo(
     """Integra el evaluador especializado del decálogo con la evaluación industrial."""
 
     if not sistema.extractor:
-        raise ValueError("Extractor no inicializado - Error industrial crítico")
+        raise ValueError(
+            "Extractor no inicializado - Error industrial crítico")
 
     try:
         evaluador = IndustrialDecatalogoEvaluatorFull()
-        evidencia_dimension = sistema.extractor.extraer_variables_operativas(dimension)
-        matriz_trazabilidad = sistema.extractor.generar_matriz_trazabilidad(dimension)
-        cluster_metadata = DECALOGO_CONTEXT.cluster_por_dimension.get(dimension.id)
+        evidencia_dimension = sistema.extractor.extraer_variables_operativas(
+            dimension)
+        matriz_trazabilidad = sistema.extractor.generar_matriz_trazabilidad(
+            dimension)
+        cluster_metadata = DECALOGO_CONTEXT.cluster_por_dimension.get(
+            dimension.id)
 
         if not cluster_metadata:
             LOGGER.warning(
@@ -1951,5 +1803,6 @@ def integrar_evaluador_decatalogo(
         return resultado_industrial
 
     except Exception as exc:
-        LOGGER.error(f"❌ Error en integración del evaluador del decálogo: {exc}")
+        LOGGER.error(
+            f"❌ Error en integración del evaluador del decálogo: {exc}")
         return None

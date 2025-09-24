@@ -1,38 +1,31 @@
-# coding=utf-8
 """
-Example usage of the embedding model with fallback mechanism.
+Example usage of the industrial embedding model with LRU cache functionality.
 """
 
 from embedding_model import create_industrial_embedding_model
 import numpy as np
 
 def main():
-    """Demonstrate the embedding model with fallback mechanism."""
+    """Demonstrate the industrial embedding model with LRU cache."""
     
-    print("=== Embedding Model with Fallback Demo ===\n")
+    print("=== Industrial Embedding Model with LRU Cache Demo ===\n")
     
-    # Create embedding model (will try MPNet first, fallback to MiniLM if needed)
-    print("1. Initializing embedding model...")
+    # Create embedding model 
+    print("1. Initializing industrial embedding model...")
     try:
-        model = create_industrial_embedding_model()
-        print("✓ Model initialized successfully!")
-        
-        # Display model information
-        diagnostics = model.get_comprehensive_diagnostics()
-        info = diagnostics['model_info']
-        print(f"   Model: {info['name']}")
-        print(f"   Dimension: {info['dimension']}")
-        print(f"   Quality Tier: {info['quality_tier']}")
-        
-    except Exception as e:
-        print(f"✗ Failed to initialize model: {e}")
-        return
-    
-    print("\n2. Encoding sample sentences...")
-    
-    # Sample sentences for demonstration
-    sentences = [
-        "The quick brown fox jumps over the lazy dog.",
+        with create_industrial_embedding_model(model_tier="standard") as model:
+            print("✓ Model initialized successfully!")
+            
+            # Display model information
+            stats = model.get_embedding_statistics()
+            info = stats.get('model_information', {})
+            print(f"   Model: {info.get('name', 'Unknown')}")
+            print(f"   Dimension: {info.get('dimension', 'Unknown')}")
+            print(f"   Quality tier: {info.get('quality_tier', 'Unknown')}")
+            
+            # Sample documents for demonstration
+            documents = [
+                "The quick brown fox jumps over the lazy dog.",
         "Machine learning models can process natural language.",
         "Embedding vectors represent semantic meaning of text.",
         "This is a completely different topic about cooking.",
@@ -75,53 +68,111 @@ def main():
         print(f"  Sentence {best_pair[0]+1}: {sentences[best_pair[0]]}")
         print(f"  Sentence {best_pair[1]+1}: {sentences[best_pair[1]]}")
         
+=======
+        with create_industrial_embedding_model(model_tier="standard") as model:
+            print("✓ Model initialized successfully!")
+            
+            # Display model information
+            stats = model.get_embedding_statistics()
+            info = stats.get('model_information', {})
+            print(f"   Model: {info.get('name', 'Unknown')}")
+            print(f"   Dimension: {info.get('dimension', 'Unknown')}")
+            print(f"   Quality tier: {info.get('quality_tier', 'Unknown')}")
+            
+            # Sample documents for demonstration
+            documents = [
+                "The quick brown fox jumps over the lazy dog.",
+                "Machine learning models can process natural language efficiently.",
+                "Embedding vectors represent semantic meaning of text content.",
+                "This is a completely different topic about cooking recipes.",
+                "Neural networks learn complex patterns from training data.",
+                "Financial reports show quarterly revenue growth of 15%.",
+                "The weather today is sunny with temperatures around 25°C.",
+                "Deep learning techniques advance artificial intelligence research."
+            ]
+            
+            print(f"\n2. Setting up document embeddings cache...")
+            # Set up document embeddings for reuse
+            model.set_document_embeddings(documents, cache_key="demo_docs")
+            print(f"✓ Cached embeddings for {len(documents)} documents")
+            
+            print(f"\n3. Performing semantic searches with query caching...")
+            
+            # Test queries - some repeated to demonstrate LRU cache
+            test_queries = [
+                "machine learning and artificial intelligence",
+                "cooking and food preparation", 
+                "financial performance and revenue",
+                "machine learning and artificial intelligence",  # Repeat to test cache
+                "weather conditions and temperature",
+                "financial performance and revenue",  # Another repeat
+                "neural networks and deep learning"
+            ]
+            
+            # Perform searches and track cache performance
+            print("\nSearch Results:")
+            for i, query in enumerate(test_queries):
+                print(f"\nQuery {i+1}: '{query}'")
+                
+                # Search using cached embeddings
+                results = model.search_documents(query, k=2)
+                
+                # Display top results
+                for rank, (doc_idx, score) in enumerate(results):
+                    print(f"  {rank+1}. Score: {score:.3f} - {documents[doc_idx][:60]}...")
+            
+            print(f"\n4. Cache Performance Statistics:")
+            # Get final cache statistics
+            final_stats = model.get_embedding_statistics()
+            
+            lru_stats = final_stats.get('query_lru_cache', {})
+            print(f"   Query Cache Hits: {lru_stats.get('hits', 0)}")
+            print(f"   Query Cache Misses: {lru_stats.get('misses', 0)}")
+            print(f"   Query Cache Hit Rate: {lru_stats.get('hit_rate', 0):.1%}")
+            print(f"   Query Cache Size: {lru_stats.get('current_size', 0)}/{lru_stats.get('max_size', 0)}")
+            
+            doc_cache = final_stats.get('document_cache', {})
+            print(f"   Document Cache: {doc_cache.get('cached_document_count', 0)} documents")
+            print(f"   Document Cache Key: {doc_cache.get('cache_key', 'None')}")
+            
+            # Additional cache stats
+            quality_stats = final_stats.get('quality_metrics', {})
+            print(f"   Total Embeddings Generated: {quality_stats.get('total_embeddings', 0)}")
+            print(f"   Adaptive Cache Hits: {quality_stats.get('cache_hits', 0)}")
+            
+            print(f"\n5. Testing different query variations...")
+            
+            # Test similar queries to show nuanced caching behavior
+            similar_queries = [
+                "artificial intelligence and machine learning",  # Similar to cached query
+                "AI and ML",  # Abbreviation
+                "machine learning and artificial intelligence"   # Exact repeat
+            ]
+            
+            for query in similar_queries:
+                results = model.search_documents(query, k=1)
+                cache_info = model._encode_query_cached.cache_info()
+                print(f"   '{query}' -> Cache hits: {cache_info.hits}, misses: {cache_info.misses}")
+                
+>>>>>>> 4872831 (Implement LRU cache for query embeddings to optimize semantic search performance)
     except Exception as e:
         print(f"✗ Error during processing: {e}")
         return
     
-    print("\n5. Testing with different batch sizes...")
-    
-    # Test different configurations
-    test_sentences = ["Test sentence " + str(i) for i in range(50)]
-    
-    try:
-        # Test with default batch size
-        embeddings_default = model.encode(test_sentences)
-        print(f"✓ Default batch encoding: {embeddings_default.shape}")
-        
-        # Test with custom batch size
-        embeddings_custom = model.encode(test_sentences, batch_size=8)
-        print(f"✓ Custom batch encoding: {embeddings_custom.shape}")
-        
-        # Verify results are similar
-        difference = np.mean(np.abs(embeddings_default - embeddings_custom))
-        print(f"✓ Batch size difference (should be ~0): {difference:.6f}")
-        
-    except Exception as e:
-        print(f"✗ Error during batch testing: {e}")
-    
-    print("\n=== Demo completed successfully! ===")
+    print("\n=== LRU Cache Demo completed successfully! ===")
 
 
-def test_semantic_search():
-    """Demonstrate semantic search functionality."""
+def demonstrate_cache_efficiency():
+    """Demonstrate cache efficiency with repeated queries."""
     
-    print("\n=== Testing Semantic Search ===")
+    print("\n=== Cache Efficiency Demonstration ===")
     
     try:
-        model = create_industrial_embedding_model()
-        
-        # Create a document corpus
-        documents = [
-            "Cats are independent and graceful animals that make wonderful pets.",
-            "Dogs are loyal and friendly companions that love to play with their owners.",
-            "Machine learning algorithms can recognize patterns in large datasets.",
-            "Deep learning uses neural networks to solve complex computational problems.",
-            "Natural language processing helps computers understand and generate human text.",
-            "Computer vision enables machines to interpret and analyze visual information.",
-            "The weather is sunny and warm today, perfect for outdoor activities.",
-            "Rain is expected tomorrow afternoon, so bring an umbrella."
-        ]
+        with create_industrial_embedding_model(model_tier="basic") as model:
+            documents = [f"Document {i} with sample content about topic {i%5}" for i in range(20)]
+            model.set_document_embeddings(documents, "efficiency_test")
+            
+            # Clear cache for clean test
         
         # Create page identifiers
         pages = [f"doc_{i+1}.txt" for i in range(len(documents))]
@@ -166,30 +217,41 @@ def test_semantic_search():
 
 def test_fallback_scenario():
     """Demonstrate forced fallback scenario."""
+=======
+def demonstrate_cache_efficiency():
+    """Demonstrate cache efficiency with repeated queries."""
+>>>>>>> 4872831 (Implement LRU cache for query embeddings to optimize semantic search performance)
     
-    print("\n=== Testing Fallback Scenario ===")
+    print("\n=== Cache Efficiency Demonstration ===")
     
     try:
-        # Force fallback to MiniLM
-        model = create_industrial_embedding_model(model_tier="basic")
-        
-        diagnostics = model.get_comprehensive_diagnostics()
-        info = diagnostics['model_info']
-        print(f"✓ Basic tier model loaded successfully!")
-        print(f"   Model: {info['name']}")
-        print(f"   Dimension: {info['dimension']}")
-        print(f"   Quality Tier: {info['quality_tier']}")
-        
-        # Test encoding with fallback model
-        test_sentence = "Testing fallback model functionality."
-        embedding = model.encode(test_sentence)
-        print(f"✓ Fallback encoding successful: shape {embedding.shape}")
-        
+        with create_industrial_embedding_model(model_tier="basic") as model:
+            documents = [f"Document {i} with sample content about topic {i%5}" for i in range(20)]
+            model.set_document_embeddings(documents, "efficiency_test")
+            
+            # Clear cache for clean test
+            model._encode_query_cached.cache_clear()
+            
+            # Test query repeated many times
+            repeated_query = "sample content and topics"
+            num_repeats = 10
+            
+            print(f"\nTesting query '{repeated_query}' repeated {num_repeats} times:")
+            
+            for i in range(num_repeats):
+                _ = model.search_documents(repeated_query, k=3)
+                cache_info = model._encode_query_cached.cache_info()
+                if i == 0:
+                    print(f"   First search: {cache_info.misses} miss, {cache_info.hits} hits")
+                elif i == num_repeats - 1:
+                    print(f"   Final search: {cache_info.misses} misses, {cache_info.hits} hits")
+            
+            print(f"✓ Cache efficiency: {cache_info.hits}/{cache_info.hits + cache_info.misses} hits ({cache_info.hits/(cache_info.hits + cache_info.misses)*100:.1f}%)")
+            
     except Exception as e:
-        print(f"✗ Fallback test failed: {e}")
+        print(f"✗ Cache efficiency test failed: {e}")
 
 
 if __name__ == "__main__":
     main()
-    test_semantic_search()
-    test_fallback_scenario()
+    demonstrate_cache_efficiency()

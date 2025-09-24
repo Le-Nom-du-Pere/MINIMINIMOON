@@ -1,4 +1,3 @@
-# coding=utf-8
 """
 Feasibility Scorer for Indicator Quality Assessment
 
@@ -70,12 +69,30 @@ class BatchScoreResult:
 
 
 class FeasibilityScorer:
-    """
-    Assesses indicator quality by detecting baseline values, targets/goals, and time horizons
-    using regex patterns and named entity recognition.
+    """Assesses indicator quality by detecting baseline values, targets/goals, and time horizons using regex patterns and named entity recognition.
+    
+    This class implements a weighted quality assessment system that evaluates indicators
+    based on the presence of baseline values, targets/goals, and time horizons with
+    support for parallel processing and comprehensive pattern matching.
+    
+    Attributes:
+        detection_patterns: Dictionary of regex patterns organized by component type.
+        weights: Scoring weights for different component types.
+        quality_thresholds: Thresholds for quality tier classification.
+        enable_parallel: Whether parallel processing is enabled.
+        n_jobs: Number of parallel jobs for batch processing.
+        backend: Parallel processing backend ('loky' or 'threading').
+        logger: Logger instance for performance monitoring.
     """
     
     def __init__(self, enable_parallel=True, n_jobs=None, backend='loky'):
+        """Initialize the feasibility scorer.
+        
+        Args:
+            enable_parallel: Enable parallel processing for batch operations.
+            n_jobs: Number of parallel jobs (default: min(CPU count, 8)).
+            backend: Parallel processing backend ('loky' or 'threading').
+        """
         self.detection_patterns = self._initialize_patterns()
         self.weights = {
             ComponentType.BASELINE: 0.4,
@@ -105,7 +122,11 @@ class FeasibilityScorer:
         self._setup_logging()
     
     def _setup_logging(self):
-        """Setup performance logging."""
+        """Setup performance logging.
+        
+        Configures logging with appropriate handlers and formatters for
+        performance monitoring and debugging purposes.
+        """
         if not self.logger.handlers:
             handler = logging.StreamHandler()
             formatter = logging.Formatter(
@@ -115,8 +136,17 @@ class FeasibilityScorer:
             self.logger.addHandler(handler)
             self.logger.setLevel(logging.INFO)
     
-    def _initialize_patterns(self) -> Dict[ComponentType, List[Dict]]:
-        """Initialize regex patterns for detecting indicator components in Spanish and English."""
+    @staticmethod
+    def _initialize_patterns() -> Dict[ComponentType, List[Dict]]:
+        """Initialize regex patterns for detecting indicator components in Spanish and English.
+        
+        Creates comprehensive pattern dictionaries for detecting baseline values,
+        targets, time horizons, numerical values, and dates in both Spanish and English.
+        
+        Returns:
+            Dictionary mapping ComponentType to lists of pattern dictionaries
+            with pattern, confidence, and language information.
+        """
         return {
             ComponentType.BASELINE: [
                 {
@@ -212,11 +242,29 @@ class FeasibilityScorer:
     
     @staticmethod
     def _normalize_text(text: str) -> str:
-        """Normalize text using Unicode NFKC normalization for consistent character representation."""
+        """Normalize text using Unicode NFKC normalization for consistent character representation.
+        
+        Args:
+            text: Input text to normalize.
+            
+        Returns:
+            Unicode-normalized text string.
+        """
         return unicodedata.normalize('NFKC', text)
     
     def detect_components(self, text: str) -> List[DetectionResult]:
-        """Detect all components in the given text using regex patterns."""
+        """Detect all components in the given text using regex patterns.
+        
+        Applies pattern matching to identify baseline values, targets, time horizons,
+        numerical values, and dates with confidence scoring and position tracking.
+        
+        Args:
+            text: Input text to analyze for indicator components.
+            
+        Returns:
+            List of DetectionResult objects with component type, matched text,
+            confidence score, and position information.
+        """
         results = []
         # Apply Unicode normalization before processing
         normalized_text = FeasibilityScorer._normalize_text(text)
@@ -240,7 +288,19 @@ class FeasibilityScorer:
         return results
     
     def _has_quantitative_component(self, text: str, component_type: ComponentType) -> bool:
-        """Check if a component has quantitative elements nearby."""
+        """Check if a component has quantitative elements nearby.
+        
+        Analyzes text context around component mentions to determine if
+        quantitative values are present within a proximity window.
+        
+        Args:
+            text: Text to analyze for quantitative components.
+            component_type: Type of component to check for quantitative elements.
+            
+        Returns:
+            True if quantitative elements are found near component mentions,
+            False otherwise.
+        """
         # Apply Unicode normalization before processing
         normalized_text = FeasibilityScorer._normalize_text(text)
         text_lower = normalized_text.lower()
@@ -268,15 +328,23 @@ class FeasibilityScorer:
         
         return False
     
-    def calculate_feasibility_score(self, text: str, evidencia_soporte: Optional[int] = None) -> IndicatorScore:
-        """
-        Calculate feasibility score based on detected components and their quality.
+    def calculate_feasibility_score(self, text: str) -> IndicatorScore:
+        """Calculate feasibility score based on detected components and their quality.
+        
+        Implements a comprehensive scoring system that evaluates indicator quality
+        based on the presence and quality of baseline values, targets, and temporal elements.
         
         Requirements for positive score:
         - Must have both baseline and target components
         - Higher scores for quantitative baselines and targets
         - Bonus for time horizons, numerical values, and dates
-        - If evidencia_soporte equals zero, overrides normal scoring with high risk
+        
+        Args:
+            text: Input text containing the indicator description.
+            
+        Returns:
+            IndicatorScore object with feasibility score, detected components,
+            quantitative analysis, and quality tier classification.
         """
         # Check for zero evidence support condition first
         if evidencia_soporte is not None and evidencia_soporte == 0:
@@ -363,22 +431,30 @@ class FeasibilityScorer:
             quality_tier=quality_tier
         )
     
-    def _score_single_indicator(self, indicator: str, evidencia_soporte: Optional[int] = None) -> IndicatorScore:
-        """Score a single indicator - helper function for parallel processing."""
-        return self.calculate_feasibility_score(indicator, evidencia_soporte)
-    
-    def batch_score(self, indicators: List[str], compare_backends=False, use_parallel: bool = False, evidencia_soporte_list: Optional[List[Optional[int]]] = None) -> List[IndicatorScore]:
-        """
-        Score multiple indicators with optional parallel processing.
+    def _score_single_indicator(self, indicator: str) -> IndicatorScore:
+        """Score a single indicator - helper function for parallel processing.
         
         Args:
-            indicators: List of indicator strings to score
-            compare_backends: If True, compare performance between threading and loky backends
-            use_parallel: Legacy parameter for backward compatibility
-            evidencia_soporte_list: Optional list of evidence support values corresponding to indicators
+            indicator: Indicator text to score.
             
         Returns:
-            List of IndicatorScore results
+            IndicatorScore for the given indicator.
+        """
+        return self.calculate_feasibility_score(indicator)
+    
+    def batch_score(self, indicators: List[str], compare_backends=False, use_parallel: bool = False) -> List[IndicatorScore]:
+        """Score multiple indicators with optional parallel processing.
+        
+        Processes a batch of indicators with automatic selection of sequential
+        or parallel processing based on batch size and system capabilities.
+        
+        Args:
+            indicators: List of indicator strings to score.
+            compare_backends: If True, compare performance between threading and loky backends.
+            use_parallel: Legacy parameter for backward compatibility.
+            
+        Returns:
+            List of IndicatorScore results in the same order as input indicators.
         """
         if not indicators:
             return []
@@ -515,7 +591,8 @@ class FeasibilityScorer:
             planes_por_minuto=planes_por_minuto
         )
     
-    def get_detection_rules_documentation(self) -> str:
+    @staticmethod
+    def get_detection_rules_documentation() -> str:
         """Return comprehensive documentation of detection rules."""
         doc = """
 # Feasibility Scorer Detection Rules Documentation
@@ -649,7 +726,8 @@ The feasibility scorer evaluates indicator quality by detecting three core compo
         # Ensure score is between 0.0 and 1.0
         return max(0.0, min(1.0, final_score))
     
-    def _detect_monetary_values(self, text: str) -> float:
+    @staticmethod
+    def _detect_monetary_values(text: str) -> float:
         """Detect monetary amounts and return normalized score."""
         monetary_patterns = [
             # Colombian pesos with COP
@@ -694,7 +772,8 @@ The feasibility scorer evaluates indicator quality by detecting three core compo
         
         return min(base_score + precision_bonus, 1.0)
     
-    def _detect_temporal_indicators(self, text: str) -> float:
+    @staticmethod
+    def _detect_temporal_indicators(text: str) -> float:
         """Detect dates and temporal indicators."""
         temporal_patterns = [
             # Year patterns (YYYY)
@@ -747,7 +826,8 @@ The feasibility scorer evaluates indicator quality by detecting three core compo
         
         return min(score, 1.0)
     
-    def _detect_measurement_terminology(self, text: str) -> float:
+    @staticmethod
+    def _detect_measurement_terminology(text: str) -> float:
         """Detect measurement and evaluation terminology."""
         terminology_patterns = [
             # Baseline terminology
@@ -798,7 +878,8 @@ The feasibility scorer evaluates indicator quality by detecting three core compo
         
         return min(richness_score + measurement_bonus, 1.0)
     
-    def _calculate_structure_penalty(self, text: str) -> float:
+    @staticmethod
+    def _calculate_structure_penalty(text: str) -> float:
         """Calculate penalty for indicators in titles/bullets without values."""
         # Check for title/bullet point patterns
         title_patterns = [
@@ -1067,11 +1148,13 @@ The feasibility scorer evaluates indicator quality by detecting three core compo
         
         return str(output_path)
     
-    def translate_quality_tier_spanish(self, tier: str) -> str:
+    @staticmethod
+    def translate_quality_tier_spanish(tier: str) -> str:
         """Public wrapper to translate quality tier to Spanish."""
         return FeasibilityScorer._translate_quality_tier_spanish(tier)
 
-    def get_recommendation_spanish(self, quality_tier: str) -> str:
+    @staticmethod
+    def get_recommendation_spanish(quality_tier: str) -> str:
         """Public wrapper to obtain recommendation in Spanish for a quality tier."""
         return FeasibilityScorer._get_recommendation_spanish(quality_tier)
 
@@ -1099,7 +1182,8 @@ The feasibility scorer evaluates indicator quality by detecting three core compo
         }
         return recommendations.get(quality_tier, 'Evaluación pendiente.')
     
-    def _generate_csv_fallback(self, results: Dict[str, IndicatorScore], output_dir: str = ".") -> str:
+    @staticmethod
+    def _generate_csv_fallback(results: Dict[str, IndicatorScore], output_dir: str = ".") -> str:
         """
         Fallback CSV generation without pandas dependency.
         
