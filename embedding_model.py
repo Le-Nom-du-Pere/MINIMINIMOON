@@ -404,7 +404,7 @@ class MemoryManager:
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
                 logger.debug("Cleared CUDA cache")
-
+        return None
     @contextmanager
     def managed_operation(self):
         """Context manager for memory-managed operations.
@@ -495,8 +495,7 @@ class EmbeddingCache:
         total cache size exceeds the configured limit.
         """
         if self._get_disk_usage_gb() <= self.max_disk_size_gb:
-            return
-
+            return None
         # Sort files by access time
         files_with_times = [
             (f, f.stat().st_atime) for f in self._disk_files if f.exists()
@@ -511,6 +510,7 @@ class EmbeddingCache:
                 self._disk_files.discard(oldest_file)
             except OSError:
                 continue
+        return None
 
     def _generate_cache_key(
         self,
@@ -533,6 +533,13 @@ class EmbeddingCache:
         Returns:
             SHA-256 hash string as cache key.
         """
+=======
+        return None
+    
+    def _generate_cache_key(self, texts: List[str], normalize: bool, 
+                          instruction: Optional[str] = None, 
+                          instruction_strength: float = 0.4) -> str:
+        """Generate cache key for text embeddings."""
         cache_components = [
             str(hash(tuple(texts))),
             str(normalize),
@@ -625,6 +632,7 @@ class EmbeddingCache:
 
             except Exception as e:
                 logger.warning(f"Failed to save embeddings to disk cache: {e}")
+        return None
 
 
 class AdaptiveCache:
@@ -671,6 +679,7 @@ class AdaptiveCache:
             self._cache.pop(key, None)
             self._access_times.pop(key, None)
             self._access_counts.pop(key, None)
+        return None
 
     def get(self, key: str) -> Optional[Any]:
         """Get item from cache with automatic cleanup.
@@ -717,6 +726,7 @@ class AdaptiveCache:
             self._cache[key] = value
             self._access_times[key] = time.time()
             self._access_counts[key] = 1
+        return None
 
     def stats(self) -> Dict[str, int]:
         """Get cache statistics.
@@ -1302,7 +1312,7 @@ class IndustrialEmbeddingModel:
                     self.quality_metrics["model_switches"] += 1
                     logger.info(f"Using fallback model: {model_key}")
 
-                return
+                return None
 
             except Exception as e:
                 error_msg = f"Failed to initialize {config.name}: {str(e)}"

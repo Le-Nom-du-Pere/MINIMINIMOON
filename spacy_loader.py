@@ -23,6 +23,7 @@ class SpacyModelLoader:
         self.retry_delay = retry_delay
         self.degraded_mode = False
         self.loaded_models = {}
+        return None
 
     def load_model(
         self, model_name: str, disable: Optional[list] = None
@@ -143,7 +144,7 @@ class SafeSpacyProcessor:
         self.loader = SpacyModelLoader()
         self.model = self.loader.load_model(preferred_model)
         self.preferred_model = preferred_model
-
+        return None
     def process_text(self, text: str) -> dict:
         """
         Process text with available spaCy functionality or fallback methods.
@@ -216,13 +217,13 @@ def setup_logging():
                 f.write("test")
             os.remove(test_file)
         except (PermissionError, OSError, IOError) as fallback_e:
+<<<<<<< HEAD
             print(
                 f"WARNING: Cannot write to fallback directory '{log_dir}': {fallback_e}"
             )
-            return  # Skip file logging setup if no writable directory available
+            return None  # Skip file logging setup if no writable directory available
 
     log_file = os.path.join(log_dir, "spacy_loader.log")
-
     # Configure root logger
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.INFO)
@@ -263,6 +264,8 @@ def setup_logging():
         console_formatter = logging.Formatter("%(levelname)s - %(message)s")
         console_handler.setFormatter(console_formatter)
         root_logger.addHandler(console_handler)
+    
+    return None
 
 
 # Example usage and testing functions
@@ -283,6 +286,8 @@ def example_usage():
     if not processor.is_fully_functional():
         logger.warning(
             "Application running in degraded mode due to spaCy model issues")
+    
+    return None
 
 
 if __name__ == "__main__":

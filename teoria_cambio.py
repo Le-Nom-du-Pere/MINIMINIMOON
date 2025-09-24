@@ -159,6 +159,7 @@ class TeoriaCambio:
         Invalida el cache del grafo causal, forzando su reconstrucción en la próxima llamada.
         """
         self._grafo_causal = None
+        return None
     
     def validar_orden_causal(self, grafo: nx.DiGraph = None) -> ValidacionResultado:
         """
@@ -378,6 +379,7 @@ class TeoriaCambio:
                         sugerencia = f"Agregar conexiones entre {categoria_actual.name} y {categoria_siguiente.name}. "
                         sugerencia += f"Considerar conectar '{nodos_actual[0]}' con '{nodos_siguiente[0]}'"
                         resultado.sugerencias.append(sugerencia)
+        return None
     
     @staticmethod
     def _generar_sugerencias_categorias_faltantes(resultado: ValidacionResultado):
@@ -405,6 +407,7 @@ class TeoriaCambio:
                 resultado.sugerencias.append(
                     "Falta definir IMPACTOS: Agregar cambios de largo plazo en el problema o situación objetivo"
                 )
+        return None
     
     def verificar_identificabilidad(self) -> bool:
         """Verifica condiciones de identificabilidad según Pearl (2009)"""
