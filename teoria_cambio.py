@@ -84,9 +84,11 @@ except ImportError:
     # Replace networkx with mock
     class MockNetworkX:
         DiGraph = MockDiGraph
-        def has_path(self, graph, source, target):
+        @staticmethod
+        def has_path(graph, source, target):
             return graph.has_path(source, target)
-        def shortest_path(self, graph, source, target):
+        @staticmethod
+        def shortest_path(graph, source, target):
             return graph.shortest_path(source, target)
     
     nx = MockNetworkX()
@@ -277,7 +279,8 @@ class TeoriaCambio:
         # Intentar determinar por posición en el grafo si no hay identificación por nombre
         return self._inferir_categoria_por_posicion(nodo, grafo)
     
-    def _inferir_categoria_por_posicion(self, nodo: str, grafo: nx.DiGraph) -> CategoriaCausal:
+    @staticmethod
+    def _inferir_categoria_por_posicion(nodo: str, grafo: nx.DiGraph) -> CategoriaCausal:
         """
         Infiere la categoría basándose en la posición topológica del nodo
         """
@@ -301,7 +304,8 @@ class TeoriaCambio:
             
             return CategoriaCausal.PRODUCTOS  # Valor por defecto para nodos intermedios
     
-    def _es_conexion_valida(self, origen: CategoriaCausal, destino: CategoriaCausal) -> bool:
+    @staticmethod
+    def _es_conexion_valida(origen: CategoriaCausal, destino: CategoriaCausal) -> bool:
         """
         Verifica si una conexión entre dos categorías es válida según las reglas causales
         """
@@ -375,7 +379,8 @@ class TeoriaCambio:
                         sugerencia += f"Considerar conectar '{nodos_actual[0]}' con '{nodos_siguiente[0]}'"
                         resultado.sugerencias.append(sugerencia)
     
-    def _generar_sugerencias_categorias_faltantes(self, resultado: ValidacionResultado):
+    @staticmethod
+    def _generar_sugerencias_categorias_faltantes(resultado: ValidacionResultado):
         """
         Genera sugerencias para categorías completamente ausentes
         """

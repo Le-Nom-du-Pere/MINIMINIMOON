@@ -257,7 +257,8 @@ class AdvancedDAGValidator:
         np.random.seed(seed)  # Also set numpy seed for statistical functions
         return seed
 
-    def _compute_graph_metrics(self, nodes: Dict[str, AdvancedGraphNode]) -> Dict[str, Any]:
+    @staticmethod
+    def _compute_graph_metrics(nodes: Dict[str, AdvancedGraphNode]) -> Dict[str, Any]:
         """Compute comprehensive graph metrics for topological analysis.
         
         Calculates various graph-theoretic measures including connectivity,
@@ -314,7 +315,8 @@ class AdvancedDAGValidator:
 
         return metrics
 
-    def _compute_basic_connectivity(self, nodes: Dict[str, AdvancedGraphNode]) -> Dict[str, Any]:
+    @staticmethod
+    def _compute_basic_connectivity(nodes: Dict[str, AdvancedGraphNode]) -> Dict[str, Any]:
         """Fallback connectivity computation without networkx.
         
         Implements basic graph connectivity analysis using breadth-first search
@@ -838,7 +840,8 @@ class AdvancedDAGValidator:
 
         return importance
 
-    def _calculate_robustness_score(self, sensitivity_results: Dict[str, Any]) -> float:
+    @staticmethod
+    def _calculate_robustness_score(sensitivity_results: Dict[str, Any]) -> float:
         """Calculate overall robustness score from sensitivity analysis."""
         avg_sensitivity = sensitivity_results.get('average_sensitivity', 0)
         max_sensitivity = sensitivity_results.get('max_sensitivity', 0)
@@ -857,7 +860,8 @@ class AdvancedDAGValidator:
         expected_variance = (acyclic_count / iterations) * (1 - acyclic_count / iterations) / iterations
         return expected_variance < self.config['convergence_threshold']
 
-    def _create_empty_result(self, plan_name: str, seed: int, timestamp: str) -> MonteCarloAdvancedResult:
+    @staticmethod
+    def _create_empty_result(plan_name: str, seed: int, timestamp: str) -> MonteCarloAdvancedResult:
         """Create empty result for empty graph."""
         return MonteCarloAdvancedResult(
             plan_name=plan_name,
@@ -886,7 +890,8 @@ class AdvancedDAGValidator:
             test_parameters={}
         )
 
-    def _aggregate_metrics(self, metrics_list: List[Dict[str, Any]]) -> Dict[str, Any]:
+    @staticmethod
+    def _aggregate_metrics(metrics_list: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Aggregate metrics across multiple iterations."""
         if not metrics_list:
             return {}
@@ -901,7 +906,8 @@ class AdvancedDAGValidator:
 
         return aggregated
 
-    def _combine_graph_metrics(self, metrics_list: List[Dict[str, Any]]) -> Dict[str, Any]:
+    @staticmethod
+    def _combine_graph_metrics(metrics_list: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Combine graph metrics from parallel processes."""
         combined = {}
         for key in metrics_list[0].keys():
@@ -928,7 +934,8 @@ class AdvancedDAGValidator:
         else:
             return self._export_text(result, filename)
 
-    def _export_json(self, result: MonteCarloAdvancedResult, filename: str) -> str:
+    @staticmethod
+    def _export_json(result: MonteCarloAdvancedResult, filename: str) -> str:
         """Export results as JSON."""
         data = {
             'validation_results': {
@@ -954,7 +961,8 @@ class AdvancedDAGValidator:
 
         return filepath
 
-    def _export_html(self, result: MonteCarloAdvancedResult, filename: str) -> str:
+    @staticmethod
+    def _export_html(result: MonteCarloAdvancedResult, filename: str) -> str:
         """Export results as HTML report."""
         html_content = f"""
         <!DOCTYPE html>
@@ -999,7 +1007,8 @@ class AdvancedDAGValidator:
 
         return filepath
 
-    def _export_latex(self, result: MonteCarloAdvancedResult, filename: str) -> str:
+    @staticmethod
+    def _export_latex(result: MonteCarloAdvancedResult, filename: str) -> str:
         """Export results as LaTeX for academic papers."""
         latex_content = f"""
         \\documentclass{{article}}
@@ -1040,7 +1049,8 @@ class AdvancedDAGValidator:
 
         return filepath
 
-    def _export_text(self, result: MonteCarloAdvancedResult, filename: str) -> str:
+    @staticmethod
+    def _export_text(result: MonteCarloAdvancedResult, filename: str) -> str:
         """Export results as plain text."""
         text_content = f"""
         DAG VALIDATION REPORT

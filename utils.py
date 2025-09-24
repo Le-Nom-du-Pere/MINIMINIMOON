@@ -44,7 +44,8 @@ class TextAnalyzer:
         
         return results
     
-    def clean_text(self, text: str, preserve_spaces: bool = True) -> str:
+    @staticmethod
+    def clean_text(text: str, preserve_spaces: bool = True) -> str:
         """Clean text by removing special characters with Unicode normalization."""
         normalized_text = normalize_text(text)
         
@@ -55,13 +56,15 @@ class TextAnalyzer:
             pattern = r'[^\w]'
             return re.sub(pattern, '', normalized_text)
     
-    def tokenize(self, text: str) -> List[str]:
+    @staticmethod
+    def tokenize(text: str) -> List[str]:
         """Tokenize text into words with Unicode normalization."""
         normalized_text = normalize_text(text)
         pattern = r'\b\w+\b'
         return re.findall(pattern, normalized_text.lower())
     
-    def find_quoted_text(self, text: str) -> List[str]:
+    @staticmethod
+    def find_quoted_text(text: str) -> List[str]:
         """Extract quoted text with Unicode normalization."""
         normalized_text = normalize_text(text)
         # Pattern to match various quote types
@@ -69,14 +72,16 @@ class TextAnalyzer:
         matches = re.findall(pattern, normalized_text)
         return matches
     
-    def replace_unicode_punctuation(self, text: str, replacement: str = ' ') -> str:
+    @staticmethod
+    def replace_unicode_punctuation(text: str, replacement: str = ' ') -> str:
         """Replace Unicode punctuation marks with specified replacement."""
         normalized_text = normalize_text(text)
         # Pattern for various Unicode punctuation
         pattern = r'[—–−‐‑‒―''""„‚‛‟«»‹›]'
         return re.sub(pattern, replacement, normalized_text)
     
-    def normalize_whitespace(self, text: str) -> str:
+    @staticmethod
+    def normalize_whitespace(text: str) -> str:
         """Normalize all whitespace characters with Unicode normalization."""
         normalized_text = normalize_text(text)
         # Replace various Unicode whitespace with regular space

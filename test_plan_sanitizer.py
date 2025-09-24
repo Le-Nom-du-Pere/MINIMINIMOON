@@ -17,13 +17,15 @@ from plan_sanitizer import (
 class TestPlanSanitizer:
     """Test the PlanSanitizer class functionality."""
     
-    def test_sanitize_basic_plan_names(self):
+    @staticmethod
+    def test_sanitize_basic_plan_names():
         """Test basic plan name sanitization."""
         # Normal names should remain unchanged
         assert PlanSanitizer.sanitize_plan_name("Plan Nacional 2024") == "Plan Nacional 2024"
         assert PlanSanitizer.sanitize_plan_name("Proyecto Educativo") == "Proyecto Educativo"
         
-    def test_sanitize_problematic_characters(self):
+    @staticmethod
+    def test_sanitize_problematic_characters():
         """Test sanitization of problematic characters."""
         test_cases = [
             # Slashes
@@ -58,7 +60,8 @@ class TestPlanSanitizer:
             result = PlanSanitizer.sanitize_plan_name(input_name)
             assert result == expected, f"Input: {input_name}, Expected: {expected}, Got: {result}"
     
-    def test_sanitize_control_characters(self):
+    @staticmethod
+    def test_sanitize_control_characters():
         """Test removal of control characters."""
         # Tab, newline, carriage return
         assert PlanSanitizer.sanitize_plan_name("Plan\tMeta\n2024\r") == "Plan Meta 2024"
@@ -70,7 +73,8 @@ class TestPlanSanitizer:
         assert '\x01' not in result
         assert result == "PlanMeta"
     
-    def test_sanitize_reserved_names(self):
+    @staticmethod
+    def test_sanitize_reserved_names():
         """Test handling of Windows reserved names."""
         reserved_cases = [
             ("CON", "plan_CON"),
@@ -86,7 +90,8 @@ class TestPlanSanitizer:
             result = PlanSanitizer.sanitize_plan_name(input_name)
             assert result == expected, f"Input: {input_name}, Expected: {expected}, Got: {result}"
     
-    def test_sanitize_length_limits(self):
+    @staticmethod
+    def test_sanitize_length_limits():
         """Test length truncation."""
         # Very long name
         long_name = "Plan de Desarrollo Nacional Integral Sostenible " * 10
@@ -99,7 +104,8 @@ class TestPlanSanitizer:
         result = PlanSanitizer.sanitize_plan_name(long_word, max_length=50)
         assert len(result) <= 50
     
-    def test_sanitize_edge_cases(self):
+    @staticmethod
+    def test_sanitize_edge_cases():
         """Test edge cases."""
         # Empty or None names
         assert PlanSanitizer.sanitize_plan_name("") == "plan_sin_nombre"
@@ -114,7 +120,8 @@ class TestPlanSanitizer:
         assert PlanSanitizer.sanitize_plan_name("...Plan Meta...") == "Plan Meta"
         assert PlanSanitizer.sanitize_plan_name("---Plan---") == "Plan"
     
-    def test_create_safe_directory(self):
+    @staticmethod
+    def test_create_safe_directory():
         """Test safe directory creation."""
         with tempfile.TemporaryDirectory() as temp_dir:
             # Basic directory creation
@@ -135,7 +142,8 @@ class TestPlanSanitizer:
             assert os.path.basename(result_path3) == f"{expected_name}_2"
             assert os.path.exists(result_path3)
     
-    def test_standardize_json_key_basic(self):
+    @staticmethod
+    def test_standardize_json_key_basic():
         """Test basic JSON key standardization."""
         test_cases = [
             # Spanish tildes
@@ -164,7 +172,8 @@ class TestPlanSanitizer:
             result = PlanSanitizer.standardize_json_key(input_key)
             assert result == expected, f"Input: {input_key}, Expected: {expected}, Got: {result}"
     
-    def test_standardize_json_key_edge_cases(self):
+    @staticmethod
+    def test_standardize_json_key_edge_cases():
         """Test edge cases for JSON key standardization."""
         # Empty/None keys
         assert PlanSanitizer.standardize_json_key("") == ""
@@ -182,7 +191,8 @@ class TestPlanSanitizer:
         assert PlanSanitizer.standardize_json_key("página123Meta") == "pagina123_meta"
         assert PlanSanitizer.standardize_json_key("línea2024Base") == "linea2024_base"
     
-    def test_standardize_json_object_simple(self):
+    @staticmethod
+    def test_standardize_json_object_simple():
         """Test JSON object standardization with simple structure."""
         input_obj = {
             "línea_base": "2023",
@@ -202,7 +212,8 @@ class TestPlanSanitizer:
         assert result["evaluacion"] == "completa"
         assert result["tipo_documento"] == "plan"
     
-    def test_standardize_json_object_with_display_keys(self):
+    @staticmethod
+    def test_standardize_json_object_with_display_keys():
         """Test JSON object standardization preserving display keys."""
         input_obj = {
             "línea_base": "2023",
@@ -221,7 +232,8 @@ class TestPlanSanitizer:
         assert result["linea_base_display"] == "línea_base"
         assert result["numero_pagina_display"] == "número_página"
     
-    def test_standardize_json_object_nested(self):
+    @staticmethod
+    def test_standardize_json_object_nested():
         """Test nested JSON object standardization."""
         input_obj = {
             "información_general": {
@@ -261,7 +273,8 @@ class TestPlanSanitizer:
         assert "descripcion" in metas[0]
         assert "situacion" in metas[0]
     
-    def test_get_markdown_display_key(self):
+    @staticmethod
+    def test_get_markdown_display_key():
         """Test getting display keys for Markdown."""
         # With display keys available
         json_obj = {
@@ -281,7 +294,8 @@ class TestPlanSanitizer:
         # Unknown key fallback
         assert PlanSanitizer.get_markdown_display_key("campo_desconocido", {}) == "campo desconocido"
     
-    def test_convenience_functions(self):
+    @staticmethod
+    def test_convenience_functions():
         """Test convenience functions."""
         # sanitize_plan_name
         assert sanitize_plan_name("Plan: Meta/2024") == "Plan - Meta - 2024"
@@ -301,7 +315,8 @@ class TestPlanSanitizer:
 class TestIntegrationScenarios:
     """Test realistic integration scenarios."""
     
-    def test_complete_plan_processing(self):
+    @staticmethod
+    def test_complete_plan_processing():
         """Test complete plan processing workflow."""
         # Simulate a plan with problematic name and data structure
         plan_name = "Plan: Desarrollo/Social*2024 <Urgente>"
@@ -362,7 +377,8 @@ class TestIntegrationScenarios:
             assert "evaluacion_inicial" in metas[1]
             assert "implementacion_esperada" in metas[1]
     
-    def test_extreme_plan_names(self):
+    @staticmethod
+    def test_extreme_plan_names():
         """Test with extremely problematic plan names."""
         extreme_cases = [
             # All forbidden characters

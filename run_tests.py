@@ -15,7 +15,8 @@ class TestRunner:
         self.tests_passed = 0
         self.tests_failed = 0
 
-    def assert_equal(self, actual, expected, message=""):
+    @staticmethod
+    def assert_equal(actual, expected, message=""):
         if actual != expected:
             raise AssertionError(
                 f"Expected {expected}, got {actual}. {message}")
