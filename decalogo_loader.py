@@ -3,6 +3,9 @@ import tempfile
 from pathlib import Path
 from typing import Optional
 
+# Import log configuration to set up environment variable support
+import log_config
+
 logger = logging.getLogger(__name__)
 
 # Hardcoded template data for fallback

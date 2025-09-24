@@ -7,6 +7,9 @@ import spacy
 import spacy.cli
 from spacy.language import Language
 
+# Import log configuration to set up environment variable support
+import log_config
+
 logger = logging.getLogger(__name__)
 
 class SpacyModelLoader:

@@ -7,5 +7,5 @@ __pycache__/
 .coverage
 .pytest_cache/
 
-# Virtual environment
+# Virtual Environment
 venv/
