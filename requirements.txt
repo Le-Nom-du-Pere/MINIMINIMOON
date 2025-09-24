@@ -20,3 +20,4 @@ pandas>=1.3.0
 
 # Note: Factibilidad scoring module uses only Python standard library
 # Note: Text processing and DAG validation components (if present) use only Python standard library
+psutil>=5.9.0
