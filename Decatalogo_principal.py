@@ -65,11 +65,13 @@ Focus: Structural evaluation with policy econometrics, causal mining and industr
 """
 import argparse
 import atexit
+import argparse
 import hashlib
 import heapq
 import json
 import logging
 import os
+import random
 import re
 import signal
 import statistics
@@ -125,11 +127,17 @@ LOGGER = logging.getLogger("EvaluacionPoliticasPublicasIndustrial")
 
 # -------------------- MODELOS AVANZADOS CON FALLBACK INDUSTRIAL --------------------
 try:
-    NLP = spacy.load("es_core_news_lg")
-    log_info_with_text(LOGGER, "✅ Modelo SpaCy cargado exitosamente")
+    # Intentar cargar el modelo grande primero, con fallback al pequeño
+    try:
+        NLP = spacy.load("es_core_news_lg")
+        LOGGER.info("✅ Modelo SpaCy large cargado exitosamente")
+    except OSError:
+        LOGGER.warning("⚠️  Modelo SpaCy large no disponible, usando small")
+        NLP = spacy.load("es_core_news_sm")
+        LOGGER.info("✅ Modelo SpaCy small cargado exitosamente")
 except OSError as e:
-    log_error_with_text(LOGGER, f"❌ Error crítico cargando modelo SpaCy: {e}")
-    raise SystemExit("Modelo SpaCy no disponible. Ejecute: python -m spacy download es_core_news_lg")
+    LOGGER.error(f"❌ Error crítico cargando modelo SpaCy: {e}")
+    raise SystemExit("Modelo SpaCy no disponible. Ejecute: python -m spacy download es_core_news_sm")
 
 try:
     from device_config import to_device
@@ -2068,6 +2076,24 @@ class PDFLoaderIndustrial:
                     continue
 
             self.logger.info(f"✅ Segmentación completada: {len(self.segmentos)} segmentos - {self.nombre_plan}")
+            
+            # Fallback: si no se generaron segmentos, crear segmentos básicos por párrafo
+            if len(self.segmentos) == 0:
+                self.logger.warning("⚠️  No se generaron segmentos con método NLP, usando fallback básico")
+                for i, pagina in enumerate(self.paginas, start=1):
+                    paragrafos = [p.strip() for p in pagina.split('\n\n') if len(p.strip()) > 20]
+                    for paragrafo in paragrafos:
+                        if len(paragrafo) > 30:
+                            self.segmentos.append((i, paragrafo))
+                
+                # Si aún no hay segmentos, crear uno por página completa
+                if len(self.segmentos) == 0:
+                    for i, pagina in enumerate(self.paginas, start=1):
+                        if len(pagina.strip()) > 30:
+                            self.segmentos.append((i, pagina.strip()))
+                
+                self.logger.info(f"✅ Segmentación fallback completada: {len(self.segmentos)} segmentos")
+            
             return len(self.segmentos) > 0
 
         except Exception as e:
@@ -2782,9 +2808,39 @@ class GeneradorReporteIndustrial:
         }
 
 
+# ==================== CONFIGURACIÓN DE REPRODUCIBILIDAD DETERMINISTA ====================
+def configurar_semillas_deterministas(base_seed: int, plan_name: str) -> None:
+    """
+    Configura semillas deterministas para reproducibilidad en el procesamiento de cada plan.
+    
+    Args:
+        base_seed: Semilla base proporcionada por el usuario
+        plan_name: Nombre del plan para generar semilla específica
+    """
+    # Crear semilla específica para el plan combinando base_seed con hash del nombre
+    plan_hash = hashlib.md5(plan_name.encode('utf-8')).hexdigest()
+    plan_seed = base_seed ^ int(plan_hash[:8], 16)  # XOR con primeros 8 dígitos hex del hash
+    
+    # Configurar semillas para todas las librerías de números aleatorios
+    random.seed(plan_seed)
+    np.random.seed(plan_seed % (2**32))  # numpy requiere seed de 32 bits
+    torch.manual_seed(plan_seed)
+    
+    # Configurar generadores adicionales de PyTorch si están disponibles
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(plan_seed)
+        torch.cuda.manual_seed_all(plan_seed)
+    
+    # Configurar comportamiento determinista adicional para PyTorch
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    
+    LOGGER.debug(f"🎲 Semillas configuradas para '{plan_name}': base={base_seed}, plan_specific={plan_seed}")
+
+
 # ==================== PROCESAMIENTO PARALELO INDUSTRIAL PARA 170+ PLANES ====================
-def procesar_plan_industrial(pdf_path: Path, max_segmentos: Optional[int] = None, 
-                           batch_size: int = 32) -> Tuple[str, Dict[str, Any]]:
+<<<<<<< HEAD
+def procesar_plan_industrial(pdf_path: Path, base_seed: Optional[int] = None) -> Tuple[str, Dict[str, Any]]:
     """Worker industrial para procesamiento paralelo de planes de desarrollo"""
     nombre_plan = pdf_path.stem
     logger_worker = logging.getLogger(f"Worker_{nombre_plan}")
@@ -2795,6 +2851,11 @@ def procesar_plan_industrial(pdf_path: Path, max_segmentos: Optional[int] = None
         return nombre_plan, {"error": "Archivo inválido o no encontrado", "status": "failed"}
 
     try:
+        # Configurar reproducibilidad determinista si se proporciona semilla
+        if base_seed is not None:
+            configurar_semillas_deterministas(base_seed, nombre_plan)
+            logger_worker.info(f"🎲 Configuración determinista activada para: {nombre_plan}")
+        
         # Inicializar sistema industrial
         sistema = SistemaEvaluacionIndustrial(pdf_path)
 
@@ -3077,6 +3138,7 @@ class SistemaMonitoreoIndustrial:
                 self.logger.error(f"❌ Error guardando dump de emergencia: {e}")
                 raise
 
+<<<<<<< HEAD
     def _calcular_estadisticas_parciales(self) -> Dict[str, Any]:
         """Calcula estadísticas parciales de las ejecuciones completadas hasta el momento"""
         completados = [e for e in self.ejecuciones if e["resultado"].get("status") == "completed"]
@@ -3238,6 +3300,19 @@ Ejemplos de uso:
         default=32,
         help="Tamaño de batch para procesamiento de embeddings (default: 32)"
     )
+=======
+# ==================== FUNCIÓN PRINCIPAL INDUSTRIAL ====================
+def main():
+    """Función principal industrial con procesamiento batch y monitoreo"""
+    parser = argparse.ArgumentParser(
+        description="Sistema Industrial de Evaluación de Políticas Públicas v8.0",
+        epilog="Ejemplo: python Decatalogo_principal.py --seed 42 ./planes_desarrollo/"
+    )
+    parser.add_argument('input_path', 
+                       help='Directorio con archivos PDF o archivo PDF individual')
+    parser.add_argument('--seed', 
+                       type=int, 
+                       help='Semilla para reproducibilidad determinista (opcional)')
     
     args = parser.parse_args()
     
@@ -3245,19 +3320,14 @@ Ejemplos de uso:
     output_dir = Path("resultados_evaluacion_industrial")
     output_dir.mkdir(exist_ok=True)
     
+<<<<<<< HEAD
     # Configure device
     device_config = configure_device_from_args(args)
     LOGGER.info(f"🔧 Dispositivo configurado: {device_config.get_device()}")
     
     # Get device information
     device_info = device_config.get_device_info()
-    LOGGER.info(f"🖥️  Tipo de dispositivo: {device_info['device_type']}")
-    LOGGER.info(f"🔢 Hilos de PyTorch: {device_info['num_threads']}")
-    if device_info['cuda_available'] and device_info['device_type'] == 'cuda':
-        LOGGER.info(f"🚀 CUDA disponible: {device_info['cuda_device_count']} dispositivos")
-
-    # Configurar variables globales para handlers
-    _output_dir_global = output_dir
+    base_seed = args.seed
 
     # Inicializar sistema de monitoreo industrial
     sistema_monitoreo = SistemaMonitoreoIndustrial()
@@ -3271,9 +3341,12 @@ Ejemplos de uso:
 
     LOGGER.info(f"🚀 Iniciando sistema industrial de evaluación de políticas públicas v8.1")
     LOGGER.info(f"📁 Directorio de entrada: {input_path}")
+<<<<<<< HEAD
     if args.max_segmentos:
-        LOGGER.info(f"📊 Límite global de segmentos: {args.max_segmentos}")
-        LOGGER.info(f"⚙️  Tamaño de batch: {args.batch_size}")
+    
+    if base_seed is not None:
+        LOGGER.info(f"🎲 Modo determinista activado con semilla base: {base_seed}")
+        LOGGER.warning("⚠️  NOTA: La extracción de texto PDF puede contener elementos no deterministas debido a comportamientos subyacentes de las librerías, pero las operaciones de análisis numérico serán reproducibles.")
 
     if input_path.is_dir():
         # Procesamiento batch industrial paralelo
@@ -3286,6 +3359,7 @@ Ejemplos de uso:
         LOGGER.info(f"🏭 Procesando {len(pdf_paths)} planes de desarrollo en paralelo...")
         LOGGER.info(f"⚙️  Utilizando {os.cpu_count()} núcleos disponibles")
 
+<<<<<<< HEAD
         # Función de procesamiento con argumentos adicionales y monitoreo
         def procesar_con_args(pdf_path):
             return procesar_plan_industrial_con_monitoreo(pdf_path)
@@ -3295,10 +3369,10 @@ Ejemplos de uso:
             resultados_batch = Parallel(n_jobs=-1, backend='threading', verbose=10)(
                 delayed(procesar_con_args)(pdf_path) for pdf_path in pdf_paths
             )
-        except KeyboardInterrupt:
-            LOGGER.warning("🚨 Procesamiento interrumpido por el usuario")
-            # El signal handler se encargará de la limpieza
-            raise
+        # Procesamiento paralelo industrial
+        resultados_batch = Parallel(n_jobs=-1, backend='threading', verbose=10)(
+            delayed(procesar_plan_industrial)(pdf_path, base_seed) for pdf_path in pdf_paths
+        )
 
         # Registrar resultados en sistema de monitoreo
         for nombre_plan, metrics in resultados_batch:
@@ -3393,9 +3467,7 @@ Ejemplos de uso:
     else:
         # Modo single-file industrial
         LOGGER.info(f"📄 Procesando archivo individual: {input_path.name}")
-        try:
-            nombre_plan, metrics = procesar_plan_industrial_con_monitoreo(input_path)
-            sistema_monitoreo.registrar_ejecucion(nombre_plan, metrics)
+        nombre_plan, metrics = procesar_plan_industrial(input_path, base_seed)
 
             if "error" not in metrics:
                 LOGGER.info(f"✅✅✅ EVALUACIÓN COMPLETADA PARA {nombre_plan}")
