@@ -480,24 +480,24 @@ def run_decatalogo_mode(args: argparse.Namespace) -> int:
                 
                 # Evaluate each of the 10 Decatalogo points
                 for punto_id in range(1, 11):
-                    result = evaluator.evaluar_punto_completo(content, punto_id)
-                    
+                    evaluacion_punto, _, _ = evaluator.evaluar_punto_completo(content, punto_id)
+
                     # Save individual results
                     output_file = Path(args.outdir) / f'decatalogo_punto_{punto_id}_{file_path.stem}.json'
-                    
+
                     import json
                     with open(output_file, 'w', encoding='utf-8') as f:
                         json.dump({
-                            'punto_id': result.punto_id,
-                            'nombre_punto': result.nombre_punto,
-                            'puntaje_agregado': result.puntaje_agregado_punto,
+                            'punto_id': evaluacion_punto.punto_id,
+                            'nombre_punto': evaluacion_punto.nombre_punto,
+                            'puntaje_agregado': evaluacion_punto.puntaje_agregado_punto,
                             'evaluaciones_dimensiones': [
                                 {
                                     'dimension': ed.dimension,
                                     'puntaje': ed.puntaje_dimension,
                                     'preguntas_evaluadas': len(ed.evaluaciones_preguntas)
                                 }
-                                for ed in result.evaluaciones_dimensiones
+                                for ed in evaluacion_punto.evaluaciones_dimensiones
                             ]
                         }, f, indent=2, ensure_ascii=False)
                 
