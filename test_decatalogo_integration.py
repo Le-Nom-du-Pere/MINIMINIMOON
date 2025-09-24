@@ -36,7 +36,9 @@ def _load_evaluator_with_stubs():
 
     dummy_sentence = ModuleType("sentence_transformers")
     dummy_sentence.SentenceTransformer = lambda *args, **kwargs: _DummySentenceModel()
-    dummy_sentence.util = SimpleNamespace(pytorch_cos_sim=lambda *args, **kwargs: MagicMock())
+    dummy_sentence.util = SimpleNamespace(
+        pytorch_cos_sim=lambda *args, **kwargs: MagicMock()
+    )
     sys.modules["sentence_transformers"] = dummy_sentence
 
     sys.modules["pdfplumber"] = MagicMock()
@@ -49,21 +51,25 @@ def _load_evaluator_with_stubs():
 def _build_sample_evidence():
     return {
         "indicadores": [
-            {"texto": "La línea base actual es 50 beneficiarios y la meta es 120 en 2025."},
-            {"texto": "Objetivo específico incrementar cobertura 30% con horizonte temporal 2024."},
+            {
+                "texto": "La línea base actual es 50 beneficiarios y la meta es 120 en 2025."
+            },
+            {
+                "texto": "Objetivo específico incrementar cobertura 30% con horizonte temporal 2024."
+            },
         ],
         "metas": [
-            {"texto": "Meta transformadora alcanzar 120 familias antes de diciembre de 2025."}
+            {
+                "texto": "Meta transformadora alcanzar 120 familias antes de diciembre de 2025."
+            }
         ],
         "recursos": [
-            {"texto": "Se asignan $500 millones para el programa, codificado en el plan plurianual."}
+            {
+                "texto": "Se asignan $500 millones para el programa, codificado en el plan plurianual."
+            }
         ],
-        "plazos": [
-            {"texto": "Plan plurianual 2024-2027 con hitos trimestrales."}
-        ],
-        "riesgos": [
-            {"texto": "Riesgo de retraso por capacidad operativa limitada."}
-        ],
+        "plazos": [{"texto": "Plan plurianual 2024-2027 con hitos trimestrales."}],
+        "riesgos": [{"texto": "Riesgo de retraso por capacidad operativa limitada."}],
         "responsables": [
             {"texto": "El Ministerio de Salud será responsable directo del programa."}
         ],
@@ -91,10 +97,14 @@ def test_generar_reporte_final_contiene_trazabilidad():
     evaluator = module.IndustrialDecatalogoEvaluatorFull()
     evidencias_por_punto = {1: _build_sample_evidence(), 2: _build_sample_evidence()}
 
-    reporte = evaluator.generar_reporte_final(evidencias_por_punto, nombre_plan="Plan Piloto")
+    reporte = evaluator.generar_reporte_final(
+        evidencias_por_punto, nombre_plan="Plan Piloto"
+    )
 
     assert isinstance(reporte, module.ReporteFinalDecatalogo)
     assert reporte.resultados_dimension
     assert reporte.anexos_serializables["resultados_industriales"]
-    assert len(reporte.anexos_serializables["resultados_industriales"]) == len(reporte.resultados_dimension)
+    assert len(reporte.anexos_serializables["resultados_industriales"]) == len(
+        reporte.resultados_dimension
+    )
     assert "brechas_globales" in reporte.reporte_macro
