@@ -28,7 +28,8 @@ def _load_evaluator_with_stubs():
     sys.modules["spacy"] = dummy_spacy
 
     class _DummySentenceModel:
-        def encode(self, *args, **kwargs):
+        @staticmethod
+        def encode(*args, **kwargs):
             return MagicMock()
 
         def to(self, *args, **kwargs):

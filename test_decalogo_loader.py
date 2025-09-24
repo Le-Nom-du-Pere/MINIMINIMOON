@@ -140,7 +140,8 @@ class TestDecalogoLoader:
         assert nested_path.parent.exists()
         assert nested_path.read_text(encoding="utf-8") == DECALOGO_INDUSTRIAL_TEMPLATE.strip()
 
-    def test_get_decalogo_idempotent(self, tmp_path):
+    @staticmethod
+    def test_get_decalogo_idempotent(tmp_path):
         """Repeated calls should return the same template content."""
         cache_path = tmp_path / "cached.txt"
         first = get_decalogo_industrial(str(cache_path))
@@ -152,7 +153,8 @@ class TestDecalogoLoader:
 class TestDecalogoIndustrialJSONValidation:
     """Test suite for industrial JSON structure validation per v8.1 specifications."""
 
-    def test_decalogo_industrial_json_structure(self):
+    @staticmethod
+    def test_decalogo_industrial_json_structure():
         """Validate JSON structure aligns with v8.1 industrial framework."""
         json_path = Path("decalogo_industrial.json")
         
@@ -212,7 +214,8 @@ class TestDecalogoIndustrialJSONValidation:
                 assert (ponderacion is not None and isinstance(ponderacion, (int, float)) 
                        and float(ponderacion) > 0), "Positive KPI weighting required"
 
-    def test_decalogo_causal_coherence_validation(self):
+    @staticmethod
+    def test_decalogo_causal_coherence_validation():
         """Test causal coherence requirements per v8.1 framework."""
         json_path = Path("decalogo_industrial.json")
         
@@ -242,7 +245,8 @@ class TestDecalogoIndustrialJSONValidation:
             precondiciones = teoria_cambio["precondiciones"]
             assert len(precondiciones) >= 1, f"Dimension {idx} needs preconditions"
 
-    def test_decalogo_value_chain_completeness(self):
+    @staticmethod
+    def test_decalogo_value_chain_completeness():
         """Test value chain completeness per v8.1 industrial standards."""
         json_path = Path("decalogo_industrial.json")
         
