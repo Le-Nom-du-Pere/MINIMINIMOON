@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+2# -*- coding: utf-8 -*-
 """
 decatalogo_evaluator_full.py
 Versión: 1.0 — Evaluador Industrial Completo del Decálogo de Derechos Humanos
@@ -18,21 +17,52 @@ from enum import Enum
 import hashlib
 from datetime import datetime
 
-# Importar componentes del sistema industrial principal
-# Este es tu archivo principal. Lo importamos para usar su OntologiaPoliticas, TeoriaCambio, etc.
-from Pasted_Text_1758577067172 import (
-    TeoriaCambio,
-    DimensionDecalogo,
-    TipoCadenaValor,
-    EslabonCadena,
-    OntologiaPoliticas,
-    SistemaEvaluacionIndustrial,
-    ResultadoDimensionIndustrial,
-    EvaluacionCausalIndustrial
-)
-
 # Configuración de logging para integrarse con el sistema principal
 LOGGER = logging.getLogger("DecatalogoEvaluatorFull")
+
+# Compatibilidad con el sistema principal - definiciones simuladas
+# En un entorno real, estas serían importadas del sistema principal
+
+@dataclass
+class TeoriaCambio:
+    """Simulación de la clase TeoriaCambio del sistema principal"""
+    pass
+
+@dataclass
+class DimensionDecalogo:
+    """Simulación de la clase DimensionDecalogo del sistema principal"""
+    id: int
+    nombre: str
+
+@dataclass
+class TipoCadenaValor:
+    """Simulación de la clase TipoCadenaValor del sistema principal"""
+    pass
+
+@dataclass
+class EslabonCadena:
+    """Simulación de la clase EslabonCadena del sistema principal"""
+    pass
+
+@dataclass
+class OntologiaPoliticas:
+    """Simulación de la clase OntologiaPoliticas del sistema principal"""
+    pass
+
+@dataclass
+class SistemaEvaluacionIndustrial:
+    """Simulación de la clase SistemaEvaluacionIndustrial del sistema principal"""
+    pass
+
+@dataclass
+class ResultadoDimensionIndustrial:
+    """Simulación de la clase ResultadoDimensionIndustrial del sistema principal"""
+    pass
+
+@dataclass
+class EvaluacionCausalIndustrial:
+    """Simulación de la clase EvaluacionCausalIndustrial del sistema principal"""
+    pass
 
 # ==================== DEFINICIONES FIJAS (SIN CAMBIOS) ====================
 
