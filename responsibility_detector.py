@@ -196,7 +196,8 @@ class ResponsibilityDetector:
         
         return entities
     
-    def _is_government_entity(self, text: str) -> bool:
+    @staticmethod
+    def _is_government_entity(text: str) -> bool:
         """Check if an entity is likely a government organization."""
         text_lower = text.lower()
         government_keywords = [
@@ -207,7 +208,8 @@ class ResponsibilityDetector:
         
         return any(keyword in text_lower for keyword in government_keywords)
     
-    def _merge_overlapping_entities(self, entities: List[ResponsibilityEntity]) -> List[ResponsibilityEntity]:
+    @staticmethod
+    def _merge_overlapping_entities(entities: List[ResponsibilityEntity]) -> List[ResponsibilityEntity]:
         """Merge overlapping entities, keeping the highest confidence one."""
         if not entities:
             return entities
@@ -235,7 +237,8 @@ class ResponsibilityDetector:
         merged.append(current)
         return merged
     
-    def _calculate_final_scores(self, entities: List[ResponsibilityEntity]) -> List[ResponsibilityEntity]:
+    @staticmethod
+    def _calculate_final_scores(entities: List[ResponsibilityEntity]) -> List[ResponsibilityEntity]:
         """Calculate final confidence scores considering entity types and patterns."""
         for entity in entities:
             base_score = entity.confidence

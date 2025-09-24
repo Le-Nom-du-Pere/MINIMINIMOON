@@ -48,7 +48,8 @@ class DeviceConfig:
         
         return device
     
-    def _parse_and_validate_device(self, device_str: str) -> torch.device:
+    @staticmethod
+    def _parse_and_validate_device(device_str: str) -> torch.device:
         """Parse and validate the device string."""
         try:
             device = torch.device(device_str)

@@ -8,7 +8,8 @@ from decalogo_loader import (
 
 
 class TestDecalogoLoader:
-    def test_load_decalogo_no_target_path(self, caplog):
+    @staticmethod
+    def test_load_decalogo_no_target_path(caplog):
         """Test loading without target path returns template and logs appropriately."""
         result = load_decalogo_industrial(None)
 
