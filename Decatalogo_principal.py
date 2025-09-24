@@ -487,6 +487,7 @@ class OntologiaPoliticas:
             raise SystemExit("Fallo en carga de ontología - Requiere intervención manual")
 
     @staticmethod
+    @staticmethod
     def _cargar_indicadores_ods(ruta: Path) -> Dict[str, List[str]]:
         """
         Load ODS indicators with industrial fallback system.
@@ -540,7 +541,7 @@ class OntologiaPoliticas:
 
 
 # ==================== SISTEMA DE CARGA DINÁMICA DEL DECÁLOGO INDUSTRIAL ====================
-def cargar_decalogo_industrial() -> List[Any]:
+def cargar_decalogo_industrial() -> List[DimensionDecalogo]:
     """
     Load complete industrial decalog from JSON with comprehensive schema validation.
     
@@ -549,7 +550,7 @@ def cargar_decalogo_industrial() -> List[Any]:
     theoretical consistency.
     
     Returns:
-        List[Any]: List of validated DimensionDecalogo instances
+        List[DimensionDecalogo]: List of validated DimensionDecalogo instances
         
     Raises:
         SystemExit: When validation fails or critical errors require manual intervention
@@ -1726,7 +1727,7 @@ class ExtractorEvidenciaIndustrial:
             self.logger.error(f"❌ Error en búsqueda semántica global: {e}")
             return []
 
-    def extraer_variables_operativas(self, dimension: DimensionDecalogo) -> Dict[str, List]:
+    def extraer_variables_operativas(self, dimension: DimensionDecalogo) -> Dict[str, List[str]]:
         """Extrae variables operativas específicas para cada dimensión con trazabilidad industrial"""
         variables = {
             "indicadores": [],
@@ -2839,7 +2840,6 @@ def configurar_semillas_deterministas(base_seed: int, plan_name: str) -> None:
 
 
 # ==================== PROCESAMIENTO PARALELO INDUSTRIAL PARA 170+ PLANES ====================
-<<<<<<< HEAD
 def procesar_plan_industrial(pdf_path: Path, base_seed: Optional[int] = None) -> Tuple[str, Dict[str, Any]]:
     """Worker industrial para procesamiento paralelo de planes de desarrollo"""
     nombre_plan = pdf_path.stem
@@ -3138,7 +3138,6 @@ class SistemaMonitoreoIndustrial:
                 self.logger.error(f"❌ Error guardando dump de emergencia: {e}")
                 raise
 
-<<<<<<< HEAD
     def _calcular_estadisticas_parciales(self) -> Dict[str, Any]:
         """Calcula estadísticas parciales de las ejecuciones completadas hasta el momento"""
         completados = [e for e in self.ejecuciones if e["resultado"].get("status") == "completed"]
@@ -3300,7 +3299,7 @@ Ejemplos de uso:
         default=32,
         help="Tamaño de batch para procesamiento de embeddings (default: 32)"
     )
-=======
+
 # ==================== FUNCIÓN PRINCIPAL INDUSTRIAL ====================
 def main():
     """Función principal industrial con procesamiento batch y monitoreo"""
@@ -3320,7 +3319,6 @@ def main():
     output_dir = Path("resultados_evaluacion_industrial")
     output_dir.mkdir(exist_ok=True)
     
-<<<<<<< HEAD
     # Configure device
     device_config = configure_device_from_args(args)
     LOGGER.info(f"🔧 Dispositivo configurado: {device_config.get_device()}")
@@ -3341,7 +3339,6 @@ def main():
 
     LOGGER.info(f"🚀 Iniciando sistema industrial de evaluación de políticas públicas v8.1")
     LOGGER.info(f"📁 Directorio de entrada: {input_path}")
-<<<<<<< HEAD
     if args.max_segmentos:
     
     if base_seed is not None:
@@ -3359,7 +3356,6 @@ def main():
         LOGGER.info(f"🏭 Procesando {len(pdf_paths)} planes de desarrollo en paralelo...")
         LOGGER.info(f"⚙️  Utilizando {os.cpu_count()} núcleos disponibles")
 
-<<<<<<< HEAD
         # Función de procesamiento con argumentos adicionales y monitoreo
         def procesar_con_args(pdf_path):
             return procesar_plan_industrial_con_monitoreo(pdf_path)

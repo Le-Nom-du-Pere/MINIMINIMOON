@@ -421,10 +421,15 @@ class PatternRegistry:
         """Initialize pattern registry with complete pattern sets."""
         self._patterns = self._build_complete_patterns()
 
-    def _build_complete_patterns(self) -> Dict[PatternCategory, Dict[str, Tuple[re.Pattern, str]]]:
-        """
-        Build comprehensive pattern dictionary organized by category.
-        
+    def _build_complete_patterns(
+        self,
+    ) -> Dict[PatternCategory, Dict[str, Tuple[re.Pattern[str], str]]]:
+        """Build comprehensive pattern dictionary.
+
+        Creates a complete set of regex patterns organized by category,
+        covering quotes, punctuation, whitespace, words, numbers, diacritics,
+        control characters, and symbols.
+
         Returns:
             Dict[PatternCategory, Dict[str, Tuple[re.Pattern, str]]]: 
                 Complete pattern registry with compiled patterns and descriptions
@@ -534,26 +539,33 @@ class PatternRegistry:
             },
         }
 
-    def get_patterns(self, category: PatternCategory) -> Dict[str, Tuple[re.Pattern, str]]:
-        """
-        Get patterns for specific category.
-        
+    def get_patterns(
+        self, category: PatternCategory
+    ) -> Dict[str, Tuple[re.Pattern[str], str]]:
+        """Get patterns for a specific category.
+
         Args:
             category (PatternCategory): Pattern category to retrieve
             
         Returns:
-            Dict[str, Tuple[re.Pattern, str]]: Dictionary of pattern name to 
+            Dict[str, Tuple[re.Pattern[str], str]]: Dictionary of pattern name to 
                 (compiled_pattern, description) tuples
 
         """
         return self._patterns.get(category, {})
 
-    def get_all_patterns(self) -> Dict[str, Tuple[re.Pattern, str]]:
+    def get_all_patterns(self) -> Dict[str, Tuple[re.Pattern[str], str]]:
         """
         Get all patterns flattened into single dictionary.
         
+    def get_all_patterns(self) -> Dict[str, Tuple[re.Pattern[str], str]]:
+        """Get all patterns flattened into a single dictionary.
+
+        Creates a flattened view of all patterns with category-prefixed names
+        for comprehensive pattern matching across all categories.
+
         Returns:
-            Dict[str, Tuple[re.Pattern, str]]: All patterns with category prefixes
+            Dict[str, Tuple[re.Pattern[str], str]]: All patterns with category prefixes
                 in format "category_name": (pattern, description)
 
         """
