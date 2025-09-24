@@ -107,18 +107,42 @@ class TipoCadenaValor(Enum):
 
 @dataclass(frozen=True)
 class TeoriaCambio:
-    """Representación formal de teoría de cambio como DAG causal con verificación matemática"""
+    """Representación formal de teoría de cambio como DAG causal con verificación matemática.
+    
+    Esta clase modela una teoría de cambio como un grafo dirigido acíclico (DAG) causal,
+    implementando métodos de identificabilidad según Pearl (2009) y análisis de robustez.
+    
+    Attributes:
+        supuestos_causales: Lista de supuestos causales fundamentales.
+        mediadores: Diccionario de mediadores categorizados por tipo.
+        resultados_intermedios: Lista de resultados intermedios esperados.
+        precondiciones: Lista de precondiciones necesarias.
+    """
     supuestos_causales: List[str]
     mediadores: Dict[str, List[str]]
     resultados_intermedios: List[str]
     precondiciones: List[str]
 
     def verificar_identificabilidad(self) -> bool:
-        """Verifica condiciones de identificabilidad según Pearl (2009)"""
+        """Verifica condiciones de identificabilidad según Pearl (2009).
+        
+        Evalúa si la teoría de cambio cumple con los criterios básicos
+        de identificabilidad causal para análisis estadístico válido.
+        
+        Returns:
+            bool: True si la teoría es identificable, False en caso contrario.
+        """
         return len(self.supuestos_causales) > 0 and len(self.mediadores) > 0 and len(self.resultados_intermedios) > 0
 
     def construir_grafo_causal(self) -> nx.DiGraph:
-        """Construye grafo causal para análisis de paths y d-separación"""
+        """Construye grafo causal para análisis de paths y d-separación.
+        
+        Crea un grafo dirigido NetworkX que representa la estructura causal
+        de la teoría de cambio, incluyendo nodos, aristas y pesos.
+        
+        Returns:
+            nx.DiGraph: Grafo dirigido con la estructura causal completa.
+        """
         G = nx.DiGraph()
         # Nodos base obligatorios
         G.add_node("insumos", tipo="nodo_base")
@@ -139,7 +163,14 @@ class TeoriaCambio:
         return G
 
     def calcular_coeficiente_causal(self) -> float:
-        """Calcula coeficiente de robustez causal basado en conectividad y paths"""
+        """Calcula coeficiente de robustez causal basado en conectividad y paths.
+        
+        Computa un índice de robustez causal basado en la proporción de
+        paths causales válidos en el grafo construido.
+        
+        Returns:
+            float: Coeficiente de robustez causal entre 0.0 y 1.0.
+        """
         G = self.construir_grafo_causal()
         if len(G.nodes) < 3:
             return 0.3
@@ -162,7 +193,20 @@ class TeoriaCambio:
 
 @dataclass(frozen=True)
 class EslabonCadena:
-    """Modelo industrial de eslabón de cadena de valor con métricas cuantitativas"""
+    """Modelo industrial de eslabón de cadena de valor con métricas cuantitativas.
+    
+    Representa un eslabón individual en la cadena de valor de políticas públicas,
+    incluyendo indicadores, capacidades, puntos críticos y métricas temporales.
+    
+    Attributes:
+        id: Identificador único del eslabón.
+        tipo: Tipo de cadena de valor (INSUMOS, PROCESOS, PRODUCTOS, etc.).
+        indicadores: Lista de indicadores asociados al eslabón.
+        capacidades_requeridas: Capacidades necesarias para el eslabón.
+        puntos_criticos: Puntos críticos identificados.
+        ventana_temporal: Tupla con rango temporal en meses (mínimo, máximo).
+        kpi_ponderacion: Factor de ponderación para cálculos de KPI.
+    """
     id: str
     tipo: TipoCadenaValor
     indicadores: List[str]
@@ -172,6 +216,12 @@ class EslabonCadena:
     kpi_ponderacion: float = 1.0  # Ponderación para cálculo de KPI
 
     def __post_init__(self):
+        """Validación industrial de datos post-inicialización.
+        
+        Raises:
+            ValueError: Si la ponderación KPI está fuera del rango válido o
+                       si la ventana temporal es inválida.
+        """
         # Validación industrial de datos
         if not (0 <= self.kpi_ponderacion <= 2.0):
             raise ValueError("KPI ponderación debe estar entre 0 y 2.0")
@@ -179,11 +229,25 @@ class EslabonCadena:
             raise ValueError("Ventana temporal inválida")
 
     def calcular_lead_time(self) -> float:
-        """Calcula lead time esperado con intervalo de confianza"""
+        """Calcula lead time esperado con intervalo de confianza.
+        
+        Computa el tiempo promedio esperado para completar el eslabón
+        basado en la ventana temporal especificada.
+        
+        Returns:
+            float: Lead time promedio en meses.
+        """
         return (self.ventana_temporal[0] + self.ventana_temporal[1]) / 2.0
 
     def generar_hash(self) -> str:
-        """Genera hash único para trazabilidad industrial"""
+        """Genera hash único para trazabilidad industrial.
+        
+        Crea un hash MD5 único basado en los atributos clave del eslabón
+        para propósitos de trazabilidad y verificación de integridad.
+        
+        Returns:
+            str: Hash MD5 hexadecimal del eslabón.
+        """
         data = f"{self.id}|{self.tipo.value}|{sorted(self.indicadores)}|{sorted(self.capacidades_requeridas)}"
         return hashlib.md5(data.encode('utf-8')).hexdigest()
 
@@ -191,7 +255,18 @@ class EslabonCadena:
 # ==================== ONTOLOGÍA DE POLÍTICAS PÚBLICAS INDUSTRIAL ====================
 @dataclass
 class OntologiaPoliticas:
-    """Sistema ontológico industrial con validación cruzada y trazabilidad"""
+    """Sistema ontológico industrial con validación cruzada y trazabilidad.
+    
+    Sistema integral de ontología para políticas públicas que incluye dimensiones
+    temáticas, relaciones causales e indicadores ODS con validación robusta.
+    
+    Attributes:
+        dimensiones: Diccionario de dimensiones temáticas y sus componentes.
+        relaciones_causales: Mapeo de relaciones causales entre conceptos.
+        indicadores_ods: Indicadores asociados a Objetivos de Desarrollo Sostenible.
+        fecha_creacion: Timestamp ISO de creación de la ontología.
+        version: Versión del sistema ontológico.
+    """
     dimensiones: Dict[str, List[str]]
     relaciones_causales: Dict[str, List[str]]
     indicadores_ods: Dict[str, List[str]]
@@ -200,7 +275,17 @@ class OntologiaPoliticas:
 
     @classmethod
     def cargar_estandar(cls) -> 'OntologiaPoliticas':
-        """Carga ontología con validación industrial robusta y fallback jerárquico"""
+        """Carga ontología con validación industrial robusta y fallback jerárquico.
+        
+        Inicializa una ontología estándar con dimensiones predefinidas,
+        relaciones causales validadas e indicadores ODS estructurados.
+        
+        Returns:
+            OntologiaPoliticas: Instancia de ontología completamente inicializada.
+            
+        Raises:
+            SystemExit: Si falla la carga crítica de la ontología.
+        """
         try:
             dimensiones_industrial = {
                 "social": ["salud", "educación", "vivienda", "protección_social", "equidad_genero", "inclusión"],
@@ -235,7 +320,17 @@ class OntologiaPoliticas:
 
     @staticmethod
     def _cargar_indicadores_ods(ruta: Path) -> Dict[str, List[str]]:
-        """Carga indicadores ODS con sistema de fallback industrial"""
+        """Carga indicadores ODS con sistema de fallback industrial.
+        
+        Carga indicadores de Objetivos de Desarrollo Sostenible desde archivo JSON,
+        con sistema de fallback robusto que genera templates si es necesario.
+        
+        Args:
+            ruta: Ruta del archivo JSON con indicadores ODS.
+            
+        Returns:
+            Dict[str, List[str]]: Diccionario de indicadores ODS por objetivo.
+        """
         indicadores_base = {
             "ods1": ["tasa_pobreza", "protección_social", "vulnerabilidad_económica"],
             "ods3": ["mortalidad_infantil", "acceso_salud", "cobertura_sanitaria"],
@@ -272,7 +367,18 @@ class OntologiaPoliticas:
 
 # ==================== SISTEMA DE CARGA DINÁMICA DEL DECÁLOGO INDUSTRIAL ====================
 def cargar_decalogo_industrial() -> List[Any]:
-    """Carga el decálogo industrial completo desde JSON con validación de esquema"""
+    """Carga el decálogo industrial completo desde JSON con validación de esquema.
+    
+    Esta función carga y valida el decálogo industrial desde un archivo JSON,
+    aplicando validación exhaustiva de esquema y construcción de objetos complejos.
+    
+    Returns:
+        List[Any]: Lista de dimensiones del decálogo validadas e instanciadas.
+        
+    Raises:
+        SystemExit: Si falla la validación o carga del decálogo.
+        ValueError: Si la estructura del JSON es inválida.
+    """
     json_path = Path("decalogo_industrial.json")
 
     if json_path.exists():

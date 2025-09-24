@@ -160,7 +160,21 @@ class ExportError(UnicodeAnalyzerError):
 # ============================================================================
 
 def normalize_unicode(text: str, form: str = 'NFC') -> str:
-    """Normalize Unicode text to specified form."""
+    """Normalize Unicode text to specified form.
+    
+    Applies Unicode normalization to ensure consistent character representation
+    across different input sources and encoding variations.
+    
+    Args:
+        text: Input text to normalize.
+        form: Unicode normalization form ('NFC', 'NFD', 'NFKC', 'NFKD').
+        
+    Returns:
+        Normalized Unicode text string.
+        
+    Raises:
+        Logs warning if normalization fails, returns original text.
+    """
     if not text:
         return text
 
@@ -172,13 +186,33 @@ def normalize_unicode(text: str, form: str = 'NFC') -> str:
 
 
 def find_quotes(text: str) -> List[int]:
-    """Find all quote positions in text."""
+    """Find all quote positions in text.
+    
+    Identifies various types of quotation marks including smart quotes,
+    straight quotes, guillemets, and other Unicode quote characters.
+    
+    Args:
+        text: Text to search for quotes.
+        
+    Returns:
+        List of character positions where quotes are found.
+    """
     quote_pattern = re.compile(r'[""''"\'\u201C\u201D\u2018\u2019\u00AB\u00BB\u2039\u203A]')
     return [m.start() for m in quote_pattern.finditer(text)]
 
 
 def count_words(text: str) -> int:
-    """Count words with Unicode support."""
+    """Count words with Unicode support.
+    
+    Performs multi-script word counting supporting Latin, CJK, Arabic,
+    Hebrew, Devanagari, and Cyrillic scripts with normalization.
+    
+    Args:
+        text: Text to count words in.
+        
+    Returns:
+        Total number of words across all supported scripts.
+    """
     if not text:
         return 0
 
@@ -204,7 +238,17 @@ def count_words(text: str) -> int:
 
 
 def extract_unicode_scripts(text: str) -> Dict[str, int]:
-    """Extract Unicode script information."""
+    """Extract Unicode script information.
+    
+    Analyzes text to identify and count characters from different
+    Unicode scripts and writing systems.
+    
+    Args:
+        text: Text to analyze for script information.
+        
+    Returns:
+        Dictionary mapping script names to character counts.
+    """
     script_counts = defaultdict(int)
 
     for char in text:
@@ -220,7 +264,17 @@ def extract_unicode_scripts(text: str) -> Dict[str, int]:
 
 
 def get_unicode_script(code_point: int) -> str:
-    """Determine Unicode script from code point."""
+    """Determine Unicode script from code point.
+    
+    Maps Unicode code points to their corresponding script or writing
+    system based on standard Unicode block assignments.
+    
+    Args:
+        code_point: Unicode code point value.
+        
+    Returns:
+        String identifying the Unicode script or 'Other' for unrecognized ranges.
+    """
     # Simplified script detection based on ranges
     if 0x0000 <= code_point <= 0x007F:
         return 'Latin'
@@ -257,13 +311,29 @@ def get_unicode_script(code_point: int) -> str:
 # ============================================================================
 
 class PatternRegistry:
-    """Centralized pattern registry with complete implementations."""
+    """Centralized pattern registry with complete implementations.
+    
+    This class maintains a comprehensive registry of Unicode patterns for
+    text analysis, organizing patterns by category with descriptions.
+    
+    Attributes:
+        _patterns: Internal pattern storage organized by category.
+    """
 
     def __init__(self):
+        """Initialize pattern registry with complete pattern sets."""
         self._patterns = self._build_complete_patterns()
 
     def _build_complete_patterns(self) -> Dict[PatternCategory, Dict[str, Tuple[re.Pattern, str]]]:
-        """Build comprehensive pattern dictionary."""
+        """Build comprehensive pattern dictionary.
+        
+        Creates a complete set of regex patterns organized by category,
+        covering quotes, punctuation, whitespace, words, numbers, diacritics,
+        control characters, and symbols.
+        
+        Returns:
+            Dictionary mapping pattern categories to pattern dictionaries.
+        """
         return {
             PatternCategory.QUOTES: {
                 'smart_double_quotes': (re.compile(r'[""„‚]'), 'Smart double quotes'),
@@ -339,11 +409,25 @@ class PatternRegistry:
         }
 
     def get_patterns(self, category: PatternCategory) -> Dict[str, Tuple[re.Pattern, str]]:
-        """Get patterns for category."""
+        """Get patterns for a specific category.
+        
+        Args:
+            category: Pattern category to retrieve.
+            
+        Returns:
+            Dictionary of patterns for the specified category.
+        """
         return self._patterns.get(category, {})
 
     def get_all_patterns(self) -> Dict[str, Tuple[re.Pattern, str]]:
-        """Get all patterns flattened."""
+        """Get all patterns flattened into a single dictionary.
+        
+        Creates a flattened view of all patterns with category-prefixed names
+        for comprehensive pattern matching across all categories.
+        
+        Returns:
+            Dictionary mapping full pattern names to (pattern, description) tuples.
+        """
         all_patterns = {}
         for category, patterns in self._patterns.items():
             for name, (pattern, desc) in patterns.items():
@@ -357,9 +441,20 @@ class PatternRegistry:
 # ============================================================================
 
 class PerformanceMonitor:
-    """Thread-safe performance monitoring."""
+    """Thread-safe performance monitoring.
+    
+    This class provides comprehensive performance monitoring capabilities
+    with timing measurements, memory usage tracking, and statistical analysis.
+    
+    Attributes:
+        metrics: Dictionary storing timing measurements by operation.
+        memory_samples: Dictionary storing memory usage changes by operation.
+        _lock: Thread synchronization lock for thread-safe operations.
+        start_time: Monitor initialization timestamp.
+    """
 
     def __init__(self):
+        """Initialize performance monitor with empty metrics."""
         self.metrics: Dict[str, List[float]] = defaultdict(list)
         self.memory_samples: Dict[str, List[int]] = defaultdict(list)
         self._lock = threading.Lock()
@@ -367,7 +462,17 @@ class PerformanceMonitor:
 
     @contextmanager
     def measure(self, operation: str):
-        """Measure operation performance."""
+        """Measure operation performance with context manager.
+        
+        Provides a context manager for measuring operation execution time
+        and memory usage changes with thread-safe storage.
+        
+        Args:
+            operation: Name of the operation being measured.
+            
+        Yields:
+            Control to the measured operation.
+        """
         start_time = time.perf_counter()
         start_memory = self._get_memory_usage()
 
@@ -385,7 +490,14 @@ class PerformanceMonitor:
                 self.memory_samples[operation].append(memory_delta)
 
     def _get_memory_usage(self) -> int:
-        """Get current memory usage in bytes."""
+        """Get current memory usage in bytes.
+        
+        Attempts to get accurate memory usage via psutil, falls back
+        to garbage collector-based estimation if psutil unavailable.
+        
+        Returns:
+            Current memory usage in bytes.
+        """
         try:
             import psutil
             return psutil.Process().memory_info().rss
@@ -394,7 +506,18 @@ class PerformanceMonitor:
             return len(gc.get_objects()) * 64  # Rough estimate
 
     def get_statistics(self, operation: str) -> Dict[str, Any]:
-        """Get operation statistics."""
+        """Get operation statistics.
+        
+        Computes comprehensive statistics for a specific operation including
+        timing metrics, memory usage, and statistical measures.
+        
+        Args:
+            operation: Operation name to get statistics for.
+            
+        Returns:
+            Dictionary containing timing and memory statistics, or empty
+            dictionary if no data is available.
+        """
         with self._lock:
             times = self.metrics.get(operation, [])
             memory_deltas = self.memory_samples.get(operation, [])
@@ -421,7 +544,13 @@ class PerformanceMonitor:
         return stats
 
     def get_all_statistics(self) -> Dict[str, Dict[str, Any]]:
-        """Get all operation statistics."""
+        """Get all operation statistics.
+        
+        Returns comprehensive statistics for all monitored operations.
+        
+        Returns:
+            Dictionary mapping operation names to their statistics.
+        """
         return {op: self.get_statistics(op) for op in self.metrics.keys()}
 
 
@@ -430,10 +559,29 @@ class PerformanceMonitor:
 # ============================================================================
 
 class IndustrialUnicodeAnalyzer:
-    """Complete industrial Unicode analyzer with zero dependencies."""
+    """Complete industrial Unicode analyzer with zero dependencies.
+    
+    This class provides comprehensive Unicode text analysis capabilities
+    including normalization, pattern detection, and statistical analysis
+    with enterprise-grade performance monitoring and caching.
+    
+    Attributes:
+        config: Analyzer configuration dictionary.
+        pattern_registry: Registry of Unicode patterns for analysis.
+        performance_monitor: Performance monitoring and metrics collection.
+        logger: Configured logger for the analyzer.
+        stats: Runtime statistics dictionary.
+    """
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
-        """Initialize analyzer with configuration."""
+        """Initialize analyzer with configuration.
+        
+        Args:
+            config: Optional configuration dictionary. If None, uses defaults.
+            
+        Raises:
+            ConfigurationError: If configuration validation fails.
+        """
         self.config = self._validate_and_load_config(config or {})
         self.pattern_registry = PatternRegistry()
         self.performance_monitor = PerformanceMonitor()
@@ -458,7 +606,20 @@ class IndustrialUnicodeAnalyzer:
         self.logger.info(f"Analyzer initialized with config: {self.config}")
 
     def _validate_and_load_config(self, user_config: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate and merge configuration."""
+        """Validate and merge configuration.
+        
+        Validates user configuration against defaults and ensures all
+        parameters are within acceptable ranges and types.
+        
+        Args:
+            user_config: User-provided configuration dictionary.
+            
+        Returns:
+            Merged and validated configuration dictionary.
+            
+        Raises:
+            ConfigurationError: If any configuration values are invalid.
+        """
         default_config = {
             'analysis_level': AnalysisLevel.STANDARD,
             'normalization_forms': [NormalizationForm.NFC, NormalizationForm.NFD],
@@ -490,7 +651,14 @@ class IndustrialUnicodeAnalyzer:
         return config
 
     def _setup_logging(self) -> logging.Logger:
-        """Set up comprehensive logging."""
+        """Set up comprehensive logging.
+        
+        Configures logging with both console and file handlers,
+        avoiding duplicate handlers for multiple analyzer instances.
+        
+        Returns:
+            Configured logger instance.
+        """
         logger = logging.getLogger(f'UnicodeAnalyzer_{id(self)}')
         logger.setLevel(logging.INFO)
 
@@ -1405,7 +1573,7 @@ class IndustrialDemoRunner:
         """Create comprehensive industrial-grade test suite."""
         return [
             # Basic normalization scenarios
-            ('basic_quotes', '"Hello World" vs "Hello World" and "single quotes"'),
+            ('basic_quotes', '"Hello World" vs "Hello World" and \'single quotes\''),
             ('accented_basic', 'café résumé naïve Zürich'),
             ('em_dash_test', 'Text—with—em—dashes vs Text-with-hyphens'),
             ('ellipsis_test', 'Wait… vs Wait... for response'),

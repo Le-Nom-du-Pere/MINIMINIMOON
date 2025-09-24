@@ -51,9 +51,25 @@ os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
 # Industrial logging configuration
 class ProductionLogger:
-    """Thread-safe structured logger for production environments."""
+    """Thread-safe structured logger for production environments.
+    
+    This class provides centralized logging with performance metrics collection
+    and thread-safe operations for high-concurrency environments.
+    
+    Attributes:
+        logger: The underlying Python logger instance.
+        _metrics: Thread-safe counter for various metrics.
+        _timings: Thread-safe collection of timing measurements.
+        _lock: RLock for thread synchronization.
+    """
 
     def __init__(self, name: str, level: int = logging.INFO):
+        """Initialize the production logger.
+        
+        Args:
+            name: Logger name identifier.
+            level: Logging level (default: INFO).
+        """
         self.logger = logging.getLogger(name)
         self.logger.setLevel(level)
 
@@ -71,12 +87,22 @@ class ProductionLogger:
         self._lock = threading.RLock()
 
     def metric(self, name: str, value: Union[int, float] = 1):
-        """Thread-safe metric collection."""
+        """Record a metric value in a thread-safe manner.
+        
+        Args:
+            name: Metric name identifier.
+            value: Numeric value to add to the metric.
+        """
         with self._lock:
             self._metrics[name] += value
 
     def timing(self, name: str, duration: float):
-        """Thread-safe timing collection."""
+        """Record a timing measurement in a thread-safe manner.
+        
+        Args:
+            name: Timing operation name.
+            duration: Duration in seconds.
+        """
         with self._lock:
             self._timings[name].append(duration)
             # Keep only last 1000 measurements
@@ -84,7 +110,12 @@ class ProductionLogger:
                 self._timings[name] = self._timings[name][-1000:]
 
     def get_metrics(self) -> Dict[str, Any]:
-        """Get collected metrics and statistics."""
+        """Get collected metrics and statistics.
+        
+        Returns:
+            Dictionary containing timing statistics and metric counters,
+            including average times, percentiles, and counts.
+        """
         with self._lock:
             stats = {}
             for name, values in self._timings.items():
@@ -99,15 +130,39 @@ class ProductionLogger:
             return stats
 
     def info(self, msg: str, **kwargs):
+        """Log an info-level message.
+        
+        Args:
+            msg: Message to log.
+            **kwargs: Additional context for structured logging.
+        """
         self.logger.info(msg, extra=kwargs)
 
     def error(self, msg: str, **kwargs):
+        """Log an error-level message.
+        
+        Args:
+            msg: Error message to log.
+            **kwargs: Additional context for structured logging.
+        """
         self.logger.error(msg, extra=kwargs)
 
     def warning(self, msg: str, **kwargs):
+        """Log a warning-level message.
+        
+        Args:
+            msg: Warning message to log.
+            **kwargs: Additional context for structured logging.
+        """
         self.logger.warning(msg, extra=kwargs)
 
     def debug(self, msg: str, **kwargs):
+        """Log a debug-level message.
+        
+        Args:
+            msg: Debug message to log.
+            **kwargs: Additional context for structured logging.
+        """
         self.logger.debug(msg, extra=kwargs)
 
 
@@ -164,7 +219,20 @@ atexit.register(dump_monitoring_state)
 
 
 def performance_monitor(func):
-    """Decorator for monitoring function performance."""
+    """Decorator for monitoring function performance and collecting metrics.
+    
+    This decorator tracks execution time, success/failure rates, and logs
+    performance metrics for monitored functions.
+    
+    Args:
+        func: Function to be monitored.
+        
+    Returns:
+        Wrapped function with performance monitoring capabilities.
+        
+    Raises:
+        Re-raises any exceptions from the wrapped function after logging.
+    """
 
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -185,23 +253,53 @@ def performance_monitor(func):
 
 
 class EmbeddingModelError(Exception):
-    """Base exception for embedding model operations."""
+    """Base exception for embedding model operations.
+    
+    This is the parent class for all embedding model-related exceptions,
+    providing a common interface for error handling in the embedding system.
+    """
     pass
 
 
 class ModelInitializationError(EmbeddingModelError):
-    """Exception raised when model initialization fails."""
+    """Exception raised when model initialization fails.
+    
+    This exception is raised when there are issues loading or initializing
+    embedding models, such as missing files, insufficient memory, or
+    incompatible model formats.
+    """
     pass
 
 
 class EmbeddingComputationError(EmbeddingModelError):
-    """Exception raised during embedding computation."""
+    """Exception raised during embedding computation.
+    
+    This exception is raised when there are issues during the actual
+    embedding computation process, such as input validation failures,
+    tensor operations errors, or computation timeouts.
+    """
     pass
 
 
 @dataclass
 class ModelConfiguration:
-    """Configuration for embedding models with performance characteristics."""
+    """Configuration for embedding models with performance characteristics.
+    
+    This dataclass encapsulates all configuration parameters for embedding models,
+    including performance metrics and operational settings for optimal model selection.
+    
+    Attributes:
+        name: Model identifier name.
+        batch_size: Optimal batch size for this model.
+        dimension: Embedding vector dimensionality.
+        max_seq_length: Maximum sequence length supported.
+        quality_tier: Quality tier classification (e.g., 'high', 'medium', 'low').
+        memory_footprint_mb: Approximate memory usage in megabytes.
+        avg_encode_time_ms: Average encoding time in milliseconds.
+        supports_instruction: Whether model supports instruction-following.
+        pooling_mode: Token pooling strategy (default: "mean").
+        normalization_default: Whether to normalize embeddings by default.
+    """
     name: str
     batch_size: int
     dimension: int
@@ -216,7 +314,19 @@ class ModelConfiguration:
 
 @dataclass
 class InstructionProfile:
-    """Profile for instruction-based transformations."""
+    """Profile for instruction-based transformations.
+    
+    This dataclass tracks the usage and effectiveness of specific instruction
+    embeddings for performance optimization and caching strategies.
+    
+    Attributes:
+        instruction_hash: Unique hash identifier for the instruction.
+        embedding: Cached embedding vector for the instruction.
+        usage_count: Number of times this instruction has been used.
+        last_used: Timestamp of last usage.
+        effectiveness_score: Measured effectiveness score for this instruction.
+        semantic_coherence: Semantic coherence score with target embeddings.
+    """
     instruction_hash: str
     embedding: np.ndarray
     usage_count: int = 0
@@ -226,26 +336,55 @@ class InstructionProfile:
 
 
 class MemoryManager:
-    """Advanced memory management system with automatic cleanup."""
+    """Advanced memory management system with automatic cleanup.
+    
+    This class provides intelligent memory monitoring and cleanup capabilities
+    for embedding operations, preventing OOM errors during intensive processing.
+    
+    Attributes:
+        memory_threshold: Memory usage threshold (0.0-1.0) that triggers cleanup.
+        _lock: Thread synchronization lock for memory operations.
+    """
     
     def __init__(self, memory_threshold: float = 0.85):
+        """Initialize memory manager with specified threshold.
+        
+        Args:
+            memory_threshold: Memory usage threshold (0.0-1.0) for cleanup trigger.
+        """
         self.memory_threshold = memory_threshold
         self._lock = threading.RLock()
     
     def get_memory_usage(self) -> float:
-        """Get current memory usage as percentage."""
+        """Get current memory usage as percentage.
+        
+        Returns:
+            Memory usage as a float between 0.0 and 1.0.
+        """
         return psutil.virtual_memory().percent / 100.0
     
     def get_available_memory_gb(self) -> float:
-        """Get available memory in GB."""
+        """Get available memory in GB.
+        
+        Returns:
+            Available memory in gigabytes.
+        """
         return psutil.virtual_memory().available / (1024**3)
     
     def should_trigger_cleanup(self) -> bool:
-        """Check if memory cleanup should be triggered."""
+        """Check if memory cleanup should be triggered.
+        
+        Returns:
+            True if memory usage exceeds threshold, False otherwise.
+        """
         return self.get_memory_usage() > self.memory_threshold
     
     def cleanup_memory(self):
-        """Force garbage collection and CUDA cache cleanup."""
+        """Force garbage collection and CUDA cache cleanup.
+        
+        Performs synchronized cleanup of Python garbage collector and
+        CUDA memory cache if available.
+        """
         with self._lock:
             gc.collect()
             if torch.cuda.is_available():
@@ -254,7 +393,14 @@ class MemoryManager:
     
     @contextmanager
     def managed_operation(self):
-        """Context manager for memory-managed operations."""
+        """Context manager for memory-managed operations.
+        
+        Automatically performs memory cleanup before and after operations
+        if memory usage is high.
+        
+        Yields:
+            Control to the managed operation.
+        """
         initial_memory = self.get_memory_usage()
         try:
             if self.should_trigger_cleanup():
@@ -267,10 +413,31 @@ class MemoryManager:
 
 
 class EmbeddingCache:
-    """Advanced embedding cache with disk serialization and memory management."""
+    """Advanced embedding cache with disk serialization and memory management.
+    
+    This class provides a two-tier caching system with in-memory and disk storage,
+    automatic cleanup, and intelligent cache management for embedding operations.
+    
+    Attributes:
+        cache_dir: Directory for disk cache storage.
+        max_memory_size: Maximum number of items in memory cache.
+        max_disk_size_gb: Maximum disk cache size in gigabytes.
+        _memory_cache: In-memory cache dictionary.
+        _access_times: Access time tracking for LRU eviction.
+        _access_counts: Usage frequency tracking.
+        _lock: Thread synchronization lock.
+        _disk_files: Set of cached files on disk.
+    """
     
     def __init__(self, cache_dir: str = ".embedding_cache", max_memory_size: int = 1000, 
                  max_disk_size_gb: float = 10.0):
+        """Initialize embedding cache with specified parameters.
+        
+        Args:
+            cache_dir: Directory path for disk cache storage.
+            max_memory_size: Maximum number of items in memory cache.
+            max_disk_size_gb: Maximum disk cache size in gigabytes.
+        """
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(exist_ok=True)
         self.max_memory_size = max_memory_size
@@ -287,16 +454,27 @@ class EmbeddingCache:
         self._update_disk_files()
     
     def _update_disk_files(self):
-        """Update list of cached files on disk."""
+        """Update list of cached files on disk.
+        
+        Scans the cache directory to maintain an up-to-date set of cached files.
+        """
         self._disk_files = set(self.cache_dir.glob("*.pt"))
     
     def _get_disk_usage_gb(self) -> float:
-        """Get current disk cache usage in GB."""
+        """Get current disk cache usage in GB.
+        
+        Returns:
+            Total disk usage of cache files in gigabytes.
+        """
         total_size = sum(f.stat().st_size for f in self._disk_files if f.exists())
         return total_size / (1024**3)
     
     def _cleanup_disk_cache(self):
-        """Clean up oldest disk cache files when size limit exceeded."""
+        """Clean up oldest disk cache files when size limit exceeded.
+        
+        Removes the least recently accessed files from disk cache when the
+        total cache size exceeds the configured limit.
+        """
         if self._get_disk_usage_gb() <= self.max_disk_size_gb:
             return
         
@@ -316,7 +494,20 @@ class EmbeddingCache:
     def _generate_cache_key(self, texts: List[str], normalize: bool, 
                           instruction: Optional[str] = None, 
                           instruction_strength: float = 0.4) -> str:
-        """Generate cache key for text embeddings."""
+        """Generate cache key for text embeddings.
+        
+        Creates a unique cache key based on input parameters to ensure
+        consistent caching and retrieval of embeddings.
+        
+        Args:
+            texts: List of input texts.
+            normalize: Whether normalization is applied.
+            instruction: Optional instruction string.
+            instruction_strength: Instruction strength parameter.
+            
+        Returns:
+            SHA-256 hash string as cache key.
+        """
         cache_components = [
             str(hash(tuple(texts))),
             str(normalize),
@@ -326,7 +517,17 @@ class EmbeddingCache:
         return hashlib.sha256("|".join(cache_components).encode()).hexdigest()
     
     def get(self, cache_key: str) -> Optional[torch.Tensor]:
-        """Get cached embeddings, checking memory first then disk."""
+        """Get cached embeddings, checking memory first then disk.
+        
+        Implements a two-tier cache lookup with automatic promotion of
+        frequently accessed items to memory cache.
+        
+        Args:
+            cache_key: Unique identifier for cached embeddings.
+            
+        Returns:
+            Cached tensor if found, None otherwise.
+        """
         with self._lock:
             # Check memory cache first
             if cache_key in self._memory_cache:
@@ -358,7 +559,15 @@ class EmbeddingCache:
             return None
     
     def put(self, cache_key: str, embeddings: torch.Tensor):
-        """Store embeddings in cache with memory and disk management."""
+        """Store embeddings in cache with memory and disk management.
+        
+        Implements intelligent cache storage with LRU eviction for memory
+        cache and automatic disk persistence for durability.
+        
+        Args:
+            cache_key: Unique identifier for the embeddings.
+            embeddings: Tensor to cache.
+        """
         with self._lock:
             # Always store to memory cache if there's space
             if len(self._memory_cache) < self.max_memory_size:
@@ -393,9 +602,27 @@ class EmbeddingCache:
 
 
 class AdaptiveCache:
-    """High-performance adaptive cache with intelligent eviction."""
+    """High-performance adaptive cache with intelligent eviction.
+    
+    This class implements an adaptive caching strategy with TTL-based expiration
+    and intelligent LRU eviction based on access frequency and recency.
+    
+    Attributes:
+        max_size: Maximum number of items to cache.
+        ttl_seconds: Time-to-live for cached items in seconds.
+        _cache: Internal cache storage dictionary.
+        _access_times: Timestamp tracking for cache items.
+        _access_counts: Access frequency counters.
+        _lock: Thread synchronization lock.
+    """
 
     def __init__(self, max_size: int = 10000, ttl_seconds: int = 3600):
+        """Initialize adaptive cache with specified parameters.
+        
+        Args:
+            max_size: Maximum number of items to store in cache.
+            ttl_seconds: Time-to-live for cached items in seconds.
+        """
         self.max_size = max_size
         self.ttl_seconds = ttl_seconds
         self._cache = {}
@@ -404,7 +631,10 @@ class AdaptiveCache:
         self._lock = threading.RLock()
 
     def _cleanup_expired(self):
-        """Remove expired entries."""
+        """Remove expired entries based on TTL.
+        
+        Scans the cache for items that have exceeded their TTL and removes them.
+        """
         current_time = time.time()
         expired_keys = [
             key for key, access_time in self._access_times.items()
@@ -416,7 +646,14 @@ class AdaptiveCache:
             self._access_counts.pop(key, None)
 
     def get(self, key: str) -> Optional[Any]:
-        """Get item from cache."""
+        """Get item from cache with automatic cleanup.
+        
+        Args:
+            key: Cache key to retrieve.
+            
+        Returns:
+            Cached value if found and not expired, None otherwise.
+        """
         with self._lock:
             self._cleanup_expired()
             if key in self._cache:
@@ -426,7 +663,15 @@ class AdaptiveCache:
             return None
 
     def put(self, key: str, value: Any):
-        """Put item in cache with intelligent eviction."""
+        """Put item in cache with intelligent eviction.
+        
+        Uses a scoring system based on access frequency and recency for
+        intelligent eviction when the cache reaches capacity.
+        
+        Args:
+            key: Cache key to store.
+            value: Value to cache.
+        """
         with self._lock:
             self._cleanup_expired()
 
@@ -446,7 +691,11 @@ class AdaptiveCache:
             self._access_counts[key] = 1
 
     def stats(self) -> Dict[str, int]:
-        """Get cache statistics."""
+        """Get cache statistics.
+        
+        Returns:
+            Dictionary containing cache size, capacity, and usage statistics.
+        """
         with self._lock:
             return {
                 "size": len(self._cache),
@@ -457,7 +706,12 @@ class AdaptiveCache:
 
 
 class StatisticalNumericsAnalyzer:
-    """Advanced statistical analysis for numeric content in embeddings."""
+    """Advanced statistical analysis for numeric content in embeddings.
+    
+    This class provides comprehensive analysis of numeric patterns in text,
+    supporting various formats, currencies, units, and statistical comparisons
+    for enhanced embedding quality assessment.
+    """
 
     # Comprehensive numeric pattern recognition
     NUMERIC_PATTERNS = {
@@ -481,7 +735,18 @@ class StatisticalNumericsAnalyzer:
 
     @classmethod
     def extract_comprehensive_numerics(cls, text: str) -> Dict[str, List[Dict[str, Any]]]:
-        """Extract all numeric information with context and metadata."""
+        """Extract all numeric information with context and metadata.
+        
+        Analyzes text to identify and extract various types of numeric content,
+        providing context and metadata for each match.
+        
+        Args:
+            text: Input text to analyze for numeric patterns.
+            
+        Returns:
+            Dictionary mapping pattern types to lists of match dictionaries
+            containing raw text, numeric value, position, context, and type.
+        """
         results = {}
 
         for pattern_name, pattern in cls.NUMERIC_PATTERNS.items():
@@ -513,7 +778,18 @@ class StatisticalNumericsAnalyzer:
 
     @classmethod
     def _clean_numeric_string(cls, raw: str, pattern_type: str) -> Optional[float]:
-        """Clean and convert numeric string to float."""
+        """Clean and convert numeric string to float.
+        
+        Processes raw numeric strings by removing prefixes, suffixes, and units,
+        then converts them to float values for statistical analysis.
+        
+        Args:
+            raw: Raw numeric string from pattern matching.
+            pattern_type: Type of numeric pattern matched.
+            
+        Returns:
+            Cleaned numeric value as float, or None if conversion fails.
+        """
         try:
             # Remove common prefixes/suffixes
             cleaned = re.sub(r'[$€£¥%]', '', raw)
