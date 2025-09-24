@@ -28,12 +28,12 @@ import json
 import multiprocessing as mp
 import random
 import time
-from collections import defaultdict, deque, Counter
+from collections import Counter, defaultdict, deque
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum, auto
-from typing import List, Tuple, Dict, Set, Any
+from typing import Any, Dict, List, Set, Tuple
 
 import networkx as nx
 import numpy as np
@@ -45,6 +45,7 @@ from json_utils import safe_json_dump, safe_json_dumps
 
 class GraphType(Enum):
     """Types of graph structures for analysis."""
+
     CAUSAL_DAG = auto()
     BAYESIAN_NETWORK = auto()
     STRUCTURAL_MODEL = auto()
@@ -53,6 +54,7 @@ class GraphType(Enum):
 
 class StatisticalTest(Enum):
     """Available statistical tests."""
+
     ACYCLICITY = auto()
     CONNECTIVITY = auto()
     PATH_ANALYSIS = auto()
@@ -63,6 +65,7 @@ class StatisticalTest(Enum):
 @dataclass
 class AdvancedGraphNode:
     """Enhanced node representation with metadata and metrics."""
+
     name: str
     dependencies: Set[str]
     metadata: Dict[str, Any] = field(default_factory=dict)
@@ -75,13 +78,14 @@ class AdvancedGraphNode:
             self.metadata = {
                 "created": datetime.now().isoformat(),
                 "node_type": "causal",
-                "confidence": 1.0
+                "confidence": 1.0,
             }
 
 
 @dataclass
 class MonteCarloAdvancedResult:
     """Comprehensive results from advanced Monte Carlo testing."""
+
     # Basic identification
     plan_name: str
     seed: int
@@ -124,6 +128,7 @@ class MonteCarloAdvancedResult:
 @dataclass
 class HypothesisTestResult:
     """Results of formal statistical hypothesis testing."""
+
     test_type: StatisticalTest
     null_hypothesis: str
     alternative_hypothesis: str
@@ -141,18 +146,18 @@ class HypothesisTestResult:
 def _create_advanced_seed(plan_name: str, salt: str = "") -> int:
     """Create deterministic seed with salt for additional variability."""
     combined_string = f"{plan_name}{salt}{datetime.now().strftime('%Y%m%d')}"
-    hash_obj = hashlib.sha512(combined_string.encode('utf-8'))
+    hash_obj = hashlib.sha512(combined_string.encode("utf-8"))
     seed_bytes = hash_obj.digest()[:8]  # Use 8 bytes for larger seed space
-    seed = int.from_bytes(seed_bytes, byteorder='big', signed=False)
+    seed = int.from_bytes(seed_bytes, byteorder="big", signed=False)
     return seed
 
 
 class AdvancedDAGValidator:
     """Sophisticated DAG validation with multiple statistical approaches and advanced graph analysis capabilities.
-    
+
     This class provides comprehensive validation for Directed Acyclic Graphs (DAGs) using
     Monte Carlo methods, Bayesian analysis, and advanced graph metrics for causal inference.
-    
+
     Attributes:
         graph_nodes: Dictionary mapping node names to AdvancedGraphNode objects.
         graph_type: Type of graph being validated (CAUSAL_DAG, BAYESIAN_NETWORK, etc.).
@@ -164,7 +169,7 @@ class AdvancedDAGValidator:
 
     def __init__(self, graph_type: GraphType = GraphType.CAUSAL_DAG):
         """Initialize the advanced DAG validator.
-        
+
         Args:
             graph_type: Type of graph structure for analysis (default: CAUSAL_DAG).
         """
@@ -176,21 +181,26 @@ class AdvancedDAGValidator:
 
         # Advanced configuration
         self.config = {
-            'min_subgraph_size': 3,
-            'max_subgraph_size': None,
-            'default_iterations': 10000,
-            'confidence_level': 0.95,
-            'power_threshold': 0.8,
-            'convergence_threshold': 1e-4,
-            'max_computation_time': 3600,  # seconds
-            'parallel_processing': True,
-            'num_processes': mp.cpu_count()
+            "min_subgraph_size": 3,
+            "max_subgraph_size": None,
+            "default_iterations": 10000,
+            "confidence_level": 0.95,
+            "power_threshold": 0.8,
+            "convergence_threshold": 1e-4,
+            "max_computation_time": 3600,  # seconds
+            "parallel_processing": True,
+            "num_processes": mp.cpu_count(),
         }
 
-    def add_node(self, name: str, dependencies: Set[str] = None,
-                 role: str = "variable", metadata: Dict[str, Any] = None):
+    def add_node(
+        self,
+        name: str,
+        dependencies: Set[str] = None,
+        role: str = "variable",
+        metadata: Dict[str, Any] = None,
+    ):
         """Add a node with enhanced metadata and role specification.
-        
+
         Args:
             name: Unique identifier for the node.
             dependencies: Set of node names that this node depends on.
@@ -203,15 +213,12 @@ class AdvancedDAGValidator:
             metadata = {}
 
         self.graph_nodes[name] = AdvancedGraphNode(
-            name=name,
-            dependencies=dependencies,
-            role=role,
-            metadata=metadata
+            name=name, dependencies=dependencies, role=role, metadata=metadata
         )
 
     def add_edge(self, from_node: str, to_node: str, weight: float = 1.0):
         """Add a directed edge with optional weight parameter.
-        
+
         Args:
             from_node: Source node name.
             to_node: Target node name.
@@ -230,7 +237,7 @@ class AdvancedDAGValidator:
 
     def add_causal_pathway(self, pathway: List[str], weights: List[float] = None):
         """Add an entire causal pathway with optional weights.
-        
+
         Args:
             pathway: Ordered list of node names forming a causal pathway.
             weights: Optional list of weights for each edge in the pathway.
@@ -244,11 +251,11 @@ class AdvancedDAGValidator:
 
     def _initialize_advanced_rng(self, plan_name: str, salt: str = "") -> int:
         """Initialize advanced RNG with configurable seeding strategy.
-        
+
         Args:
             plan_name: Name of the plan for deterministic seed generation.
             salt: Additional salt string for seed variation.
-            
+
         Returns:
             Generated seed value for reproducibility.
         """
@@ -260,13 +267,13 @@ class AdvancedDAGValidator:
     @staticmethod
     def _compute_graph_metrics(nodes: Dict[str, AdvancedGraphNode]) -> Dict[str, Any]:
         """Compute comprehensive graph metrics for topological analysis.
-        
+
         Calculates various graph-theoretic measures including connectivity,
         centrality, clustering, and path-based metrics using NetworkX.
-        
+
         Args:
             nodes: Dictionary of graph nodes to analyze.
-            
+
         Returns:
             Dictionary containing computed graph metrics, or error information
             if computation fails.
@@ -286,45 +293,53 @@ class AdvancedDAGValidator:
 
         try:
             # Basic metrics
-            metrics['num_nodes'] = G.number_of_nodes()
-            metrics['num_edges'] = G.number_of_edges()
-            metrics['density'] = nx.density(G)
+            metrics["num_nodes"] = G.number_of_nodes()
+            metrics["num_edges"] = G.number_of_edges()
+            metrics["density"] = nx.density(G)
 
             # Path-based metrics
             if nx.is_weakly_connected(G):
-                metrics['average_path_length'] = nx.average_shortest_path_length(G)
-                metrics['diameter'] = nx.diameter(G)
+                metrics["average_path_length"] = nx.average_shortest_path_length(G)
+                metrics["diameter"] = nx.diameter(G)
             else:
-                metrics['average_path_length'] = float('inf')
-                metrics['diameter'] = float('inf')
+                metrics["average_path_length"] = float("inf")
+                metrics["diameter"] = float("inf")
 
             # Centrality measures
-            metrics['degree_centrality'] = nx.degree_centrality(G)
-            metrics['betweenness_centrality'] = nx.betweenness_centrality(G)
-            metrics['closeness_centrality'] = nx.closeness_centrality(G)
+            metrics["degree_centrality"] = nx.degree_centrality(G)
+            metrics["betweenness_centrality"] = nx.betweenness_centrality(G)
+            metrics["closeness_centrality"] = nx.closeness_centrality(G)
 
             # Clustering and connectivity
-            metrics['clustering_coefficient'] = nx.average_clustering(G.to_undirected())
-            metrics['strongly_connected_components'] = list(nx.strongly_connected_components(G))
-            metrics['weakly_connected_components'] = list(nx.weakly_connected_components(G))
+            metrics["clustering_coefficient"] = nx.average_clustering(G.to_undirected())
+            metrics["strongly_connected_components"] = list(
+                nx.strongly_connected_components(G)
+            )
+            metrics["weakly_connected_components"] = list(
+                nx.weakly_connected_components(G)
+            )
 
         except Exception as e:
             # Fallback metrics if networkx fails
-            metrics['error'] = str(e)
-            metrics['basic_connectivity'] = AdvancedDAGValidator._compute_basic_connectivity(nodes)
+            metrics["error"] = str(e)
+            metrics["basic_connectivity"] = (
+                AdvancedDAGValidator._compute_basic_connectivity(nodes)
+            )
 
         return metrics
 
     @staticmethod
-    def _compute_basic_connectivity(nodes: Dict[str, AdvancedGraphNode]) -> Dict[str, Any]:
+    def _compute_basic_connectivity(
+        nodes: Dict[str, AdvancedGraphNode],
+    ) -> Dict[str, Any]:
         """Fallback connectivity computation without networkx.
-        
+
         Implements basic graph connectivity analysis using breadth-first search
         and degree distribution calculation when NetworkX is unavailable.
-        
+
         Args:
             nodes: Dictionary of graph nodes to analyze.
-            
+
         Returns:
             Dictionary containing basic connectivity metrics.
         """
@@ -350,13 +365,15 @@ class AdvancedDAGValidator:
                     queue.append(neighbor)
 
         return {
-            'connected_nodes': len(visited),
-            'is_connected': len(visited) == len(nodes),
-            'in_degree_distribution': dict(Counter(in_degree.values()))
+            "connected_nodes": len(visited),
+            "is_connected": len(visited) == len(nodes),
+            "in_degree_distribution": dict(Counter(in_degree.values())),
         }
 
     @staticmethod
-    def _is_acyclic_advanced(nodes: Dict[str, AdvancedGraphNode]) -> Tuple[bool, Dict[str, Any]]:
+    def _is_acyclic_advanced(
+        nodes: Dict[str, AdvancedGraphNode],
+    ) -> Tuple[bool, Dict[str, Any]]:
         """Enhanced acyclicity check with detailed cycle information."""
         if not nodes:
             return True, {}
@@ -389,18 +406,19 @@ class AdvancedDAGValidator:
 
         # Cycle detection details
         cycle_info = {
-            'is_acyclic': is_acyclic,
-            'processed_nodes': processed,
-            'total_nodes': len(nodes),
-            'topological_order': topological_order if is_acyclic else [],
-            'cycle_exists': not is_acyclic,
-            'cycle_length': len(nodes) - processed if not is_acyclic else 0
+            "is_acyclic": is_acyclic,
+            "processed_nodes": processed,
+            "total_nodes": len(nodes),
+            "topological_order": topological_order if is_acyclic else [],
+            "cycle_exists": not is_acyclic,
+            "cycle_length": len(nodes) - processed if not is_acyclic else 0,
         }
 
         return is_acyclic, cycle_info
 
-    def _generate_stratified_subgraph(self, strategy: str = "random",
-                                      **kwargs) -> Dict[str, AdvancedGraphNode]:
+    def _generate_stratified_subgraph(
+        self, strategy: str = "random", **kwargs
+    ) -> Dict[str, AdvancedGraphNode]:
         """Generate subgraphs using different sampling strategies."""
         if not self.graph_nodes:
             return {}
@@ -418,7 +436,9 @@ class AdvancedDAGValidator:
         else:
             return self._generate_random_subgraph(**kwargs)
 
-    def _generate_random_subgraph(self, min_size: int = 3, max_size: int = None) -> Dict[str, AdvancedGraphNode]:
+    def _generate_random_subgraph(
+        self, min_size: int = 3, max_size: int = None
+    ) -> Dict[str, AdvancedGraphNode]:
         """Enhanced random subgraph generation with stratification."""
         if max_size is None:
             max_size = len(self.graph_nodes)
@@ -436,8 +456,9 @@ class AdvancedDAGValidator:
 
         return self._create_subgraph_from_nodes(selected_nodes)
 
-    def _generate_degree_stratified_subgraph(self, all_nodes: List[str],
-                                             min_size: int = 3) -> Dict[str, AdvancedGraphNode]:
+    def _generate_degree_stratified_subgraph(
+        self, all_nodes: List[str], min_size: int = 3
+    ) -> Dict[str, AdvancedGraphNode]:
         """Generate subgraph stratified by node degree."""
         # Calculate degrees for stratification
         degrees = {}
@@ -446,27 +467,39 @@ class AdvancedDAGValidator:
             degrees[node_name] = len(node.dependencies)
 
         # Stratify nodes by degree
-        high_degree = [n for n, d in degrees.items() if d > np.median(list(degrees.values()))]
-        low_degree = [n for n, d in degrees.items() if d <= np.median(list(degrees.values()))]
+        high_degree = [
+            n for n, d in degrees.items() if d > np.median(list(degrees.values()))
+        ]
+        low_degree = [
+            n for n, d in degrees.items() if d <= np.median(list(degrees.values()))
+        ]
 
         # Sample proportionally from each stratum
         high_sample_size = max(1, min_size // 2)
         low_sample_size = min_size - high_sample_size
 
-        selected_high = self._rng.sample(high_degree, min(high_sample_size, len(high_degree)))
-        selected_low = self._rng.sample(low_degree, min(low_sample_size, len(low_degree)))
+        selected_high = self._rng.sample(
+            high_degree, min(high_sample_size, len(high_degree))
+        )
+        selected_low = self._rng.sample(
+            low_degree, min(low_sample_size, len(low_degree))
+        )
 
         selected_nodes = selected_high + selected_low
 
         # Add random nodes if needed
         if len(selected_nodes) < min_size:
             remaining_nodes = set(all_nodes) - set(selected_nodes)
-            additional = self._rng.sample(list(remaining_nodes), min_size - len(selected_nodes))
+            additional = self._rng.sample(
+                list(remaining_nodes), min_size - len(selected_nodes)
+            )
             selected_nodes.extend(additional)
 
         return self._create_subgraph_from_nodes(selected_nodes)
 
-    def _create_subgraph_from_nodes(self, selected_nodes: List[str]) -> Dict[str, AdvancedGraphNode]:
+    def _create_subgraph_from_nodes(
+        self, selected_nodes: List[str]
+    ) -> Dict[str, AdvancedGraphNode]:
         """Create subgraph from selected nodes with filtered dependencies."""
         subgraph = {}
         for node_name in selected_nodes:
@@ -478,14 +511,15 @@ class AdvancedDAGValidator:
                 name=node_name,
                 dependencies=filtered_deps,
                 metadata=original_node.metadata.copy(),
-                role=original_node.role
+                role=original_node.role,
             )
             subgraph[node_name] = subgraph_node
 
         return subgraph
 
-    def calculate_bayesian_posterior(self, prior: float = 0.5,
-                                     iterations: int = 1000) -> float:
+    def calculate_bayesian_posterior(
+        self, prior: float = 0.5, iterations: int = 1000
+    ) -> float:
         """Calculate Bayesian posterior probability of acyclicity."""
         if not self.graph_nodes:
             return 1.0
@@ -501,14 +535,14 @@ class AdvancedDAGValidator:
 
         # Bayesian update: P(Acyclic|Data) = P(Data|Acyclic) * P(Acyclic) / P(Data)
         posterior = (likelihood * prior) / (
-                likelihood * prior + (1 - likelihood) * (1 - prior)
+            likelihood * prior + (1 - likelihood) * (1 - prior)
         )
 
         return posterior
 
-    def perform_sensitivity_analysis(self, plan_name: str,
-                                     perturbation_level: float = 0.1,
-                                     iterations: int = 500) -> Dict[str, Any]:
+    def perform_sensitivity_analysis(
+        self, plan_name: str, perturbation_level: float = 0.1, iterations: int = 500
+    ) -> Dict[str, Any]:
         """Perform sensitivity analysis by perturbing edges."""
         base_result = self.calculate_acyclicity_pvalue_advanced(plan_name, iterations)
         base_p_value = base_result.p_value
@@ -519,7 +553,7 @@ class AdvancedDAGValidator:
 
         for edge in original_edges:
             # Temporarily remove edge
-            from_node, to_node = edge.split('->')
+            from_node, to_node = edge.split("->")
             original_deps = self.graph_nodes[to_node].dependencies.copy()
 
             if from_node in self.graph_nodes[to_node].dependencies:
@@ -536,32 +570,34 @@ class AdvancedDAGValidator:
                 self.graph_nodes[to_node].dependencies = original_deps
 
         return {
-            'base_p_value': base_p_value,
-            'edge_sensitivity': edge_sensitivity,
-            'average_sensitivity': np.mean(list(edge_sensitivity.values())),
-            'max_sensitivity': max(edge_sensitivity.values()) if edge_sensitivity else 0
+            "base_p_value": base_p_value,
+            "edge_sensitivity": edge_sensitivity,
+            "average_sensitivity": np.mean(list(edge_sensitivity.values())),
+            "max_sensitivity": (
+                max(edge_sensitivity.values()) if edge_sensitivity else 0
+            ),
         }
 
     def calculate_acyclicity_pvalue_advanced(
-            self,
-            plan_name: str,
-            iterations: int = None,
-            min_subgraph_size: int = None,
-            max_subgraph_size: int = None,
-            confidence_level: float = None,
-            test_strategy: str = "comprehensive"
+        self,
+        plan_name: str,
+        iterations: int = None,
+        min_subgraph_size: int = None,
+        max_subgraph_size: int = None,
+        confidence_level: float = None,
+        test_strategy: str = "comprehensive",
     ) -> MonteCarloAdvancedResult:
         """
         Advanced p-value calculation with multiple statistical approaches.
         """
         if iterations is None:
-            iterations = self.config['default_iterations']
+            iterations = self.config["default_iterations"]
         if min_subgraph_size is None:
-            min_subgraph_size = self.config['min_subgraph_size']
+            min_subgraph_size = self.config["min_subgraph_size"]
         if max_subgraph_size is None:
-            max_subgraph_size = self.config['max_subgraph_size']
+            max_subgraph_size = self.config["max_subgraph_size"]
         if confidence_level is None:
-            confidence_level = self.config['confidence_level']
+            confidence_level = self.config["confidence_level"]
 
         start_time = time.time()
         seed = self._initialize_advanced_rng(plan_name)
@@ -571,28 +607,40 @@ class AdvancedDAGValidator:
             return self._create_empty_result(plan_name, seed, timestamp)
 
         # Parallel processing for large iterations
-        if iterations > 1000 and self.config['parallel_processing']:
-            results = self._run_parallel_monte_carlo(iterations, min_subgraph_size, max_subgraph_size)
+        if iterations > 1000 and self.config["parallel_processing"]:
+            results = self._run_parallel_monte_carlo(
+                iterations, min_subgraph_size, max_subgraph_size
+            )
         else:
-            results = self._run_sequential_monte_carlo(iterations, min_subgraph_size, max_subgraph_size)
+            results = self._run_sequential_monte_carlo(
+                iterations, min_subgraph_size, max_subgraph_size
+            )
 
-        acyclic_count = results['acyclic_count']
-        subgraph_sizes = results['subgraph_sizes']
-        graph_metrics = results['graph_metrics']
+        acyclic_count = results["acyclic_count"]
+        subgraph_sizes = results["subgraph_sizes"]
+        graph_metrics = results["graph_metrics"]
 
         # Calculate p-value with confidence interval
         p_value = acyclic_count / iterations if iterations > 0 else 1.0
-        ci = AdvancedDAGValidator._calculate_confidence_interval(acyclic_count, iterations, confidence_level)
+        ci = AdvancedDAGValidator._calculate_confidence_interval(
+            acyclic_count, iterations, confidence_level
+        )
 
         # Bayesian posterior
         posterior = self.calculate_bayesian_posterior(iterations=min(iterations, 1000))
 
         # Effect size and power
-        effect_size = AdvancedDAGValidator._calculate_effect_size(acyclic_count, iterations)
-        statistical_power = AdvancedDAGValidator._calculate_statistical_power(acyclic_count, iterations)
+        effect_size = AdvancedDAGValidator._calculate_effect_size(
+            acyclic_count, iterations
+        )
+        statistical_power = AdvancedDAGValidator._calculate_statistical_power(
+            acyclic_count, iterations
+        )
 
         # Sensitivity analysis
-        sensitivity = self.perform_sensitivity_analysis(plan_name, iterations=min(iterations, 200))
+        sensitivity = self.perform_sensitivity_analysis(
+            plan_name, iterations=min(iterations, 200)
+        )
 
         computation_time = time.time() - start_time
 
@@ -608,34 +656,36 @@ class AdvancedDAGValidator:
             confidence_interval=ci,
             effect_size=effect_size,
             statistical_power=statistical_power,
-            average_path_length=graph_metrics.get('average_path_length', 0),
-            clustering_coefficient=graph_metrics.get('clustering_coefficient', 0),
-            degree_distribution=graph_metrics.get('degree_distribution', {}),
-            connectivity_ratio=graph_metrics.get('connectivity_ratio', 0),
-            edge_sensitivity=sensitivity['edge_sensitivity'],
+            average_path_length=graph_metrics.get("average_path_length", 0),
+            clustering_coefficient=graph_metrics.get("clustering_coefficient", 0),
+            degree_distribution=graph_metrics.get("degree_distribution", {}),
+            connectivity_ratio=graph_metrics.get("connectivity_ratio", 0),
+            edge_sensitivity=sensitivity["edge_sensitivity"],
             node_importance=self._calculate_node_importance(),
             robustness_score=self._calculate_robustness_score(sensitivity),
             reproducible=self.verify_advanced_reproducibility(plan_name),
             convergence_achieved=self._check_convergence(acyclic_count, iterations),
-            adequate_power=statistical_power >= self.config['power_threshold'],
+            adequate_power=statistical_power >= self.config["power_threshold"],
             computation_time=computation_time,
             graph_statistics=self.get_advanced_graph_stats(),
             test_parameters={
-                'iterations': iterations,
-                'min_subgraph_size': min_subgraph_size,
-                'max_subgraph_size': max_subgraph_size,
-                'confidence_level': confidence_level,
-                'strategy': test_strategy
-            }
+                "iterations": iterations,
+                "min_subgraph_size": min_subgraph_size,
+                "max_subgraph_size": max_subgraph_size,
+                "confidence_level": confidence_level,
+                "strategy": test_strategy,
+            },
         )
 
-    def _run_parallel_monte_carlo(self, iterations: int, min_size: int, max_size: int) -> Dict[str, Any]:
+    def _run_parallel_monte_carlo(
+        self, iterations: int, min_size: int, max_size: int
+    ) -> Dict[str, Any]:
         """Run Monte Carlo simulation in parallel."""
-        chunk_size = iterations // self.config['num_processes']
-        chunks = [chunk_size] * self.config['num_processes']
-        chunks[-1] += iterations % self.config['num_processes']  # Adjust last chunk
+        chunk_size = iterations // self.config["num_processes"]
+        chunks = [chunk_size] * self.config["num_processes"]
+        chunks[-1] += iterations % self.config["num_processes"]  # Adjust last chunk
 
-        with ProcessPoolExecutor(max_workers=self.config['num_processes']) as executor:
+        with ProcessPoolExecutor(max_workers=self.config["num_processes"]) as executor:
             futures = [
                 executor.submit(self._monte_carlo_chunk, chunk, min_size, max_size)
                 for chunk in chunks
@@ -644,24 +694,30 @@ class AdvancedDAGValidator:
             results = [future.result() for future in futures]
 
         # Combine results
-        total_acyclic = sum(r['acyclic_count'] for r in results)
-        all_sizes = [size for r in results for size in r['subgraph_sizes']]
-        combined_metrics = self._combine_graph_metrics([r['graph_metrics'] for r in results])
+        total_acyclic = sum(r["acyclic_count"] for r in results)
+        all_sizes = [size for r in results for size in r["subgraph_sizes"]]
+        combined_metrics = self._combine_graph_metrics(
+            [r["graph_metrics"] for r in results]
+        )
 
         return {
-            'acyclic_count': total_acyclic,
-            'subgraph_sizes': all_sizes,
-            'graph_metrics': combined_metrics
+            "acyclic_count": total_acyclic,
+            "subgraph_sizes": all_sizes,
+            "graph_metrics": combined_metrics,
         }
 
-    def _monte_carlo_chunk(self, chunk_iterations: int, min_size: int, max_size: int) -> Dict[str, Any]:
+    def _monte_carlo_chunk(
+        self, chunk_iterations: int, min_size: int, max_size: int
+    ) -> Dict[str, Any]:
         """Process a chunk of Monte Carlo iterations."""
         acyclic_count = 0
         subgraph_sizes = []
         graph_metrics = []
 
         for _ in range(chunk_iterations):
-            subgraph = self._generate_stratified_subgraph("random", min_size=min_size, max_size=max_size)
+            subgraph = self._generate_stratified_subgraph(
+                "random", min_size=min_size, max_size=max_size
+            )
             subgraph_sizes.append(len(subgraph))
 
             is_acyclic, cycle_info = AdvancedDAGValidator._is_acyclic_advanced(subgraph)
@@ -676,14 +732,15 @@ class AdvancedDAGValidator:
         aggregated_metrics = self._aggregate_metrics(graph_metrics)
 
         return {
-            'acyclic_count': acyclic_count,
-            'subgraph_sizes': subgraph_sizes,
-            'graph_metrics': aggregated_metrics
+            "acyclic_count": acyclic_count,
+            "subgraph_sizes": subgraph_sizes,
+            "graph_metrics": aggregated_metrics,
         }
 
     @staticmethod
-    def _calculate_confidence_interval(successes: int, trials: int,
-                                       confidence: float) -> Tuple[float, float]:
+    def _calculate_confidence_interval(
+        successes: int, trials: int, confidence: float
+    ) -> Tuple[float, float]:
         """Calculate Wilson score interval for binomial proportion."""
         if trials == 0:
             return (0.0, 1.0)
@@ -691,9 +748,13 @@ class AdvancedDAGValidator:
         z = stats.norm.ppf(1 - (1 - confidence) / 2)
         p_hat = successes / trials
 
-        denominator = 1 + z ** 2 / trials
-        centre = (p_hat + z ** 2 / (2 * trials)) / denominator
-        half_width = z * np.sqrt(p_hat * (1 - p_hat) / trials + z ** 2 / (4 * trials ** 2)) / denominator
+        denominator = 1 + z**2 / trials
+        centre = (p_hat + z**2 / (2 * trials)) / denominator
+        half_width = (
+            z
+            * np.sqrt(p_hat * (1 - p_hat) / trials + z**2 / (4 * trials**2))
+            / denominator
+        )
 
         lower = max(0, centre - half_width)
         upper = min(1, centre + half_width)
@@ -711,8 +772,9 @@ class AdvancedDAGValidator:
         return 2 * (np.arcsin(np.sqrt(p)) - np.arcsin(np.sqrt(0.5)))
 
     @staticmethod
-    def _calculate_statistical_power(successes: int, trials: int,
-                                     alpha: float = 0.05) -> float:
+    def _calculate_statistical_power(
+        successes: int, trials: int, alpha: float = 0.05
+    ) -> float:
         """Calculate statistical power for the test."""
         if trials == 0:
             return 0.0
@@ -724,8 +786,9 @@ class AdvancedDAGValidator:
 
         return power
 
-    def verify_advanced_reproducibility(self, plan_name: str,
-                                        test_iterations: int = 100) -> bool:
+    def verify_advanced_reproducibility(
+        self, plan_name: str, test_iterations: int = 100
+    ) -> bool:
         """Enhanced reproducibility verification with multiple tests."""
         try:
             # Test multiple times with different salts
@@ -764,10 +827,14 @@ class AdvancedDAGValidator:
         return {
             "total_nodes": total_nodes,
             "total_edges": total_edges,
-            "graph_density": total_edges / (total_nodes * (total_nodes - 1)) if total_nodes > 1 else 0,
+            "graph_density": (
+                total_edges / (total_nodes * (total_nodes - 1))
+                if total_nodes > 1
+                else 0
+            ),
             "average_degree": total_edges / total_nodes if total_nodes > 0 else 0,
             "max_possible_edges": total_nodes * (total_nodes - 1),
-            "edge_node_ratio": total_edges / total_nodes if total_nodes > 0 else 0
+            "edge_node_ratio": total_edges / total_nodes if total_nodes > 0 else 0,
         }
 
     def _get_topological_stats(self) -> Dict[str, Any]:
@@ -806,7 +873,9 @@ class AdvancedDAGValidator:
             "role_distribution": role_counts,
             "average_path_length": np.mean(path_lengths) if path_lengths else 0,
             "max_path_length": max(path_lengths) if path_lengths else 0,
-            "root_nodes": len([n for n in self.graph_nodes.values() if not n.dependencies]),
+            "root_nodes": len(
+                [n for n in self.graph_nodes.values() if not n.dependencies]
+            ),
             "leaf_nodes": self._count_leaf_nodes(),
         }
 
@@ -834,7 +903,9 @@ class AdvancedDAGValidator:
         for node_name in self.graph_nodes:
             # Simple importance based on degree and role
             node = self.graph_nodes[node_name]
-            degree_importance = len(node.dependencies) / max(1, len(self.graph_nodes) - 1)
+            degree_importance = len(node.dependencies) / max(
+                1, len(self.graph_nodes) - 1
+            )
             role_importance = 1.0 if node.role in ["intervention", "outcome"] else 0.5
             importance[node_name] = (degree_importance + role_importance) / 2
 
@@ -843,8 +914,8 @@ class AdvancedDAGValidator:
     @staticmethod
     def _calculate_robustness_score(sensitivity_results: Dict[str, Any]) -> float:
         """Calculate overall robustness score from sensitivity analysis."""
-        avg_sensitivity = sensitivity_results.get('average_sensitivity', 0)
-        max_sensitivity = sensitivity_results.get('max_sensitivity', 0)
+        avg_sensitivity = sensitivity_results.get("average_sensitivity", 0)
+        max_sensitivity = sensitivity_results.get("max_sensitivity", 0)
 
         # Convert to robustness (inverse of sensitivity)
         robustness = 1.0 / (1.0 + avg_sensitivity + max_sensitivity)
@@ -857,11 +928,15 @@ class AdvancedDAGValidator:
 
         # Simple convergence check based on recent stability
         # For sophisticated implementation, would track running estimates
-        expected_variance = (acyclic_count / iterations) * (1 - acyclic_count / iterations) / iterations
-        return expected_variance < self.config['convergence_threshold']
+        expected_variance = (
+            (acyclic_count / iterations) * (1 - acyclic_count / iterations) / iterations
+        )
+        return expected_variance < self.config["convergence_threshold"]
 
     @staticmethod
-    def _create_empty_result(plan_name: str, seed: int, timestamp: str) -> MonteCarloAdvancedResult:
+    def _create_empty_result(
+        plan_name: str, seed: int, timestamp: str
+    ) -> MonteCarloAdvancedResult:
         """Create empty result for empty graph."""
         return MonteCarloAdvancedResult(
             plan_name=plan_name,
@@ -887,7 +962,7 @@ class AdvancedDAGValidator:
             adequate_power=False,
             computation_time=0.0,
             graph_statistics={},
-            test_parameters={}
+            test_parameters={},
         )
 
     @staticmethod
@@ -919,8 +994,12 @@ class AdvancedDAGValidator:
 
         return combined
 
-    def export_results(self, result: MonteCarloAdvancedResult,
-                       format: str = "json", filename: str = None) -> str:
+    def export_results(
+        self,
+        result: MonteCarloAdvancedResult,
+        format: str = "json",
+        filename: str = None,
+    ) -> str:
         """Export results in various formats for reporting."""
         if filename is None:
             filename = f"dag_validation_{result.plan_name}_{result.timestamp}"
@@ -938,25 +1017,25 @@ class AdvancedDAGValidator:
     def _export_json(result: MonteCarloAdvancedResult, filename: str) -> str:
         """Export results as JSON."""
         data = {
-            'validation_results': {
-                'plan_name': result.plan_name,
-                'timestamp': result.timestamp,
-                'p_value': result.p_value,
-                'confidence_interval': result.confidence_interval,
-                'bayesian_posterior': result.bayesian_posterior,
-                'statistical_power': result.statistical_power,
-                'graph_statistics': result.graph_statistics,
-                'computation_time': result.computation_time
+            "validation_results": {
+                "plan_name": result.plan_name,
+                "timestamp": result.timestamp,
+                "p_value": result.p_value,
+                "confidence_interval": result.confidence_interval,
+                "bayesian_posterior": result.bayesian_posterior,
+                "statistical_power": result.statistical_power,
+                "graph_statistics": result.graph_statistics,
+                "computation_time": result.computation_time,
             },
-            'metadata': {
-                'total_iterations': result.total_iterations,
-                'seed': result.seed,
-                'reproducible': result.reproducible
-            }
+            "metadata": {
+                "total_iterations": result.total_iterations,
+                "seed": result.seed,
+                "reproducible": result.reproducible,
+            },
         }
 
         filepath = f"{filename}.json"
-        with open(filepath, 'w') as f:
+        with open(filepath, "w") as f:
             safe_json_dump(data, f)
 
         return filepath
@@ -988,7 +1067,7 @@ class AdvancedDAGValidator:
             <div class="results">
                 <h2>Statistical Results</h2>
                 <div class="metric">
-                    <p>P-value: <span class="{'significant' if result.p_value < 0.05 else 'not-significant'}">{result.p_value:.6f}</span></p>
+                    <p>P-value: <span class="{"significant" if result.p_value < 0.05 else "not-significant"}">{result.p_value:.6f}</span></p>
                     <p>Bayesian Posterior: {result.bayesian_posterior:.4f}</p>
                     <p>Statistical Power: {result.statistical_power:.4f}</p>
                     <p>Confidence Interval: [{result.confidence_interval[0]:.4f}, {result.confidence_interval[1]:.4f}]</p>
@@ -1002,7 +1081,7 @@ class AdvancedDAGValidator:
         """
 
         filepath = f"{filename}.html"
-        with open(filepath, 'w') as f:
+        with open(filepath, "w") as f:
             f.write(html_content)
 
         return filepath
@@ -1044,7 +1123,7 @@ class AdvancedDAGValidator:
         """
 
         filepath = f"{filename}.tex"
-        with open(filepath, 'w') as f:
+        with open(filepath, "w") as f:
             f.write(latex_content)
 
         return filepath
@@ -1082,7 +1161,7 @@ class AdvancedDAGValidator:
         """
 
         filepath = f"{filename}.txt"
-        with open(filepath, 'w') as f:
+        with open(filepath, "w") as f:
             f.write(text_content)
 
         return filepath
@@ -1095,15 +1174,39 @@ def create_complex_causal_graph() -> AdvancedDAGValidator:
     # Define nodes with roles and metadata
     nodes_config = [
         ("recursos_financieros", "intervention", {"budget": 100000, "currency": "USD"}),
-        ("capacitacion_personal", "intervention", {"duration": 6, "format": "workshop"}),
+        (
+            "capacitacion_personal",
+            "intervention",
+            {"duration": 6, "format": "workshop"},
+        ),
         ("infraestructura", "intervention", {"type": "physical", "scale": "large"}),
-        ("programas_intervencion", "mediator", {"intensity": "high", "frequency": "weekly"}),
+        (
+            "programas_intervencion",
+            "mediator",
+            {"intensity": "high", "frequency": "weekly"},
+        ),
         ("participacion_comunidad", "mediator", {"engagement": "active", "reach": 500}),
-        ("cambio_comportamiento", "outcome", {"measurement": "survey", "validity": 0.85}),
-        ("mejora_indicadores", "outcome", {"indicators": ["health", "education"], "trend": "positive"}),
-        ("impacto_social", "outcome", {"sustainability": "long_term", "scope": "community"}),
-        ("contexto_social", "covariate", {"stability": "medium", "influence": "moderate"}),
-        ("factores_externos", "covariate", {"control": "low", "variability": "high"})
+        (
+            "cambio_comportamiento",
+            "outcome",
+            {"measurement": "survey", "validity": 0.85},
+        ),
+        (
+            "mejora_indicadores",
+            "outcome",
+            {"indicators": ["health", "education"], "trend": "positive"},
+        ),
+        (
+            "impacto_social",
+            "outcome",
+            {"sustainability": "long_term", "scope": "community"},
+        ),
+        (
+            "contexto_social",
+            "covariate",
+            {"stability": "medium", "influence": "moderate"},
+        ),
+        ("factores_externos", "covariate", {"control": "low", "variability": "high"}),
     ]
 
     for name, role, metadata in nodes_config:
@@ -1120,7 +1223,7 @@ def create_complex_causal_graph() -> AdvancedDAGValidator:
         (["cambio_comportamiento", "mejora_indicadores"], [0.8]),
         (["mejora_indicadores", "impacto_social"], [0.9]),
         (["contexto_social", "participacion_comunidad"], [0.4]),
-        (["factores_externos", "impacto_social"], [0.3])
+        (["factores_externos", "impacto_social"], [0.3]),
     ]
 
     for pathway, weights in pathways:
@@ -1140,8 +1243,9 @@ class DAGValidationSuite:
         """Add a validator to the suite."""
         self.validators[name] = validator
 
-    def run_comprehensive_validation(self, plan_name: str,
-                                     iterations: int = 10000) -> Dict[str, MonteCarloAdvancedResult]:
+    def run_comprehensive_validation(
+        self, plan_name: str, iterations: int = 10000
+    ) -> Dict[str, MonteCarloAdvancedResult]:
         """Run validation across all registered validators."""
         results = {}
 
@@ -1168,11 +1272,11 @@ class DAGValidationSuite:
 
         for name, result in results.items():
             comparison[name] = {
-                'p_value': result.p_value,
-                'bayesian_posterior': result.bayesian_posterior,
-                'statistical_power': result.statistical_power,
-                'robustness_score': result.robustness_score,
-                'computation_time': result.computation_time
+                "p_value": result.p_value,
+                "bayesian_posterior": result.bayesian_posterior,
+                "statistical_power": result.statistical_power,
+                "robustness_score": result.robustness_score,
+                "computation_time": result.computation_time,
             }
 
         return comparison
@@ -1198,16 +1302,16 @@ def demonstrate_advanced_features():
     print(f"RUNNING ADVANCED VALIDATION FOR: {plan_name}")
 
     result = validator.calculate_acyclicity_pvalue_advanced(
-        plan_name,
-        iterations=5000,
-        test_strategy="comprehensive"
+        plan_name, iterations=5000, test_strategy="comprehensive"
     )
 
     # Display key results
     print("\nKEY RESULTS:")
     print(f"P-value: {result.p_value:.6f}")
     print(f"Bayesian Posterior: {result.bayesian_posterior:.4f}")
-    print(f"95% Confidence Interval: [{result.confidence_interval[0]:.4f}, {result.confidence_interval[1]:.4f}]")
+    print(
+        f"95% Confidence Interval: [{result.confidence_interval[0]:.4f}, {result.confidence_interval[1]:.4f}]"
+    )
     print(f"Statistical Power: {result.statistical_power:.4f}")
     print(f"Robustness Score: {result.robustness_score:.4f}")
     print(f"Computation Time: {result.computation_time:.2f} seconds")
@@ -1225,7 +1329,8 @@ def demonstrate_advanced_features():
     print(f"\nSENSITIVITY ANALYSIS:")
     print(f"Average Sensitivity: {sensitivity['average_sensitivity']:.4f}")
     print(
-        f"Most Sensitive Edge: {max(sensitivity['edge_sensitivity'].items(), key=lambda x: x[1]) if sensitivity['edge_sensitivity'] else 'N/A'}")
+        f"Most Sensitive Edge: {max(sensitivity['edge_sensitivity'].items(), key=lambda x: x[1]) if sensitivity['edge_sensitivity'] else 'N/A'}"
+    )
 
     return validator, result
 
