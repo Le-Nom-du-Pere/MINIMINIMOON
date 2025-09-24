@@ -7,5 +7,8 @@ __pycache__/
 .coverage
 .pytest_cache/
 
-# Virtual environment
+# Virtual environment (Python)
 venv/
+.venv/
+env/
+.env/

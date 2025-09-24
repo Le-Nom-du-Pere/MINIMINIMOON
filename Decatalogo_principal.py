@@ -2,13 +2,16 @@
 # -*- coding: utf-8 -*-
 """
 Sistema Integral de Evaluación de Cadenas de Valor en Planes de Desarrollo Municipal
-Versión: 8.0 — Marco Teórico-Institucional con Análisis Causal Multinivel, Batch Processing y Certificación de Rigor
+Versión: 8.1 — Marco Teórico-Institucional con Análisis Causal Multinivel, Batch Processing, 
+Certificación de Rigor y Selección Global Top-K con Heap
 Framework basado en Institutional Analysis and Development (IAD) + Theory of Change (ToC)
 con triangulación metodológica cualitativa-cuantitativa, verificación causal y certeza probabilística.
 Autor: Dr. en Políticas Públicas
 Enfoque: Evaluación estructural con econometría de políticas, minería causal y procesamiento paralelo industrial.
 """
+import argparse
 import hashlib
+import heapq
 import json
 import logging
 import os
@@ -1206,6 +1209,92 @@ class ExtractorEvidenciaIndustrial:
             self.logger.error(f"❌ Error en búsqueda causal fallback: {e}")
             return []
 
+    def buscar_segmentos_semanticos_global(self, queries: List[str], max_segmentos: int, 
+                                         batch_size: int = 32) -> List[Dict[str, Any]]:
+        """
+        Búsqueda semántica global con selección top-k usando heap para optimización de memoria.
+        Procesa múltiples queries en batches y mantiene solo los mejores max_segmentos globalmente.
+        """
+        if self.embeddings_doc.numel() == 0:
+            self.logger.warning("⚠️  No hay embeddings disponibles para búsqueda semántica global")
+            return []
+
+        # Min-heap para mantener los top-k segmentos globalmente
+        # Formato: (score_negativo, indice_doc, query_idx, datos_segmento)
+        heap_global = []
+        
+        try:
+            # Procesar queries en batches
+            for batch_start in range(0, len(queries), batch_size):
+                batch_queries = queries[batch_start:batch_start + batch_size]
+                
+                # Encode el batch de queries
+                query_embeddings = EMBEDDING_MODEL.encode(batch_queries, convert_to_tensor=True)
+                
+                # Calcular similitudes para todo el batch contra todos los documentos
+                similitudes_batch = util.pytorch_cos_sim(query_embeddings, self.embeddings_doc)
+                
+                # Procesar cada query del batch
+                for query_idx_local, query in enumerate(batch_queries):
+                    query_idx_global = batch_start + query_idx_local
+                    similitudes = similitudes_batch[query_idx_local]
+                    
+                    # Procesar todos los segmentos para esta query
+                    for doc_idx, similitud in enumerate(similitudes):
+                        score = float(similitud.item())
+                        
+                        # Encontrar el documento original correspondiente
+                        if doc_idx < len(self.textos_originales):
+                            texto_seg = self.textos_originales[doc_idx]
+                            
+                            # Encontrar la página correspondiente
+                            pagina = None
+                            for doc in self.documentos:
+                                if doc[1] == texto_seg:
+                                    pagina = doc[0]
+                                    break
+                            
+                            if pagina is None:
+                                continue
+                            
+                            datos_segmento = {
+                                "texto": texto_seg,
+                                "pagina": pagina,
+                                "query": query,
+                                "query_idx": query_idx_global,
+                                "similitud_semantica": score,
+                                "score_final": score,
+                                "hash_segmento": hashlib.md5(texto_seg.encode('utf-8')).hexdigest()[:8],
+                                "timestamp_extraccion": datetime.now().isoformat()
+                            }
+                            
+                            # Usar heap para mantener top-k global eficientemente
+                            # Como usamos un min-heap con scores negativos, el elemento en heap[0] es el de MENOR score
+                            if len(heap_global) < max_segmentos:
+                                # Heap no está lleno, agregar directamente
+                                heapq.heappush(heap_global, (score, doc_idx, query_idx_global, datos_segmento))
+                            elif score > heap_global[0][0]:  # score > min_score_in_heap
+                                # Reemplazar el peor elemento con este mejor elemento
+                                heapq.heappushpop(heap_global, (score, doc_idx, query_idx_global, datos_segmento))
+
+            # Extraer los resultados finales del heap y ordenar por score descendente
+            resultados_finales = []
+            while heap_global:
+                score, _, _, datos_segmento = heapq.heappop(heap_global)
+                resultados_finales.append(datos_segmento)
+            
+            # Ordenar por score final descendente para tener los mejores primero
+            resultados_finales.sort(key=lambda x: x['score_final'], reverse=True)
+            
+            self.logger.info(f"✅ Búsqueda semántica global completada: {len(resultados_finales)} segmentos "
+                           f"seleccionados de {len(self.textos_originales)} totales con {len(queries)} queries")
+            
+            return resultados_finales
+            
+        except Exception as e:
+            self.logger.error(f"❌ Error en búsqueda semántica global: {e}")
+            return []
+
     def extraer_variables_operativas(self, dimension: DimensionDecalogo) -> Dict[str, List]:
         """Extrae variables operativas específicas para cada dimensión con trazabilidad industrial"""
         variables = {
@@ -2217,7 +2306,8 @@ class GeneradorReporteIndustrial:
 
 
 # ==================== PROCESAMIENTO PARALELO INDUSTRIAL PARA 170+ PLANES ====================
-def procesar_plan_industrial(pdf_path: Path) -> Tuple[str, Dict[str, Any]]:
+def procesar_plan_industrial(pdf_path: Path, max_segmentos: Optional[int] = None, 
+                           batch_size: int = 32) -> Tuple[str, Dict[str, Any]]:
     """Worker industrial para procesamiento paralelo de planes de desarrollo"""
     nombre_plan = pdf_path.stem
     logger_worker = logging.getLogger(f"Worker_{nombre_plan}")
@@ -2236,8 +2326,51 @@ def procesar_plan_industrial(pdf_path: Path) -> Tuple[str, Dict[str, Any]]:
             logger_worker.error(f"❌ Falló la carga y procesamiento de: {nombre_plan}")
             return nombre_plan, {"error": "Falló carga y procesamiento", "status": "failed"}
 
+        # Aplicar límite global de segmentos si está especificado
+        if max_segmentos and sistema.extractor:
+            logger_worker.info(f"🔍 Aplicando selección global de top-{max_segmentos} segmentos con batch_size={batch_size}")
+            
+            # Generar queries para búsqueda semántica global
+            queries_semanticas = []
+            for dimension in DECALOGO_INDUSTRIAL:
+                # Query principal basada en el nombre de la dimensión
+                queries_semanticas.append(f"{dimension.nombre} objetivo meta resultado")
+                
+                # Queries específicas por eslabón
+                for eslabon in dimension.eslabones:
+                    for indicador in eslabon.indicadores[:2]:  # Top 2 indicadores por eslabón
+                        queries_semanticas.append(f"{indicador} {dimension.nombre}")
+                
+                # Queries de teoría de cambio
+                for supuesto in dimension.teoria_cambio.supuestos_causales[:1]:  # Top 1 supuesto
+                    queries_semanticas.append(supuesto)
+            
+            # Limitar número de queries para evitar sobrecarga
+            queries_semanticas = queries_semanticas[:100]  # Máximo 100 queries
+            
+            # Ejecutar búsqueda semántica global con heap
+            segmentos_seleccionados = sistema.extractor.buscar_segmentos_semanticos_global(
+                queries_semanticas, max_segmentos, batch_size
+            )
+            
+            # Reemplazar los documentos originales con los segmentos seleccionados
+            if segmentos_seleccionados:
+                documentos_filtrados = []
+                for i, seg in enumerate(segmentos_seleccionados):
+                    documentos_filtrados.append((seg["pagina"], seg["texto"]))
+                
+                # Actualizar el extractor con los segmentos seleccionados
+                sistema.extractor.documentos = documentos_filtrados
+                sistema.extractor.textos_originales = [doc[1] for doc in documentos_filtrados]
+                sistema.extractor._precomputar_embeddings()
+                
+                logger_worker.info(f"✅ Segmentos filtrados: {len(documentos_filtrados)} de {len(sistema.loader.segmentos)} originales")
+
         # Evaluar todas las dimensiones industriales
         resultados = []
+        segmentos_totales = len(sistema.loader.segmentos) if hasattr(sistema.loader, 'segmentos') else 0
+        segmentos_procesados = len(sistema.extractor.textos_originales) if sistema.extractor else 0
+        
         for dimension in DECALOGO_INDUSTRIAL:
             try:
                 resultado = sistema.evaluar_dimension(dimension)
@@ -2283,6 +2416,10 @@ def procesar_plan_industrial(pdf_path: Path) -> Tuple[str, Dict[str, Any]]:
             "hash_evaluacion": sistema.hash_evaluacion[:12] + "...",
             "timestamp": datetime.now().isoformat(),
             "status": "completed",
+            "segmentos_totales": segmentos_totales,
+            "segmentos_procesados": segmentos_procesados,
+            "segmentos_filtrados": max_segmentos is not None,
+            "batch_size_usado": batch_size,
             "reportes_generados": {
                 "markdown": str(reporte_md_path),
                 "json": str(reporte_json_path)
@@ -2412,15 +2549,42 @@ class SistemaMonitoreoIndustrial:
         return recomendaciones
 
 
-# ==================== FUNCIÓN PRINCIPAL INDUSTRIAL ====================
+# ==================== FUNCIÓN PRINCIPAL INDUSTRIAL CON ARGUMENTOS ====================
 def main():
-    """Función principal industrial con procesamiento batch y monitoreo"""
-    if len(sys.argv) != 2:
-        print("Uso industrial: python evaluacion_politicas_industrial.py <directorio_o_archivo.pdf>")
-        print("Ejemplo: python evaluacion_politicas_industrial.py ./planes_desarrollo/")
-        sys.exit(1)
-
-    input_path = Path(sys.argv[1]).expanduser()
+    """Función principal industrial con procesamiento batch y monitoreo mejorado"""
+    parser = argparse.ArgumentParser(
+        description="Sistema Industrial de Evaluación de Políticas Públicas v8.1",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Ejemplos de uso:
+  python Decatalogo_principal.py ./planes_desarrollo/
+  python Decatalogo_principal.py ./plan.pdf --max-segmentos 1000
+  python Decatalogo_principal.py ./planes/ --max-segmentos 500 --batch-size 64
+        """
+    )
+    
+    parser.add_argument(
+        "input_path",
+        help="Directorio con archivos PDF o archivo PDF individual"
+    )
+    
+    parser.add_argument(
+        "--max-segmentos",
+        type=int,
+        default=None,
+        help="Límite total de segmentos de texto procesados globalmente (default: sin límite)"
+    )
+    
+    parser.add_argument(
+        "--batch-size",
+        type=int, 
+        default=32,
+        help="Tamaño de batch para procesamiento de embeddings (default: 32)"
+    )
+    
+    args = parser.parse_args()
+    
+    input_path = Path(args.input_path).expanduser()
     output_dir = Path("resultados_evaluacion_industrial")
     output_dir.mkdir(exist_ok=True)
 
@@ -2428,8 +2592,11 @@ def main():
     sistema_monitoreo = SistemaMonitoreoIndustrial()
     sistema_monitoreo.iniciar_monitoreo()
 
-    LOGGER.info(f"🚀 Iniciando sistema industrial de evaluación de políticas públicas v8.0")
+    LOGGER.info(f"🚀 Iniciando sistema industrial de evaluación de políticas públicas v8.1")
     LOGGER.info(f"📁 Directorio de entrada: {input_path}")
+    if args.max_segmentos:
+        LOGGER.info(f"📊 Límite global de segmentos: {args.max_segmentos}")
+        LOGGER.info(f"⚙️  Tamaño de batch: {args.batch_size}")
 
     if input_path.is_dir():
         # Procesamiento batch industrial paralelo
@@ -2442,9 +2609,13 @@ def main():
         LOGGER.info(f"🏭 Procesando {len(pdf_paths)} planes de desarrollo en paralelo...")
         LOGGER.info(f"⚙️  Utilizando {os.cpu_count()} núcleos disponibles")
 
+        # Función de procesamiento con argumentos adicionales
+        def procesar_con_args(pdf_path):
+            return procesar_plan_industrial(pdf_path, args.max_segmentos, args.batch_size)
+
         # Procesamiento paralelo industrial
         resultados_batch = Parallel(n_jobs=-1, backend='threading', verbose=10)(
-            delayed(procesar_plan_industrial)(pdf_path) for pdf_path in pdf_paths
+            delayed(procesar_con_args)(pdf_path) for pdf_path in pdf_paths
         )
 
         # Registrar resultados en sistema de monitoreo
@@ -2540,12 +2711,14 @@ def main():
     else:
         # Modo single-file industrial
         LOGGER.info(f"📄 Procesando archivo individual: {input_path.name}")
-        nombre_plan, metrics = procesar_plan_industrial(input_path)
+        nombre_plan, metrics = procesar_plan_industrial(input_path, args.max_segmentos, args.batch_size)
 
         if "error" not in metrics:
             LOGGER.info(f"✅✅✅ EVALUACIÓN COMPLETADA PARA {nombre_plan}")
             LOGGER.info(f"📊 PUNTAJE FINAL: {metrics.get('puntaje_promedio', 0):.1f}/100")
             LOGGER.info(f"🏭 NIVEL DE MADUREZ: {metrics.get('nivel_madurez_predominante', 'N/A')}")
+            if args.max_segmentos:
+                LOGGER.info(f"📊 SEGMENTOS PROCESADOS: {metrics.get('segmentos_procesados', 'N/A')}/{metrics.get('segmentos_totales', 'N/A')}")
         else:
             LOGGER.error(f"❌❌❌ ERROR PROCESANDO {nombre_plan}: {metrics.get('error', 'Desconocido')}")
             sys.exit(1)
