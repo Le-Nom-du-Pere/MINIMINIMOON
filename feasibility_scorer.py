@@ -1031,17 +1031,25 @@ The feasibility scorer evaluates indicator quality by detecting three core compo
         
         return str(output_path)
     
+    def translate_quality_tier_spanish(self, tier: str) -> str:
+        """Public wrapper to translate quality tier to Spanish."""
+        return self._translate_quality_tier_spanish(tier)
+
+    def get_recommendation_spanish(self, quality_tier: str) -> str:
+        """Public wrapper to obtain recommendation in Spanish for a quality tier."""
+        return self._get_recommendation_spanish(quality_tier)
+
     def _translate_quality_tier_spanish(self, tier: str) -> str:
         """Translate quality tier to Spanish."""
         translations = {
             'high': 'Alto',
-            'medium': 'Medio', 
+            'medium': 'Medio',
             'low': 'Bajo',
             'poor': 'Deficiente',
             'insufficient': 'Insuficiente'
         }
         return translations.get(tier, tier)
-    
+
     def _get_recommendation_spanish(self, quality_tier: str) -> str:
         """Generate recommendation in Spanish based on quality tier."""
         recommendations = {
@@ -1257,8 +1265,8 @@ Examples:
             print(f"\nArchivo: {filename}")
             print(f"Texto: {text}")
             print(f"Puntuación: {score.feasibility_score:.3f}")
-            print(f"Nivel: {scorer._translate_quality_tier_spanish(score.quality_tier)}")
-            print(f"Recomendación: {scorer._get_recommendation_spanish(score.quality_tier)}")
+            print(f"Nivel: {scorer.translate_quality_tier_spanish(score.quality_tier)}")
+            print(f"Recomendación: {scorer.get_recommendation_spanish(score.quality_tier)}")
             
             if args.verbose:
                 print(f"Componentes: {[c.value for c in score.components_detected]}")
@@ -1275,10 +1283,10 @@ Examples:
         
         print(f"Texto evaluado: {args.text}")
         print(f"Puntuación de factibilidad: {score.feasibility_score:.3f}")
-        print(f"Nivel de calidad: {scorer._translate_quality_tier_spanish(score.quality_tier)}")
+        print(f"Nivel de calidad: {scorer.translate_quality_tier_spanish(score.quality_tier)}")
         print(f"Línea base cuantitativa: {'Sí' if score.has_quantitative_baseline else 'No'}")
         print(f"Meta cuantitativa: {'Sí' if score.has_quantitative_target else 'No'}")
-        print(f"Recomendación: {scorer._get_recommendation_spanish(score.quality_tier)}")
+        print(f"Recomendación: {scorer.get_recommendation_spanish(score.quality_tier)}")
         
         if args.verbose and score.detailed_matches:
             print("\nCoincidencias detalladas:")
@@ -1305,7 +1313,7 @@ Examples:
             if not args.export_csv:  # Only show individual results if not exporting CSV
                 print(f"\n{i}. {filename}")
                 print(f"   Puntuación: {score.feasibility_score:.3f}")
-                print(f"   Nivel: {scorer._translate_quality_tier_spanish(score.quality_tier)}")
+                print(f"   Nivel: {scorer.translate_quality_tier_spanish(score.quality_tier)}")
     
     # Export results in requested formats
     if args.export_csv:
@@ -1362,7 +1370,7 @@ Examples:
                 tier_counts = {tier: tiers.count(tier) for tier in set(tiers)}
                 f.write(f"\n### Distribución por Nivel de Calidad\n\n")
                 for tier, count in tier_counts.items():
-                    tier_spanish = scorer._translate_quality_tier_spanish(tier)
+                    tier_spanish = scorer.translate_quality_tier_spanish(tier)
                     percentage = (count / len(tiers)) * 100
                     f.write(f"- **{tier_spanish}:** {count} indicadores ({percentage:.1f}%)\n")
             
@@ -1374,11 +1382,11 @@ Examples:
             for filename, score in sorted_results:
                 f.write(f"### {filename}\n\n")
                 f.write(f"- **Puntuación:** {score.feasibility_score:.3f}\n")
-                f.write(f"- **Nivel de calidad:** {scorer._translate_quality_tier_spanish(score.quality_tier)}\n")
+                f.write(f"- **Nivel de calidad:** {scorer.translate_quality_tier_spanish(score.quality_tier)}\n")
                 f.write(f"- **Línea base cuantitativa:** {'Sí' if score.has_quantitative_baseline else 'No'}\n")
                 f.write(f"- **Meta cuantitativa:** {'Sí' if score.has_quantitative_target else 'No'}\n")
                 f.write(f"- **Componentes detectados:** {len(score.components_detected)}\n")
-                f.write(f"- **Recomendación:** {scorer._get_recommendation_spanish(score.quality_tier)}\n\n")
+                f.write(f"- **Recomendación:** {scorer.get_recommendation_spanish(score.quality_tier)}\n\n")
         
         print(f"✓ Reporte Markdown exportado: {md_path}")
     
