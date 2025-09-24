@@ -484,8 +484,7 @@ class EmbeddingCache:
         Returns:
             Total disk usage of cache files in gigabytes.
         """
-        total_size = sum(
-            f.stat().st_size for f in self._disk_files if f.exists())
+        total_size = sum(f.stat().st_size for f in self._disk_files if f.exists())
         return total_size / (1024**3)
 
     def _cleanup_disk_cache(self):
@@ -789,8 +788,7 @@ class StatisticalNumericsAnalyzer:
             for match in pattern.finditer(text):
                 try:
                     raw_value = match.group(0)
-                    cleaned_value = cls._clean_numeric_string(
-                        raw_value, pattern_name)
+                    cleaned_value = cls._clean_numeric_string(raw_value, pattern_name)
 
                     if cleaned_value is not None:
                         # Extract context around the number
@@ -831,8 +829,7 @@ class StatisticalNumericsAnalyzer:
         try:
             # Remove common prefixes/suffixes
             cleaned = re.sub(r"[$€£¥%]", "", raw)
-            cleaned = re.sub(r"\b(?:st|nd|rd|th)\b", "",
-                             cleaned, flags=re.IGNORECASE)
+            cleaned = re.sub(r"\b(?:st|nd|rd|th)\b", "", cleaned, flags=re.IGNORECASE)
             cleaned = re.sub(
                 r"\b(?:km|m|cm|mm|kg|g|mg|l|ml|miles?|feet|ft|inches?|in|pounds?|lbs?|ounces?|oz|years?|months?|weeks?|days?|hours?|hrs?|minutes?|mins?|seconds?|secs?)\b",
                 "",
@@ -889,8 +886,7 @@ class StatisticalNumericsAnalyzer:
         try:
             # Basic distance metrics
             abs_diffs = np.abs(n1 - n2)
-            rel_diffs = np.abs(
-                (n1 - n2) / (np.maximum(np.abs(n1), np.abs(n2)) + 1e-12))
+            rel_diffs = np.abs((n1 - n2) / (np.maximum(np.abs(n1), np.abs(n2)) + 1e-12))
 
             # Statistical tests
             try:
@@ -934,8 +930,7 @@ class StatisticalNumericsAnalyzer:
                 "mean_relative_diff": float(np.mean(rel_diffs)),
                 "euclidean_distance": float(np.linalg.norm(abs_diffs)),
                 "cosine_similarity": float(
-                    np.dot(n1, n2) / (np.linalg.norm(n1)
-                                      * np.linalg.norm(n2) + 1e-12)
+                    np.dot(n1, n2) / (np.linalg.norm(n1) * np.linalg.norm(n2) + 1e-12)
                 ),
                 "pearson_correlation": (
                     float(np.corrcoef(n1, n2)[0, 1])
@@ -1037,8 +1032,7 @@ class AdvancedMMR:
                     ]
                 )
                 mmr_score = (
-                    lambda_param * relevance -
-                    (1 - lambda_param) * max_similarity
+                    lambda_param * relevance - (1 - lambda_param) * max_similarity
                 )
 
                 if mmr_score > best_score:
@@ -1074,8 +1068,7 @@ class AdvancedMMR:
                 # Compute minimum Euclidean distance to selected documents
                 min_distance = min(
                     [
-                        np.linalg.norm(
-                            doc_embs[candidate_idx] - doc_embs[sel_idx])
+                        np.linalg.norm(doc_embs[candidate_idx] - doc_embs[sel_idx])
                         for sel_idx, _ in selected
                     ]
                 )
@@ -1085,8 +1078,7 @@ class AdvancedMMR:
                     np.sqrt(doc_embs.shape[1]) + 1e-12
                 )
                 mmr_score = (
-                    lambda_param * relevance +
-                    (1 - lambda_param) * normalized_distance
+                    lambda_param * relevance + (1 - lambda_param) * normalized_distance
                 )
 
                 if mmr_score > best_score:
@@ -1137,8 +1129,7 @@ class AdvancedMMR:
                 diversity_bonus = 1.0 - cluster_penalty
 
                 mmr_score = (
-                    lambda_param * relevance +
-                    (1 - lambda_param) * diversity_bonus
+                    lambda_param * relevance + (1 - lambda_param) * diversity_bonus
                 )
 
                 if mmr_score > best_score:
@@ -1462,8 +1453,7 @@ class IndustrialEmbeddingModel:
         except Exception as e:
             self.quality_metrics["error_count"] += 1
             logger.error(f"Encoding failed for {len(texts)} texts: {str(e)}")
-            raise EmbeddingComputationError(
-                f"Failed to encode texts: {str(e)}")
+            raise EmbeddingComputationError(f"Failed to encode texts: {str(e)}")
 
     def _calculate_optimal_batch_size(self, num_texts: int) -> int:
         """Calculate optimal batch size based on model, system constraints, and memory."""
@@ -1581,7 +1571,7 @@ class IndustrialEmbeddingModel:
         )
 
         for i in range(0, len(texts), batch_size):
-            chunk_texts = texts[i: i + batch_size]
+            chunk_texts = texts[i : i + batch_size]
 
             # Process chunk with memory management
             with self.memory_manager.managed_operation():
@@ -1639,8 +1629,7 @@ class IndustrialEmbeddingModel:
         strength = np.clip(strength, 0.0, 1.0)
 
         # Generate instruction hash for caching and learning
-        instruction_hash = hashlib.sha256(
-            instruction.encode()).hexdigest()[:16]
+        instruction_hash = hashlib.sha256(instruction.encode()).hexdigest()[:16]
 
         # Get or create instruction profile
         if instruction_hash not in self.instruction_profiles:
@@ -1682,8 +1671,7 @@ class IndustrialEmbeddingModel:
 
         # Adaptive strength based on learned effectiveness
         if self.instruction_learning_enabled and profile.usage_count > 3:
-            adaptive_strength = strength * \
-                (0.5 + 0.5 * profile.effectiveness_score)
+            adaptive_strength = strength * (0.5 + 0.5 * profile.effectiveness_score)
             adaptive_strength = np.clip(adaptive_strength, 0.1, 0.9)
         else:
             adaptive_strength = strength
@@ -1696,8 +1684,7 @@ class IndustrialEmbeddingModel:
             alignment_scores = embeddings @ instruction_emb
 
             # Apply non-linear transformation based on alignment
-            alignment_weights = np.tanh(
-                alignment_scores * 2.0)  # Smooth weighting
+            alignment_weights = np.tanh(alignment_scores * 2.0)  # Smooth weighting
 
             # Multi-dimensional projection
             projection_matrix = np.outer(alignment_scores, instruction_emb)
@@ -1756,8 +1743,7 @@ class IndustrialEmbeddingModel:
         try:
             # Measure instruction alignment improvement
             original_alignment = np.mean(np.abs(original @ instruction_emb))
-            transformed_alignment = np.mean(
-                np.abs(transformed @ instruction_emb))
+            transformed_alignment = np.mean(np.abs(transformed @ instruction_emb))
 
             # Measure preservation of original information
             similarity_preservation = np.mean(
@@ -1826,8 +1812,7 @@ class IndustrialEmbeddingModel:
         }
 
         if metric not in similarity_functions:
-            logger.warning(
-                f"Unknown metric '{metric}', falling back to cosine")
+            logger.warning(f"Unknown metric '{metric}', falling back to cosine")
             metric = "cosine"
 
         try:
@@ -1870,14 +1855,12 @@ class IndustrialEmbeddingModel:
         try:
             # Generate query embedding if string provided
             if isinstance(query, str):
-                query_embedding = self.encode(
-                    [query], instruction=instruction)[0]
+                query_embedding = self.encode([query], instruction=instruction)[0]
             else:
                 query_embedding = query
 
             # Generate document embeddings
-            document_embeddings = self.encode(
-                documents, instruction=instruction)
+            document_embeddings = self.encode(documents, instruction=instruction)
 
             # Convert to torch tensors for efficient computation
             query_tensor = torch.from_numpy(query_embedding).float()
@@ -1891,8 +1874,7 @@ class IndustrialEmbeddingModel:
             docs_normalized = torch.nn.functional.normalize(doc_tensor, dim=1)
 
             # Compute similarity scores
-            similarities = torch.mm(
-                docs_normalized, query_normalized.t()).squeeze()
+            similarities = torch.mm(docs_normalized, query_normalized.t()).squeeze()
 
             # Use torch.topk for efficient top-k retrieval
             topk_scores, topk_indices = torch.topk(
@@ -1926,8 +1908,7 @@ class IndustrialEmbeddingModel:
                     results.append((idx_int, page, text))
 
             self.quality_metrics["total_embeddings"] += len(documents) + 1
-            logger.info(
-                f"Semantic search completed: {len(results)} results for query")
+            logger.info(f"Semantic search completed: {len(results)} results for query")
 
             return results
 
@@ -1976,8 +1957,7 @@ class IndustrialEmbeddingModel:
                 else:
                     return [int(idx) for idx in top_indices]
             except Exception as fallback_error:
-                logger.error(
-                    f"Fallback ranking also failed: {str(fallback_error)}")
+                logger.error(f"Fallback ranking also failed: {str(fallback_error)}")
                 return [] if return_scores else []
 
     def analyze_numeric_semantics(
@@ -2033,8 +2013,7 @@ class IndustrialEmbeddingModel:
                             if item["numeric_value"] is not None
                         ]
 
-                        stats = analyzer.compute_statistical_distances(
-                            values1, values2)
+                        stats = analyzer.compute_statistical_distances(values1, values2)
                         statistical_analysis[numeric_type] = stats
 
                         # Risk assessment
@@ -2104,8 +2083,7 @@ class IndustrialEmbeddingModel:
                 results.append(result)
 
             except Exception as e:
-                logger.error(
-                    f"Numeric semantic analysis failed for pair {i}: {str(e)}")
+                logger.error(f"Numeric semantic analysis failed for pair {i}: {str(e)}")
                 results.append(
                     {
                         "pair_index": i,
@@ -2212,8 +2190,7 @@ class IndustrialEmbeddingModel:
 
                 # Optimize batch size if latency is too high
                 if avg_latency_ms > target_latency_ms * 1.5:
-                    new_batch_size = max(
-                        1, int(self.model_config.batch_size * 0.8))
+                    new_batch_size = max(1, int(self.model_config.batch_size * 0.8))
                     if new_batch_size != self.model_config.batch_size:
                         self.model_config.batch_size = new_batch_size
                         optimization_results["changes_made"].append(
@@ -2356,8 +2333,7 @@ def production_deployment_example():
         for key, value in model_info.items():
             print(f"  {key}: {value}")
 
-        print(
-            f"\nProcessing {len(documents)} documents with advanced instruction:")
+        print(f"\nProcessing {len(documents)} documents with advanced instruction:")
         print(f"Query: '{query}'")
         print(f"Instruction: '{instruction[:100]}...'")
 
@@ -2438,8 +2414,7 @@ def production_deployment_example():
 
         for i, analysis in enumerate(numeric_analysis):
             print(f"\nPair {i + 1} Analysis:")
-            print(
-                f"  Semantic Similarity: {analysis['semantic_similarity']:.4f}")
+            print(f"  Semantic Similarity: {analysis['semantic_similarity']:.4f}")
             print(
                 f"  Risk Level: {analysis['risk_assessment']['overall_risk_level'].upper()}"
             )
@@ -2461,16 +2436,14 @@ def production_deployment_example():
             text2_numbers = sum(
                 len(nums) for nums in analysis["extracted_numerics"]["text2"].values()
             )
-            print(
-                f"  Numbers Found: Text1={text1_numbers}, Text2={text2_numbers}")
+            print(f"  Numbers Found: Text1={text1_numbers}, Text2={text2_numbers}")
             print()
 
         # Performance optimization demonstration
         print(f"\n{'Performance Optimization:':<40}")
         print(f"{'=' * 80}")
 
-        optimization_results = model.optimize_performance(
-            target_latency_ms=50.0)
+        optimization_results = model.optimize_performance(target_latency_ms=50.0)
         if optimization_results["changes_made"]:
             print("Optimizations applied:")
             for change in optimization_results["changes_made"]:
@@ -2487,12 +2460,10 @@ def production_deployment_example():
         # Performance metrics
         perf_metrics = final_diagnostics["performance_metrics"]
         print(f"Performance Metrics:")
-        print(
-            f"  Total Embeddings Generated: {perf_metrics['total_embeddings']}")
+        print(f"  Total Embeddings Generated: {perf_metrics['total_embeddings']}")
         print(f"  Cache Hit Rate: {perf_metrics['cache_hit_rate']:.1%}")
         print(f"  Error Rate: {perf_metrics['error_rate']:.1%}")
-        print(
-            f"  Instruction Applications: {perf_metrics['instruction_applications']}")
+        print(f"  Instruction Applications: {perf_metrics['instruction_applications']}")
 
         # System status
         system_status = final_diagnostics["system_status"]
@@ -2511,8 +2482,7 @@ def production_deployment_example():
         if "cache_diagnostics" in final_diagnostics:
             cache_stats = final_diagnostics["cache_diagnostics"]
             print(f"\nCache Performance:")
-            print(
-                f"  Cache Size: {cache_stats['size']}/{cache_stats['max_size']}")
+            print(f"  Cache Size: {cache_stats['size']}/{cache_stats['max_size']}")
             print(f"  Total Accesses: {cache_stats['total_accesses']}")
             print(f"  Unique Keys: {cache_stats['unique_keys']}")
 
@@ -2521,8 +2491,7 @@ def production_deployment_example():
             learning_stats = final_diagnostics["instruction_learning"]
             print(f"\nInstruction Learning:")
             print(f"  Learned Profiles: {learning_stats['total_profiles']}")
-            print(
-                f"  Average Usage: {learning_stats['average_usage_count']:.1f}")
+            print(f"  Average Usage: {learning_stats['average_usage_count']:.1f}")
             print(
                 f"  Average Effectiveness: {learning_stats['average_effectiveness']:.3f}"
             )
@@ -2587,8 +2556,7 @@ class EmbeddingModelBenchmark:
 
         # 2. Quality benchmarks
         print("  Running quality benchmarks...")
-        results["benchmark_results"]["quality"] = self._benchmark_quality(
-            test_corpus)
+        results["benchmark_results"]["quality"] = self._benchmark_quality(test_corpus)
 
         # 3. Instruction effectiveness benchmarks
         print("  Running instruction effectiveness benchmarks...")
@@ -2649,8 +2617,7 @@ class EmbeddingModelBenchmark:
                 quarter=random.randint(1, 4),
                 year=random.randint(2020, 2024),
                 percentage=round(random.uniform(10.0, 95.0), 1),
-                product=random.choice(
-                    ["Product A", "Service B", "Platform C"]),
+                product=random.choice(["Product A", "Service B", "Platform C"]),
                 improvement=round(random.uniform(5.0, 50.0), 1),
                 growth_rate=round(random.uniform(2.0, 25.0), 1),
                 sector=random.choice(["technology", "healthcare", "finance"]),
@@ -2691,7 +2658,7 @@ class EmbeddingModelBenchmark:
 
                 # Process in batches
                 for i in range(0, len(test_subset), batch_size):
-                    batch = test_subset[i: i + batch_size]
+                    batch = test_subset[i : i + batch_size]
                     self.model.encode(batch, batch_size=len(batch))
 
                 elapsed_time = time.perf_counter() - start_time
@@ -2753,28 +2720,23 @@ class EmbeddingModelBenchmark:
             "diversity_score": float(diversity_score),
             "similarity_distribution": {
                 "p25": float(
-                    np.percentile(
-                        similarity_matrix[similarity_matrix != 0], 25)
+                    np.percentile(similarity_matrix[similarity_matrix != 0], 25)
                 ),
                 "p50": float(
-                    np.percentile(
-                        similarity_matrix[similarity_matrix != 0], 50)
+                    np.percentile(similarity_matrix[similarity_matrix != 0], 50)
                 ),
                 "p75": float(
-                    np.percentile(
-                        similarity_matrix[similarity_matrix != 0], 75)
+                    np.percentile(similarity_matrix[similarity_matrix != 0], 75)
                 ),
                 "p95": float(
-                    np.percentile(
-                        similarity_matrix[similarity_matrix != 0], 95)
+                    np.percentile(similarity_matrix[similarity_matrix != 0], 95)
                 ),
             },
         }
 
         # 3. Dimensional analysis (PCA explained variance)
         try:
-            pca = PCA(n_components=min(
-                50, embeddings.shape[0], embeddings.shape[1]))
+            pca = PCA(n_components=min(50, embeddings.shape[0], embeddings.shape[1]))
             pca.fit(embeddings)
 
             quality_results["dimensional_analysis"] = {
@@ -2845,8 +2807,7 @@ class EmbeddingModelBenchmark:
             # Measure instruction alignment
             instruction_embedding = self.model.encode([instruction])[0]
             avg_alignment = np.mean(
-                [np.dot(emb, instruction_embedding)
-                 for emb in instructed_embeddings]
+                [np.dot(emb, instruction_embedding) for emb in instructed_embeddings]
             )
 
             # Measure consistency (how similar are instruction-transformed embeddings)
@@ -2903,8 +2864,7 @@ class EmbeddingModelBenchmark:
                             selected_indices = [idx for idx, _ in results]
                             selected_embeddings = doc_embeddings[selected_indices]
 
-                            pairwise_sims = cosine_similarity(
-                                selected_embeddings)
+                            pairwise_sims = cosine_similarity(selected_embeddings)
                             np.fill_diagonal(pairwise_sims, 0)
                             avg_diversity = 1.0 - np.mean(pairwise_sims)
 
@@ -2919,8 +2879,7 @@ class EmbeddingModelBenchmark:
 
                     except Exception as e:
                         algorithm_results.append(
-                            {"query": query, "lambda": lambda_val,
-                                "error": str(e)}
+                            {"query": query, "lambda": lambda_val, "error": str(e)}
                         )
 
                 elapsed_time = time.perf_counter() - start_time
@@ -2996,10 +2955,8 @@ class EmbeddingModelBenchmark:
         avg_semantic_similarity = np.mean(
             [r["semantic_similarity"] for r in analysis_results]
         )
-        confusion_rate = np.mean([r["confusion_potential"]
-                                 for r in analysis_results])
-        high_risk_rate = np.mean(
-            [r["risk_level"] == "high" for r in analysis_results])
+        confusion_rate = np.mean([r["confusion_potential"] for r in analysis_results])
+        high_risk_rate = np.mean([r["risk_level"] == "high" for r in analysis_results])
 
         return {
             "test_cases_analyzed": len(test_cases),
@@ -3078,15 +3035,13 @@ class EmbeddingModelBenchmark:
         report_lines.append(f"  Name: {model_info['name']}")
         report_lines.append(f"  Dimension: {model_info['dimension']}")
         report_lines.append(f"  Quality Tier: {model_info['quality_tier']}")
-        report_lines.append(
-            f"  Max Sequence Length: {model_info['max_seq_length']}")
+        report_lines.append(f"  Max Sequence Length: {model_info['max_seq_length']}")
 
         # Test configuration
         test_config = self.benchmark_results["test_configuration"]
         report_lines.append(f"\nTest Configuration:")
         report_lines.append(f"  Corpus Size: {test_config['corpus_size']}")
-        report_lines.append(
-            f"  Batch Size Range: {test_config['batch_size_range']}")
+        report_lines.append(f"  Batch Size Range: {test_config['batch_size_range']}")
         report_lines.append(
             f"  Instruction Complexity Levels: {test_config['instruction_levels']}"
         )
@@ -3094,8 +3049,7 @@ class EmbeddingModelBenchmark:
         # Throughput results
         throughput = self.benchmark_results["benchmark_results"]["throughput"]
         report_lines.append(f"\nThroughput Performance:")
-        report_lines.append(
-            f"  Optimal Batch Size: {throughput['optimal_batch_size']}")
+        report_lines.append(f"  Optimal Batch Size: {throughput['optimal_batch_size']}")
         report_lines.append(
             f"  Peak Throughput: {throughput['peak_throughput_texts_per_second']:.1f} texts/second"
         )

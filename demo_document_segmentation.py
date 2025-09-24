@@ -80,8 +80,7 @@ def main():
             print(f"  Words: {metrics.word_count}")
             print(f"  Type: {metrics.segment_type}")
             print(f"  Meets char criteria: {segment['meets_char_criteria']}")
-            print(
-                f"  Meets sentence criteria: {segment['meets_sentence_criteria']}")
+            print(f"  Meets sentence criteria: {segment['meets_sentence_criteria']}")
             print(f"  Coherence score: {metrics.semantic_coherence_score:.2f}")
             print()
 
@@ -148,8 +147,7 @@ def main():
 
         print(f"  Segments created: {len(segments)}")
         print(f"  Avg char length: {report['summary']['avg_char_length']:.1f}")
-        print(
-            f"  Avg sentence count: {report['summary']['avg_sentence_count']:.1f}")
+        print(f"  Avg sentence count: {report['summary']['avg_sentence_count']:.1f}")
         print(
             f"  Quality score: {report['quality_indicators']['overall_quality_score']:.3f}"
         )

@@ -21,8 +21,7 @@ class TestTextReference:
 
     def test_text_reference_creation(self):
         """Test basic TextReference creation."""
-        ref = TextReference("abc123", page_number=5,
-                            relevance_score=0.85, length=150)
+        ref = TextReference("abc123", page_number=5, relevance_score=0.85, length=150)
         assert ref.hash_id == "abc123"
         assert ref.page_number == 5
         assert ref.relevance_score == 0.85
@@ -30,8 +29,7 @@ class TestTextReference:
 
     def test_text_reference_str_all_fields(self):
         """Test string representation with all fields."""
-        ref = TextReference("abc123", page_number=5,
-                            relevance_score=0.85, length=150)
+        ref = TextReference("abc123", page_number=5, relevance_score=0.85, length=150)
         result = str(ref)
         assert "#abc123" in result
         assert "p5" in result
@@ -104,8 +102,7 @@ class TestTextTruncationLogger:
         logger = TextTruncationLogger()
         text = "Sample text for reference creation"
 
-        ref = logger.create_text_reference(
-            text, page_number=10, relevance_score=0.75)
+        ref = logger.create_text_reference(text, page_number=10, relevance_score=0.75)
 
         assert isinstance(ref, TextReference)
         assert ref.page_number == 10

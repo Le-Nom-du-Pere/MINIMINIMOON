@@ -96,8 +96,7 @@ class DocumentSegmenter:
         try:
             self.nlp = self.spacy_loader.load_model("es_core_news_sm")
             if self.nlp is None:
-                logger.warning(
-                    "spaCy Spanish model not available, using English model")
+                logger.warning("spaCy Spanish model not available, using English model")
                 self.nlp = self.spacy_loader.load_model("en_core_web_sm")
 
             if self.nlp is None:
@@ -378,8 +377,7 @@ class DocumentSegmenter:
                 # Finalize current segment
                 segment_text = " ".join(current_segment_words)
                 segments.append(
-                    self._create_segment_dict(
-                        segment_text, [], "character_based")
+                    self._create_segment_dict(segment_text, [], "character_based")
                 )
 
                 # Start new segment
@@ -464,8 +462,7 @@ class DocumentSegmenter:
                     length_variance = statistics.variance(sent_lengths) / max(
                         statistics.mean(sent_lengths), 1
                     )
-                    length_score = max(
-                        0, 1.0 - length_variance / 100)  # Normalize
+                    length_score = max(0, 1.0 - length_variance / 100)  # Normalize
                 else:
                     length_score = 0.5
             except:
@@ -493,8 +490,7 @@ class DocumentSegmenter:
                     # Merge with previous segment, preserving original type if possible
                     prev_segment = processed_segments[-1]
                     merged_text = prev_segment["text"] + " " + segment["text"]
-                    merged_sentences = prev_segment["sentences"] + \
-                        segment["sentences"]
+                    merged_sentences = prev_segment["sentences"] + segment["sentences"]
                     # Preserve the original segment type when merging from rule-based
                     original_type = prev_segment.get(
                         "segment_type", segment.get("segment_type", "merged")
@@ -566,15 +562,13 @@ class DocumentSegmenter:
 
         # Calculate averages
         self.segmentation_stats.avg_char_length = statistics.mean(char_lengths)
-        self.segmentation_stats.avg_sentence_count = statistics.mean(
-            sentence_counts)
+        self.segmentation_stats.avg_sentence_count = statistics.mean(sentence_counts)
 
         # Calculate distributions
         self.segmentation_stats.char_length_distribution = (
             self._create_char_distribution(char_lengths)
         )
-        self.segmentation_stats.sentence_count_distribution = Counter(
-            sentence_counts)
+        self.segmentation_stats.sentence_count_distribution = Counter(sentence_counts)
 
     def _create_char_distribution(self, char_lengths: List[int]) -> Dict[str, int]:
         """Create character length distribution buckets."""
@@ -602,7 +596,7 @@ class DocumentSegmenter:
         segments = []
 
         for i in range(0, len(text), target_size):
-            chunk = text[i: i + target_size].strip()
+            chunk = text[i : i + target_size].strip()
             if chunk:
                 segments.append(
                     self._create_segment_dict(chunk, [], "emergency_fallback")
@@ -627,13 +621,11 @@ class DocumentSegmenter:
 
         # Calculate quality metrics
         char_lengths = [seg.char_count for seg in stats.segments]
-        char_std_dev = statistics.stdev(
-            char_lengths) if len(char_lengths) > 1 else 0
+        char_std_dev = statistics.stdev(char_lengths) if len(char_lengths) > 1 else 0
 
         sentence_counts = [seg.sentence_count for seg in stats.segments]
         sentence_std_dev = (
-            statistics.stdev(sentence_counts) if len(
-                sentence_counts) > 1 else 0
+            statistics.stdev(sentence_counts) if len(sentence_counts) > 1 else 0
         )
 
         report = {
@@ -667,8 +659,7 @@ class DocumentSegmenter:
 
     def _calculate_consistency_score(self) -> float:
         """Calculate consistency score based on segment size variation."""
-        char_lengths = [
-            seg.char_count for seg in self.segmentation_stats.segments]
+        char_lengths = [seg.char_count for seg in self.segmentation_stats.segments]
         if len(char_lengths) < 2:
             return 1.0
 
@@ -700,8 +691,7 @@ class DocumentSegmenter:
         coherence_scores = [
             seg.semantic_coherence_score for seg in self.segmentation_stats.segments
         ]
-        avg_coherence = statistics.mean(
-            coherence_scores) if coherence_scores else 0.5
+        avg_coherence = statistics.mean(coherence_scores) if coherence_scores else 0.5
 
         return consistency * 0.3 + adherence * 0.5 + avg_coherence * 0.2
 
@@ -711,8 +701,7 @@ class DocumentSegmenter:
 
         logger.info("=== Document Segmentation Report ===")
         logger.info(f"Total segments: {report['summary']['total_segments']}")
-        logger.info(
-            f"Average character length: {report['summary']['avg_char_length']}")
+        logger.info(f"Average character length: {report['summary']['avg_char_length']}")
         logger.info(
             f"Average sentence count: {report['summary']['avg_sentence_count']}"
         )

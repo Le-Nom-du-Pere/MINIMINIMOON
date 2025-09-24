@@ -128,8 +128,7 @@ class ComparisonResult:
     metrics_after: Dict[str, AnalysisMetrics] = field(default_factory=dict)
     differences_detected: List[Dict[str, Any]] = field(default_factory=list)
     recommendations: List[str] = field(default_factory=list)
-    timestamp: datetime = field(
-        default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 @dataclass
@@ -807,15 +806,13 @@ class IndustrialUnicodeAnalyzer:
         )
 
         if control_ratio > 0.1:
-            anomalies.append(
-                f"High control character ratio: {control_ratio:.1%}")
+            anomalies.append(f"High control character ratio: {control_ratio:.1%}")
 
         # Check for unusual byte-to-character ratio
         if metrics.character_count > 0:
             byte_ratio = metrics.byte_size / metrics.character_count
             if byte_ratio > 4:
-                anomalies.append(
-                    f"High byte-to-character ratio: {byte_ratio:.1f}")
+                anomalies.append(f"High byte-to-character ratio: {byte_ratio:.1f}")
 
         # Check for mixed scripts
         script_analysis = extract_unicode_scripts(text)
@@ -835,8 +832,7 @@ class IndustrialUnicodeAnalyzer:
 
         # Check for suspicious character sequences
         if "\ufffd" in text:  # Replacement character
-            anomalies.append(
-                "Replacement characters detected (encoding issues)")
+            anomalies.append("Replacement characters detected (encoding issues)")
 
         # Check for RTL/LTR mark imbalance
         rtl_marks = text.count("\u200f")  # RTL mark
@@ -928,8 +924,7 @@ class IndustrialUnicodeAnalyzer:
                     anomalies_detected = self._detect_anomalies(text, metrics)
                     self.stats["anomalies_found"] += len(anomalies_detected)
                     # Create new metrics instance with anomalies
-                    metrics = replace(
-                        metrics, anomalies_detected=anomalies_detected)
+                    metrics = replace(metrics, anomalies_detected=anomalies_detected)
 
                 # Calculate final confidence score
                 confidence_score = self._calculate_confidence_score(metrics)
@@ -1063,8 +1058,7 @@ class IndustrialUnicodeAnalyzer:
         with self.performance_monitor.measure("full_comparison"):
             try:
                 # Analyze original text
-                original_metrics = self.analyze_text(
-                    text, f"{text_id}_original")
+                original_metrics = self.analyze_text(text, f"{text_id}_original")
 
                 # Normalize text in all configured forms
                 normalized_forms = {}
@@ -1180,39 +1174,30 @@ class IndustrialUnicodeAnalyzer:
                 "⚠️ WARNING: Significant normalization changes detected"
             )
         else:
-            recommendations.append(
-                "ℹ️ INFO: Minor normalization changes detected")
+            recommendations.append("ℹ️ INFO: Minor normalization changes detected")
 
         # Form-specific recommendations
-        nfc_changes = any(d["normalization_form"] ==
-                          "NFC" for d in differences)
-        nfd_changes = any(d["normalization_form"] ==
-                          "NFD" for d in differences)
-        nfkc_changes = any(d["normalization_form"] ==
-                           "NFKC" for d in differences)
-        nfkd_changes = any(d["normalization_form"] ==
-                           "NFKD" for d in differences)
+        nfc_changes = any(d["normalization_form"] == "NFC" for d in differences)
+        nfd_changes = any(d["normalization_form"] == "NFD" for d in differences)
+        nfkc_changes = any(d["normalization_form"] == "NFKC" for d in differences)
+        nfkd_changes = any(d["normalization_form"] == "NFKD" for d in differences)
 
         if nfc_changes:
             recommendations.append("📝 NFC normalization recommended for:")
-            recommendations.append(
-                "   → Database storage and data interchange")
+            recommendations.append("   → Database storage and data interchange")
             recommendations.append("   → Web applications and APIs")
 
         if nfd_changes:
             recommendations.append("🔍 NFD normalization useful for:")
-            recommendations.append(
-                "   → Linguistic analysis and text processing")
-            recommendations.append(
-                "   → Custom sorting and searching algorithms")
+            recommendations.append("   → Linguistic analysis and text processing")
+            recommendations.append("   → Custom sorting and searching algorithms")
 
         if nfkc_changes or nfkd_changes:
             recommendations.append(
                 "⚡ Compatibility normalization (NFKC/NFKD) considerations:"
             )
             recommendations.append("   → Use for legacy system compatibility")
-            recommendations.append(
-                "   → May cause information loss - review carefully")
+            recommendations.append("   → May cause information loss - review carefully")
 
         # Pattern-specific recommendations
         quote_changes = any(
@@ -1221,8 +1206,7 @@ class IndustrialUnicodeAnalyzer:
         )
         if quote_changes:
             recommendations.append("💬 Quote normalization detected:")
-            recommendations.append(
-                "   → Ensure consistent quote handling in templates")
+            recommendations.append("   → Ensure consistent quote handling in templates")
             recommendations.append("   → Consider user input sanitization")
 
         whitespace_changes = any(
@@ -1231,17 +1215,14 @@ class IndustrialUnicodeAnalyzer:
         )
         if whitespace_changes:
             recommendations.append("📏 Whitespace normalization detected:")
-            recommendations.append(
-                "   → May affect text layout and formatting")
+            recommendations.append("   → May affect text layout and formatting")
             recommendations.append("   → Review display and printing systems")
 
         # Performance recommendations
         if total_changes > 1000:
             recommendations.append("🚀 Performance considerations:")
-            recommendations.append(
-                f"   → {total_changes:,} character changes detected")
-            recommendations.append(
-                "   → Consider batch processing for large datasets")
+            recommendations.append(f"   → {total_changes:,} character changes detected")
+            recommendations.append("   → Consider batch processing for large datasets")
             recommendations.append(
                 "   → Implement caching for frequently normalized text"
             )
@@ -1296,8 +1277,7 @@ class IndustrialUnicodeAnalyzer:
                 except TimeoutError:
                     self.logger.error(f"Timeout analyzing text {text_id}")
                     failed_results.append(
-                        self._create_error_result(
-                            text, text_id, "Analysis timeout")
+                        self._create_error_result(text, text_id, "Analysis timeout")
                     )
                     completed += 1
 
@@ -1415,8 +1395,7 @@ class IndustrialUnicodeAnalyzer:
                     d["total_character_changes"] for d in result.differences_detected
                 )
                 max_significance = max(
-                    (d["significance_score"]
-                     for d in result.differences_detected),
+                    (d["significance_score"] for d in result.differences_detected),
                     default=0.0,
                 )
 
@@ -1426,8 +1405,7 @@ class IndustrialUnicodeAnalyzer:
                     for d in result.differences_detected
                 )
                 has_whitespace_changes = any(
-                    any("whitespace" in k for k in d["pattern_differences"].keys(
-                    ))
+                    any("whitespace" in k for k in d["pattern_differences"].keys())
                     for d in result.differences_detected
                 )
 
@@ -1464,8 +1442,7 @@ class IndustrialUnicodeAnalyzer:
         total_texts = len(results)
         total_chars = sum(r.metrics_before.character_count for r in results)
         texts_with_changes = sum(1 for r in results if r.differences_detected)
-        total_anomalies = sum(
-            len(r.metrics_before.anomalies_detected) for r in results)
+        total_anomalies = sum(len(r.metrics_before.anomalies_detected) for r in results)
         avg_confidence = (
             sum(r.metrics_before.confidence_score for r in results) / len(results)
             if results
@@ -1859,8 +1836,7 @@ The Management""",
             ),
             (
                 "unicode_blocks",
-                "".join(chr(i)
-                        for i in range(0x100, 0x300) if chr(i).isprintable()),
+                "".join(chr(i) for i in range(0x100, 0x300) if chr(i).isprintable()),
             ),
             # Edge cases and problematic content
             ("empty_string", ""),
@@ -2012,8 +1988,7 @@ Ut enim ad minim veniam, quis nostrud exercitation."""
         ]
         failed_count = total_texts - len(successful_results)
 
-        total_chars = sum(
-            r.metrics_before.character_count for r in successful_results)
+        total_chars = sum(r.metrics_before.character_count for r in successful_results)
         texts_with_changes = sum(
             1 for r in successful_results if r.differences_detected
         )
@@ -2024,8 +1999,7 @@ Ut enim ad minim veniam, quis nostrud exercitation."""
         print(f"📈 EXECUTION METRICS")
         print(f"   ✅ Successful analyses: {len(successful_results):,}")
         print(f"   ❌ Failed analyses: {failed_count:,}")
-        print(
-            f"   📊 Success rate: {len(successful_results) / total_texts:.1%}")
+        print(f"   📊 Success rate: {len(successful_results) / total_texts:.1%}")
         print(f"   📝 Total characters processed: {total_chars:,}")
         print(
             f"   🚄 Processing throughput: {total_chars / processing_time:,.0f} chars/sec"
@@ -2058,13 +2032,11 @@ Ut enim ad minim veniam, quis nostrud exercitation."""
             if significance_scores:
                 print(f"📊 SIGNIFICANCE DISTRIBUTION")
                 high_impact = sum(1 for s in significance_scores if s > 10)
-                medium_impact = sum(
-                    1 for s in significance_scores if 5 < s <= 10)
+                medium_impact = sum(1 for s in significance_scores if 5 < s <= 10)
                 low_impact = sum(1 for s in significance_scores if s <= 5)
 
                 print(f"   🔥 High impact (>10.0): {high_impact:,} texts")
-                print(
-                    f"   ⚠️  Medium impact (5.0-10.0): {medium_impact:,} texts")
+                print(f"   ⚠️  Medium impact (5.0-10.0): {medium_impact:,} texts")
                 print(f"   ✅ Low impact (≤5.0): {low_impact:,} texts")
                 print(
                     f"   📈 Average significance: {sum(significance_scores) / len(significance_scores):.2f}"
@@ -2088,8 +2060,7 @@ Ut enim ad minim veniam, quis nostrud exercitation."""
                 percentage = (
                     count / texts_with_changes * 100 if texts_with_changes else 0
                 )
-                print(
-                    f"   • {pattern:30} {count:4,} occurrences ({percentage:5.1f}%)")
+                print(f"   • {pattern:30} {count:4,} occurrences ({percentage:5.1f}%)")
         else:
             print("   No pattern changes detected")
         print()
@@ -2117,8 +2088,7 @@ Ut enim ad minim veniam, quis nostrud exercitation."""
         # Most impactful texts
         high_impact_results = sorted(
             [r for r in successful_results if r.differences_detected],
-            key=lambda r: max(d["significance_score"]
-                              for d in r.differences_detected),
+            key=lambda r: max(d["significance_score"] for d in r.differences_detected),
             reverse=True,
         )[:5]
 
@@ -2140,8 +2110,7 @@ Ut enim ad minim veniam, quis nostrud exercitation."""
             for result in successful_results:
                 for anomaly in result.metrics_before.anomalies_detected:
                     anomaly_type = (
-                        anomaly.split(
-                            ":")[0] if ":" in anomaly else anomaly.split()[0]
+                        anomaly.split(":")[0] if ":" in anomaly else anomaly.split()[0]
                     )
                     anomaly_types[anomaly_type] += 1
 
@@ -2174,8 +2143,7 @@ Ut enim ad minim veniam, quis nostrud exercitation."""
         for filename, format_type in export_tasks:
             output_path = output_dir / filename
             try:
-                print(
-                    f"   📄 Generating {format_type.upper()} export...", end=" ")
+                print(f"   📄 Generating {format_type.upper()} export...", end=" ")
                 self.analyzer.export_results(results, output_path, format_type)
                 file_size = output_path.stat().st_size
                 print(f"✅ ({file_size:,} bytes)")
@@ -2190,8 +2158,7 @@ Ut enim ad minim veniam, quis nostrud exercitation."""
             perf_report = self.analyzer.get_performance_report()
             with open(perf_path, "w", encoding="utf-8") as f:
                 json.dump(perf_report, f, indent=2, default=str)
-            print(
-                f"   📊 Performance metrics: ✅ ({perf_path.stat().st_size:,} bytes)")
+            print(f"   📊 Performance metrics: ✅ ({perf_path.stat().st_size:,} bytes)")
             successful_exports += 1
 
         except Exception as e:
@@ -2201,8 +2168,7 @@ Ut enim ad minim veniam, quis nostrud exercitation."""
         try:
             readme_path = output_dir / "README.md"
             self._generate_readme(readme_path, results)
-            print(
-                f"   📖 Documentation: ✅ ({readme_path.stat().st_size:,} bytes)")
+            print(f"   📖 Documentation: ✅ ({readme_path.stat().st_size:,} bytes)")
             successful_exports += 1
 
         except Exception as e:

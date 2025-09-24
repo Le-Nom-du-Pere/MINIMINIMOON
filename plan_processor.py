@@ -219,8 +219,7 @@ class ErrorLogger:
                 if error.plan_parameters:
                     f.write("Plan Parameters:\n")
                     f.write("-" * 20 + "\n")
-                    f.write(json.dumps(error.plan_parameters,
-                            indent=2, default=str))
+                    f.write(json.dumps(error.plan_parameters, indent=2, default=str))
                     f.write("\n\n")
 
                 f.write("Full Traceback:\n")
@@ -235,8 +234,7 @@ class ErrorLogger:
             )
 
         except Exception as log_error:
-            self.logger.error(
-                f"Failed to write error log file {log_path}: {log_error}")
+            self.logger.error(f"Failed to write error log file {log_path}: {log_error}")
 
         return str(log_path)
 
@@ -305,8 +303,7 @@ class PlanProcessor(ABC):
         while attempt <= self.retry_config.max_retries + 1:  # +1 for initial attempt
             try:
                 # Attempt to process the plan
-                result_data = self._process_plan_implementation(
-                    plan_data, plan_id)
+                result_data = self._process_plan_implementation(plan_data, plan_id)
 
                 # Success - return result
                 total_time = time.time() - start_time
@@ -325,8 +322,7 @@ class PlanProcessor(ABC):
 
             except Exception as e:
                 # Classify the error
-                error_type, specific_error = self.error_classifier.classify_error(
-                    e)
+                error_type, specific_error = self.error_classifier.classify_error(e)
 
                 # Create error object
                 error = PlanProcessingError(
@@ -466,8 +462,7 @@ class FeasibilityPlanProcessor(PlanProcessor):
             raise FileNotFoundError("Plan file not found")
 
         if "simulate_network_timeout" in plan_data:
-            raise TimeoutError(
-                "Network timeout while accessing remote plan data")
+            raise TimeoutError("Network timeout while accessing remote plan data")
 
         if "simulate_malformed_pdf" in plan_data:
             raise ValueError("PDF file is corrupted or malformed")
@@ -488,8 +483,7 @@ class FeasibilityPlanProcessor(PlanProcessor):
             results = []
             for indicator in indicators:
                 if isinstance(indicator, str):
-                    score_result = self.scorer.calculate_feasibility_score(
-                        indicator)
+                    score_result = self.scorer.calculate_feasibility_score(indicator)
                     results.append(
                         {
                             "indicator": indicator,
@@ -603,8 +597,7 @@ if __name__ == "__main__":
         print(f"Processing Time: {result.total_processing_time:.3f}s")
 
         if result.success and result.result_data:
-            print(
-                f"Total Indicators: {result.result_data['total_indicators']}")
+            print(f"Total Indicators: {result.result_data['total_indicators']}")
             print(f"Average Score: {result.result_data['average_score']:.3f}")
         elif result.error:
             print(f"Error Type: {result.error.error_type.value}")

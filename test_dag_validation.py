@@ -20,8 +20,7 @@ class TestDAGValidator(unittest.TestCase):
         seed1 = self.validator._create_seed_from_plan_name(plan_name)
         seed2 = self.validator._create_seed_from_plan_name(plan_name)
 
-        self.assertEqual(
-            seed1, seed2, "Seeds should be identical for same plan name")
+        self.assertEqual(seed1, seed2, "Seeds should be identical for same plan name")
 
     def test_seed_generation_different_plans(self):
         """Test that different plan names produce different seeds."""
@@ -63,14 +62,12 @@ class TestDAGValidator(unittest.TestCase):
         }
 
         self.assertFalse(
-            self.validator._is_acyclic(
-                nodes), "Graph with cycle should not be acyclic"
+            self.validator._is_acyclic(nodes), "Graph with cycle should not be acyclic"
         )
 
     def test_empty_graph_acyclic(self):
         """Test that empty graph is considered acyclic."""
-        self.assertTrue(self.validator._is_acyclic({}),
-                        "Empty graph should be acyclic")
+        self.assertTrue(self.validator._is_acyclic({}), "Empty graph should be acyclic")
 
     def test_single_node_acyclic(self):
         """Test that single node is acyclic."""
@@ -146,8 +143,7 @@ class TestDAGValidator(unittest.TestCase):
         self.validator.add_node("X")
         self.validator.add_node("Y", {"X"})
 
-        is_reproducible = self.validator.verify_reproducibility(
-            "repro_test", 50)
+        is_reproducible = self.validator.verify_reproducibility("repro_test", 50)
         self.assertTrue(is_reproducible, "Results should be reproducible")
 
     def test_graph_stats(self):

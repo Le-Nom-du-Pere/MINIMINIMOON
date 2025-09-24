@@ -200,16 +200,13 @@ class TestTeoriaCambioValidacion(unittest.TestCase):
         grafo.add_edge("nodo_medio", "nodo_final")
 
         assert (
-            tc._obtener_categoria_nodo(
-                "nodo_inicial", grafo) == CategoriaCausal.INSUMOS
+            tc._obtener_categoria_nodo("nodo_inicial", grafo) == CategoriaCausal.INSUMOS
         )
         assert (
-            tc._obtener_categoria_nodo(
-                "nodo_final", grafo) == CategoriaCausal.IMPACTOS
+            tc._obtener_categoria_nodo("nodo_final", grafo) == CategoriaCausal.IMPACTOS
         )
         assert (
-            tc._obtener_categoria_nodo(
-                "nodo_medio", grafo) == CategoriaCausal.PRODUCTOS
+            tc._obtener_categoria_nodo("nodo_medio", grafo) == CategoriaCausal.PRODUCTOS
         )
 
     def test_es_conexion_valida(self):
@@ -265,13 +262,11 @@ class TestTeoriaCambioValidacion(unittest.TestCase):
         assert tc._es_camino_completo(camino_completo, grafo)
 
         # Camino incompleto (no termina en IMPACTOS)
-        camino_incompleto = ["insumos",
-                             "proceso_actividad", "producto_entregable"]
+        camino_incompleto = ["insumos", "proceso_actividad", "producto_entregable"]
         assert not tc._es_camino_completo(camino_incompleto, grafo)
 
         # Camino que no empieza en INSUMOS
-        camino_sin_inicio = ["proceso_actividad",
-                             "producto_entregable", "impactos"]
+        camino_sin_inicio = ["proceso_actividad", "producto_entregable", "impactos"]
         assert not tc._es_camino_completo(camino_sin_inicio, grafo)
 
     def test_obtener_nodos_por_categoria(self):
@@ -284,8 +279,7 @@ class TestTeoriaCambioValidacion(unittest.TestCase):
         grafo.add_node("actividad_proceso1", tipo="proceso")
         grafo.add_node("transformacion_impacto", tipo="impacto")
 
-        nodos_insumos = tc._obtener_nodos_por_categoria(
-            grafo, CategoriaCausal.INSUMOS)
+        nodos_insumos = tc._obtener_nodos_por_categoria(grafo, CategoriaCausal.INSUMOS)
         nodos_procesos = tc._obtener_nodos_por_categoria(
             grafo, CategoriaCausal.PROCESOS
         )

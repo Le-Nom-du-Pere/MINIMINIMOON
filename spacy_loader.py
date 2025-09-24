@@ -84,8 +84,7 @@ class SpacyModelLoader:
         try:
             return spacy.load(model_name, disable=disable or [])
         except Exception as e:  # Catch all exceptions to prevent SystemExit
-            log_debug_with_text(
-                logger, f"Failed to load model '{model_name}': {e}")
+            log_debug_with_text(logger, f"Failed to load model '{model_name}': {e}")
             return None
 
     def _download_model_with_retry(self, model_name: str) -> bool:
@@ -104,8 +103,7 @@ class SpacyModelLoader:
                     f"Downloading spaCy model '{model_name}' (attempt {attempt + 1}/{self.max_retries + 1})"
                 )
                 spacy.cli.download(model_name)
-                logger.info(
-                    f"Successfully downloaded spaCy model '{model_name}'")
+                logger.info(f"Successfully downloaded spaCy model '{model_name}'")
                 return True
 
             except Exception as e:
@@ -251,8 +249,7 @@ def setup_logging():
         console_handler.setFormatter(console_formatter)
         root_logger.addHandler(console_handler)
 
-        logger.info(
-            f"Logging configured successfully. Log files in: {log_dir}")
+        logger.info(f"Logging configured successfully. Log files in: {log_dir}")
 
     except (PermissionError, OSError, IOError) as e:
         print(
@@ -281,8 +278,7 @@ def example_usage():
     print(f"Entities: {result['entities']}")
 
     if not processor.is_fully_functional():
-        logger.warning(
-            "Application running in degraded mode due to spaCy model issues")
+        logger.warning("Application running in degraded mode due to spaCy model issues")
 
 
 if __name__ == "__main__":

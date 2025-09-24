@@ -142,8 +142,7 @@ def ejemplo_teoria_cambio_completa():
     )
 
     if resultado.caminos_completos:
-        print("Primer camino completo:", " → ".join(
-            resultado.caminos_completos[0]))
+        print("Primer camino completo:", " → ".join(resultado.caminos_completos[0]))
 
     print()
 

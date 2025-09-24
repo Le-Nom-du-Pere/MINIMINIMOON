@@ -203,8 +203,7 @@ class TestDocumentSegmenter(unittest.TestCase):
             for segment in segments:
                 self.assertGreater(len(segment["text"]), 0)
                 # After post-processing, segment type might change due to merging
-                self.assertIn(segment["segment_type"],
-                              ["rule_based", "merged"])
+                self.assertIn(segment["segment_type"], ["rule_based", "merged"])
 
     def test_segmentation_stats(self):
         """Test segmentation statistics calculation."""
@@ -285,10 +284,8 @@ class TestDocumentSegmenter(unittest.TestCase):
         coherent_text = "The algorithm processes documents efficiently. The system uses advanced processing techniques. Processing accuracy improves with better algorithms."
         incoherent_text = "Random words scattered. Elephant purple mathematics. Cooking flying temperature."
 
-        coherent_score = self.segmenter._estimate_semantic_coherence(
-            coherent_text)
-        incoherent_score = self.segmenter._estimate_semantic_coherence(
-            incoherent_text)
+        coherent_score = self.segmenter._estimate_semantic_coherence(coherent_text)
+        incoherent_score = self.segmenter._estimate_semantic_coherence(incoherent_text)
 
         # Coherent text should score higher
         self.assertGreater(coherent_score, incoherent_score)
@@ -325,8 +322,7 @@ class TestDocumentSegmenter(unittest.TestCase):
         # Create a pathological case
         pathological_text = "a" * 10000  # Very long text with no sentence boundaries
 
-        segments = self.segmenter._emergency_fallback_segmentation(
-            pathological_text)
+        segments = self.segmenter._emergency_fallback_segmentation(pathological_text)
 
         # Should create segments
         self.assertGreater(len(segments), 0)
@@ -335,8 +331,7 @@ class TestDocumentSegmenter(unittest.TestCase):
         for segment in segments:
             self.assertLessEqual(
                 segment["metrics"].char_count,
-                (self.segmenter.target_char_min +
-                 self.segmenter.target_char_max) // 2
+                (self.segmenter.target_char_min + self.segmenter.target_char_max) // 2
                 + 50,
             )  # Allow some flexibility
 
@@ -370,12 +365,9 @@ class TestDocumentSegmenter(unittest.TestCase):
                 self.assertGreater(len(segments), 0)
 
                 # Check that configuration is respected
-                self.assertEqual(segmenter.target_char_min,
-                                 config["target_char_min"])
-                self.assertEqual(segmenter.target_char_max,
-                                 config["target_char_max"])
-                self.assertEqual(segmenter.target_sentences,
-                                 config["target_sentences"])
+                self.assertEqual(segmenter.target_char_min, config["target_char_min"])
+                self.assertEqual(segmenter.target_char_max, config["target_char_max"])
+                self.assertEqual(segmenter.target_sentences, config["target_sentences"])
 
 
 class TestSegmentMetrics(unittest.TestCase):

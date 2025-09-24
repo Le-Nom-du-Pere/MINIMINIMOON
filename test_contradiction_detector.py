@@ -53,8 +53,7 @@ class TestContradictionDetector(unittest.TestCase):
         self.assertTrue(len(matches) >= 1)
         # Check if "sin embargo" is among the matches
         adversative_texts = [match[0].lower() for match in matches]
-        self.assertTrue(
-            any("sin embargo" in text for text in adversative_texts))
+        self.assertTrue(any("sin embargo" in text for text in adversative_texts))
 
     def test_pattern_matching_goals(self):
         """Test goal pattern matching."""
@@ -200,8 +199,7 @@ class TestContradictionDetector(unittest.TestCase):
         text = "Meta del 95% de cobertura, sin embargo, presupuesto reducido 30%."
         existing_score = 0.3
 
-        result = self.detector.integrate_with_risk_assessment(
-            text, existing_score)
+        result = self.detector.integrate_with_risk_assessment(text, existing_score)
 
         self.assertEqual(result["base_score"], existing_score)
         self.assertTrue(result["contradiction_risk"] > 0.2)
@@ -214,8 +212,7 @@ class TestContradictionDetector(unittest.TestCase):
         text = "El programa mejorará la calidad de vida con presupuesto adecuado."
         existing_score = 0.2
 
-        result = self.detector.integrate_with_risk_assessment(
-            text, existing_score)
+        result = self.detector.integrate_with_risk_assessment(text, existing_score)
 
         self.assertEqual(result["base_score"], existing_score)
         self.assertEqual(result["contradiction_risk"], 0.0)
@@ -228,8 +225,7 @@ class TestContradictionDetector(unittest.TestCase):
         text = "Meta del 100%, sin embargo, recursos del 0%. Aunque se pretende alcanzar todo, pero no hay nada."
         existing_score = 0.9
 
-        result = self.detector.integrate_with_risk_assessment(
-            text, existing_score)
+        result = self.detector.integrate_with_risk_assessment(text, existing_score)
 
         self.assertLessEqual(result["integrated_score"], 1.0)
 
@@ -310,8 +306,7 @@ class TestContradictionDetector(unittest.TestCase):
         self.assertEqual(analysis.total_contradictions, 0)
 
         # Only adversative connector, no goals/actions
-        analysis = self.detector.detect_contradictions(
-            "Sin embargo, es importante.")
+        analysis = self.detector.detect_contradictions("Sin embargo, es importante.")
         self.assertEqual(analysis.total_contradictions, 0)
 
         # Only goals, no adversative connectors

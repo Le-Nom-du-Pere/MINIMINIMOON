@@ -28,12 +28,10 @@ def test_zero_evidence_support():
 
     # Test with zero evidence support
     print("\n2. With zero evidence support (evidencia_soporte=0):")
-    zero_evidence_result = scorer.calculate_feasibility_score(
-        text, evidencia_soporte=0)
+    zero_evidence_result = scorer.calculate_feasibility_score(text, evidencia_soporte=0)
     print(f"   Score: {zero_evidence_result.feasibility_score:.2f}")
     print(f"   Quality tier: {zero_evidence_result.quality_tier}")
-    print(
-        f"   Components detected: {len(zero_evidence_result.components_detected)}")
+    print(f"   Components detected: {len(zero_evidence_result.components_detected)}")
     print(f"   Risk level: HIGH (due to zero evidence)")
 
     # Test with non-zero evidence support
@@ -88,8 +86,7 @@ def test_batch_scoring_with_evidence():
     print("\n\nTesting batch scoring with evidence support...")
     print("=" * 50)
 
-    results = scorer.batch_score(
-        indicators, evidencia_soporte_list=evidencia_list)
+    results = scorer.batch_score(indicators, evidencia_soporte_list=evidencia_list)
 
     for i, (indicator, evidencia, result) in enumerate(
         zip(indicators, evidencia_list, results)

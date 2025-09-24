@@ -51,8 +51,7 @@ class TeamCitySetupTester:
                 self.log_test("Python3 Available", True, version)
                 return True
             else:
-                self.log_test("Python3 Available", False,
-                              "python3 command failed")
+                self.log_test("Python3 Available", False, "python3 command failed")
                 return False
         except Exception as e:
             self.log_test("Python3 Available", False, str(e))
@@ -63,8 +62,7 @@ class TeamCitySetupTester:
         try:
             # Create virtual environment
             cmd = ["python3", "-m", "venv", self.venv_path]
-            result = subprocess.run(
-                cmd, capture_output=True, text=True, timeout=30)
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
 
             if result.returncode == 0 and os.path.exists(self.venv_path):
                 # Check if python executable exists
@@ -84,8 +82,7 @@ class TeamCitySetupTester:
                     )
                     return False
             else:
-                self.log_test("Virtual Environment Creation",
-                              False, result.stderr)
+                self.log_test("Virtual Environment Creation", False, result.stderr)
                 return False
         except Exception as e:
             self.log_test("Virtual Environment Creation", False, str(e))
@@ -142,8 +139,7 @@ class TeamCitySetupTester:
             cache_dir = os.path.join(self.temp_dir, ".pip-cache")
 
             if not os.path.exists(python_exec):
-                self.log_test("Pip Caching", False,
-                              "Virtual environment not found")
+                self.log_test("Pip Caching", False, "Virtual environment not found")
                 return False
 
             # Create cache directory
@@ -166,8 +162,7 @@ class TeamCitySetupTester:
             )
 
             if result.returncode == 0:
-                self.log_test("Pip Caching", True,
-                              f"Cache directory: {cache_dir}")
+                self.log_test("Pip Caching", True, f"Cache directory: {cache_dir}")
                 return True
             else:
                 self.log_test("Pip Caching", False, result.stderr)
@@ -204,8 +199,7 @@ class TeamCitySetupTester:
                 "-r",
                 test_requirements,
             ]
-            result = subprocess.run(
-                cmd, capture_output=True, text=True, timeout=60)
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
 
             if result.returncode == 0:
                 self.log_test(
@@ -259,8 +253,7 @@ class TeamCitySetupTester:
                 )
                 return True
             else:
-                self.log_test("Module Import", False,
-                              f"Import failed: {result.stderr}")
+                self.log_test("Module Import", False, f"Import failed: {result.stderr}")
                 return False
         except Exception as e:
             self.log_test("Module Import", False, str(e))
@@ -297,8 +290,7 @@ print(f'Build validation passed: score={result.feasibility_score}')
             )
 
             if result.returncode == 0 and "Build validation passed" in result.stdout:
-                self.log_test("Build Validation", True,
-                              "Functional test passed")
+                self.log_test("Build Validation", True, "Functional test passed")
                 return True
             else:
                 self.log_test(

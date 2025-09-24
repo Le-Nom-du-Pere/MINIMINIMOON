@@ -33,8 +33,7 @@ class TestDataCleaning:
 
     def test_clean_inf_values(self):
         """Test infinity value replacement"""
-        data = {"pos_inf": float("inf"), "neg_inf": float(
-            "-inf"), "normal": 42}
+        data = {"pos_inf": float("inf"), "neg_inf": float("-inf"), "normal": 42}
         cleaned = clean_data_for_json(data)
         assert cleaned["pos_inf"] == "Infinity"
         assert cleaned["neg_inf"] == "-Infinity"
@@ -71,8 +70,7 @@ class TestDataCleaning:
 
     def test_custom_replacements(self):
         """Test custom replacement values"""
-        data = {"nan": float("nan"), "inf": float("inf"),
-                "neg_inf": float("-inf")}
+        data = {"nan": float("nan"), "inf": float("inf"), "neg_inf": float("-inf")}
         cleaned = clean_data_for_json(
             data,
             nan_replacement="NOT_A_NUMBER",
@@ -150,8 +148,7 @@ class TestSafeJsonDumps:
 
     def test_safe_json_dumps_with_special_values(self):
         """Test JSON dumps with special float values"""
-        data = {"nan": float("nan"), "inf": float("inf"),
-                "list": [float("-inf"), 42]}
+        data = {"nan": float("nan"), "inf": float("inf"), "list": [float("-inf"), 42]}
 
         result = safe_json_dumps(data)
 

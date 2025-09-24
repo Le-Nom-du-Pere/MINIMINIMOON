@@ -17,8 +17,7 @@ class TestRunner:
 
     def assert_equal(self, actual, expected, message=""):
         if actual != expected:
-            raise AssertionError(
-                f"Expected {expected}, got {actual}. {message}")
+            raise AssertionError(f"Expected {expected}, got {actual}. {message}")
 
     def assert_true(self, condition, message=""):
         if not condition:
@@ -61,8 +60,7 @@ def test_high_quality_indicators():
     runner.assert_true(
         result.feasibility_score >= 0.8, "High quality score should be >= 0.8"
     )
-    runner.assert_equal(result.quality_tier, "high",
-                        "Should be high quality tier")
+    runner.assert_equal(result.quality_tier, "high", "Should be high quality tier")
     runner.assert_true(
         result.has_quantitative_baseline, "Should detect quantitative baseline"
     )
@@ -82,8 +80,7 @@ def test_mandatory_requirements():
     runner = TestRunner()
 
     # Only baseline - should get 0 score
-    result = scorer.calculate_feasibility_score(
-        "La línea base es de 50% de cobertura")
+    result = scorer.calculate_feasibility_score("La línea base es de 50% de cobertura")
     runner.assert_equal(
         result.feasibility_score, 0.0, "Missing target should result in 0 score"
     )
@@ -174,10 +171,8 @@ def test_date_detection():
 
     for text in date_texts:
         components = scorer.detect_components(text)
-        date_detected = any(c.component_type ==
-                            ComponentType.DATE for c in components)
-        runner.assert_true(
-            date_detected, f"Failed to detect date pattern in: {text}")
+        date_detected = any(c.component_type == ComponentType.DATE for c in components)
+        runner.assert_true(date_detected, f"Failed to detect date pattern in: {text}")
 
 
 def test_insufficient_indicators():
@@ -219,8 +214,7 @@ def test_batch_scoring():
     # Test with parallel processing disabled
     scorer_seq = FeasibilityScorer(enable_parallel=False)
     results_disabled = scorer_seq.batch_score(indicators)
-    runner.assert_equal(len(results_disabled), 3,
-                        "Should work with parallel disabled")
+    runner.assert_equal(len(results_disabled), 3, "Should work with parallel disabled")
 
     # First should score higher than others
     runner.assert_true(
@@ -249,15 +243,11 @@ def test_batch_scoring_with_monitoring():
 
     # Check result structure
     runner.assert_equal(len(result.scores), 3, "Should return 3 scores")
-    runner.assert_equal(result.total_indicators, 3,
-                        "Should count 3 indicators")
-    runner.assert_true(result.duracion_segundos >= 0,
-                       "Duration should be non-negative")
-    runner.assert_true(result.planes_por_minuto >= 0,
-                       "Rate should be non-negative")
+    runner.assert_equal(result.total_indicators, 3, "Should count 3 indicators")
+    runner.assert_true(result.duracion_segundos >= 0, "Duration should be non-negative")
+    runner.assert_true(result.planes_por_minuto >= 0, "Rate should be non-negative")
     runner.assert_true(
-        isinstance(result.execution_time,
-                   str), "Execution time should be string"
+        isinstance(result.execution_time, str), "Execution time should be string"
     )
 
     # Check that scores match regular batch_score
@@ -315,10 +305,8 @@ def test_documentation():
     runner.assert_true(
         "Spanish Pattern Recognition" in docs, "Should contain Spanish patterns section"
     )
-    runner.assert_true("Quality Tiers" in docs,
-                       "Should contain quality tiers section")
-    runner.assert_true(
-        len(docs) > 1000, "Documentation should be comprehensive")
+    runner.assert_true("Quality Tiers" in docs, "Should contain quality tiers section")
+    runner.assert_true(len(docs) > 1000, "Documentation should be comprehensive")
 
 
 def main():
@@ -336,8 +324,7 @@ def main():
     runner.run_test(test_date_detection, "Date Detection")
     runner.run_test(test_insufficient_indicators, "Insufficient Indicators")
     runner.run_test(test_batch_scoring, "Batch Scoring")
-    runner.run_test(test_batch_scoring_with_monitoring,
-                    "Batch Scoring with Monitoring")
+    runner.run_test(test_batch_scoring_with_monitoring, "Batch Scoring with Monitoring")
     runner.run_test(test_quantitative_components, "Quantitative Components")
     runner.run_test(test_documentation, "Documentation")
 
@@ -364,8 +351,7 @@ def main():
             print(
                 f"   Score: {result.feasibility_score:.2f} | Tier: {result.quality_tier}"
             )
-            print(
-                f"   Components: {[c.value for c in result.components_detected]}")
+            print(f"   Components: {[c.value for c in result.components_detected]}")
 
         return 0
     else:

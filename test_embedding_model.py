@@ -124,8 +124,7 @@ class TestEmbeddingModel(unittest.TestCase):
         mock_model.encode.return_value = np.random.rand(1, 768)
         mock_sentence_transformer.return_value = mock_model
 
-        embedding_model = IndustrialEmbeddingModel(
-            preferred_model="primary_large")
+        embedding_model = IndustrialEmbeddingModel(preferred_model="primary_large")
 
         # Test with primary model
         batch_size = embedding_model._calculate_optimal_batch_size(50)
@@ -190,8 +189,7 @@ class TestEmbeddingModel(unittest.TestCase):
         embeddings2 = np.random.rand(2, 384)
 
         # Test similarity calculation
-        similarity_scores = embedding_model.compute_similarity(
-            embeddings1, embeddings2)
+        similarity_scores = embedding_model.compute_similarity(embeddings1, embeddings2)
 
         # Verify output shape
         self.assertEqual(similarity_scores.shape, (2, 2))
@@ -299,8 +297,7 @@ class TestEmbeddingModel(unittest.TestCase):
 
         # Normalize document embeddings
         for i in range(len(doc_embeddings)):
-            doc_embeddings[i] = doc_embeddings[i] / \
-                np.linalg.norm(doc_embeddings[i])
+            doc_embeddings[i] = doc_embeddings[i] / np.linalg.norm(doc_embeddings[i])
 
         def encode_side_effect(texts, *args, **kwargs):
             if len(texts) == 1:
@@ -370,8 +367,7 @@ class TestEmbeddingModel(unittest.TestCase):
 
         # Test with k larger than number of documents
         documents = ["Doc 1", "Doc 2"]
-        results = embedding_model.semantic_search(
-            "test query", documents, k=10)
+        results = embedding_model.semantic_search("test query", documents, k=10)
 
         # Should return only available documents
         self.assertEqual(len(results), 2)

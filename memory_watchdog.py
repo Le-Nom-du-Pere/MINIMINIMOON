@@ -78,8 +78,7 @@ class MemoryWatchdog:
         self._lock = threading.RLock()
 
         # Callbacks
-        self._termination_callback: Optional[Callable[[
-            WatchdogEvent], None]] = None
+        self._termination_callback: Optional[Callable[[WatchdogEvent], None]] = None
 
         # Setup logging
         self.logger = logging.getLogger(__name__)
@@ -142,8 +141,7 @@ class MemoryWatchdog:
             return True
 
         except psutil.NoSuchProcess:
-            self.logger.warning(
-                f"Cannot register process {pid}: process not found")
+            self.logger.warning(f"Cannot register process {pid}: process not found")
             return False
         except Exception as e:
             self.logger.error(f"Failed to register process {pid}: {e}")
@@ -154,8 +152,7 @@ class MemoryWatchdog:
         with self._lock:
             if pid in self._monitored_processes:
                 del self._monitored_processes[pid]
-                self.logger.info(
-                    f"Unregistered process {pid} from memory monitoring")
+                self.logger.info(f"Unregistered process {pid} from memory monitoring")
 
     def start_monitoring(self) -> bool:
         """
@@ -253,8 +250,7 @@ class MemoryWatchdog:
                 memory_percent = process.memory_percent()
 
                 memory_usage = MemoryUsage(
-                    rss_mb=memory_info.rss /
-                    (1024 * 1024),  # Convert bytes to MB
+                    rss_mb=memory_info.rss / (1024 * 1024),  # Convert bytes to MB
                     vms_mb=memory_info.vms / (1024 * 1024),
                     percent=memory_percent,
                     timestamp=time.time(),
@@ -262,8 +258,7 @@ class MemoryWatchdog:
 
                 # Check if memory limit exceeded
                 if memory_usage.rss_mb > self.memory_limit_mb:
-                    self._terminate_process_for_memory(
-                        pid, process, memory_usage)
+                    self._terminate_process_for_memory(pid, process, memory_usage)
                     processes_to_remove.append(pid)
                 else:
                     # Log high memory usage as warning
@@ -284,8 +279,7 @@ class MemoryWatchdog:
                 self.logger.warning(f"Access denied to process {pid}")
                 processes_to_remove.append(pid)
             except Exception as e:
-                self.logger.error(
-                    f"Error checking memory for process {pid}: {e}")
+                self.logger.error(f"Error checking memory for process {pid}: {e}")
 
         # Remove dead or inaccessible processes
         if processes_to_remove:
@@ -513,8 +507,7 @@ def demo_memory_watchdog():
     # Test basic watchdog functionality
     with MemoryWatchdog(memory_limit_mb=100) as watchdog:  # Very low limit for demo
         current_pid = os.getpid()
-        print(
-            f"Monitoring current process (PID: {current_pid}) with 100MB limit")
+        print(f"Monitoring current process (PID: {current_pid}) with 100MB limit")
 
         watchdog.register_process(current_pid)
 
@@ -523,8 +516,7 @@ def demo_memory_watchdog():
 
         status = watchdog.get_monitored_processes()
         if current_pid in status:
-            print(
-                f"Current memory usage: {status[current_pid]['rss_mb']:.1f}MB")
+            print(f"Current memory usage: {status[current_pid]['rss_mb']:.1f}MB")
 
         events = watchdog.get_termination_events()
         print(f"Termination events: {len(events)}")

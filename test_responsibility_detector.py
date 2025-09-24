@@ -51,10 +51,8 @@ class TestResponsibilityDetector:
         result = detector.calculate_responsibility_score(text)
 
         entities = result["entities"]
-        person_entities = [
-            e for e in entities if e.entity_type == EntityType.PERSON]
-        org_entities = [e for e in entities if e.entity_type ==
-                        EntityType.ORGANIZATION]
+        person_entities = [e for e in entities if e.entity_type == EntityType.PERSON]
+        org_entities = [e for e in entities if e.entity_type == EntityType.ORGANIZATION]
 
         # Should detect some entities (specific counts may vary with NER model)
         assert len(entities) > 0
@@ -140,8 +138,7 @@ class TestResponsibilityDetector:
         for text, should_detect in test_cases:
             entities = detector.detect_entities(text)
             if should_detect:
-                assert len(
-                    entities) > 0, f"Failed to detect entities in: {text}"
+                assert len(entities) > 0, f"Failed to detect entities in: {text}"
                 assert any(e.confidence > 0.5 for e in entities), (
                     f"Low confidence for: {text}"
                 )

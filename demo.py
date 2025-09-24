@@ -67,10 +67,8 @@ def main():
             print(f'\n{i}. "{indicator}"')
             print(f"   Score: {result.feasibility_score:.2f}")
             print(f"   Quality Tier: {result.quality_tier}")
-            print(
-                f"   Components: {[c.value for c in result.components_detected]}")
-            print(
-                f"   Quantitative Baseline: {result.has_quantitative_baseline}")
+            print(f"   Components: {[c.value for c in result.components_detected]}")
+            print(f"   Quantitative Baseline: {result.has_quantitative_baseline}")
             print(f"   Quantitative Target: {result.has_quantitative_target}")
 
             if result.detailed_matches:
@@ -137,8 +135,7 @@ def main():
         score = scorer.calcular_calidad_evidencia(fragment)
         quality_level = "High" if score >= 0.7 else "Medium" if score >= 0.4 else "Low"
 
-        display_text = fragment[:50] + \
-            "..." if len(fragment) > 50 else fragment
+        display_text = fragment[:50] + "..." if len(fragment) > 50 else fragment
         print(f"{i}. Score: {score:.3f} ({quality_level:>6}) | {display_text}")
 
     print(f"\n{'=' * 60}")
