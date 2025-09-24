@@ -10,12 +10,23 @@ Enfoque: Calidad del dato de entrada para garantizar la robustez del análisis c
 """
 
 import logging
+
 import sys
-from dataclasses import dataclass
+import json
+import hashlib
+from enum import Enum
+from datetime import datetime
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, Set, Tuple
 from datetime import datetime
 from typing import Dict, List, Any, Tuple, Optional
 
+import sys
+
 assert sys.version_info >= (3, 11), "Python 3.11 or higher is required"
+
+# Importar componentes del sistema industrial principal
+# from sistema_industrial.componentes import ...
 
 from Decatalogo_principal import (
     DimensionDecalogo,
@@ -217,22 +228,25 @@ class IndustrialDecatalogoEvaluatorFull:
             riesgos=len(evidencia.get("riesgos", [])),
         )
 
+from typing import List, Optional
+
+class Evaluador:
     @staticmethod
-    def _seleccionar_mejor_deteccion(detecciones: List[DetectionResult]) -> Optional[DetectionResult]:
+    def _seleccionar_mejor_deteccion(detecciones: List["DetectionResult"]) -> Optional["DetectionResult"]:
         return max(detecciones, key=lambda d: d.confidence, default=None)
 
     @staticmethod
-    def _seleccionar_mejor_responsable(responsables: List[ResponsibilityEntity]) -> Optional[ResponsibilityEntity]:
+    def _seleccionar_mejor_responsable(responsables: List["ResponsibilityEntity"]) -> Optional["ResponsibilityEntity"]:
         return max(responsables, key=lambda r: r.confidence, default=None)
 
     @staticmethod
-    def _formatear_deteccion(deteccion: Optional[DetectionResult]) -> str:
+    def _formatear_deteccion(deteccion: Optional["DetectionResult"]) -> str:
         if not deteccion:
             return ""
         return f"{deteccion.matched_text} (conf. {deteccion.confidence:.2f})"
 
     @staticmethod
-    def _formatear_responsable(responsable: Optional[ResponsibilityEntity]) -> str:
+    def _formatear_responsable(responsable: Optional["ResponsibilityEntity"]) -> str:
         if not responsable:
             return ""
         rol = responsable.role or responsable.entity_type.value
@@ -258,16 +272,34 @@ class IndustrialDecatalogoEvaluatorFull:
         valor: float,
         evidencia: str,
         descripcion: Optional[str] = None,
-    ) -> EvaluacionPregunta:
+    ) -> "EvaluacionPregunta":
         valor = self._clamp(valor)
         respuesta = self._valor_a_respuesta(valor)
-        evidencia_textual = evidencia
+
+        # Construcción de evidencia textual priorizando descripción cuando aporta contexto.
         if descripcion and evidencia:
             evidencia_textual = f"{descripcion} → {evidencia}"
         elif descripcion and valor > 0:
             evidencia_textual = descripcion
+        else:
+            evidencia_textual = evidencia or ""
 
-        evidencia_contraria = "" if valor > 0 else "No se identificaron elementos que respondan a la pregunta con la evidencia disponible."
+        # Si el valor es 0, consignar explícitamente ausencia de evidencia a favor.
+        evidencia_contraria = (
+            "" if valor > 0
+            else "No se identificaron elementos que respondan a la pregunta con la evidencia disponible."
+        )
+
+        # Ensamblado final del objeto dominio
+        return EvaluacionPregunta(
+            pregunta_id=pregunta_id,
+            dimension=dimension,
+            punto_id=punto_id,
+            valor=valor,
+            respuesta=respuesta,
+            evidencia=evidencia_textual,
+            evidencia_contraria=evidencia_contraria,
+        )
 
         return EvaluacionPregunta(
             pregunta_id=pregunta_id,

@@ -3,7 +3,7 @@ Tests for deterministic Monte Carlo DAG validation.
 """
 
 import unittest
-from dag_validation import DAGValidator, MonteCarloResult, GraphNode
+from dag_validation import AdvancedDAGValidator, MonteCarloAdvancedResult, AdvancedGraphNode
 
 
 class TestDAGValidator(unittest.TestCase):
@@ -11,7 +11,7 @@ class TestDAGValidator(unittest.TestCase):
     
     def setUp(self):
         """Set up test fixtures."""
-        self.validator = DAGValidator()
+        self.validator = AdvancedDAGValidator()
     
     def test_seed_generation_deterministic(self):
         """Test that seed generation is deterministic for same plan names."""

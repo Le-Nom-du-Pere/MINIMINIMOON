@@ -29,18 +29,19 @@ import json
 import multiprocessing as mp
 import random
 import time
-from collections import defaultdict, deque
+from collections import defaultdict, deque, Counter
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum, auto
 from typing import List, Tuple, Dict, Set, Any
 
-import Counter
 import networkx as nx
 import numpy as np
 import scipy.stats as stats
 import seaborn as sns
+
+from json_utils import safe_json_dump, safe_json_dumps
 
 
 class GraphType(Enum):
@@ -137,6 +138,7 @@ class HypothesisTestResult:
     limitations: List[str]
 
 
+@staticmethod
 def _create_advanced_seed(plan_name: str, salt: str = "") -> int:
     """Create deterministic seed with salt for additional variability."""
     combined_string = f"{plan_name}{salt}{datetime.now().strftime('%Y%m%d')}"
@@ -211,7 +213,7 @@ class AdvancedDAGValidator:
 
     def _initialize_advanced_rng(self, plan_name: str, salt: str = "") -> int:
         """Initialize advanced RNG with configurable seeding strategy."""
-        seed = _create_advanced_seed(plan_name, salt)
+        seed = AdvancedDAGValidator._create_advanced_seed(plan_name, salt)
         self._rng = random.Random(seed)
         np.random.seed(seed)  # Also set numpy seed for statistical functions
         return seed
@@ -258,11 +260,12 @@ class AdvancedDAGValidator:
         except Exception as e:
             # Fallback metrics if networkx fails
             metrics['error'] = str(e)
-            metrics['basic_connectivity'] = self._compute_basic_connectivity(nodes)
+            metrics['basic_connectivity'] = AdvancedDAGValidator._compute_basic_connectivity(nodes)
 
         return metrics
 
-    def _compute_basic_connectivity(self, nodes: Dict[str, AdvancedGraphNode]) -> Dict[str, Any]:
+    @staticmethod
+    def _compute_basic_connectivity(nodes: Dict[str, AdvancedGraphNode]) -> Dict[str, Any]:
         """Fallback connectivity computation without networkx."""
         # Implement basic graph algorithms
         adjacency = defaultdict(set)
@@ -291,7 +294,8 @@ class AdvancedDAGValidator:
             'in_degree_distribution': dict(Counter(in_degree.values()))
         }
 
-    def _is_acyclic_advanced(self, nodes: Dict[str, AdvancedGraphNode]) -> Tuple[bool, Dict[str, Any]]:
+    @staticmethod
+    def _is_acyclic_advanced(nodes: Dict[str, AdvancedGraphNode]) -> Tuple[bool, Dict[str, Any]]:
         """Enhanced acyclicity check with detailed cycle information."""
         if not nodes:
             return True, {}
@@ -428,7 +432,7 @@ class AdvancedDAGValidator:
         acyclic_count = 0
         for _ in range(iterations):
             subgraph = self._generate_stratified_subgraph(strategy="random")
-            is_acyclic, _ = self._is_acyclic_advanced(subgraph)
+            is_acyclic, _ = AdvancedDAGValidator._is_acyclic_advanced(subgraph)
             if is_acyclic:
                 acyclic_count += 1
 
@@ -517,14 +521,14 @@ class AdvancedDAGValidator:
 
         # Calculate p-value with confidence interval
         p_value = acyclic_count / iterations if iterations > 0 else 1.0
-        ci = self._calculate_confidence_interval(acyclic_count, iterations, confidence_level)
+        ci = AdvancedDAGValidator._calculate_confidence_interval(acyclic_count, iterations, confidence_level)
 
         # Bayesian posterior
         posterior = self.calculate_bayesian_posterior(iterations=min(iterations, 1000))
 
         # Effect size and power
-        effect_size = self._calculate_effect_size(acyclic_count, iterations)
-        statistical_power = self._calculate_statistical_power(acyclic_count, iterations)
+        effect_size = AdvancedDAGValidator._calculate_effect_size(acyclic_count, iterations)
+        statistical_power = AdvancedDAGValidator._calculate_statistical_power(acyclic_count, iterations)
 
         # Sensitivity analysis
         sensitivity = self.perform_sensitivity_analysis(plan_name, iterations=min(iterations, 200))
@@ -599,7 +603,7 @@ class AdvancedDAGValidator:
             subgraph = self._generate_stratified_subgraph("random", min_size=min_size, max_size=max_size)
             subgraph_sizes.append(len(subgraph))
 
-            is_acyclic, cycle_info = self._is_acyclic_advanced(subgraph)
+            is_acyclic, cycle_info = AdvancedDAGValidator._is_acyclic_advanced(subgraph)
             if is_acyclic:
                 acyclic_count += 1
 
@@ -616,7 +620,8 @@ class AdvancedDAGValidator:
             'graph_metrics': aggregated_metrics
         }
 
-    def _calculate_confidence_interval(self, successes: int, trials: int,
+    @staticmethod
+    def _calculate_confidence_interval(successes: int, trials: int,
                                        confidence: float) -> Tuple[float, float]:
         """Calculate Wilson score interval for binomial proportion."""
         if trials == 0:
@@ -634,7 +639,8 @@ class AdvancedDAGValidator:
 
         return (lower, upper)
 
-    def _calculate_effect_size(self, successes: int, trials: int) -> float:
+    @staticmethod
+    def _calculate_effect_size(successes: int, trials: int) -> float:
         """Calculate Cohen's h for effect size."""
         if trials == 0:
             return 0.0
@@ -643,7 +649,8 @@ class AdvancedDAGValidator:
         # Effect size for proportion difference from 0.5
         return 2 * (np.arcsin(np.sqrt(p)) - np.arcsin(np.sqrt(0.5)))
 
-    def _calculate_statistical_power(self, successes: int, trials: int,
+    @staticmethod
+    def _calculate_statistical_power(successes: int, trials: int,
                                      alpha: float = 0.05) -> float:
         """Calculate statistical power for the test."""
         if trials == 0:
@@ -651,7 +658,7 @@ class AdvancedDAGValidator:
 
         p = successes / trials
         # Power for one-sample proportion test against 0.5
-        effect_size = self._calculate_effect_size(successes, trials)
+        effect_size = AdvancedDAGValidator._calculate_effect_size(successes, trials)
         power = stats.norm.sf(stats.norm.ppf(1 - alpha) - effect_size * np.sqrt(trials))
 
         return power
@@ -884,7 +891,7 @@ class AdvancedDAGValidator:
 
         filepath = f"{filename}.json"
         with open(filepath, 'w') as f:
-            json.dump(data, f, indent=2)
+            safe_json_dump(data, f)
 
         return filepath
 
@@ -921,7 +928,7 @@ class AdvancedDAGValidator:
                 </div>
 
                 <h2>Graph Statistics</h2>
-                <pre>{json.dumps(result.graph_statistics, indent=2)}</pre>
+                <pre>{safe_json_dumps(result.graph_statistics)}</pre>
             </div>
         </body>
         </html>
@@ -992,7 +999,7 @@ class AdvancedDAGValidator:
         - Effect Size: {result.effect_size:.4f}
 
         GRAPH STATISTICS:
-        {json.dumps(result.graph_statistics, indent=2)}
+        {safe_json_dumps(result.graph_statistics)}
 
         QUALITY INDICATORS:
         - Reproducible: {result.reproducible}

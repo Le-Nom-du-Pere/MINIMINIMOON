@@ -2,6 +2,10 @@ import logging
 import tempfile
 from pathlib import Path
 from typing import Optional
+from text_truncation_logger import log_info_with_text, log_warning_with_text, log_error_with_text
+
+# Import log configuration to set up environment variable support
+import log_config
 
 logger = logging.getLogger(__name__)
 
@@ -54,12 +58,13 @@ def load_decalogo_industrial(target_path: Optional[str] = None) -> str:
             
             # Atomically rename temporary file to target location
             temp_path.rename(target_file)
-            logger.info(f"DECALOGO_INDUSTRIAL loaded and written to file: {target_path}")
+            log_info_with_text(logger, f"DECALOGO_INDUSTRIAL loaded and written to file: {target_path}", template_content)
             
         except (PermissionError, OSError, IOError) as e:
-            logger.warning(
-                f"Failed to write DECALOGO_INDUSTRIAL to {target_path}: {e}. "
-                "Using in-memory fallback template."
+            log_warning_with_text(
+                logger, 
+                f"Failed to write DECALOGO_INDUSTRIAL to {target_path}: {e}. Using in-memory fallback template.",
+                template_content
             )
             # Clean up temp file if it exists
             try:
@@ -68,12 +73,13 @@ def load_decalogo_industrial(target_path: Optional[str] = None) -> str:
             except Exception:
                 pass  # Best effort cleanup
             
-            logger.info("DECALOGO_INDUSTRIAL loaded from in-memory fallback template")
+            log_info_with_text(logger, "DECALOGO_INDUSTRIAL loaded from in-memory fallback template", template_content)
             
         except Exception as e:
-            logger.error(
-                f"Unexpected error writing DECALOGO_INDUSTRIAL to {target_path}: {e}. "
-                "Using in-memory fallback template."
+            log_error_with_text(
+                logger,
+                f"Unexpected error writing DECALOGO_INDUSTRIAL to {target_path}: {e}. Using in-memory fallback template.",
+                template_content
             )
             # Clean up temp file if it exists
             try:
@@ -82,9 +88,9 @@ def load_decalogo_industrial(target_path: Optional[str] = None) -> str:
             except Exception:
                 pass  # Best effort cleanup
                 
-            logger.info("DECALOGO_INDUSTRIAL loaded from in-memory fallback template")
+            log_info_with_text(logger, "DECALOGO_INDUSTRIAL loaded from in-memory fallback template", template_content)
     else:
-        logger.info("DECALOGO_INDUSTRIAL loaded from in-memory template (no target path specified)")
+        log_info_with_text(logger, "DECALOGO_INDUSTRIAL loaded from in-memory template (no target path specified)", template_content)
     
     return template_content
 

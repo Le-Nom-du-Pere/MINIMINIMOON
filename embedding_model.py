@@ -12,6 +12,7 @@ Advanced semantic embedding system with enterprise-level features:
 """
 
 import asyncio
+import atexit
 import gc
 import hashlib
 import json
@@ -19,6 +20,8 @@ import logging
 import os
 import pickle
 import re
+import signal
+import sys
 import threading
 import time
 import warnings
@@ -110,6 +113,55 @@ class ProductionLogger:
 
 logger = ProductionLogger(__name__)
 
+# Global monitoring state for signal handlers and atexit
+_monitoring_state = {
+    'models_loaded': [],
+    'active_embeddings': 0,
+    'memory_usage_mb': 0,
+    'cuda_memory_mb': 0,
+    'start_time': time.time(),
+    'total_operations': 0
+}
+
+def update_monitoring_state(key: str, value: Any):
+    """Thread-safe monitoring state update."""
+    global _monitoring_state
+    _monitoring_state[key] = value
+
+def dump_monitoring_state():
+    """Dump monitoring state on process termination."""
+    try:
+        state_dump = {
+            'timestamp': time.time(),
+            'uptime_seconds': time.time() - _monitoring_state['start_time'],
+            'memory_usage_mb': psutil.Process().memory_info().rss / 1024 / 1024,
+            'cuda_memory_mb': torch.cuda.memory_allocated() / 1024 / 1024 if torch.cuda.is_available() else 0,
+            **_monitoring_state
+        }
+        
+        with open('.embedding_model_state.json', 'w') as f:
+            json.dump(state_dump, f, indent=2)
+        logger.info(f"Monitoring state dumped: {state_dump}")
+    except Exception as e:
+        logger.error(f"Failed to dump monitoring state: {e}")
+
+def signal_handler(signum, frame):
+    """Signal handler for graceful shutdown."""
+    logger.warning(f"Received signal {signum}, dumping monitoring state and cleaning up...")
+    dump_monitoring_state()
+    
+    # Cleanup CUDA memory if available
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        logger.info("Cleared CUDA cache on signal")
+    
+    sys.exit(0)
+
+# Register signal handlers and atexit cleanup
+signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGTERM, signal_handler)
+atexit.register(dump_monitoring_state)
+
 
 def performance_monitor(func):
     """Decorator for monitoring function performance."""
@@ -198,6 +250,7 @@ class MemoryManager:
             gc.collect()
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
+                logger.debug("Cleared CUDA cache")
     
     @contextmanager
     def managed_operation(self):
@@ -988,13 +1041,22 @@ class IndustrialEmbeddingModel:
                     # Legacy cache expects numpy arrays
                     self.embedding_cache.put(cache_key, embeddings_np)
 
-            # Update metrics
+            # Update metrics and monitoring state
             self.quality_metrics['total_embeddings'] += len(texts)
             encode_time = time.perf_counter() - start_time
+            update_monitoring_state('active_embeddings', len(texts))
+            update_monitoring_state('total_operations', _monitoring_state['total_operations'] + 1)
+            update_monitoring_state('memory_usage_mb', psutil.Process().memory_info().rss / 1024 / 1024)
 
             if self._enable_monitoring:
                 self.performance_stats['encode_times'].append(encode_time)
                 self.performance_stats['batch_sizes'].append(len(texts))
+            
+            # Final CUDA cleanup after plan processing (when device is CUDA)
+            if torch.cuda.is_available() and hasattr(self.model, 'device') and self.model.device.type == 'cuda':
+                torch.cuda.empty_cache()
+                update_monitoring_state('cuda_memory_mb', torch.cuda.memory_allocated() / 1024 / 1024)
+                logger.debug("Cleared CUDA cache after plan processing")
 
             logger.debug(f"Encoded {len(texts)} texts in {encode_time:.3f}s")
             return embeddings_np
@@ -1069,6 +1131,11 @@ class IndustrialEmbeddingModel:
                         # Move to CPU to free GPU memory
                         if embeddings.device != torch.device('cpu'):
                             embeddings = embeddings.cpu()
+                        
+                        # Clear CUDA cache after encoding if device is CUDA
+                        if torch.cuda.is_available() and self.model.device.type == 'cuda':
+                            torch.cuda.empty_cache()
+                            update_monitoring_state('cuda_memory_mb', torch.cuda.memory_allocated() / 1024 / 1024)
 
                 if embeddings.shape[0] != len(texts):
                     raise EmbeddingComputationError(
@@ -1122,6 +1189,16 @@ class IndustrialEmbeddingModel:
             if i % (batch_size * 10) == 0 and i > 0:
                 self.memory_manager.cleanup_memory()
                 self.quality_metrics['memory_cleanups'] += 1
+                
+                # Clear CUDA cache after processing chunks if device is CUDA
+                if torch.cuda.is_available() and next(iter(self.model.modules())).device.type == 'cuda':
+                    torch.cuda.empty_cache()
+                    update_monitoring_state('cuda_memory_mb', torch.cuda.memory_allocated() / 1024 / 1024)
+        
+        # Final CUDA cleanup after all chunks processed
+        if torch.cuda.is_available() and next(iter(self.model.modules())).device.type == 'cuda':
+            torch.cuda.empty_cache()
+            update_monitoring_state('cuda_memory_mb', torch.cuda.memory_allocated() / 1024 / 1024)
         
         # Combine all chunks
         return torch.cat(chunk_results, dim=0)
@@ -1323,6 +1400,94 @@ class IndustrialEmbeddingModel:
         except Exception as e:
             logger.error(f"Similarity computation failed: {str(e)}")
             raise EmbeddingComputationError(f"Failed to compute {metric} similarity: {str(e)}")
+
+    @performance_monitor
+    def semantic_search(
+            self,
+            query: Union[str, np.ndarray],
+            documents: List[str],
+            pages: Optional[List[str]] = None,
+            k: int = 10,
+            instruction: Optional[str] = None,
+            return_scores: bool = True
+    ) -> Union[List[Tuple[int, str, str]], List[Tuple[int, str, str, float]]]:
+        """
+        Efficient semantic search using torch.topk for top-k retrieval.
+        
+        Args:
+            query: Query string or embedding vector
+            documents: List of document texts to search
+            pages: Optional list of page identifiers (same length as documents)
+            k: Number of top results to return
+            instruction: Optional semantic instruction
+            return_scores: Whether to include similarity scores
+            
+        Returns:
+            List of (index, page, text) or (index, page, text, score) tuples
+        """
+        if not documents:
+            return []
+        
+        k = min(k, len(documents))
+        
+        try:
+            # Generate query embedding if string provided
+            if isinstance(query, str):
+                query_embedding = self.encode([query], instruction=instruction)[0]
+            else:
+                query_embedding = query
+                
+            # Generate document embeddings
+            document_embeddings = self.encode(documents, instruction=instruction)
+            
+            # Convert to torch tensors for efficient computation
+            query_tensor = torch.from_numpy(query_embedding).float()
+            doc_tensor = torch.from_numpy(document_embeddings).float()
+            
+            # Compute cosine similarities
+            # Normalize embeddings for cosine similarity
+            query_normalized = torch.nn.functional.normalize(query_tensor.unsqueeze(0), dim=1)
+            docs_normalized = torch.nn.functional.normalize(doc_tensor, dim=1)
+            
+            # Compute similarity scores
+            similarities = torch.mm(docs_normalized, query_normalized.t()).squeeze()
+            
+            # Use torch.topk for efficient top-k retrieval
+            topk_scores, topk_indices = torch.topk(similarities, k=k, largest=True, sorted=True)
+            
+            # Convert back to numpy and Python types
+            topk_scores = topk_scores.cpu().numpy()
+            topk_indices = topk_indices.cpu().numpy()
+            
+            # Create parallel arrays for pages and texts if pages not provided
+            if pages is None:
+                pages = [f"page_{i}" for i in range(len(documents))]
+            elif len(pages) != len(documents):
+                logger.warning(f"Pages length ({len(pages)}) doesn't match documents length ({len(documents)})")
+                pages = [f"page_{i}" for i in range(len(documents))]
+            
+            # Direct mapping from topk indices to (page, text) pairs
+            results = []
+            for i, idx in enumerate(topk_indices):
+                idx_int = int(idx)
+                page = pages[idx_int]
+                text = documents[idx_int]
+                score = float(topk_scores[i])
+                
+                if return_scores:
+                    results.append((idx_int, page, text, score))
+                else:
+                    results.append((idx_int, page, text))
+            
+            self.quality_metrics['total_embeddings'] += len(documents) + 1
+            logger.info(f"Semantic search completed: {len(results)} results for query")
+            
+            return results
+            
+        except Exception as e:
+            logger.error(f"Semantic search failed: {str(e)}")
+            # Return empty results on failure
+            return []
 
     @performance_monitor
     def rerank_with_mmr(

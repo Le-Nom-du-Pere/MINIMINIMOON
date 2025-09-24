@@ -295,16 +295,11 @@ class TestFeasibilityScorer:
             "aumentar servicios región"
         ]
         
-<<<<<<< HEAD
         # Test sequential processing (default)
-=======
-        # Test sequential processing
->>>>>>> f911a1c (Optimize parallel processing by switching to loky backend with CPU-based job limits and performance comparison logging)
         results_seq = scorer.batch_score(indicators)
         assert len(results_seq) == 3
         assert results_seq[0].feasibility_score > results_seq[1].feasibility_score > results_seq[2].feasibility_score
         
-<<<<<<< HEAD
         # Test parallel processing option
         results_par = scorer.batch_score(indicators, use_parallel=True)
         assert len(results_par) == 3
@@ -313,7 +308,7 @@ class TestFeasibilityScorer:
         for seq, par in zip(results_seq, results_par):
             assert seq.feasibility_score == par.feasibility_score
             assert seq.quality_tier == par.quality_tier
-=======
+        
         # Test with extended batch for parallel processing comparison
         extended_indicators = indicators * 5  # 15 total for better parallel testing
         results_extended = scorer.batch_score(extended_indicators, compare_backends=True)
@@ -362,7 +357,6 @@ class TestFeasibilityScorer:
         copy_result = unpickled.calculate_feasibility_score(test_text)
         
         assert abs(original_result.feasibility_score - copy_result.feasibility_score) < 0.01
->>>>>>> f911a1c (Optimize parallel processing by switching to loky backend with CPU-based job limits and performance comparison logging)
     
     def test_precision_recall_metrics(self, scorer):
         """Test precision and recall of component detection."""
@@ -948,8 +942,49 @@ class TestAtomicReportGeneration:
             
             # Verify high score appears before medium, which appears before low
             assert high_score_pos < medium_score_pos < low_score_pos
->>>>>>> 66cac3d (Implement atomic file operations for report writing with temporary files and error handling)
 
+
+    def test_zero_evidence_support_override(self, scorer):
+        """Test that zero evidencia_soporte overrides normal scoring logic."""
+        text = "línea base 50% meta 80% año 2025 responsable Secretaría"
+        
+        # Test normal scoring
+        normal_result = scorer.calculate_feasibility_score(text)
+        assert normal_result.feasibility_score > 0.0
+        assert normal_result.quality_tier != 'REQUIERE MAYOR EVIDENCIA'
+        
+        # Test with zero evidence support
+        zero_evidence_result = scorer.calculate_feasibility_score(text, evidencia_soporte=0)
+        assert zero_evidence_result.feasibility_score == 0.0
+        assert zero_evidence_result.quality_tier == 'REQUIERE MAYOR EVIDENCIA'
+        assert len(zero_evidence_result.components_detected) == 0
+        assert len(zero_evidence_result.detailed_matches) == 0
+        assert zero_evidence_result.has_quantitative_baseline == False
+        assert zero_evidence_result.has_quantitative_target == False
+        
+        # Test with non-zero evidence support (should work normally)
+        normal_result_with_evidence = scorer.calculate_feasibility_score(text, evidencia_soporte=1)
+        assert normal_result_with_evidence.feasibility_score > 0.0
+        assert normal_result_with_evidence.quality_tier != 'REQUIERE MAYOR EVIDENCIA'
+
+    def test_batch_scoring_with_evidence_support(self, scorer):
+        """Test batch scoring with evidencia_soporte values."""
+        indicators = [
+            "línea base 50% meta 80% año 2025",
+            "situación actual mejorar objetivo",
+            "aumentar servicios región"
+        ]
+        evidencia_list = [0, 1, 2]  # First one has zero evidence
+        
+        results = scorer.batch_score(indicators, evidencia_soporte_list=evidencia_list)
+        
+        # First result should be overridden due to zero evidence
+        assert results[0].feasibility_score == 0.0
+        assert results[0].quality_tier == 'REQUIERE MAYOR EVIDENCIA'
+        
+        # Other results should score normally
+        assert results[1].feasibility_score > 0.0
+        assert results[1].quality_tier != 'REQUIERE MAYOR EVIDENCIA'
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
