@@ -1,4 +1,3 @@
-# coding=utf-8
 """
 DETERMINISTIC MONTE CARLO SAMPLING FOR ADVANCED DAG VALIDATION
 ================================================================

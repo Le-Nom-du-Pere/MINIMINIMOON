@@ -1,4 +1,3 @@
-# coding=utf-8
 """
 Feasibility Scorer for Indicator Quality Assessment
 

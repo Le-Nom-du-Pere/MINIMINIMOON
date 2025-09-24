@@ -1,4 +1,3 @@
-# coding=utf-8
 """
 Test script for device configuration functionality.
 """

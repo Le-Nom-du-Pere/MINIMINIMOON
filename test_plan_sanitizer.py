@@ -1,4 +1,3 @@
-# coding=utf-8
 """
 Comprehensive tests for plan name sanitization and JSON key standardization.
 """
