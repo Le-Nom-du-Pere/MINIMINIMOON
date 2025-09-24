@@ -1043,11 +1043,14 @@ class ExtractorEvidenciaIndustrial:
     def buscar_evidencia_causal(self, query: str, conceptos_clave: List[str],
                                 top_k: int = 5, umbral_certeza: float = 0.75) -> List[Dict[str, Any]]:
         """Búsqueda semántica industrial con filtrado por relaciones causales y umbral de certeza ajustable"""
-        if self.embeddings_doc.numel() == 0:
-            self.logger.warning("⚠️  No hay embeddings disponibles para búsqueda")
-            return []
+        # Check if precomputed embeddings are available and properly initialized
+        if not hasattr(self, 'embeddings_doc') or self.embeddings_doc is None or self.embeddings_doc.numel() == 0:
+            self.logger.warning("⚠️  No hay embeddings precomputados disponibles, fallback a encoding en tiempo real")
+            # Fallback to current encoding behavior if precomputed embeddings aren't available
+            return self._buscar_evidencia_fallback(query, conceptos_clave, top_k, umbral_certeza)
 
         try:
+            # Reuse precomputed embeddings - encode only the query
             query_embedding = EMBEDDING_MODEL.encode(query, convert_to_tensor=True)
             similitudes = util.pytorch_cos_sim(query_embedding, self.embeddings_doc)[0]
             resultados = []
@@ -1117,7 +1120,90 @@ class ExtractorEvidenciaIndustrial:
             return resultados_ordenados[:top_k]
 
         except Exception as e:
-            self.logger.error(f"❌ Error en búsqueda causal: {e}")
+            self.logger.error(f"❌ Error en búsqueda causal con embeddings precomputados: {e}")
+            # Fallback to current encoding behavior on error
+            return self._buscar_evidencia_fallback(query, conceptos_clave, top_k, umbral_certeza)
+
+    def _buscar_evidencia_fallback(self, query: str, conceptos_clave: List[str],
+                                   top_k: int = 5, umbral_certeza: float = 0.75) -> List[Dict[str, Any]]:
+        """Fallback method that performs document encoding at runtime when precomputed embeddings are not available"""
+        if not self.textos_originales:
+            self.logger.warning("⚠️  No hay textos disponibles para búsqueda")
+            return []
+        
+        try:
+            # Encode both query and documents at runtime (original behavior)
+            query_embedding = EMBEDDING_MODEL.encode(query, convert_to_tensor=True)
+            doc_embeddings = EMBEDDING_MODEL.encode(self.textos_originales, convert_to_tensor=True)
+            similitudes = util.pytorch_cos_sim(query_embedding, doc_embeddings)[0]
+            resultados = []
+
+            # Obtener top 2*top_k resultados para filtrado posterior
+            indices_top = torch.topk(similitudes, min(top_k * 2, len(self.textos_originales))).indices
+
+            for idx in indices_top:
+                # Encontrar el documento original correspondiente
+                texto_original = None
+                pagina_original = None
+                for doc in self.documentos:
+                    if doc[1] in self.textos_originales and self.textos_originales.index(doc[1]) == idx:
+                        texto_original = doc[1]
+                        pagina_original = doc[0]
+                        break
+
+                if not texto_original:
+                    continue
+
+                texto = texto_original
+                pagina = pagina_original
+
+                # Cálculo industrial de relevancia conceptual
+                coincidencias_conceptuales = sum(1 for concepto in conceptos_clave
+                                                 if concepto.lower() in texto.lower())
+                relevancia_conceptual = coincidencias_conceptuales / max(1, len(conceptos_clave))
+
+                # Detección avanzada de relaciones causales con patrones industriales
+                patrones_causales_industriales = [
+                    r"\b(porque|debido a|como consecuencia de|en razón de|a causa de)\b",
+                    r"\b(genera|produce|causa|determina|influye en|afecta a)\b",
+                    r"\b(impacto|efecto|resultado|consecuencia|repercusión)\b",
+                    r"\b(mejora|aumenta|reduce|disminuye|fortalece|debilita)\b",
+                    r"\b(siempre que|cuando|si)\b.*\b(entonces|por lo tanto|en consecuencia)\b"
+                ]
+
+                densidad_causal = 0.0
+                for patron in patrones_causales_industriales:
+                    matches = len(re.findall(patron, texto.lower(), re.IGNORECASE))
+                    densidad_causal += matches * 0.2  # Ponderación por tipo de patrón
+
+                densidad_causal = min(1.0, densidad_causal / max(1, len(texto.split()) / 100))
+
+                # Cálculo de score final con ponderaciones industriales
+                score_final = (
+                        similitudes[idx].item() * 0.5 +  # Similaridad semántica
+                        relevancia_conceptual * 0.3 +  # Relevancia conceptual
+                        densidad_causal * 0.2  # Densidad causal
+                )
+
+                # Aplicar umbral de certeza industrial estricto
+                if score_final >= umbral_certeza:
+                    resultados.append({
+                        "texto": texto,
+                        "pagina": pagina,
+                        "similitud_semantica": float(similitudes[idx].item()),
+                        "relevancia_conceptual": relevancia_conceptual,
+                        "densidad_causal": densidad_causal,
+                        "score_final": score_final,
+                        "hash_segmento": hashlib.md5(texto.encode('utf-8')).hexdigest()[:8],
+                        "timestamp_extraccion": datetime.now().isoformat()
+                    })
+
+            # Ordenar por score_final y retornar top_k
+            resultados_ordenados = sorted(resultados, key=lambda x: x["score_final"], reverse=True)
+            return resultados_ordenados[:top_k]
+
+        except Exception as e:
+            self.logger.error(f"❌ Error en búsqueda causal fallback: {e}")
             return []
 
     def extraer_variables_operativas(self, dimension: DimensionDecalogo) -> Dict[str, List]:
