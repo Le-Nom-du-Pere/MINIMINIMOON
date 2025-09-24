@@ -12,15 +12,11 @@ Enfoque: Calidad del dato de entrada para garantizar la robustez del análisis c
 import re
 import logging
 import json
-import sys
 from typing import Dict, List, Any, Tuple, Optional, Set
 from dataclasses import dataclass, field
 from enum import Enum
 import hashlib
 from datetime import datetime
-from text_truncation_logger import log_info_with_text, log_warning_with_text, log_error_with_text
-
-assert sys.version_info >= (3, 11), "Python 3.11 or higher is required"
 
 # Importar componentes del sistema industrial principal
 from Decatalogo_principal import (
@@ -374,7 +370,7 @@ class IndustrialDecatalogoEvaluatorFull:
             puntaje = 1.0
         elif pregunta_id == "Q6":
             # Aquí se debería buscar una explicación explícita, pero para simplificar, asumimos que si hay Q4, hay Q6.
-            if all(pattern_type in patterns and patterns[pattern_type] for pattern_type in ['baseline', 'target', 'quantitative']):
+            if respuesta == "Sí" for pregunta in ["Q1", "Q2", "Q3", "Q4", "Q5"]: # Esto es pseudocódigo, no funcional.
                 respuesta = "Sí"
                 evidencia = "La lógica de intervención se infiere de la coherencia entre productos, resultados e impactos."
                 puntaje = 1.0
@@ -554,7 +550,7 @@ def integrar_evaluador_decatalogo(sistema: SistemaEvaluacionIndustrial, dimensio
             if evaluacion_cluster.puntaje_agregado_cluster < 60:
                 for eval_punto in evaluacion_cluster.evaluaciones_puntos:
                     if eval_punto.puntaje_agregado_punto < 50:
-                        log_warning_with_text(LOGGER, f"⚠️  [DECÁLOGO] Punto {eval_punto.punto_id} en dimensión {dimension.id} tiene baja calidad: {eval_punto.puntaje_agregado_punto:.1f}")
+                        LOGGER.warning(f"⚠️  [DECÁLOGO] Punto {eval_punto.punto_id} en dimensión {dimension.id} tiene baja calidad: {eval_punto.puntaje_agregado_punto:.1f}")
             
             # Convertir evaluación del decálogo al formato del sistema principal
             # Esta es una conversión simplificada para demostrar la integración
@@ -585,5 +581,5 @@ def integrar_evaluador_decatalogo(sistema: SistemaEvaluacionIndustrial, dimensio
         return None
 
     except Exception as e:
-        log_error_with_text(LOGGER, f"❌ Error en integración del evaluador del decálogo: {e}")
+        LOGGER.error(f"❌ Error en integración del evaluador del decálogo: {e}")
         return None

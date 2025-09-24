@@ -26,14 +26,27 @@ from typing import Dict, List, Optional, Tuple, Any
 
 import networkx as nx
 try:
+    # Manejo robusto de pdfplumber con fallback
+try:
     import pdfplumber
+    PDFPLUMBER_AVAILABLE = True
+except ImportError:
+    PDFPLUMBER_AVAILABLE = False
+    pdfplumber = None
     PDFPLUMBER_AVAILABLE = True
 except ImportError:
     PDFPLUMBER_AVAILABLE = False
     LOGGER.warning("⚠️  pdfplumber no disponible. Algunas funciones de extracción de PDF pueden no estar disponibles.")
 import spacy
 from joblib import Parallel, delayed
-from sentence_transformers import SentenceTransformer, util
+# Manejo robusto de sentence_transformers con fallback
+try:
+    from sentence_transformers import SentenceTransformer, util
+    SENTENCE_TRANSFORMERS_AVAILABLE = True
+except ImportError:
+    SENTENCE_TRANSFORMERS_AVAILABLE = False
+    SentenceTransformer = None
+    util = None
 
 from device_config import add_device_args, configure_device_from_args, get_device_config
 
@@ -1562,6 +1575,10 @@ class PDFLoaderIndustrial:
         self.logger = logging.getLogger(f"PDFLoader_{self.nombre_plan}")
         self.hash_documento = ""
         self.metadata = {}
+        
+        # Verificar disponibilidad de pdfplumber
+        if not PDFPLUMBER_AVAILABLE:
+            raise RuntimeError("❌ pdfplumber no está instalado. Por favor, instale con: pip install pdfplumber")
 
     def calcular_hash_documento(self) -> str:
         """Calcula hash industrial del documento para trazabilidad"""
@@ -1701,6 +1718,56 @@ class SistemaEvaluacionIndustrial:
         """Carga y procesa el documento PDF con estándares industriales"""
         self.logger.info(f"🔄 Iniciando procesamiento industrial de: {self.pdf_path.name}")
 
+# ==================== INTEGRACIÓN CON EVALUADOR DEL DECÁLOGO ====================
+
+def integrar_evaluador_decatalogo(sistema: SistemaEvaluacionIndustrial, 
+                                 dimension: DimensionDecalogo) -> Optional[ResultadoDimensionIndustrial]:
+    """
+    Integra el evaluador del Decálogo con el sistema industrial principal.
+    
+    Args:
+        sistema: Sistema de evaluación industrial principal
+        dimension: Dimensión del decálogo a evaluar
+        
+    Returns:
+        Resultado de la evaluación industrial o None si hay error
+    """
+    if not sistema.extractor:
+        raise ValueError("Extractor no inicializado - Error industrial crítico")
+
+    try:
+        # >>>>>>>> INTEGRACIÓN INDUSTRIAL DEL EVALUADOR DEL DECÁLOGO <<<<<<<<
+        from Decatalogo_evaluador import integrar_evaluador_decatalogo as integrar_evaluador
+        resultado_decatalogo = integrar_evaluador(sistema, dimension)
+        
+        if resultado_decatalogo:
+            # Registrar advertencias si el puntaje es bajo
+            if resultado_decatalogo.puntaje_final < 60:
+                LOGGER.warning(f"⚠️  [DECÁLOGO] Dimensión {dimension.id} tiene baja calidad: {resultado_decatalogo.puntaje_final:.1f}")
+            
+            return resultado_decatalogo
+        # >>>>>>>> FIN DE LA INTEGRACIÓN <<<<<<<<
+
+        return None
+
+    except ImportError as e:
+        LOGGER.warning(f"⚠️  No se pudo importar el evaluador del decálogo: {e}")
+        return None
+    except Exception as e:
+        LOGGER.error(f"❌ Error en integración del evaluador del decálogo: {e}")
+        return None
+
+
+class SistemaEvaluacionIndustrial:
+    def __init__(self, pdf_path: Path, logger: logging.Logger):
+        self.pdf_path = pdf_path
+        self.logger = logger
+        self.loader = LoaderDocumento(pdf_path)
+        self.extractor = None
+        self.metadata_plan = None
+        self.hash_evaluacion = None
+
+    def inicializar(self) -> bool:
         if not self.loader.cargar():
             self.logger.error("❌ Falló la carga del documento")
             return False
