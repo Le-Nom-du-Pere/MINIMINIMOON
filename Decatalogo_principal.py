@@ -26,17 +26,11 @@ from typing import Dict, List, Optional, Tuple, Any
 
 import networkx as nx
 try:
-    # Manejo robusto de pdfplumber con fallback
-try:
     import pdfplumber
     PDFPLUMBER_AVAILABLE = True
 except ImportError:
     PDFPLUMBER_AVAILABLE = False
     pdfplumber = None
-    PDFPLUMBER_AVAILABLE = True
-except ImportError:
-    PDFPLUMBER_AVAILABLE = False
-    LOGGER.warning("⚠️  pdfplumber no disponible. Algunas funciones de extracción de PDF pueden no estar disponibles.")
 import spacy
 from joblib import Parallel, delayed
 # Manejo robusto de sentence_transformers con fallback
@@ -49,6 +43,7 @@ except ImportError:
     util = None
 
 from device_config import add_device_args, configure_device_from_args, get_device_config
+from decalogo_loader import get_decalogo_industrial
 
 import numpy as np
 import pandas as pd
@@ -348,6 +343,15 @@ def cargar_decalogo_industrial() -> List[Any]:
 
     # Generar template industrial si no existe
     LOGGER.info("⚙️  Generando template industrial de decálogo estructurado")
+    try:
+        fallback_raw = get_decalogo_industrial()
+        LOGGER.info(
+            "⚠️  Plantilla textual de respaldo del decálogo activada (%d caracteres)", len(fallback_raw)
+        )
+    except Exception as fallback_exc:  # pragma: no cover - logging resiliencia
+        LOGGER.warning(
+            "⚠️  No se pudo activar fallback textual del decálogo: %s", fallback_exc
+        )
     template_industrial = [
         {
             "id": 1,

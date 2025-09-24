@@ -4,6 +4,7 @@ Test script for the factibilidad scoring module.
 """
 
 from factibilidad import PatternDetector, FactibilidadScorer
+from feasibility_scorer import FeasibilityScorer
 
 
 def test_pattern_detection():
@@ -107,6 +108,22 @@ def test_scoring():
             print("Weaknesses:")
             for weakness in analysis['weaknesses']:
                 print(f"  - {weakness}")
+
+
+def test_batch_scoring_parallel_consistency():
+    """Ensure parallel batch scoring yields deterministic results."""
+    textos = [
+        "Línea base actual 40 beneficiarios; meta 120 en 2025.",
+        "Objetivo alcanzar 300 hogares con horizonte temporal 2024.",
+    ]
+    scorer = FeasibilityScorer(enable_parallel=True)
+    resultados_parallel = scorer.batch_score(textos, use_parallel=True)
+    resultados_secuencial = scorer.batch_score(textos, use_parallel=False)
+
+    assert len(resultados_parallel) == len(textos)
+    assert [round(r.feasibility_score, 4) for r in resultados_parallel] == [
+        round(r.feasibility_score, 4) for r in resultados_secuencial
+    ]
 
 
 def test_weight_validation():
