@@ -12,3 +12,7 @@ venv/
 .venv/
 env/
 .env/
+
+# Plan Processor Error Logs
+error_logs/
+test_logs_*/

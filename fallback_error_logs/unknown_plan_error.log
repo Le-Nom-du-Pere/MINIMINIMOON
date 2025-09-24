@@ -1,0 +1,13 @@
+================================================================================
+PLAN PROCESSING ERROR LOG
+================================================================================
+
+Timestamp: 2025-09-24T05:31:49.495904+00:00
+Plan ID: None
+Error Type: transient (io_error)
+Attempt Number: 1
+Message: Test error
+
+Full Traceback:
+--------------------
+Test traceback
