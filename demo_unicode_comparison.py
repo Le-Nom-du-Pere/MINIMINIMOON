@@ -100,8 +100,7 @@ class PatternCategory(Enum):
 # DATA STRUCTURES
 # ============================================================================
 
-
-@dataclass(frozen=True)
+@dataclass
 class AnalysisMetrics:
     """Comprehensive analysis metrics."""
 
