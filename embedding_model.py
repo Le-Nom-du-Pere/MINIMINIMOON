@@ -2282,6 +2282,8 @@ class IndustrialEmbeddingModel:
 
         except Exception as e:
             logger.error(f"Cleanup failed: {str(e)}")
+        
+        return None
 
 
 # Factory and utility functions
