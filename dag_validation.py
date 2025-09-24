@@ -589,7 +589,7 @@ class AdvancedDAGValidator:
 
         # Effect size and power
         effect_size = AdvancedDAGValidator._calculate_effect_size(acyclic_count, iterations)
-        statistical_power = AdvancedDAGValidator._calculate_statistical_power(acyclic_count, iterations)
+        statistical_power = self._calculate_statistical_power(acyclic_count, iterations)
 
         # Sensitivity analysis
         sensitivity = self.perform_sensitivity_analysis(plan_name, iterations=min(iterations, 200))
