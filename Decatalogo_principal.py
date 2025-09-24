@@ -10,14 +10,17 @@ Autor: Dr. en Políticas Públicas
 Enfoque: Evaluación estructural con econometría de políticas, minería causal y procesamiento paralelo industrial.
 """
 import argparse
+import atexit
 import hashlib
 import heapq
 import json
 import logging
 import os
 import re
+import signal
 import statistics
 import sys
+import threading
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -27,15 +30,11 @@ from typing import Dict, List, Optional, Tuple, Any
 import networkx as nx
 try:
     # Manejo robusto de pdfplumber con fallback
-try:
     import pdfplumber
     PDFPLUMBER_AVAILABLE = True
 except ImportError:
     PDFPLUMBER_AVAILABLE = False
     pdfplumber = None
-    PDFPLUMBER_AVAILABLE = True
-except ImportError:
-    PDFPLUMBER_AVAILABLE = False
     LOGGER.warning("⚠️  pdfplumber no disponible. Algunas funciones de extracción de PDF pueden no estar disponibles.")
 import spacy
 from joblib import Parallel, delayed
@@ -2730,13 +2729,16 @@ def procesar_plan_industrial(pdf_path: Path, max_segmentos: Optional[int] = None
 
 # ==================== SISTEMA DE MONITOREO Y CONTROL INDUSTRIAL ====================
 class SistemaMonitoreoIndustrial:
-    """Sistema de monitoreo y control industrial para procesamiento batch"""
+    """Sistema de monitoreo y control industrial para procesamiento batch con manejo de señales"""
 
     def __init__(self):
         self.logger = logging.getLogger("MonitoreoIndustrial")
         self.ejecuciones = []
         self.tiempo_inicio = None
         self.tiempo_fin = None
+        self.trabajadores_activos = set()
+        self.lock = threading.RLock()
+        self.interrumpido = False
 
     def iniciar_monitoreo(self):
         """Inicia el monitoreo industrial"""
@@ -2744,19 +2746,41 @@ class SistemaMonitoreoIndustrial:
         self.logger.info("🚀 Iniciando sistema de monitoreo industrial")
 
     def registrar_ejecucion(self, nombre_plan: str, resultado: Dict[str, Any]):
-        """Registra una ejecución industrial"""
-        ejecucion = {
-            "nombre_plan": nombre_plan,
-            "resultado": resultado,
-            "timestamp": datetime.now().isoformat(),
-            "duracion_estimada": self._calcular_duracion_estimada()
-        }
-        self.ejecuciones.append(ejecucion)
+        """Registra una ejecución industrial de forma thread-safe"""
+        with self.lock:
+            ejecucion = {
+                "nombre_plan": nombre_plan,
+                "resultado": resultado,
+                "timestamp": datetime.now().isoformat(),
+                "duracion_estimada": self._calcular_duracion_estimada()
+            }
+            self.ejecuciones.append(ejecucion)
 
-        if resultado.get("status") == "completed":
-            self.logger.info(f"✅ Plan completado: {nombre_plan} - Puntaje: {resultado.get('puntaje_promedio', 0):.1f}")
-        else:
-            self.logger.error(f"❌ Plan fallido: {nombre_plan} - Error: {resultado.get('error', 'Desconocido')}")
+            if resultado.get("status") == "completed":
+                self.logger.info(f"✅ Plan completado: {nombre_plan} - Puntaje: {resultado.get('puntaje_promedio', 0):.1f}")
+            else:
+                self.logger.error(f"❌ Plan fallido: {nombre_plan} - Error: {resultado.get('error', 'Desconocido')}")
+
+    def registrar_trabajador(self, trabajador_id: str):
+        """Registra un trabajador activo de forma thread-safe"""
+        with self.lock:
+            self.trabajadores_activos.add(trabajador_id)
+            self.logger.debug(f"Trabajador registrado: {trabajador_id}")
+
+    def desregistrar_trabajador(self, trabajador_id: str):
+        """Desregistra un trabajador activo de forma thread-safe"""
+        with self.lock:
+            self.trabajadores_activos.discard(trabajador_id)
+            self.logger.debug(f"Trabajador desregistrado: {trabajador_id}")
+
+    def terminar_trabajadores(self):
+        """Termina todos los trabajadores activos graciosamente"""
+        with self.lock:
+            self.interrumpido = True
+            trabajadores_activos_copia = self.trabajadores_activos.copy()
+        
+        self.logger.warning(f"Terminando {len(trabajadores_activos_copia)} trabajadores activos...")
+        # Note: En joblib, los trabajadores se terminan automáticamente cuando se interrumpe el proceso padre
 
     def _calcular_duracion_estimada(self) -> str:
         """Calcula duración estimada del proceso"""
@@ -2842,10 +2866,162 @@ class SistemaMonitoreoIndustrial:
 
         return recomendaciones
 
+    def generar_dump_emergencia(self, output_dir: Path) -> Path:
+        """Genera dump de emergencia con estado actual del monitoreo de forma thread-safe"""
+        with self.lock:
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            dump_path = output_dir / f"dump_emergencia_monitoreo_{timestamp}.json"
+            
+            estado_emergencia = {
+                "timestamp_dump": datetime.now().isoformat(),
+                "sistema_interrumpido": self.interrumpido,
+                "trabajadores_activos": list(self.trabajadores_activos),
+                "tiempo_inicio": self.tiempo_inicio.isoformat() if self.tiempo_inicio else None,
+                "ejecuciones_completadas": len([e for e in self.ejecuciones if e["resultado"].get("status") == "completed"]),
+                "ejecuciones_fallidas": len([e for e in self.ejecuciones if e["resultado"].get("status") == "failed"]),
+                "ejecuciones_parciales": self.ejecuciones,
+                "estadisticas_parciales": self._calcular_estadisticas_parciales(),
+                "recomendaciones_recuperacion": self._generar_recomendaciones_recuperacion()
+            }
+            
+            try:
+                with open(dump_path, 'w', encoding='utf-8') as f:
+                    json.dump(estado_emergencia, f, indent=2, ensure_ascii=False)
+                self.logger.info(f"🚨 Dump de emergencia guardado: {dump_path}")
+                return dump_path
+            except Exception as e:
+                self.logger.error(f"❌ Error guardando dump de emergencia: {e}")
+                raise
+
+    def _calcular_estadisticas_parciales(self) -> Dict[str, Any]:
+        """Calcula estadísticas parciales de las ejecuciones completadas hasta el momento"""
+        completados = [e for e in self.ejecuciones if e["resultado"].get("status") == "completed"]
+        puntajes = [e["resultado"].get("puntaje_promedio", 0) for e in completados if e["resultado"].get("puntaje_promedio")]
+        
+        if not puntajes:
+            return {"mensaje": "No hay ejecuciones completadas para estadísticas"}
+        
+        return {
+            "total_completados": len(completados),
+            "puntaje_promedio": statistics.mean(puntajes),
+            "puntaje_mediana": statistics.median(puntajes),
+            "desviacion_estandar": statistics.stdev(puntajes) if len(puntajes) > 1 else 0,
+            "puntaje_maximo": max(puntajes),
+            "puntaje_minimo": min(puntajes),
+            "planes_excelentes": len([p for p in puntajes if p >= 85]),
+            "planes_aceptables": len([p for p in puntajes if 70 <= p < 85]),
+            "planes_deficientes": len([p for p in puntajes if p < 70])
+        }
+
+    def _generar_recomendaciones_recuperacion(self) -> List[str]:
+        """Genera recomendaciones para recuperar el procesamiento después de una interrupción"""
+        recomendaciones = [
+            "Revisar el dump de emergencia para identificar planes completados",
+            "Verificar la integridad de los archivos de salida generados",
+            "Reanudar procesamiento solo con planes no completados",
+            "Considerar reducir paralelismo si se detectaron problemas de recursos"
+        ]
+        
+        fallidos = [e for e in self.ejecuciones if e["resultado"].get("status") == "failed"]
+        if len(fallidos) > len(self.ejecuciones) * 0.2:
+            recomendaciones.append("Alta tasa de fallos detectada - revisar configuración del sistema")
+        
+        return recomendaciones
+
+
+# ==================== GESTIÓN DE SEÑALES Y TERMINACIÓN GRACIOSA ====================
+
+# Variables globales para manejo de señales thread-safe
+_sistema_monitoreo_global = None
+_output_dir_global = None
+_signal_handler_lock = threading.RLock()
+
+def signal_handler(signum, frame):
+    """Manejador de señales thread-safe para terminación graciosa"""
+    global _sistema_monitoreo_global, _output_dir_global
+    
+    with _signal_handler_lock:
+        LOGGER.warning(f"🚨 Señal {signum} recibida - Iniciando terminación graciosa...")
+        
+        if _sistema_monitoreo_global:
+            try:
+                # Terminar trabajadores activos
+                _sistema_monitoreo_global.terminar_trabajadores()
+                
+                # Generar dump de emergencia
+                if _output_dir_global:
+                    dump_path = _sistema_monitoreo_global.generar_dump_emergencia(_output_dir_global)
+                    LOGGER.warning(f"📊 Estado del monitoreo guardado en: {dump_path}")
+                else:
+                    # Fallback al directorio actual si no hay output_dir configurado
+                    output_fallback = Path("resultados_evaluacion_industrial")
+                    output_fallback.mkdir(exist_ok=True)
+                    dump_path = _sistema_monitoreo_global.generar_dump_emergencia(output_fallback)
+                    LOGGER.warning(f"📊 Estado del monitoreo guardado en: {dump_path}")
+                    
+            except Exception as e:
+                LOGGER.error(f"❌ Error durante terminación graciosa: {e}")
+        
+        LOGGER.warning("🛑 Terminación graciosa completada - Saliendo del sistema...")
+        sys.exit(1)
+
+def atexit_handler():
+    """Manejador atexit thread-safe para terminación inesperada"""
+    global _sistema_monitoreo_global, _output_dir_global
+    
+    with _signal_handler_lock:
+        LOGGER.warning("🚨 Terminación inesperada detectada - Guardando estado...")
+        
+        if _sistema_monitoreo_global:
+            try:
+                if _output_dir_global:
+                    dump_path = _sistema_monitoreo_global.generar_dump_emergencia(_output_dir_global)
+                    LOGGER.warning(f"📊 Estado del monitoreo guardado en: {dump_path}")
+                else:
+                    # Fallback al directorio actual
+                    output_fallback = Path("resultados_evaluacion_industrial")
+                    output_fallback.mkdir(exist_ok=True)
+                    dump_path = _sistema_monitoreo_global.generar_dump_emergencia(output_fallback)
+                    LOGGER.warning(f"📊 Estado del monitoreo guardado en: {dump_path}")
+                    
+                # Generar estadísticas finales
+                if _sistema_monitoreo_global.ejecuciones:
+                    reporte_final = _sistema_monitoreo_global.generar_reporte_monitoreo()
+                    LOGGER.warning(f"📈 Tasa de éxito parcial: {reporte_final.get('metadata', {}).get('tasa_exito', 0):.1%}")
+                    
+            except Exception as e:
+                LOGGER.error(f"❌ Error en handler atexit: {e}")
+
+def procesar_plan_industrial_con_monitoreo(pdf_path: Path) -> Tuple[str, Dict[str, Any]]:
+    """Wrapper thread-safe para procesar plan con registro de trabajador"""
+    global _sistema_monitoreo_global
+    
+    trabajador_id = f"worker_{threading.current_thread().ident}_{pdf_path.stem}"
+    
+    try:
+        # Registrar trabajador activo
+        if _sistema_monitoreo_global:
+            _sistema_monitoreo_global.registrar_trabajador(trabajador_id)
+        
+        # Procesar plan normal
+        resultado = procesar_plan_industrial(pdf_path)
+        
+        return resultado
+        
+    except Exception as e:
+        LOGGER.error(f"❌ Error en trabajador {trabajador_id}: {e}")
+        return pdf_path.stem, {"status": "failed", "error": str(e)}
+        
+    finally:
+        # Desregistrar trabajador
+        if _sistema_monitoreo_global:
+            _sistema_monitoreo_global.desregistrar_trabajador(trabajador_id)
 
 # ==================== FUNCIÓN PRINCIPAL INDUSTRIAL CON ARGUMENTOS ====================
 def main():
-    """Función principal industrial con procesamiento batch y monitoreo mejorado"""
+    """Función principal industrial con procesamiento batch, monitoreo y manejo de señales"""
+    global _sistema_monitoreo_global, _output_dir_global
+    
     parser = argparse.ArgumentParser(
         description="Sistema Industrial de Evaluación de Políticas Públicas v8.1",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -2896,9 +3072,18 @@ Ejemplos de uso:
     if device_info['cuda_available'] and device_info['device_type'] == 'cuda':
         LOGGER.info(f"🚀 CUDA disponible: {device_info['cuda_device_count']} dispositivos")
 
+    # Configurar variables globales para handlers
+    _output_dir_global = output_dir
+
     # Inicializar sistema de monitoreo industrial
     sistema_monitoreo = SistemaMonitoreoIndustrial()
+    _sistema_monitoreo_global = sistema_monitoreo
     sistema_monitoreo.iniciar_monitoreo()
+    
+    # Configurar manejadores de señales
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+    atexit.register(atexit_handler)
 
     LOGGER.info(f"🚀 Iniciando sistema industrial de evaluación de políticas públicas v8.1")
     LOGGER.info(f"📁 Directorio de entrada: {input_path}")
@@ -2917,14 +3102,19 @@ Ejemplos de uso:
         LOGGER.info(f"🏭 Procesando {len(pdf_paths)} planes de desarrollo en paralelo...")
         LOGGER.info(f"⚙️  Utilizando {os.cpu_count()} núcleos disponibles")
 
-        # Función de procesamiento con argumentos adicionales
+        # Función de procesamiento con argumentos adicionales y monitoreo
         def procesar_con_args(pdf_path):
-            return procesar_plan_industrial(pdf_path, args.max_segmentos, args.batch_size)
+            return procesar_plan_industrial_con_monitoreo(pdf_path)
 
-        # Procesamiento paralelo industrial
-        resultados_batch = Parallel(n_jobs=-1, backend='threading', verbose=10)(
-            delayed(procesar_con_args)(pdf_path) for pdf_path in pdf_paths
-        )
+        # Procesamiento paralelo industrial con monitoreo
+        try:
+            resultados_batch = Parallel(n_jobs=-1, backend='threading', verbose=10)(
+                delayed(procesar_con_args)(pdf_path) for pdf_path in pdf_paths
+            )
+        except KeyboardInterrupt:
+            LOGGER.warning("🚨 Procesamiento interrumpido por el usuario")
+            # El signal handler se encargará de la limpieza
+            raise
 
         # Registrar resultados en sistema de monitoreo
         for nombre_plan, metrics in resultados_batch:
@@ -3019,17 +3209,23 @@ Ejemplos de uso:
     else:
         # Modo single-file industrial
         LOGGER.info(f"📄 Procesando archivo individual: {input_path.name}")
-        nombre_plan, metrics = procesar_plan_industrial(input_path, args.max_segmentos, args.batch_size)
+        try:
+            nombre_plan, metrics = procesar_plan_industrial_con_monitoreo(input_path)
+            sistema_monitoreo.registrar_ejecucion(nombre_plan, metrics)
 
-        if "error" not in metrics:
-            LOGGER.info(f"✅✅✅ EVALUACIÓN COMPLETADA PARA {nombre_plan}")
-            LOGGER.info(f"📊 PUNTAJE FINAL: {metrics.get('puntaje_promedio', 0):.1f}/100")
-            LOGGER.info(f"🏭 NIVEL DE MADUREZ: {metrics.get('nivel_madurez_predominante', 'N/A')}")
-            if args.max_segmentos:
-                LOGGER.info(f"📊 SEGMENTOS PROCESADOS: {metrics.get('segmentos_procesados', 'N/A')}/{metrics.get('segmentos_totales', 'N/A')}")
-        else:
-            LOGGER.error(f"❌❌❌ ERROR PROCESANDO {nombre_plan}: {metrics.get('error', 'Desconocido')}")
-            sys.exit(1)
+            if "error" not in metrics:
+                LOGGER.info(f"✅✅✅ EVALUACIÓN COMPLETADA PARA {nombre_plan}")
+                LOGGER.info(f"📊 PUNTAJE FINAL: {metrics.get('puntaje_promedio', 0):.1f}/100")
+                LOGGER.info(f"🏭 NIVEL DE MADUREZ: {metrics.get('nivel_madurez_predominante', 'N/A')}")
+                if args.max_segmentos:
+                    LOGGER.info(f"📊 SEGMENTOS PROCESADOS: {metrics.get('segmentos_procesados', 'N/A')}/{metrics.get('segmentos_totales', 'N/A')}")
+            else:
+                LOGGER.error(f"❌❌❌ ERROR PROCESANDO {nombre_plan}: {metrics.get('error', 'Desconocido')}")
+                sys.exit(1)
+        except KeyboardInterrupt:
+            LOGGER.warning("🚨 Procesamiento interrumpido por el usuario")
+            # El signal handler se encargará de la limpieza
+            raise
 
     # Mostrar resumen final
     print(f"\n{'=' * 80}")
@@ -3047,8 +3243,10 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        LOGGER.info("🛑 Ejecución interrumpida por el usuario")
+        # El signal handler ya se encargó de la limpieza
+        LOGGER.info("🛑 Ejecución interrumpida - Limpieza completada por signal handler")
         sys.exit(1)
     except Exception as e:
         LOGGER.error(f"❌❌❌ ERROR CRÍTICO EN EJECUCIÓN INDUSTRIAL: {e}")
+        # El atexit handler se encargará de guardar el estado
         sys.exit(1)

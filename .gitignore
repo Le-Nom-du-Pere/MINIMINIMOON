@@ -1,3 +1,4 @@
+
 *.pyc
 __pycache__/
 *.pyo
@@ -13,6 +14,31 @@ venv/
 env/
 .env/
 
-# Plan Processor Error Logs
-error_logs/
-test_logs_*/
+# Output and log files
+resultados_evaluacion_industrial/
+evaluacion_politicas_*.log
+*.log
+dump_emergencia_*.json
+demo_resultados/
+test_output/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Test files and temporary data
+test_dump/
+*.tmp
+*.temp
