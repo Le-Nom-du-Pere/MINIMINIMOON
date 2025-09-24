@@ -39,7 +39,7 @@ import gzip
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError
 from contextlib import contextmanager
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field, asdict, replace
 from enum import Enum, auto
 from functools import lru_cache, wraps
 from pathlib import Path
@@ -678,11 +678,15 @@ class IndustrialUnicodeAnalyzer:
 
                 # Detect anomalies
                 if self.config['anomaly_detection']:
-                    metrics.anomalies_detected = self._detect_anomalies(text, metrics)
-                    self.stats['anomalies_found'] += len(metrics.anomalies_detected)
+                    anomalies_detected = self._detect_anomalies(text, metrics)
+                    self.stats['anomalies_found'] += len(anomalies_detected)
+                    # Create new metrics instance with anomalies
+                    metrics = replace(metrics, anomalies_detected=anomalies_detected)
 
                 # Calculate final confidence score
-                metrics.confidence_score = self._calculate_confidence_score(metrics)
+                confidence_score = self._calculate_confidence_score(metrics)
+                # Create new metrics instance with confidence score
+                metrics = replace(metrics, confidence_score=confidence_score)
 
                 # Update statistics
                 self.stats['texts_processed'] += 1
@@ -1401,7 +1405,7 @@ class IndustrialDemoRunner:
         """Create comprehensive industrial-grade test suite."""
         return [
             # Basic normalization scenarios
-            ('basic_quotes', '"Hello World" vs "Hello World" and "single quotes")
+            ('basic_quotes', '"Hello World" vs "Hello World" and "single quotes"'),
             ('accented_basic', 'café résumé naïve Zürich'),
             ('em_dash_test', 'Text—with—em—dashes vs Text-with-hyphens'),
             ('ellipsis_test', 'Wait… vs Wait... for response'),
