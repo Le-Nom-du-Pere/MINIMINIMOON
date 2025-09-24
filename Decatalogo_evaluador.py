@@ -9,20 +9,32 @@ Autor: Dr. en Políticas Públicas (Extensión)
 Enfoque: Calidad del dato de entrada para garantizar la robustez del análisis causal de alto nivel.
 """
 
-import logging
-from collections import defaultdict
-
-import sys
-import json
 import hashlib
-from enum import Enum
-from datetime import datetime
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set, Tuple
-from datetime import datetime
-from typing import Dict, List, Any, Tuple, Optional
-
+import json
+import logging
 import sys
+from collections import defaultdict
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any, Dict, List, Optional, Set, Tuple
+
+from Decatalogo_principal import (
+    ClusterMetadata,
+    DecalogoContext,
+    DimensionDecalogo,
+    EvaluacionCausalIndustrial,
+    ResultadoDimensionIndustrial,
+    SistemaEvaluacionIndustrial,
+    obtener_decalogo_contexto,
+)
+from feasibility_scorer import (
+    ComponentType,
+    DetectionResult,
+    FeasibilityScorer,
+    IndicatorScore,
+)
+from responsibility_detector import ResponsibilityDetector, ResponsibilityEntity
 
 try:
     import pandas as pd
@@ -33,24 +45,6 @@ assert sys.version_info >= (3, 11), "Python 3.11 or higher is required"
 
 # Importar componentes del sistema industrial principal
 # from sistema_industrial.componentes import ...
-
-from Decatalogo_principal import (
-    DimensionDecalogo,
-    SistemaEvaluacionIndustrial,
-    ResultadoDimensionIndustrial,
-    EvaluacionCausalIndustrial,
-    DecalogoContext,
-    ClusterMetadata,
-    obtener_decalogo_contexto,
-)
-
-from feasibility_scorer import (
-    FeasibilityScorer,
-    ComponentType,
-    IndicatorScore,
-    DetectionResult,
-)
-from responsibility_detector import ResponsibilityDetector, ResponsibilityEntity
 
 LOGGER = logging.getLogger("DecatalogoEvaluatorFull")
 
@@ -71,7 +65,9 @@ class AnalisisEvidenciaDecalogo:
 
     @property
     def max_score(self) -> float:
-        return max((score.feasibility_score for score in self.indicador_scores), default=0.0)
+        return max(
+            (score.feasibility_score for score in self.indicador_scores), default=0.0
+        )
 
     def detecciones(self, componente: ComponentType) -> List[DetectionResult]:
         return self.detecciones_por_tipo.get(componente, [])
@@ -79,9 +75,11 @@ class AnalisisEvidenciaDecalogo:
 
 # ==================== EVALUADOR INDUSTRIAL COMPLETO ====================
 
+
 @dataclass
 class EvaluacionPregunta:
     """Evaluación de una pregunta específica del cuestionario."""
+
     pregunta_id: str
     dimension: str
     punto_id: int
@@ -90,34 +88,42 @@ class EvaluacionPregunta:
     evidencia_contraria: str
     puntaje: float
 
+
 @dataclass
 class EvaluacionDimensionPunto:
     """Evaluación de una dimensión para un punto específico del Decálogo."""
+
     punto_id: int
     dimension: str
     evaluaciones_preguntas: List[EvaluacionPregunta]
     puntaje_dimension: float
     matriz_causal: Optional[Dict[str, Any]] = None
 
+
 @dataclass
 class EvaluacionPuntoCompleto:
     """Evaluación completa de un punto del Decálogo en las 4 dimensiones."""
+
     punto_id: int
     nombre_punto: str
     evaluaciones_dimensiones: List[EvaluacionDimensionPunto]
     puntaje_agregado_punto: float
 
+
 @dataclass
 class EvaluacionClusterCompleto:
     """Evaluación completa de un cluster del Decálogo."""
+
     cluster_nombre: str
     evaluaciones_puntos: List[EvaluacionPuntoCompleto]
     puntaje_agregado_cluster: float
     clasificacion_cualitativa: str
 
+
 @dataclass
 class ReporteFinalDecatalogo:
     """Reporte final completo del análisis del Decálogo."""
+
     metadata: Dict[str, Any]
     resumen_ejecutivo: Dict[str, Any]
     reporte_macro: Dict[str, Any]
@@ -127,15 +133,20 @@ class ReporteFinalDecatalogo:
     reporte_por_pregunta: List[EvaluacionPregunta]
     anexos_serializables: Dict[str, Any] = field(default_factory=dict)
 
+
 class _EvaluadorBase:
     """Utilidades compartidas para construir evaluaciones del decálogo."""
 
     @staticmethod
-    def _seleccionar_mejor_deteccion(detecciones: List["DetectionResult"]) -> Optional["DetectionResult"]:
+    def _seleccionar_mejor_deteccion(
+        detecciones: List["DetectionResult"],
+    ) -> Optional["DetectionResult"]:
         return max(detecciones, key=lambda d: d.confidence, default=None)
 
     @staticmethod
-    def _seleccionar_mejor_responsable(responsables: List["ResponsibilityEntity"]) -> Optional["ResponsibilityEntity"]:
+    def _seleccionar_mejor_responsable(
+        responsables: List["ResponsibilityEntity"],
+    ) -> Optional["ResponsibilityEntity"]:
         return max(responsables, key=lambda r: r.confidence, default=None)
 
     @staticmethod
@@ -183,7 +194,9 @@ class _EvaluadorBase:
             evidencia_textual = evidencia or ""
 
         evidencia_contraria = (
-            "" if valor > 0 else "No se identificaron elementos que respondan a la pregunta con la evidencia disponible."
+            ""
+            if valor > 0
+            else "No se identificaron elementos que respondan a la pregunta con la evidencia disponible."
         )
 
         return EvaluacionPregunta(
@@ -283,23 +296,31 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
         textos = self._extraer_textos(evidencia, key)
         return textos[0] if textos else ""
 
-    def _analizar_evidencia(self, evidencia: Dict[str, List[Any]]) -> AnalisisEvidenciaDecalogo:
+    def _analizar_evidencia(
+        self, evidencia: Dict[str, List[Any]]
+    ) -> AnalisisEvidenciaDecalogo:
         textos_indicadores = self._extraer_textos(evidencia, "indicadores", "metas")
         if textos_indicadores:
-            indicador_scores = self.scorer.batch_score(textos_indicadores, use_parallel=True)
+            indicador_scores = self.scorer.batch_score(
+                textos_indicadores, use_parallel=True
+            )
         else:
             indicador_scores = []
 
         indicadores_evaluados = list(zip(textos_indicadores, indicador_scores))
 
-        detecciones_por_tipo: Dict[ComponentType, List[DetectionResult]] = {component: [] for component in ComponentType}
+        detecciones_por_tipo: Dict[ComponentType, List[DetectionResult]] = {
+            component: [] for component in ComponentType
+        }
         for _, score in indicadores_evaluados:
             for deteccion in score.detailed_matches:
                 detecciones_por_tipo[deteccion.component_type].append(deteccion)
 
         responsabilidades: List[ResponsibilityEntity] = []
         for texto in self._extraer_textos(evidencia, "responsables"):
-            responsabilidades.extend(self.responsibility_detector.detect_entities(texto))
+            responsabilidades.extend(
+                self.responsibility_detector.detect_entities(texto)
+            )
 
         detecciones_por_tipo = {k: v for k, v in detecciones_por_tipo.items() if v}
 
@@ -345,20 +366,30 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
             match_count = len(matches)
             total_matches += match_count
             baseline_matches += sum(
-                1 for score in matches if ComponentType.BASELINE in score.components_detected
+                1
+                for score in matches
+                if ComponentType.BASELINE in score.components_detected
             )
             target_matches += sum(
-                1 for score in matches if ComponentType.TARGET in score.components_detected
+                1
+                for score in matches
+                if ComponentType.TARGET in score.components_detected
             )
             time_matches += sum(
-                1 for score in matches if ComponentType.TIME_HORIZON in score.components_detected
+                1
+                for score in matches
+                if ComponentType.TIME_HORIZON in score.components_detected
             )
             numerical_matches += sum(
-                1 for score in matches if ComponentType.NUMERICAL in score.components_detected
+                1
+                for score in matches
+                if ComponentType.NUMERICAL in score.components_detected
             )
 
             calidad_promedio = (
-                sum(score.feasibility_score for score in matches) / match_count if match_count else 0.0
+                sum(score.feasibility_score for score in matches) / match_count
+                if match_count
+                else 0.0
             )
             cobertura_ratio = match_count / max(1, len(eslabon.indicadores))
             cobertura = self._clamp(0.5 * calidad_promedio + 0.5 * cobertura_ratio)
@@ -378,7 +409,9 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
                 "lead_time": eslabon.calcular_lead_time(),
             }
 
-        cobertura_ponderada_final = cobertura_ponderada / ponderacion_total if ponderacion_total else 0.0
+        cobertura_ponderada_final = (
+            cobertura_ponderada / ponderacion_total if ponderacion_total else 0.0
+        )
         cobertura_tipo_promedio = {
             tipo: (sum(valores) / len(valores) if valores else 0.0)
             for tipo, valores in cobertura_por_tipo.items()
@@ -389,13 +422,19 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
         riesgo_factor = max(0.55, 1.0 - 0.15 * riesgo_promedio)
 
         riesgo_indicadores = sum(
-            1 for riesgos in riesgo_matriz.values() if any("indicadores" in r.lower() for r in riesgos)
+            1
+            for riesgos in riesgo_matriz.values()
+            if any("indicadores" in r.lower() for r in riesgos)
         )
         riesgo_temporal = sum(
-            1 for riesgos in riesgo_matriz.values() if any("temporal" in r.lower() for r in riesgos)
+            1
+            for riesgos in riesgo_matriz.values()
+            if any("temporal" in r.lower() for r in riesgos)
         )
         riesgo_capacidades = sum(
-            1 for riesgos in riesgo_matriz.values() if any("capacidades" in r.lower() for r in riesgos)
+            1
+            for riesgos in riesgo_matriz.values()
+            if any("capacidades" in r.lower() for r in riesgos)
         )
         divisor_riesgos = max(1, len(dimension.eslabones))
         riesgo_breakdown = {
@@ -405,7 +444,8 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
         }
 
         feasibility_avg = (
-            sum(score.feasibility_score for score in analisis.indicador_scores) / len(analisis.indicador_scores)
+            sum(score.feasibility_score for score in analisis.indicador_scores)
+            / len(analisis.indicador_scores)
             if analisis.indicador_scores
             else 0.0
         )
@@ -415,10 +455,14 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
         time_ratio = time_matches / max(1, total_matches)
         numerical_ratio = numerical_matches / max(1, total_matches)
 
-        responsable_ratio = min(1.0, len(analisis.responsabilidades) / max(1, len(dimension.eslabones)))
+        responsable_ratio = min(
+            1.0, len(analisis.responsabilidades) / max(1, len(dimension.eslabones))
+        )
         resource_ratio = min(1.0, analisis.recursos / max(1, len(dimension.eslabones)))
         plazo_ratio = min(1.0, analisis.plazos / max(1, len(dimension.eslabones)))
-        riesgo_evidencia_ratio = min(1.0, analisis.riesgos / max(1, len(dimension.eslabones)))
+        riesgo_evidencia_ratio = min(
+            1.0, analisis.riesgos / max(1, len(dimension.eslabones))
+        )
 
         kpi_global = dimension.calcular_kpi_global()
         kpi_norm = min(1.0, kpi_global / 1.6) if dimension.eslabones else 0.0
@@ -446,7 +490,9 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
             "total_matches": total_matches,
         }
 
-    def _generar_matriz_trazabilidad(self, metricas: Optional[Dict[str, Any]]) -> Optional[pd.DataFrame]:
+    def _generar_matriz_trazabilidad(
+        self, metricas: Optional[Dict[str, Any]]
+    ) -> Optional[pd.DataFrame]:
         if not metricas or pd is None:
             return None
 
@@ -470,7 +516,10 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
         return pd.DataFrame(filas)
 
     def evaluar_dimension_de1(
-        self, analisis: AnalisisEvidenciaDecalogo, evidencia: Dict[str, List[Any]], punto_id: int
+        self,
+        analisis: AnalisisEvidenciaDecalogo,
+        evidencia: Dict[str, List[Any]],
+        punto_id: int,
     ) -> EvaluacionDimensionPunto:
         evaluaciones: List[EvaluacionPregunta] = []
         max_score = analisis.max_score
@@ -496,7 +545,9 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
             )
         )
 
-        mejor_responsable = self._seleccionar_mejor_responsable(analisis.responsabilidades)
+        mejor_responsable = self._seleccionar_mejor_responsable(
+            analisis.responsabilidades
+        )
         valor_q2 = self._clamp(0.6 + 0.4 * max_score) if mejor_responsable else 0.0
         evaluaciones.append(
             self._crear_evaluacion(
@@ -509,15 +560,29 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
             )
         )
 
-        indicadores_cobertura = [bool(baseline_dets), bool(target_dets), bool(timeframe_dets)]
-        cobertura = sum(indicadores_cobertura) / len(indicadores_cobertura) if indicadores_cobertura else 0.0
+        indicadores_cobertura = [
+            bool(baseline_dets),
+            bool(target_dets),
+            bool(timeframe_dets),
+        ]
+        cobertura = (
+            sum(indicadores_cobertura) / len(indicadores_cobertura)
+            if indicadores_cobertura
+            else 0.0
+        )
         evidencia_q3 = " | ".join(
             filter(
                 None,
                 [
-                    self._formatear_deteccion(self._seleccionar_mejor_deteccion(baseline_dets)),
-                    self._formatear_deteccion(self._seleccionar_mejor_deteccion(target_dets)),
-                    self._formatear_deteccion(self._seleccionar_mejor_deteccion(timeframe_dets)),
+                    self._formatear_deteccion(
+                        self._seleccionar_mejor_deteccion(baseline_dets)
+                    ),
+                    self._formatear_deteccion(
+                        self._seleccionar_mejor_deteccion(target_dets)
+                    ),
+                    self._formatear_deteccion(
+                        self._seleccionar_mejor_deteccion(timeframe_dets)
+                    ),
                 ],
             )
         )
@@ -536,9 +601,15 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
             filter(
                 None,
                 [
-                    self._formatear_deteccion(self._seleccionar_mejor_deteccion(numerical_dets)),
-                    self._formatear_deteccion(self._seleccionar_mejor_deteccion(timeframe_dets)),
-                    self._formatear_deteccion(self._seleccionar_mejor_deteccion(date_dets)),
+                    self._formatear_deteccion(
+                        self._seleccionar_mejor_deteccion(numerical_dets)
+                    ),
+                    self._formatear_deteccion(
+                        self._seleccionar_mejor_deteccion(timeframe_dets)
+                    ),
+                    self._formatear_deteccion(
+                        self._seleccionar_mejor_deteccion(date_dets)
+                    ),
                 ],
             )
         )
@@ -578,7 +649,11 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
             )
         )
 
-        puntaje_base = sum(e.puntaje for e in evaluaciones) / len(evaluaciones) if evaluaciones else 0.0
+        puntaje_base = (
+            sum(e.puntaje for e in evaluaciones) / len(evaluaciones)
+            if evaluaciones
+            else 0.0
+        )
         matriz_causal = {
             "componentes_detectados": {
                 "baseline": bool(baseline_dets),
@@ -587,10 +662,14 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
                 "responsables": bool(analisis.responsabilidades),
             },
             "puntaje_causal": round(puntaje_base * 100, 2),
-            "cobertura_ponderada": round((metrics["cobertura_ponderada"] if metrics else 0.0) * 100, 2),
+            "cobertura_ponderada": round(
+                (metrics["cobertura_ponderada"] if metrics else 0.0) * 100, 2
+            ),
             "riesgo_factor": round(riesgo_factor, 2),
         }
-        puntaje_final = self._clamp(puntaje_base * (matriz_causal["riesgo_factor"] or 1.0))
+        puntaje_final = self._clamp(
+            puntaje_base * (matriz_causal["riesgo_factor"] or 1.0)
+        )
 
         return EvaluacionDimensionPunto(
             punto_id=punto_id,
@@ -601,7 +680,10 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
         )
 
     def evaluar_dimension_de1(
-        self, analisis: AnalisisEvidenciaDecalogo, evidencia: Dict[str, List[Any]], punto_id: int
+        self,
+        analisis: AnalisisEvidenciaDecalogo,
+        evidencia: Dict[str, List[Any]],
+        punto_id: int,
     ) -> EvaluacionDimensionPunto:
         evaluaciones: List[EvaluacionPregunta] = []
         max_score = analisis.max_score
@@ -623,7 +705,9 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
             )
         )
 
-        mejor_responsable = self._seleccionar_mejor_responsable(analisis.responsabilidades)
+        mejor_responsable = self._seleccionar_mejor_responsable(
+            analisis.responsabilidades
+        )
         valor_q2 = self._clamp(0.6 + 0.4 * max_score) if mejor_responsable else 0.0
         evaluaciones.append(
             self._crear_evaluacion(
@@ -636,15 +720,29 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
             )
         )
 
-        indicadores_cobertura = [bool(baseline_dets), bool(target_dets), bool(timeframe_dets)]
-        cobertura = sum(indicadores_cobertura) / len(indicadores_cobertura) if indicadores_cobertura else 0.0
+        indicadores_cobertura = [
+            bool(baseline_dets),
+            bool(target_dets),
+            bool(timeframe_dets),
+        ]
+        cobertura = (
+            sum(indicadores_cobertura) / len(indicadores_cobertura)
+            if indicadores_cobertura
+            else 0.0
+        )
         evidencia_q3 = " | ".join(
             filter(
                 None,
                 [
-                    self._formatear_deteccion(self._seleccionar_mejor_deteccion(baseline_dets)),
-                    self._formatear_deteccion(self._seleccionar_mejor_deteccion(target_dets)),
-                    self._formatear_deteccion(self._seleccionar_mejor_deteccion(timeframe_dets)),
+                    self._formatear_deteccion(
+                        self._seleccionar_mejor_deteccion(baseline_dets)
+                    ),
+                    self._formatear_deteccion(
+                        self._seleccionar_mejor_deteccion(target_dets)
+                    ),
+                    self._formatear_deteccion(
+                        self._seleccionar_mejor_deteccion(timeframe_dets)
+                    ),
                 ],
             )
         )
@@ -661,8 +759,15 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
 
         factor_responsable = 1.0 if mejor_responsable else 0.0
         factor_recursos = 1.0 if analisis.recursos else 0.0
-        valor_q4 = self._clamp(0.4 * cobertura + 0.3 * max_score + 0.2 * factor_responsable + 0.1 * factor_recursos)
-        evidencia_q4 = "; ".join(filter(None, [evidencia_q3, self._formatear_responsable(mejor_responsable)]))
+        valor_q4 = self._clamp(
+            0.4 * cobertura
+            + 0.3 * max_score
+            + 0.2 * factor_responsable
+            + 0.1 * factor_recursos
+        )
+        evidencia_q4 = "; ".join(
+            filter(None, [evidencia_q3, self._formatear_responsable(mejor_responsable)])
+        )
         evaluaciones.append(
             self._crear_evaluacion(
                 "Q4",
@@ -675,7 +780,9 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
         )
 
         mejor_impacto = self._seleccionar_mejor_deteccion(target_dets + date_dets)
-        valor_q5 = self._clamp(max_score if mejor_impacto else (max_score * 0.5 if target_dets else 0.0))
+        valor_q5 = self._clamp(
+            max_score if mejor_impacto else (max_score * 0.5 if target_dets else 0.0)
+        )
         evaluaciones.append(
             self._crear_evaluacion(
                 "Q5",
@@ -699,7 +806,11 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
             )
         )
 
-        puntaje_base = sum(e.puntaje for e in evaluaciones) / len(evaluaciones) if evaluaciones else 0.0
+        puntaje_base = (
+            sum(e.puntaje for e in evaluaciones) / len(evaluaciones)
+            if evaluaciones
+            else 0.0
+        )
         matriz_causal = {
             "C1": "Sí" if baseline_dets else "No",
             "C2": "Sí" if target_dets else "No",
@@ -719,7 +830,10 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
         )
 
     def evaluar_dimension_de2(
-        self, analisis: AnalisisEvidenciaDecalogo, evidencia: Dict[str, List[Any]], punto_id: int
+        self,
+        analisis: AnalisisEvidenciaDecalogo,
+        evidencia: Dict[str, List[Any]],
+        punto_id: int,
     ) -> EvaluacionDimensionPunto:
         evaluaciones: List[EvaluacionPregunta] = []
         baseline_dets = analisis.detecciones(ComponentType.BASELINE)
@@ -735,70 +849,124 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
         coverage_resultados = coverage_por_tipo.get("RESULTADOS", 0.0)
         coverage_ponderada = metrics["cobertura_ponderada"] if metrics else 0.0
         riesgo_factor = metrics["riesgo_factor"] if metrics else 1.0
-        riesgo_breakdown = metrics["riesgo_breakdown"] if metrics else {"indicadores": 0.0, "temporal": 0.0, "capacidades": 0.0}
+        riesgo_breakdown = (
+            metrics["riesgo_breakdown"]
+            if metrics
+            else {"indicadores": 0.0, "temporal": 0.0, "capacidades": 0.0}
+        )
         feasibility_avg = metrics["feasibility_avg"] if metrics else analisis.max_score
-        baseline_ratio = metrics["baseline_ratio"] if metrics else (1.0 if baseline_dets else 0.0)
-        target_ratio = metrics["target_ratio"] if metrics else (1.0 if target_dets else 0.0)
-        time_ratio = metrics["time_ratio"] if metrics else (1.0 if timeframe_dets else 0.0)
-        numerical_ratio = metrics["numerical_ratio"] if metrics else (1.0 if numerical_dets else 0.0)
-        resource_ratio = metrics["resource_ratio"] if metrics else (1.0 if analisis.recursos else 0.0)
-        plazo_ratio = metrics["plazo_ratio"] if metrics else (1.0 if analisis.plazos else 0.0)
+        baseline_ratio = (
+            metrics["baseline_ratio"] if metrics else (1.0 if baseline_dets else 0.0)
+        )
+        target_ratio = (
+            metrics["target_ratio"] if metrics else (1.0 if target_dets else 0.0)
+        )
+        time_ratio = (
+            metrics["time_ratio"] if metrics else (1.0 if timeframe_dets else 0.0)
+        )
+        numerical_ratio = (
+            metrics["numerical_ratio"] if metrics else (1.0 if numerical_dets else 0.0)
+        )
+        resource_ratio = (
+            metrics["resource_ratio"]
+            if metrics
+            else (1.0 if analisis.recursos else 0.0)
+        )
+        plazo_ratio = (
+            metrics["plazo_ratio"] if metrics else (1.0 if analisis.plazos else 0.0)
+        )
         kpi_norm = metrics["kpi_norm"] if metrics else 0.0
 
         evidencia_d1 = " | ".join(
             filter(
                 None,
                 [
-                    self._formatear_deteccion(self._seleccionar_mejor_deteccion(baseline_dets)),
+                    self._formatear_deteccion(
+                        self._seleccionar_mejor_deteccion(baseline_dets)
+                    ),
                     f"Cobertura insumos {coverage_insumos:.0%}" if metrics else "",
                 ],
             )
         )
-        valor_d1 = self._clamp((0.6 * baseline_ratio + 0.4 * coverage_insumos) * riesgo_factor)
+        valor_d1 = self._clamp(
+            (0.6 * baseline_ratio + 0.4 * coverage_insumos) * riesgo_factor
+        )
         evaluaciones.append(
-            self._crear_evaluacion("D1", "DE-2", punto_id, valor_d1, evidencia_d1, self.preguntas_de2["D1"])
+            self._crear_evaluacion(
+                "D1", "DE-2", punto_id, valor_d1, evidencia_d1, self.preguntas_de2["D1"]
+            )
         )
 
         evidencia_d2 = " | ".join(
             filter(
                 None,
                 [
-                    self._formatear_deteccion(self._seleccionar_mejor_deteccion(timeframe_dets)),
-                    f"Cobertura resultados {coverage_resultados:.0%}" if metrics else "",
+                    self._formatear_deteccion(
+                        self._seleccionar_mejor_deteccion(timeframe_dets)
+                    ),
+                    (
+                        f"Cobertura resultados {coverage_resultados:.0%}"
+                        if metrics
+                        else ""
+                    ),
                 ],
             )
         )
-        valor_d2 = self._clamp((0.4 * time_ratio + 0.3 * coverage_resultados + 0.3 * feasibility_avg) * riesgo_factor)
+        valor_d2 = self._clamp(
+            (0.4 * time_ratio + 0.3 * coverage_resultados + 0.3 * feasibility_avg)
+            * riesgo_factor
+        )
         evaluaciones.append(
-            self._crear_evaluacion("D2", "DE-2", punto_id, valor_d2, evidencia_d2, self.preguntas_de2["D2"])
+            self._crear_evaluacion(
+                "D2", "DE-2", punto_id, valor_d2, evidencia_d2, self.preguntas_de2["D2"]
+            )
         )
 
         evidencia_o1 = " | ".join(
             filter(
                 None,
                 [
-                    self._formatear_deteccion(self._seleccionar_mejor_deteccion(target_dets)),
-                    f"Cobertura resultados {coverage_resultados:.0%}" if metrics else "",
+                    self._formatear_deteccion(
+                        self._seleccionar_mejor_deteccion(target_dets)
+                    ),
+                    (
+                        f"Cobertura resultados {coverage_resultados:.0%}"
+                        if metrics
+                        else ""
+                    ),
                 ],
             )
         )
-        valor_o1 = self._clamp((0.5 * target_ratio + 0.3 * coverage_resultados + 0.2 * kpi_norm) * riesgo_factor)
+        valor_o1 = self._clamp(
+            (0.5 * target_ratio + 0.3 * coverage_resultados + 0.2 * kpi_norm)
+            * riesgo_factor
+        )
         evaluaciones.append(
-            self._crear_evaluacion("O1", "DE-2", punto_id, valor_o1, evidencia_o1, self.preguntas_de2["O1"])
+            self._crear_evaluacion(
+                "O1", "DE-2", punto_id, valor_o1, evidencia_o1, self.preguntas_de2["O1"]
+            )
         )
 
         evidencia_o2 = " | ".join(
             filter(
                 None,
                 [
-                    self._formatear_deteccion(self._seleccionar_mejor_deteccion(baseline_dets)),
-                    self._formatear_deteccion(self._seleccionar_mejor_deteccion(target_dets)),
+                    self._formatear_deteccion(
+                        self._seleccionar_mejor_deteccion(baseline_dets)
+                    ),
+                    self._formatear_deteccion(
+                        self._seleccionar_mejor_deteccion(target_dets)
+                    ),
                 ],
             )
         )
-        valor_o2 = self._clamp(((baseline_ratio + target_ratio + feasibility_avg) / 3) * riesgo_factor)
+        valor_o2 = self._clamp(
+            ((baseline_ratio + target_ratio + feasibility_avg) / 3) * riesgo_factor
+        )
         evaluaciones.append(
-            self._crear_evaluacion("O2", "DE-2", punto_id, valor_o2, evidencia_o2, self.preguntas_de2["O2"])
+            self._crear_evaluacion(
+                "O2", "DE-2", punto_id, valor_o2, evidencia_o2, self.preguntas_de2["O2"]
+            )
         )
 
         evidencia_t1 = " | ".join(
@@ -810,21 +978,38 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
                 ],
             )
         )
-        valor_t1 = self._clamp((0.5 * coverage_procesos + 0.3 * resource_ratio + 0.2 * (1 - riesgo_breakdown["indicadores"])) * riesgo_factor)
+        valor_t1 = self._clamp(
+            (
+                0.5 * coverage_procesos
+                + 0.3 * resource_ratio
+                + 0.2 * (1 - riesgo_breakdown["indicadores"])
+            )
+            * riesgo_factor
+        )
         evaluaciones.append(
-            self._crear_evaluacion("T1", "DE-2", punto_id, valor_t1, evidencia_t1, self.preguntas_de2["T1"])
+            self._crear_evaluacion(
+                "T1", "DE-2", punto_id, valor_t1, evidencia_t1, self.preguntas_de2["T1"]
+            )
         )
 
         mejor_t2 = self._seleccionar_mejor_deteccion(numerical_dets + timeframe_dets)
         evidencia_t2 = " | ".join(
             filter(
                 None,
-                [self._formatear_deteccion(mejor_t2), f"Cobertura insumos {coverage_insumos:.0%}" if metrics else ""],
+                [
+                    self._formatear_deteccion(mejor_t2),
+                    f"Cobertura insumos {coverage_insumos:.0%}" if metrics else "",
+                ],
             )
         )
-        valor_t2 = self._clamp((0.4 * time_ratio + 0.3 * numerical_ratio + 0.3 * coverage_insumos) * riesgo_factor)
+        valor_t2 = self._clamp(
+            (0.4 * time_ratio + 0.3 * numerical_ratio + 0.3 * coverage_insumos)
+            * riesgo_factor
+        )
         evaluaciones.append(
-            self._crear_evaluacion("T2", "DE-2", punto_id, valor_t2, evidencia_t2, self.preguntas_de2["T2"])
+            self._crear_evaluacion(
+                "T2", "DE-2", punto_id, valor_t2, evidencia_t2, self.preguntas_de2["T2"]
+            )
         )
 
         evidencia_s1 = " | ".join(
@@ -836,9 +1021,18 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
                 ],
             )
         )
-        valor_s1 = self._clamp((0.5 * coverage_productos + 0.3 * coverage_ponderada + 0.2 * feasibility_avg) * riesgo_factor)
+        valor_s1 = self._clamp(
+            (
+                0.5 * coverage_productos
+                + 0.3 * coverage_ponderada
+                + 0.2 * feasibility_avg
+            )
+            * riesgo_factor
+        )
         evaluaciones.append(
-            self._crear_evaluacion("S1", "DE-2", punto_id, valor_s1, evidencia_s1, self.preguntas_de2["S1"])
+            self._crear_evaluacion(
+                "S1", "DE-2", punto_id, valor_s1, evidencia_s1, self.preguntas_de2["S1"]
+            )
         )
 
         mejor_s2 = self._seleccionar_mejor_deteccion(timeframe_dets)
@@ -848,21 +1042,40 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
                 [
                     self._formatear_deteccion(mejor_s2),
                     self._obtener_muestra(evidencia, "plazos"),
-                    f"Planificación en procesos {coverage_procesos:.0%}" if metrics else "",
+                    (
+                        f"Planificación en procesos {coverage_procesos:.0%}"
+                        if metrics
+                        else ""
+                    ),
                 ],
             )
         )
-        valor_s2 = self._clamp((0.6 * time_ratio + 0.2 * coverage_ponderada + 0.2 * (1 - riesgo_breakdown["temporal"])) * riesgo_factor)
+        valor_s2 = self._clamp(
+            (
+                0.6 * time_ratio
+                + 0.2 * coverage_ponderada
+                + 0.2 * (1 - riesgo_breakdown["temporal"])
+            )
+            * riesgo_factor
+        )
         evaluaciones.append(
-            self._crear_evaluacion("S2", "DE-2", punto_id, valor_s2, evidencia_s2, self.preguntas_de2["S2"])
+            self._crear_evaluacion(
+                "S2", "DE-2", punto_id, valor_s2, evidencia_s2, self.preguntas_de2["S2"]
+            )
         )
 
-        puntaje_dimension = sum(e.puntaje for e in evaluaciones) / len(evaluaciones) if evaluaciones else 0.0
+        puntaje_dimension = (
+            sum(e.puntaje for e in evaluaciones) / len(evaluaciones)
+            if evaluaciones
+            else 0.0
+        )
         matriz_causal = {
             "kpi_global": round((metrics["kpi_global"] if metrics else 0.0), 2),
             "cobertura_por_tipo": {
                 tipo: round(valor * 100, 2)
-                for tipo, valor in (metrics["cobertura_por_tipo"] if metrics else {}).items()
+                for tipo, valor in (
+                    metrics["cobertura_por_tipo"] if metrics else {}
+                ).items()
             },
             "riesgo_breakdown": riesgo_breakdown,
             "componentes": {
@@ -883,14 +1096,19 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
         )
 
     def evaluar_dimension_de3(
-        self, analisis: AnalisisEvidenciaDecalogo, evidencia: Dict[str, List[Any]], punto_id: int
+        self,
+        analisis: AnalisisEvidenciaDecalogo,
+        evidencia: Dict[str, List[Any]],
+        punto_id: int,
     ) -> EvaluacionDimensionPunto:
         evaluaciones: List[EvaluacionPregunta] = []
         numerical_dets = analisis.detecciones(ComponentType.NUMERICAL)
         timeframe_dets = analisis.detecciones(ComponentType.TIME_HORIZON)
         mejor_numerico = self._seleccionar_mejor_deteccion(numerical_dets)
         mejor_plazo = self._seleccionar_mejor_deteccion(timeframe_dets)
-        mejor_responsable = self._seleccionar_mejor_responsable(analisis.responsabilidades)
+        mejor_responsable = self._seleccionar_mejor_responsable(
+            analisis.responsabilidades
+        )
 
         metrics = self._calcular_metricas_dimension(punto_id, analisis)
         coverage_por_tipo = metrics["cobertura_por_tipo"] if metrics else {}
@@ -900,99 +1118,215 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
         coverage_resultados = coverage_por_tipo.get("RESULTADOS", 0.0)
         coverage_ponderada = metrics["cobertura_ponderada"] if metrics else 0.0
         riesgo_factor = metrics["riesgo_factor"] if metrics else 1.0
-        riesgo_breakdown = metrics["riesgo_breakdown"] if metrics else {"indicadores": 0.0, "temporal": 0.0, "capacidades": 0.0}
-        feasibility_avg = metrics["feasibility_avg"] if metrics else (mejor_numerico.feasibility_score if mejor_numerico else 0.0)
-        time_ratio = metrics["time_ratio"] if metrics else (1.0 if timeframe_dets else 0.0)
-        numerical_ratio = metrics["numerical_ratio"] if metrics else (1.0 if numerical_dets else 0.0)
-        responsable_ratio = metrics["responsable_ratio"] if metrics else (1.0 if analisis.responsabilidades else 0.0)
-        resource_ratio = metrics["resource_ratio"] if metrics else (1.0 if analisis.recursos else 0.0)
-        plazo_ratio = metrics["plazo_ratio"] if metrics else (1.0 if analisis.plazos else 0.0)
-        riesgo_evidencia_ratio = metrics["riesgo_evidencia_ratio"] if metrics else (1.0 if analisis.riesgos else 0.0)
+        riesgo_breakdown = (
+            metrics["riesgo_breakdown"]
+            if metrics
+            else {"indicadores": 0.0, "temporal": 0.0, "capacidades": 0.0}
+        )
+        feasibility_avg = (
+            metrics["feasibility_avg"]
+            if metrics
+            else (mejor_numerico.feasibility_score if mejor_numerico else 0.0)
+        )
+        time_ratio = (
+            metrics["time_ratio"] if metrics else (1.0 if timeframe_dets else 0.0)
+        )
+        numerical_ratio = (
+            metrics["numerical_ratio"] if metrics else (1.0 if numerical_dets else 0.0)
+        )
+        responsable_ratio = (
+            metrics["responsable_ratio"]
+            if metrics
+            else (1.0 if analisis.responsabilidades else 0.0)
+        )
+        resource_ratio = (
+            metrics["resource_ratio"]
+            if metrics
+            else (1.0 if analisis.recursos else 0.0)
+        )
+        plazo_ratio = (
+            metrics["plazo_ratio"] if metrics else (1.0 if analisis.plazos else 0.0)
+        )
+        riesgo_evidencia_ratio = (
+            metrics["riesgo_evidencia_ratio"]
+            if metrics
+            else (1.0 if analisis.riesgos else 0.0)
+        )
         kpi_norm = metrics["kpi_norm"] if metrics else 0.0
 
         evidencia_g1 = " | ".join(
             filter(
                 None,
-                [self._obtener_muestra(evidencia, "recursos"), f"Cobertura insumos {coverage_insumos:.0%}" if metrics else ""],
+                [
+                    self._obtener_muestra(evidencia, "recursos"),
+                    f"Cobertura insumos {coverage_insumos:.0%}" if metrics else "",
+                ],
             )
         )
-        valor_g1 = self._clamp((0.5 * coverage_insumos + 0.3 * resource_ratio + 0.2 * (1 - riesgo_breakdown["indicadores"])) * riesgo_factor)
+        valor_g1 = self._clamp(
+            (
+                0.5 * coverage_insumos
+                + 0.3 * resource_ratio
+                + 0.2 * (1 - riesgo_breakdown["indicadores"])
+            )
+            * riesgo_factor
+        )
         evaluaciones.append(
-            self._crear_evaluacion("G1", "DE-3", punto_id, valor_g1, evidencia_g1, self.preguntas_de3["G1"])
+            self._crear_evaluacion(
+                "G1", "DE-3", punto_id, valor_g1, evidencia_g1, self.preguntas_de3["G1"]
+            )
         )
 
         evidencia_g2 = " | ".join(
             filter(
                 None,
-                [self._formatear_deteccion(mejor_plazo) or self._obtener_muestra(evidencia, "plazos"), f"Cobertura procesos {coverage_procesos:.0%}" if metrics else ""],
+                [
+                    self._formatear_deteccion(mejor_plazo)
+                    or self._obtener_muestra(evidencia, "plazos"),
+                    f"Cobertura procesos {coverage_procesos:.0%}" if metrics else "",
+                ],
             )
         )
-        valor_g2 = self._clamp((0.4 * time_ratio + 0.3 * plazo_ratio + 0.3 * (1 - riesgo_breakdown["temporal"])) * riesgo_factor)
+        valor_g2 = self._clamp(
+            (
+                0.4 * time_ratio
+                + 0.3 * plazo_ratio
+                + 0.3 * (1 - riesgo_breakdown["temporal"])
+            )
+            * riesgo_factor
+        )
         evaluaciones.append(
-            self._crear_evaluacion("G2", "DE-3", punto_id, valor_g2, evidencia_g2, self.preguntas_de3["G2"])
+            self._crear_evaluacion(
+                "G2", "DE-3", punto_id, valor_g2, evidencia_g2, self.preguntas_de3["G2"]
+            )
         )
 
         evidencia_a1 = self._formatear_deteccion(mejor_numerico)
-        valor_a1 = self._clamp((0.5 * numerical_ratio + 0.3 * feasibility_avg + 0.2 * coverage_resultados) * riesgo_factor)
+        valor_a1 = self._clamp(
+            (0.5 * numerical_ratio + 0.3 * feasibility_avg + 0.2 * coverage_resultados)
+            * riesgo_factor
+        )
         evaluaciones.append(
-            self._crear_evaluacion("A1", "DE-3", punto_id, valor_a1, evidencia_a1, self.preguntas_de3["A1"])
+            self._crear_evaluacion(
+                "A1", "DE-3", punto_id, valor_a1, evidencia_a1, self.preguntas_de3["A1"]
+            )
         )
 
         evidencia_a2 = " | ".join(
             filter(
                 None,
-                [self._formatear_responsable(mejor_responsable), f"Cobertura procesos {coverage_procesos:.0%}" if metrics else ""],
+                [
+                    self._formatear_responsable(mejor_responsable),
+                    f"Cobertura procesos {coverage_procesos:.0%}" if metrics else "",
+                ],
             )
         )
-        valor_a2 = self._clamp((0.4 * coverage_procesos + 0.3 * responsable_ratio + 0.3 * (1 - riesgo_breakdown["capacidades"])) * riesgo_factor)
+        valor_a2 = self._clamp(
+            (
+                0.4 * coverage_procesos
+                + 0.3 * responsable_ratio
+                + 0.3 * (1 - riesgo_breakdown["capacidades"])
+            )
+            * riesgo_factor
+        )
         evaluaciones.append(
-            self._crear_evaluacion("A2", "DE-3", punto_id, valor_a2, evidencia_a2, self.preguntas_de3["A2"])
+            self._crear_evaluacion(
+                "A2", "DE-3", punto_id, valor_a2, evidencia_a2, self.preguntas_de3["A2"]
+            )
         )
 
         evidencia_r1 = " | ".join(
             filter(
                 None,
-                [self._obtener_muestra(evidencia, "recursos"), f"Cobertura insumos {coverage_insumos:.0%}" if metrics else ""],
+                [
+                    self._obtener_muestra(evidencia, "recursos"),
+                    f"Cobertura insumos {coverage_insumos:.0%}" if metrics else "",
+                ],
             )
         )
-        valor_r1 = self._clamp((0.5 * coverage_insumos + 0.3 * kpi_norm + 0.2 * (1 - riesgo_breakdown["indicadores"])) * riesgo_factor)
+        valor_r1 = self._clamp(
+            (
+                0.5 * coverage_insumos
+                + 0.3 * kpi_norm
+                + 0.2 * (1 - riesgo_breakdown["indicadores"])
+            )
+            * riesgo_factor
+        )
         evaluaciones.append(
-            self._crear_evaluacion("R1", "DE-3", punto_id, valor_r1, evidencia_r1, self.preguntas_de3["R1"])
+            self._crear_evaluacion(
+                "R1", "DE-3", punto_id, valor_r1, evidencia_r1, self.preguntas_de3["R1"]
+            )
         )
 
         evidencia_r2 = self._formatear_responsable(mejor_responsable)
-        valor_r2 = self._clamp((0.5 * (1 - riesgo_breakdown["capacidades"]) + 0.3 * responsable_ratio + 0.2 * coverage_procesos) * riesgo_factor)
+        valor_r2 = self._clamp(
+            (
+                0.5 * (1 - riesgo_breakdown["capacidades"])
+                + 0.3 * responsable_ratio
+                + 0.2 * coverage_procesos
+            )
+            * riesgo_factor
+        )
         evaluaciones.append(
-            self._crear_evaluacion("R2", "DE-3", punto_id, valor_r2, evidencia_r2, self.preguntas_de3["R2"])
+            self._crear_evaluacion(
+                "R2", "DE-3", punto_id, valor_r2, evidencia_r2, self.preguntas_de3["R2"]
+            )
         )
 
         evidencia_s1 = " | ".join(
             filter(
                 None,
-                [self._formatear_deteccion(mejor_plazo) or self._obtener_muestra(evidencia, "plazos"), f"Cobertura productos {coverage_productos:.0%}" if metrics else ""],
+                [
+                    self._formatear_deteccion(mejor_plazo)
+                    or self._obtener_muestra(evidencia, "plazos"),
+                    f"Cobertura productos {coverage_productos:.0%}" if metrics else "",
+                ],
             )
         )
-        valor_s1 = self._clamp((0.4 * coverage_productos + 0.4 * time_ratio + 0.2 * coverage_ponderada) * riesgo_factor)
+        valor_s1 = self._clamp(
+            (0.4 * coverage_productos + 0.4 * time_ratio + 0.2 * coverage_ponderada)
+            * riesgo_factor
+        )
         evaluaciones.append(
-            self._crear_evaluacion("S1", "DE-3", punto_id, valor_s1, evidencia_s1, self.preguntas_de3["S1"])
+            self._crear_evaluacion(
+                "S1", "DE-3", punto_id, valor_s1, evidencia_s1, self.preguntas_de3["S1"]
+            )
         )
 
         evidencia_s2 = " | ".join(
             filter(
                 None,
-                [self._obtener_muestra(evidencia, "riesgos"), f"Cobertura procesos {coverage_procesos:.0%}" if metrics else ""],
+                [
+                    self._obtener_muestra(evidencia, "riesgos"),
+                    f"Cobertura procesos {coverage_procesos:.0%}" if metrics else "",
+                ],
             )
         )
-        valor_s2 = self._clamp((0.4 * (1 - riesgo_breakdown["temporal"]) + 0.3 * (1 - riesgo_breakdown["capacidades"]) + 0.3 * riesgo_evidencia_ratio) * riesgo_factor)
+        valor_s2 = self._clamp(
+            (
+                0.4 * (1 - riesgo_breakdown["temporal"])
+                + 0.3 * (1 - riesgo_breakdown["capacidades"])
+                + 0.3 * riesgo_evidencia_ratio
+            )
+            * riesgo_factor
+        )
         evaluaciones.append(
-            self._crear_evaluacion("S2", "DE-3", punto_id, valor_s2, evidencia_s2, self.preguntas_de3["S2"])
+            self._crear_evaluacion(
+                "S2", "DE-3", punto_id, valor_s2, evidencia_s2, self.preguntas_de3["S2"]
+            )
         )
 
-        puntaje_dimension = sum(e.puntaje for e in evaluaciones) / len(evaluaciones) if evaluaciones else 0.0
+        puntaje_dimension = (
+            sum(e.puntaje for e in evaluaciones) / len(evaluaciones)
+            if evaluaciones
+            else 0.0
+        )
         matriz_causal = {
             "cobertura_por_tipo": {
                 tipo: round(valor * 100, 2)
-                for tipo, valor in (metrics["cobertura_por_tipo"] if metrics else {}).items()
+                for tipo, valor in (
+                    metrics["cobertura_por_tipo"] if metrics else {}
+                ).items()
             },
             "riesgo_breakdown": riesgo_breakdown,
             "factores": {
@@ -1013,14 +1347,19 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
         )
 
     def evaluar_dimension_de4(
-        self, analisis: AnalisisEvidenciaDecalogo, evidencia: Dict[str, List[Any]], punto_id: int
+        self,
+        analisis: AnalisisEvidenciaDecalogo,
+        evidencia: Dict[str, List[Any]],
+        punto_id: int,
     ) -> EvaluacionDimensionPunto:
         evaluaciones: List[EvaluacionPregunta] = []
         baseline_dets = analisis.detecciones(ComponentType.BASELINE)
         target_dets = analisis.detecciones(ComponentType.TARGET)
         timeframe_dets = analisis.detecciones(ComponentType.TIME_HORIZON)
         numerical_dets = analisis.detecciones(ComponentType.NUMERICAL)
-        best_responsable = self._seleccionar_mejor_responsable(analisis.responsabilidades)
+        best_responsable = self._seleccionar_mejor_responsable(
+            analisis.responsabilidades
+        )
 
         metrics = self._calcular_metricas_dimension(punto_id, analisis)
         coverage_por_tipo = metrics["cobertura_por_tipo"] if metrics else {}
@@ -1031,15 +1370,37 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
         coverage_impactos = coverage_por_tipo.get("IMPACTOS", 0.0)
         coverage_ponderada = metrics["cobertura_ponderada"] if metrics else 0.0
         riesgo_factor = metrics["riesgo_factor"] if metrics else 1.0
-        riesgo_breakdown = metrics["riesgo_breakdown"] if metrics else {"indicadores": 0.0, "temporal": 0.0, "capacidades": 0.0}
+        riesgo_breakdown = (
+            metrics["riesgo_breakdown"]
+            if metrics
+            else {"indicadores": 0.0, "temporal": 0.0, "capacidades": 0.0}
+        )
         feasibility_avg = metrics["feasibility_avg"] if metrics else analisis.max_score
-        baseline_ratio = metrics["baseline_ratio"] if metrics else (1.0 if baseline_dets else 0.0)
-        target_ratio = metrics["target_ratio"] if metrics else (1.0 if target_dets else 0.0)
-        time_ratio = metrics["time_ratio"] if metrics else (1.0 if timeframe_dets else 0.0)
-        numerical_ratio = metrics["numerical_ratio"] if metrics else (1.0 if numerical_dets else 0.0)
-        responsable_ratio = metrics["responsable_ratio"] if metrics else (1.0 if analisis.responsabilidades else 0.0)
-        resource_ratio = metrics["resource_ratio"] if metrics else (1.0 if analisis.recursos else 0.0)
-        plazo_ratio = metrics["plazo_ratio"] if metrics else (1.0 if analisis.plazos else 0.0)
+        baseline_ratio = (
+            metrics["baseline_ratio"] if metrics else (1.0 if baseline_dets else 0.0)
+        )
+        target_ratio = (
+            metrics["target_ratio"] if metrics else (1.0 if target_dets else 0.0)
+        )
+        time_ratio = (
+            metrics["time_ratio"] if metrics else (1.0 if timeframe_dets else 0.0)
+        )
+        numerical_ratio = (
+            metrics["numerical_ratio"] if metrics else (1.0 if numerical_dets else 0.0)
+        )
+        responsable_ratio = (
+            metrics["responsable_ratio"]
+            if metrics
+            else (1.0 if analisis.responsabilidades else 0.0)
+        )
+        resource_ratio = (
+            metrics["resource_ratio"]
+            if metrics
+            else (1.0 if analisis.recursos else 0.0)
+        )
+        plazo_ratio = (
+            metrics["plazo_ratio"] if metrics else (1.0 if analisis.plazos else 0.0)
+        )
         kpi_norm = metrics["kpi_norm"] if metrics else 0.0
 
         preguntas_valores: List[Tuple[str, float, str]] = []
@@ -1047,13 +1408,26 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
         preguntas_valores.append(
             (
                 "DE4_1",
-                self._clamp((0.5 * baseline_ratio + 0.3 * coverage_insumos + 0.2 * feasibility_avg) * riesgo_factor),
+                self._clamp(
+                    (
+                        0.5 * baseline_ratio
+                        + 0.3 * coverage_insumos
+                        + 0.2 * feasibility_avg
+                    )
+                    * riesgo_factor
+                ),
                 " | ".join(
                     filter(
                         None,
                         [
-                            self._formatear_deteccion(self._seleccionar_mejor_deteccion(baseline_dets)),
-                            f"Cobertura insumos {coverage_insumos:.0%}" if metrics else "",
+                            self._formatear_deteccion(
+                                self._seleccionar_mejor_deteccion(baseline_dets)
+                            ),
+                            (
+                                f"Cobertura insumos {coverage_insumos:.0%}"
+                                if metrics
+                                else ""
+                            ),
                         ],
                     )
                 ),
@@ -1063,14 +1437,27 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
         preguntas_valores.append(
             (
                 "DE4_2",
-                self._clamp(((baseline_ratio + target_ratio + time_ratio) / 3 + coverage_ponderada) / 2 * riesgo_factor),
+                self._clamp(
+                    (
+                        (baseline_ratio + target_ratio + time_ratio) / 3
+                        + coverage_ponderada
+                    )
+                    / 2
+                    * riesgo_factor
+                ),
                 " | ".join(
                     filter(
                         None,
                         [
-                            self._formatear_deteccion(self._seleccionar_mejor_deteccion(baseline_dets)),
-                            self._formatear_deteccion(self._seleccionar_mejor_deteccion(target_dets)),
-                            self._formatear_deteccion(self._seleccionar_mejor_deteccion(timeframe_dets)),
+                            self._formatear_deteccion(
+                                self._seleccionar_mejor_deteccion(baseline_dets)
+                            ),
+                            self._formatear_deteccion(
+                                self._seleccionar_mejor_deteccion(target_dets)
+                            ),
+                            self._formatear_deteccion(
+                                self._seleccionar_mejor_deteccion(timeframe_dets)
+                            ),
                         ],
                     )
                 ),
@@ -1080,15 +1467,31 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
         preguntas_valores.append(
             (
                 "DE4_3",
-                self._clamp((0.5 * target_ratio + 0.3 * coverage_resultados + 0.2 * feasibility_avg) * riesgo_factor),
-                self._formatear_deteccion(self._seleccionar_mejor_deteccion(target_dets)),
+                self._clamp(
+                    (
+                        0.5 * target_ratio
+                        + 0.3 * coverage_resultados
+                        + 0.2 * feasibility_avg
+                    )
+                    * riesgo_factor
+                ),
+                self._formatear_deteccion(
+                    self._seleccionar_mejor_deteccion(target_dets)
+                ),
             )
         )
 
         preguntas_valores.append(
             (
                 "DE4_4",
-                self._clamp((0.4 * coverage_procesos + 0.3 * resource_ratio + 0.3 * responsable_ratio) * riesgo_factor),
+                self._clamp(
+                    (
+                        0.4 * coverage_procesos
+                        + 0.3 * resource_ratio
+                        + 0.3 * responsable_ratio
+                    )
+                    * riesgo_factor
+                ),
                 " | ".join(
                     filter(
                         None,
@@ -1104,11 +1507,25 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
         preguntas_valores.append(
             (
                 "DE4_5",
-                self._clamp((0.4 * plazo_ratio + 0.3 * coverage_productos + 0.3 * coverage_procesos) * riesgo_factor),
+                self._clamp(
+                    (
+                        0.4 * plazo_ratio
+                        + 0.3 * coverage_productos
+                        + 0.3 * coverage_procesos
+                    )
+                    * riesgo_factor
+                ),
                 " | ".join(
                     filter(
                         None,
-                        [self._obtener_muestra(evidencia, "plazos"), f"Cobertura productos {coverage_productos:.0%}" if metrics else ""],
+                        [
+                            self._obtener_muestra(evidencia, "plazos"),
+                            (
+                                f"Cobertura productos {coverage_productos:.0%}"
+                                if metrics
+                                else ""
+                            ),
+                        ],
                     )
                 ),
             )
@@ -1117,7 +1534,14 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
         preguntas_valores.append(
             (
                 "DE4_6",
-                self._clamp((0.5 * responsable_ratio + 0.3 * coverage_procesos + 0.2 * (1 - riesgo_breakdown["capacidades"])) * riesgo_factor),
+                self._clamp(
+                    (
+                        0.5 * responsable_ratio
+                        + 0.3 * coverage_procesos
+                        + 0.2 * (1 - riesgo_breakdown["capacidades"])
+                    )
+                    * riesgo_factor
+                ),
                 self._formatear_responsable(best_responsable),
             )
         )
@@ -1125,8 +1549,13 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
         preguntas_valores.append(
             (
                 "DE4_7",
-                self._clamp((0.5 * time_ratio + 0.3 * feasibility_avg + 0.2 * numerical_ratio) * riesgo_factor),
-                self._formatear_deteccion(self._seleccionar_mejor_deteccion(timeframe_dets))
+                self._clamp(
+                    (0.5 * time_ratio + 0.3 * feasibility_avg + 0.2 * numerical_ratio)
+                    * riesgo_factor
+                ),
+                self._formatear_deteccion(
+                    self._seleccionar_mejor_deteccion(timeframe_dets)
+                )
                 or self._obtener_muestra(evidencia, "indicadores"),
             )
         )
@@ -1134,12 +1563,23 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
         preguntas_valores.append(
             (
                 "DE4_8",
-                self._clamp((0.4 * coverage_resultados + 0.3 * coverage_impactos + 0.3 * kpi_norm) * riesgo_factor),
-                self._formatear_deteccion(self._seleccionar_mejor_deteccion(target_dets + numerical_dets)),
+                self._clamp(
+                    (
+                        0.4 * coverage_resultados
+                        + 0.3 * coverage_impactos
+                        + 0.3 * kpi_norm
+                    )
+                    * riesgo_factor
+                ),
+                self._formatear_deteccion(
+                    self._seleccionar_mejor_deteccion(target_dets + numerical_dets)
+                ),
             )
         )
 
-        for idx, (pregunta_id, valor, evidencia_texto) in enumerate(preguntas_valores, start=1):
+        for idx, (pregunta_id, valor, evidencia_texto) in enumerate(
+            preguntas_valores, start=1
+        ):
             evaluaciones.append(
                 self._crear_evaluacion(
                     pregunta_id,
@@ -1151,7 +1591,11 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
                 )
             )
 
-        puntaje_dimension = sum(e.puntaje for e in evaluaciones) / len(evaluaciones) if evaluaciones else 0.0
+        puntaje_dimension = (
+            sum(e.puntaje for e in evaluaciones) / len(evaluaciones)
+            if evaluaciones
+            else 0.0
+        )
         matriz_causal = {
             "componentes_detectados": {
                 "baseline": bool(baseline_dets),
@@ -1180,7 +1624,11 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
 
     def evaluar_punto_completo(
         self, evidencia: Dict[str, List[Any]], punto_id: int
-    ) -> Tuple[EvaluacionPuntoCompleto, AnalisisEvidenciaDecalogo, Optional[ResultadoDimensionIndustrial]]:
+    ) -> Tuple[
+        EvaluacionPuntoCompleto,
+        AnalisisEvidenciaDecalogo,
+        Optional[ResultadoDimensionIndustrial],
+    ]:
         analisis = self._analizar_evidencia(evidencia)
         evaluaciones_dimensiones = [
             self.evaluar_dimension_de1(analisis, evidencia, punto_id),
@@ -1189,7 +1637,8 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
             self.evaluar_dimension_de4(analisis, evidencia, punto_id),
         ]
         puntaje_agregado = (
-            sum(dim.puntaje_dimension for dim in evaluaciones_dimensiones) / len(evaluaciones_dimensiones)
+            sum(dim.puntaje_dimension for dim in evaluaciones_dimensiones)
+            / len(evaluaciones_dimensiones)
             if evaluaciones_dimensiones
             else 0.0
         )
@@ -1197,7 +1646,8 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
         nombre_punto = dimension.nombre if dimension else f"Punto {punto_id}"
         metricas = self._calcular_metricas_dimension(punto_id, analisis)
         puntajes_norm = {
-            dim_eval.dimension: dim_eval.puntaje_dimension / 100 for dim_eval in evaluaciones_dimensiones
+            dim_eval.dimension: dim_eval.puntaje_dimension / 100
+            for dim_eval in evaluaciones_dimensiones
         }
 
         resultado_industrial: Optional[ResultadoDimensionIndustrial] = None
@@ -1205,21 +1655,31 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
             matriz_trazabilidad = self._generar_matriz_trazabilidad(metricas)
             riesgos_list = []
             if metricas:
-                for eslabon_id, riesgos_eslabon in metricas.get("riesgo_matriz", {}).items():
+                for eslabon_id, riesgos_eslabon in metricas.get(
+                    "riesgo_matriz", {}
+                ).items():
                     for riesgo in riesgos_eslabon:
                         riesgos_list.append(f"{eslabon_id}: {riesgo}")
 
             factibilidad_operativa = self._clamp(puntajes_norm.get("DE-3", 0.0))
             robustez_causal = self._clamp(puntajes_norm.get("DE-4", 0.0))
             consistencia_logica = self._clamp(puntajes_norm.get("DE-1", 0.0))
-            certeza_probabilistica = self._clamp(
-                max(metricas["feasibility_avg"], puntajes_norm.get("DE-2", 0.0))
-            ) if metricas else self._clamp(puntajes_norm.get("DE-2", 0.0))
-            identificabilidad_causal = self._clamp((consistencia_logica + robustez_causal) / 2)
+            certeza_probabilistica = (
+                self._clamp(
+                    max(metricas["feasibility_avg"], puntajes_norm.get("DE-2", 0.0))
+                )
+                if metricas
+                else self._clamp(puntajes_norm.get("DE-2", 0.0))
+            )
+            identificabilidad_causal = self._clamp(
+                (consistencia_logica + robustez_causal) / 2
+            )
 
             brechas_identificadas = []
             cobertura_descriptor = (
-                f"Cobertura ponderada {metricas['cobertura_ponderada'] * 100:.1f}%" if metricas else "Cobertura limitada"
+                f"Cobertura ponderada {metricas['cobertura_ponderada'] * 100:.1f}%"
+                if metricas
+                else "Cobertura limitada"
             )
             for dim_eval in evaluaciones_dimensiones:
                 if dim_eval.puntaje_dimension < 60:
@@ -1229,15 +1689,21 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
 
             recomendaciones = []
             if metricas:
-                for eslabon_id, riesgos_eslabon in metricas.get("riesgo_matriz", {}).items():
+                for eslabon_id, riesgos_eslabon in metricas.get(
+                    "riesgo_matriz", {}
+                ).items():
                     for riesgo in riesgos_eslabon:
-                        recomendaciones.append(f"Mitigar riesgo en {eslabon_id}: {riesgo}")
+                        recomendaciones.append(
+                            f"Mitigar riesgo en {eslabon_id}: {riesgo}"
+                        )
                 if metricas["feasibility_avg"] < 0.6:
                     recomendaciones.append(
-                        "Fortalecer evidencia cuantitativa de indicadores para incrementar la factibilidad." 
+                        "Fortalecer evidencia cuantitativa de indicadores para incrementar la factibilidad."
                     )
             if not recomendaciones:
-                recomendaciones.append("Mantener seguimiento industrial sobre la implementación del decálogo.")
+                recomendaciones.append(
+                    "Mantener seguimiento industrial sobre la implementación del decálogo."
+                )
 
             evaluacion_causal = EvaluacionCausalIndustrial(
                 consistencia_logica=consistencia_logica,
@@ -1248,7 +1714,9 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
                 riesgos_implementacion=riesgos_list[:10],
                 supuestos_criticos=dimension.teoria_cambio.supuestos_causales,
                 evidencia_soporte=len(analisis.indicador_scores),
-                brechas_criticas=sum(1 for valor in puntajes_norm.values() if valor < 0.6),
+                brechas_criticas=sum(
+                    1 for valor in puntajes_norm.values() if valor < 0.6
+                ),
             )
 
             resultado_industrial = ResultadoDimensionIndustrial(
@@ -1287,7 +1755,8 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
                 resultados_industriales.append(resultado_industrial)
 
         puntaje_agregado = (
-            sum(e.puntaje_agregado_punto for e in evaluaciones_puntos) / len(evaluaciones_puntos)
+            sum(e.puntaje_agregado_punto for e in evaluaciones_puntos)
+            / len(evaluaciones_puntos)
             if evaluaciones_puntos
             else 0.0
         )
@@ -1317,7 +1786,9 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
         evaluaciones_clusters: List[EvaluacionClusterCompleto] = []
         resultados_dimension: List[ResultadoDimensionIndustrial] = []
         for cluster in self.contexto.clusters_por_id.values():
-            evaluacion_cluster, resultados = self.evaluar_cluster_completo(evidencias_por_punto, cluster)
+            evaluacion_cluster, resultados = self.evaluar_cluster_completo(
+                evidencias_por_punto, cluster
+            )
             evaluaciones_clusters.append(evaluacion_cluster)
             resultados_dimension.extend(resultados)
         evaluaciones_puntos = [
@@ -1332,19 +1803,31 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
             for eval_pregunta in eval_dim.evaluaciones_preguntas
         ]
 
-        puntajes_clusters = [cluster.puntaje_agregado_cluster for cluster in evaluaciones_clusters]
+        puntajes_clusters = [
+            cluster.puntaje_agregado_cluster for cluster in evaluaciones_clusters
+        ]
         if resultados_dimension:
-            puntaje_global = sum(r.puntaje_final for r in resultados_dimension) / len(resultados_dimension)
+            puntaje_global = sum(r.puntaje_final for r in resultados_dimension) / len(
+                resultados_dimension
+            )
         else:
-            puntaje_global = sum(puntajes_clusters) / len(puntajes_clusters) if puntajes_clusters else 0.0
+            puntaje_global = (
+                sum(puntajes_clusters) / len(puntajes_clusters)
+                if puntajes_clusters
+                else 0.0
+            )
 
         cluster_mejor = (
-            max(evaluaciones_clusters, key=lambda x: x.puntaje_agregado_cluster).cluster_nombre
+            max(
+                evaluaciones_clusters, key=lambda x: x.puntaje_agregado_cluster
+            ).cluster_nombre
             if evaluaciones_clusters
             else ""
         )
         cluster_peor = (
-            min(evaluaciones_clusters, key=lambda x: x.puntaje_agregado_cluster).cluster_nombre
+            min(
+                evaluaciones_clusters, key=lambda x: x.puntaje_agregado_cluster
+            ).cluster_nombre
             if evaluaciones_clusters
             else ""
         )
@@ -1354,7 +1837,11 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
             "cluster_mejor_desempeno": cluster_mejor,
             "cluster_peor_desempeno": cluster_peor,
             "numero_puntos_evaluados": len(evaluaciones_puntos),
-            "recomendacion_estrategica_global": "IMPLEMENTACIÓN RECOMENDADA" if puntaje_global >= 70 else "REDISEÑO PARCIAL REQUERIDO",
+            "recomendacion_estrategica_global": (
+                "IMPLEMENTACIÓN RECOMENDADA"
+                if puntaje_global >= 70
+                else "REDISEÑO PARCIAL REQUERIDO"
+            ),
         }
 
         if puntaje_global >= 75:
@@ -1389,7 +1876,8 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
 
         anexos_serializables = {
             "resultados_industriales": [
-                resultado.generar_reporte_tecnico() for resultado in resultados_dimension
+                resultado.generar_reporte_tecnico()
+                for resultado in resultados_dimension
             ]
         }
 
@@ -1407,6 +1895,8 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
             reporte_por_pregunta=evaluaciones_preguntas,
             anexos_serializables=anexos_serializables,
         )
+
+
 def integrar_evaluador_decatalogo(
     sistema: SistemaEvaluacionIndustrial, dimension: DimensionDecalogo
 ) -> Optional[ResultadoDimensionIndustrial]:
@@ -1423,17 +1913,19 @@ def integrar_evaluador_decatalogo(
 
         if not cluster_metadata:
             LOGGER.warning(
-                "⚠️  [DECÁLOGO] Dimensión %s no se encuentra asociada a un cluster definido", dimension.id
+                "⚠️  [DECÁLOGO] Dimensión %s no se encuentra asociada a un cluster definido",
+                dimension.id,
             )
             return None
 
-        evaluacion_punto, analisis, resultado_industrial = evaluador.evaluar_punto_completo(
-            evidencia_dimension, dimension.id
+        evaluacion_punto, analisis, resultado_industrial = (
+            evaluador.evaluar_punto_completo(evidencia_dimension, dimension.id)
         )
 
         if resultado_industrial is None:
             LOGGER.warning(
-                "⚠️  [DECÁLOGO] No se pudo construir resultado industrial para la dimensión %s", dimension.id
+                "⚠️  [DECÁLOGO] No se pudo construir resultado industrial para la dimensión %s",
+                dimension.id,
             )
             return None
 
@@ -1441,9 +1933,12 @@ def integrar_evaluador_decatalogo(
         if matriz_trazabilidad is not None:
             resultado_industrial.matriz_trazabilidad = matriz_trazabilidad
 
-        if cluster_metadata.titulo not in " ".join(resultado_industrial.recomendaciones):
+        if cluster_metadata.titulo not in " ".join(
+            resultado_industrial.recomendaciones
+        ):
             resultado_industrial.recomendaciones.insert(
-                0, f"Alinear acciones del cluster {cluster_metadata.titulo} con la teoría de cambio industrial."
+                0,
+                f"Alinear acciones del cluster {cluster_metadata.titulo} con la teoría de cambio industrial.",
             )
 
         LOGGER.info(
