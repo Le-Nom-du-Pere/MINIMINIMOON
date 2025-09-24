@@ -262,7 +262,7 @@ class FeasibilityScorer:
         
         return False
     
-    def calculate_feasibility_score(self, text: str) -> IndicatorScore:
+    def calculate_feasibility_score(self, text: str, evidencia_soporte: Optional[int] = None) -> IndicatorScore:
         """
         Calculate feasibility score based on detected components and their quality.
         
@@ -270,7 +270,23 @@ class FeasibilityScorer:
         - Must have both baseline and target components
         - Higher scores for quantitative baselines and targets
         - Bonus for time horizons, numerical values, and dates
+        - If evidencia_soporte equals zero, overrides normal scoring with high risk
         """
+        # Check for zero evidence support condition first
+        if evidencia_soporte is not None and evidencia_soporte == 0:
+            self.logger.warning("Zero evidence support detected - overriding normal scoring logic")
+            self.logger.info("Risk level set to HIGH due to lack of supporting evidence")
+            self.logger.info("Final recommendation overridden to: REQUIERE MAYOR EVIDENCIA")
+            
+            return IndicatorScore(
+                feasibility_score=0.0,  # High risk = low feasibility score
+                components_detected=[],
+                detailed_matches=[],
+                has_quantitative_baseline=False,
+                has_quantitative_target=False,
+                quality_tier='REQUIERE MAYOR EVIDENCIA'  # Override recommendation
+            )
+        
         # Apply Unicode normalization at entry point
         normalized_text = self._normalize_text(text)
         detected_components = self.detect_components(normalized_text)
@@ -320,8 +336,10 @@ class FeasibilityScorer:
         avg_confidence = sum(result.confidence for result in detected_components) / len(detected_components)
         final_score = min(1.0, base_score * avg_confidence)
         
-        # Determine quality tier
-        if final_score >= self.quality_thresholds['high']:
+        # Determine quality tier - check again for zero evidence support override
+        if evidencia_soporte is not None and evidencia_soporte == 0:
+            quality_tier = 'REQUIERE MAYOR EVIDENCIA'
+        elif final_score >= self.quality_thresholds['high']:
             quality_tier = 'high'
         elif final_score >= self.quality_thresholds['medium']:
             quality_tier = 'medium'
@@ -339,11 +357,11 @@ class FeasibilityScorer:
             quality_tier=quality_tier
         )
     
-    def _score_single_indicator(self, indicator: str) -> IndicatorScore:
+    def _score_single_indicator(self, indicator: str, evidencia_soporte: Optional[int] = None) -> IndicatorScore:
         """Score a single indicator - helper function for parallel processing."""
-        return self.calculate_feasibility_score(indicator)
+        return self.calculate_feasibility_score(indicator, evidencia_soporte)
     
-    def batch_score(self, indicators: List[str], compare_backends=False, use_parallel: bool = False) -> List[IndicatorScore]:
+    def batch_score(self, indicators: List[str], compare_backends=False, use_parallel: bool = False, evidencia_soporte_list: Optional[List[Optional[int]]] = None) -> List[IndicatorScore]:
         """
         Score multiple indicators with optional parallel processing.
         
@@ -351,6 +369,7 @@ class FeasibilityScorer:
             indicators: List of indicator strings to score
             compare_backends: If True, compare performance between threading and loky backends
             use_parallel: Legacy parameter for backward compatibility
+            evidencia_soporte_list: Optional list of evidence support values corresponding to indicators
             
         Returns:
             List of IndicatorScore results
@@ -358,26 +377,33 @@ class FeasibilityScorer:
         if not indicators:
             return []
             
+        # Validate evidencia_soporte_list length if provided
+        if evidencia_soporte_list is not None and len(evidencia_soporte_list) != len(indicators):
+            raise ValueError("evidencia_soporte_list must have the same length as indicators")
+            
         # For small batches, use sequential processing to avoid overhead
         if len(indicators) < 10 or not self.enable_parallel or not JOBLIB_AVAILABLE:
-            return self._batch_score_sequential(indicators)
+            return self._batch_score_sequential(indicators, evidencia_soporte_list)
             
         if compare_backends:
-            return self._batch_score_with_comparison(indicators)
+            return self._batch_score_with_comparison(indicators, evidencia_soporte_list)
         else:
-            return self._batch_score_parallel(indicators, self.backend)
+            return self._batch_score_parallel(indicators, self.backend, evidencia_soporte_list)
     
-    def _batch_score_sequential(self, indicators: List[str]) -> List[IndicatorScore]:
+    def _batch_score_sequential(self, indicators: List[str], evidencia_soporte_list: Optional[List[Optional[int]]] = None) -> List[IndicatorScore]:
         """Sequential batch scoring."""
         start_time = time.time()
-        results = [self.calculate_feasibility_score(indicator) for indicator in indicators]
+        results = []
+        for i, indicator in enumerate(indicators):
+            evidencia_soporte = evidencia_soporte_list[i] if evidencia_soporte_list else None
+            results.append(self.calculate_feasibility_score(indicator, evidencia_soporte))
         elapsed = time.time() - start_time
         
         self.logger.info(f"Sequential processing: {len(indicators)} indicators in {elapsed:.3f}s "
                         f"({elapsed/len(indicators)*1000:.1f}ms per indicator)")
         return results
     
-    def _batch_score_parallel(self, indicators: List[str], backend: str) -> List[IndicatorScore]:
+    def _batch_score_parallel(self, indicators: List[str], backend: str, evidencia_soporte_list: Optional[List[Optional[int]]] = None) -> List[IndicatorScore]:
         """Parallel batch scoring using specified backend."""
         if not JOBLIB_AVAILABLE:
             raise RuntimeError("joblib not available for parallel processing")
@@ -389,8 +415,11 @@ class FeasibilityScorer:
         
         with Parallel(n_jobs=self.n_jobs, backend=backend) as parallel:
             results = parallel(
-                delayed(scorer_copy._score_single_indicator)(indicator) 
-                for indicator in indicators
+                delayed(scorer_copy._score_single_indicator)(
+                    indicator, 
+                    evidencia_soporte_list[i] if evidencia_soporte_list else None
+                ) 
+                for i, indicator in enumerate(indicators)
             )
         
         elapsed = time.time() - start_time
@@ -398,24 +427,24 @@ class FeasibilityScorer:
                         f"({elapsed/len(indicators)*1000:.1f}ms per indicator, {self.n_jobs} workers)")
         return results
     
-    def _batch_score_with_comparison(self, indicators: List[str]) -> List[IndicatorScore]:
+    def _batch_score_with_comparison(self, indicators: List[str], evidencia_soporte_list: Optional[List[Optional[int]]] = None) -> List[IndicatorScore]:
         """Score batch with performance comparison between backends."""
         if not JOBLIB_AVAILABLE:
             self.logger.warning("joblib not available, falling back to sequential processing")
-            return self._batch_score_sequential(indicators)
+            return self._batch_score_sequential(indicators, evidencia_soporte_list)
             
         self.logger.info("Comparing parallel processing backends...")
         
         # Test with threading backend
         try:
-            threading_results = self._batch_score_parallel(indicators, 'threading')
+            threading_results = self._batch_score_parallel(indicators, 'threading', evidencia_soporte_list)
         except Exception as e:
             self.logger.warning(f"Threading backend failed: {e}")
             threading_results = None
         
         # Test with loky backend  
         try:
-            loky_results = self._batch_score_parallel(indicators, 'loky')
+            loky_results = self._batch_score_parallel(indicators, 'loky', evidencia_soporte_list)
         except Exception as e:
             self.logger.warning(f"Loky backend failed: {e}")
             loky_results = None
@@ -423,7 +452,7 @@ class FeasibilityScorer:
         # Fallback to sequential if both failed
         if loky_results is None and threading_results is None:
             self.logger.warning("Both parallel backends failed, falling back to sequential")
-            return self._batch_score_sequential(indicators)
+            return self._batch_score_sequential(indicators, evidencia_soporte_list)
             
         # Return loky results if available, otherwise threading results
         return loky_results if loky_results is not None else threading_results
@@ -444,13 +473,14 @@ class FeasibilityScorer:
         
         return new_scorer
     
-    def batch_score_with_monitoring(self, indicators: List[str]) -> BatchScoreResult:
+    def batch_score_with_monitoring(self, indicators: List[str], evidencia_soporte_list: Optional[List[Optional[int]]] = None) -> BatchScoreResult:
         """Score multiple indicators with execution monitoring."""
         start_time = time.time()
         
         scores = []
-        for indicator in indicators:
-            scores.append(self.calculate_feasibility_score(indicator))
+        for i, indicator in enumerate(indicators):
+            evidencia_soporte = evidencia_soporte_list[i] if evidencia_soporte_list else None
+            scores.append(self.calculate_feasibility_score(indicator, evidencia_soporte))
         
         end_time = time.time()
         duracion_segundos = end_time - start_time
