@@ -25,7 +25,12 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Any
 
 import networkx as nx
-import pdfplumber
+try:
+    import pdfplumber
+    PDFPLUMBER_AVAILABLE = True
+except ImportError:
+    PDFPLUMBER_AVAILABLE = False
+    LOGGER.warning("⚠️  pdfplumber no disponible. Algunas funciones de extracción de PDF pueden no estar disponibles.")
 import spacy
 from joblib import Parallel, delayed
 from sentence_transformers import SentenceTransformer, util
