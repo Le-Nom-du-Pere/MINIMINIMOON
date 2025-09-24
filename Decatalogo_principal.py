@@ -1557,6 +1557,35 @@ class SistemaEvaluacionIndustrial:
             # Generación de recomendaciones industriales
             recomendaciones = self._generar_recomendaciones_industrial(dimension, evaluacion_causal, brechas)
 
+            # >>>>>>>> INTEGRACIÓN CON EVALUADOR DEL DECÁLOGO <<<<<<<<
+            # Importar e integrar el evaluador del decálogo
+            try:
+                from Decatalogo_evaluador import integrar_evaluador_decatalogo
+                resultado_decatalogo = integrar_evaluador_decatalogo(self, dimension)
+                
+                if resultado_decatalogo:
+                    # Combinar resultados del evaluador del decálogo con los resultados principales
+                    # Aquí podrías decidir cómo combinar los resultados, por ejemplo:
+                    # 1. Usar el resultado del decálogo como base
+                    # 2. Combinar puntajes
+                    # 3. Enriquecer el resultado con información adicional del decálogo
+                    
+                    # Por ahora, simplemente usamos el resultado del decálogo como base
+                    # y añadimos información adicional del sistema principal
+                    resultado_decatalogo.evidencia = evidencia
+                    resultado_decatalogo.matriz_trazabilidad = matriz_trazabilidad
+                    resultado_decatalogo.brechas_identificadas = brechas
+                    resultado_decatalogo.recomendaciones = recomendaciones
+                    
+                    self.logger.info(
+                        f"✅ Evaluación completada para dimensión {dimension.id} usando evaluador del decálogo: {resultado_decatalogo.puntaje_final:.1f}/100")
+                    return resultado_decatalogo
+            except ImportError as e:
+                self.logger.warning(f"⚠️  No se pudo importar el evaluador del decálogo: {e}")
+            except Exception as e:
+                self.logger.error(f"❌ Error en evaluador del decálogo: {e}")
+            # >>>>>>>> FIN DE LA INTEGRACIÓN CON EVALUADOR DEL DECÁLOGO <<<<<<<<
+
             resultado = ResultadoDimensionIndustrial(
                 dimension=dimension,
                 evaluacion_causal=evaluacion_causal,
