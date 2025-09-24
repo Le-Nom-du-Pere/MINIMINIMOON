@@ -9,204 +9,66 @@ Autor: Dr. en Políticas Públicas (Extensión)
 Enfoque: Calidad del dato de entrada para garantizar la robustez del análisis causal de alto nivel.
 """
 
-import re
 import logging
+
+import sys
 import json
-from typing import Dict, List, Any, Tuple, Optional, Set
-from dataclasses import dataclass, field
-from enum import Enum
 import hashlib
+from enum import Enum
 from datetime import datetime
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, Set, Tuple
+from datetime import datetime
+from typing import Dict, List, Any, Tuple, Optional
+
+import sys
+
+assert sys.version_info >= (3, 11), "Python 3.11 or higher is required"
 
 # Importar componentes del sistema industrial principal
+# from sistema_industrial.componentes import ...
+
 from Decatalogo_principal import (
-    TeoriaCambio,
     DimensionDecalogo,
-    TipoCadenaValor,
-    EslabonCadena,
-    OntologiaPoliticas,
     SistemaEvaluacionIndustrial,
     ResultadoDimensionIndustrial,
-    EvaluacionCausalIndustrial
+    EvaluacionCausalIndustrial,
+    DecalogoContext,
+    ClusterMetadata,
+    obtener_decalogo_contexto,
 )
 
-# Configuración de logging para integrarse con el sistema principal
+from feasibility_scorer import (
+    FeasibilityScorer,
+    ComponentType,
+    IndicatorScore,
+    DetectionResult,
+)
+from responsibility_detector import ResponsibilityDetector, ResponsibilityEntity
+
 LOGGER = logging.getLogger("DecatalogoEvaluatorFull")
 
-# ==================== DEFINICIONES FIJAS (SIN CAMBIOS) ====================
+DECALOGO_CONTEXT: DecalogoContext = obtener_decalogo_contexto()
 
-@dataclass(frozen=True)
-class PuntoDecalogo:
-    """Representación fija de los 10 puntos del Decálogo de Derechos Humanos."""
-    id: int
-    nombre: str
-
-PUNTOS_DECALOGO = {
-    1: PuntoDecalogo(1, "Prevención de la violencia y protección de la población frente al conflicto armado y la violencia generada por GDO"),
-    2: PuntoDecalogo(2, "Derechos de las mujeres e igualdad de género"),
-    3: PuntoDecalogo(3, "Ambiente sano, cambio climático, prevención y atención de desastres"),
-    4: PuntoDecalogo(4, "Derechos económicos, sociales y culturales"),
-    5: PuntoDecalogo(5, "Derechos de las víctimas y construcción de paz"),
-    6: PuntoDecalogo(6, "Derecho al buen futuro de la niñez, adolescencia, juventud y entornos protectores"),
-    7: PuntoDecalogo(7, "Tierras y territorios"),
-    8: PuntoDecalogo(8, "Líderes y lideresas, defensores y defensoras de derechos humanos, comunitarios, sociales, ambientales, de la tierra, el territorio y de la naturaleza"),
-    9: PuntoDecalogo(9, "Crisis de derechos de personas privadas de la libertad"),
-    10: PuntoDecalogo(10, "Migración transfronteriza en la Selva del Darién")
-}
-
-class DimensionEvaluacion(Enum):
-    DE1 = "Lógica de Intervención y Coherencia Interna"
-    DE2 = "Inclusión Temática"
-    DE3 = "Planificación y Adecuación Presupuestal"
-    DE4 = "Cadena de Valor"
 
 @dataclass
-class ClusterInfo:
-    """Información estructurada de los clusters del Decálogo."""
-    nombre: str
-    puntos: List[int]
-    logica_agrupacion: str
+class AnalisisEvidenciaDecalogo:
+    """Resultados estandarizados del análisis automático de evidencia."""
 
-# Definición FIJA de Clusters (TAL CUAL EL DOCUMENTO)
-CLUSTERS_INFO = {
-    "CLUSTER 1: PAZ, SEGURIDAD Y PROTECCIÓN DE DEFENSORES": ClusterInfo(
-        nombre="CLUSTER 1: PAZ, SEGURIDAD Y PROTECCIÓN DE DEFENSORES",
-        puntos=[1, 5, 8],
-        logica_agrupacion="Estos tres puntos comparten una matriz común centrada en la seguridad humana, la protección de la vida y la construcción de paz territorial. Abordan las dinámicas del conflicto armado, sus víctimas y quienes defienden derechos en contextos de riesgo."
-    ),
-    "CLUSTER 2: DERECHOS DE GRUPOS POBLACIONALES": ClusterInfo(
-        nombre="CLUSTER 2: DERECHOS DE GRUPOS POBLACIONALES",
-        puntos=[2, 6, 9],
-        logica_agrupacion="Agrupa derechos de poblaciones que enfrentan vulnerabilidades específicas y requieren enfoques diferenciales. Comparten la necesidad de políticas focalizadas, sistemas de protección especializados y transformación de patrones culturales discriminatorios."
-    ),
-    "CLUSTER 3: TERRITORIO, AMBIENTE Y DESARROLLO SOSTENIBLE": ClusterInfo(
-        nombre="CLUSTER 3: TERRITORIO, AMBIENTE Y DESARROLLO SOSTENIBLE",
-        puntos=[3, 7],
-        logica_agrupacion="Ambos puntos abordan la relación sociedad-territorio desde una perspectiva de sostenibilidad, justicia ambiental y equidad en el acceso a recursos. Comparten la visión del territorio como base para el desarrollo y la vida digna."
-    ),
-    "CLUSTER 4: DERECHOS SOCIALES FUNDAMENTALES Y CRISIS HUMANITARIAS": ClusterInfo(
-        nombre="CLUSTER 4: DERECHOS SOCIALES FUNDAMENTALES Y CRISIS HUMANITARIAS",
-        puntos=[4, 10],
-        logica_agrupacion="Aunque el punto 10 es altamente específico territorialmente, comparte con los derechos sociales la dimensión de respuesta a necesidades básicas y dignidad humana. Ambos requieren capacidad institucional para garantizar mínimos vitales y atención humanitaria."
-    )
-}
+    indicador_scores: List[IndicatorScore]
+    detecciones_por_tipo: Dict[ComponentType, List[DetectionResult]]
+    responsabilidades: List[ResponsibilityEntity]
+    recursos: int
+    plazos: int
+    riesgos: int
 
-# ==================== DETECCIÓN AVANZADA DE PATRONES Y RESPONSABILIDADES ====================
+    @property
+    def max_score(self) -> float:
+        return max((score.feasibility_score for score in self.indicador_scores), default=0.0)
 
-@dataclass
-class PatternMatch:
-    """Representa una coincidencia de patrón con información de posición y tipo."""
-    pattern_type: str
-    text: str
-    start: int
-    end: int
-    confidence: float = 1.0
+    def detecciones(self, componente: ComponentType) -> List[DetectionResult]:
+        return self.detecciones_por_tipo.get(componente, [])
 
-class IndustrialPatternDetector:
-    """Detecta patrones de línea base, meta y plazo en texto español con alta precisión."""
-
-    def __init__(self):
-        self.baseline_patterns = self._compile_baseline_patterns()
-        self.target_patterns = self._compile_target_patterns()
-        self.timeframe_patterns = self._compile_timeframe_patterns()
-        self.quantitative_patterns = self._compile_quantitative_patterns()
-        self.responsibility_patterns = self._compile_responsibility_patterns()
-
-    def _compile_baseline_patterns(self) -> List[re.Pattern]:
-        return [re.compile(p, re.IGNORECASE | re.UNICODE) for p in [
-            r'\b(?:línea\s+base|linea\s+base|línea\s+de\s+base|linea\s+de\s+base)\b',
-            r'\b(?:situación\s+inicial|situacion\s+inicial)\b',
-            r'\b(?:punto\s+de\s+partida)\b',
-            r'\b(?:estado\s+actual)\b',
-            r'\b(?:condición\s+inicial|condicion\s+inicial)\b',
-            r'\b(?:nivel\s+base)\b',
-            r'\b(?:valor\s+inicial)\b',
-            r'\b(?:posición\s+inicial|posicion\s+inicial)\b',
-            r'\b(?:baseline)\b',
-            r'\b(?:actualmente|en\s+la\s+actualidad)\b',
-            r'\b(?:al\s+inicio|inicialmente)\b'
-        ]]
-
-    def _compile_target_patterns(self) -> List[re.Pattern]:
-        return [re.compile(p, re.IGNORECASE | re.UNICODE) for p in [
-            r'\b(?:meta|metas)\b',
-            r'\b(?:objetivo|objetivos)\b',
-            r'\b(?:alcanzar|lograr)\b',
-            r'\b(?:conseguir|obtener)\b',
-            r'\b(?:target|targets)\b',
-            r'\b(?:propósito|proposito)\b',
-            r'\b(?:finalidad)\b',
-            r'\b(?:resultado\s+esperado)\b',
-            r'\b(?:expectativa|expectativas)\b',
-            r'\b(?:aspiración|aspiracion)\b',
-            r'\b(?:pretende|pretender)\b',
-            r'\b(?:busca|buscar)\b',
-            r'\b(?:se\s+espera)\b',
-            r'\b(?:se\s+proyecta)\b'
-        ]]
-
-    def _compile_timeframe_patterns(self) -> List[re.Pattern]:
-        return [re.compile(p, re.IGNORECASE | re.UNICODE) for p in [
-            r'\b(?:20\d{2})\b',
-            r'\b(?:al\s+(?:20\d{2}|año\s+20\d{2}))\b',
-            r'\b(?:en\s+(?:\d+\s+(?:años?|meses?|días?)))\b',
-            r'\b(?:para\s+(?:el\s+)?(?:20\d{2}|fin\s+de\s+año))\b',
-            r'\b(?:hasta\s+(?:el\s+)?20\d{2})\b',
-            r'\b(?:[1-4]º?\s*(?:trimestre|cuatrimestre))\b',
-            r'\b(?:primer|segundo|tercer|cuarto)\s+(?:trimestre|cuatrimestre)\b',
-            r'\b(?:Q[1-4])\b',
-            r'\b(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\s+(?:de\s+)?20\d{2}\b',
-            r'\b(?:en\s+los\s+próximos\s+\d+\s+(?:años?|meses?))\b',
-            r'\b(?:dentro\s+de\s+\d+\s+(?:años?|meses?))\b',
-            r'\b(?:a\s+(?:corto|mediano|largo)\s+plazo)\b',
-            r'\b(?:próximo\s+año|proximo\s+año)\b',
-            r'\b(?:año\s+(?:que\s+viene|entrante))\b',
-            r'\b(?:20\d{2}\s*[-–—]\s*20\d{2})\b',
-            r'\b(?:\d{1,2}[/-]\d{1,2}[/-]20\d{2})\b',
-            r'\b(?:vigencia\s+20\d{2})\b',
-            r'\b(?:PDD\s*20\d{2}\s*[-–—]\s*20\d{2})\b'
-        ]]
-
-    def _compile_quantitative_patterns(self) -> List[re.Pattern]:
-        return [re.compile(p, re.IGNORECASE | re.UNICODE) for p in [
-            r'\b\d+(?:[.,]\d+)?\s*(?:%|por\s+ciento|porciento)\b',
-            r'\b\d+(?:[.,]\d+)?\s*(?:millones?|millions?|mil|thousand)\b',
-            r'\b(?:incrementar|aumentar|reducir|disminuir)\s+(?:en\s+|by\s+)?\d+(?:[.,]\d+)?\b',
-            r'\b\d+(?:[.,]\d+)?\s*(?:COP|\$|USD|pesos)\b',
-            r'\b(?:línea\s+base\s+de\s+)?\d+(?:[.,]\d+)?\b',
-            r'\b(?:meta\s+de\s+)?\d+(?:[.,]\d+)?\b'
-        ]]
-
-    def _compile_responsibility_patterns(self) -> List[re.Pattern]:
-        return [re.compile(p, re.IGNORECASE | re.UNICODE) for p in [
-            r'\b(?:responsable|encargado|lidera|coordina|gestiona)\b',
-            r'\b(?:Secretaría|Departamento|Dirección|Oficina|Instituto)\s+de\s+\w+',
-            r'\b(?:a\s+cargo\s+de|depende\s+de|reporta\s+a)\b',
-            r'\b(?:designado|asignado|nombrado)\s+por\b'
-        ]]
-
-    def detect_patterns(self, text: str) -> Dict[str, List[PatternMatch]]:
-        """Detecta todos los tipos de patrones en el texto dado."""
-        return {
-            'baseline': self._find_matches(text, self.baseline_patterns, 'baseline'),
-            'target': self._find_matches(text, self.target_patterns, 'target'),
-            'timeframe': self._find_matches(text, self.timeframe_patterns, 'timeframe'),
-            'quantitative': self._find_matches(text, self.quantitative_patterns, 'quantitative'),
-            'responsibility': self._find_matches(text, self.responsibility_patterns, 'responsibility')
-        }
-
-    def _find_matches(self, text: str, patterns: List[re.Pattern], pattern_type: str) -> List[PatternMatch]:
-        """Encuentra todas las coincidencias para un tipo de patrón específico."""
-        matches: List[PatternMatch] = []
-        for pattern in patterns:
-            for m in pattern.finditer(text):
-                matches.append(PatternMatch(
-                    pattern_type=pattern_type,
-                    text=m.group(),
-                    start=m.start(),
-                    end=m.end()
-                ))
-        return matches
 
 # ==================== EVALUADOR INDUSTRIAL COMPLETO ====================
 
@@ -257,33 +119,30 @@ class ReporteFinalDecatalogo:
     reporte_por_pregunta: List[EvaluacionPregunta]
 
 class IndustrialDecatalogoEvaluatorFull:
-    """
-    Evaluador industrial completo del Decálogo de Derechos Humanos.
-    Evalúa CADA PUNTO del Decálogo en CADA DIMENSIÓN (DE-1 a DE-4) con scoring riguroso.
-    """
+    """Evaluador del decálogo apoyado en detectores especializados."""
 
-    def __init__(self):
-        self.pattern_detector = IndustrialPatternDetector()
+    def __init__(self, contexto: Optional[DecalogoContext] = None):
+        self.contexto = contexto or DECALOGO_CONTEXT
+        self.scorer = FeasibilityScorer(enable_parallel=False)
+        self.responsibility_detector = ResponsibilityDetector()
         self.preguntas_de1 = self._definir_preguntas_de1()
         self.preguntas_de2 = self._definir_preguntas_de2()
         self.preguntas_de3 = self._definir_preguntas_de3()
         self.preguntas_de4 = self._definir_preguntas_de4()
-        self.rubrica_de4 = self._definir_rubrica_de4()
 
-    def _definir_preguntas_de1(self) -> Dict[str, str]:
-        """Preguntas FIJAS para DE-1 (Lógica de Intervención)."""
+    @staticmethod
+    def _definir_preguntas_de1() -> Dict[str, str]:
         return {
             "Q1": "¿El PDT define productos medibles alineados con la prioridad?",
             "Q2": "¿Las metas de producto incluyen responsable institucional?",
             "Q3": "¿Formula resultados medibles con línea base y meta al 2027?",
             "Q4": "¿Resultados y productos están lógicamente vinculados según la cadena de valor?",
             "Q5": "¿El impacto esperado está definido y alineado al Decálogo?",
-            "Q6": "¿Existe una explicación explícita de la lógica de intervención completa?"
+            "Q6": "¿Existe una explicación explícita de la lógica de intervención completa?",
         }
 
-    def _definir_preguntas_de2(self) -> Dict[str, str]:
-        """Preguntas FIJAS para DE-2 (Inclusión Temática)."""
-        # Simplificamos para el ejemplo, pero se puede expandir a todos los criterios D1-O6, etc.
+    @staticmethod
+    def _definir_preguntas_de2() -> Dict[str, str]:
         return {
             "D1": "Línea base 2023 con fuente citada",
             "D2": "Serie histórica ≥ 5 años",
@@ -292,11 +151,11 @@ class IndustrialDecatalogoEvaluatorFull:
             "T1": "Proyecto codificado en BPIN o código interno",
             "T2": "Monto plurianual 2024-2027",
             "S1": "Indicadores de producto y resultado en SUIFP-T",
-            "S2": "Periodicidad de reporte especificada"
+            "S2": "Periodicidad de reporte especificada",
         }
 
-    def _definir_preguntas_de3(self) -> Dict[str, str]:
-        """Preguntas FIJAS para DE-3 (Planificación Presupuestal)."""
+    @staticmethod
+    def _definir_preguntas_de3() -> Dict[str, str]:
         return {
             "G1": "¿Existe identificación de fuentes de financiación diversificadas?",
             "G2": "¿Se presenta distribución presupuestal anualizada?",
@@ -305,11 +164,11 @@ class IndustrialDecatalogoEvaluatorFull:
             "R1": "¿Los recursos están trazados en el PPI con códigos?",
             "R2": "¿Se identifica necesidad de fortalecer capacidades?",
             "S1": "¿El presupuesto está alineado con el plan indicativo?",
-            "S2": "¿Existe plan de contingencia presupuestal?"
+            "S2": "¿Existe plan de contingencia presupuestal?",
         }
 
-    def _definir_preguntas_de4(self) -> List[str]:
-        """Eslabones FIJOS para DE-4 (Cadena de Valor)."""
+    @staticmethod
+    def _definir_preguntas_de4() -> List[str]:
         return [
             "Diagnóstico con línea base y brechas claras",
             "Causalidad explícita entre productos, resultados e impacto",
@@ -318,142 +177,630 @@ class IndustrialDecatalogoEvaluatorFull:
             "Territorialización de las intervenciones (geográfica o sectorial)",
             "Vinculación institucional (articulación con sectores o niveles)",
             "Seguimiento con indicadores y calendario definido",
-            "Proyección de impacto o beneficio con alineación al Decálogo"
+            "Proyección de impacto o beneficio con alineación al Decálogo",
         ]
 
-    def _definir_rubrica_de4(self) -> Dict[str, int]:
-        """Rúbrica FIJA para DE-4."""
-        return {
-            "Alto": 100,
-            "Medio": 65,
-            "Bajo": 35
-        }
+    @staticmethod
+    def _extraer_texto_entry(entry: Any) -> str:
+        if isinstance(entry, str):
+            return entry
+        if isinstance(entry, dict):
+            for key in ("texto", "texto_evidencia", "segmento", "contenido"):
+                valor = entry.get(key)
+                if valor:
+                    return str(valor)
+        return ""
 
-    def evaluar_pregunta_de1(self, texto: str, pregunta_id: str, punto_id: int) -> EvaluacionPregunta:
-        """Evalúa una pregunta de la dimensión DE-1."""
-        # Simular evaluación (en producción, aquí iría NLP + extracción de evidencia)
-        patterns = self.pattern_detector.detect_patterns(texto)
-        tiene_baseline = len(patterns['baseline']) > 0
-        tiene_target = len(patterns['target']) > 0
-        tiene_timeframe = len(patterns['timeframe']) > 0
-        tiene_quantitative = len(patterns['quantitative']) > 0
-        tiene_responsibility = len(patterns['responsibility']) > 0
+    def _extraer_textos(self, evidencia: Dict[str, List[Any]], *keys: str) -> List[str]:
+        textos: List[str] = []
+        for key in keys:
+            for entry in evidencia.get(key, []):
+                texto = self._extraer_texto_entry(entry)
+                if texto:
+                    textos.append(texto)
+        return textos
 
-        evidencia = ""
-        evidencia_contraria = ""
-        puntaje = 0.0
-        respuesta = "No"
+    def _obtener_muestra(self, evidencia: Dict[str, List[Any]], key: str) -> str:
+        textos = self._extraer_textos(evidencia, key)
+        return textos[0] if textos else ""
 
-        if pregunta_id == "Q1" and tiene_quantitative:
-            respuesta = "Sí"
-            evidencia = f"Se encontró valor cuantitativo: {patterns['quantitative'][0].text}"
-            puntaje = 1.0
-        elif pregunta_id == "Q2" and tiene_responsibility:
-            respuesta = "Sí"
-            evidencia = f"Se encontró responsable: {patterns['responsibility'][0].text}"
-            puntaje = 1.0
-        elif pregunta_id == "Q3" and tiene_baseline and tiene_target and tiene_timeframe:
-            respuesta = "Sí"
-            evidencia = f"Se encontró línea base ({patterns['baseline'][0].text}), meta ({patterns['target'][0].text}) y plazo ({patterns['timeframe'][0].text})"
-            puntaje = 1.0
-        elif pregunta_id == "Q4":
-            # Aquí se debería verificar causalidad, pero para simplificar, asumimos que si hay todos los elementos, hay causalidad.
-            if tiene_baseline and tiene_target and tiene_quantitative:
-                respuesta = "Sí"
-                evidencia = "Se infiere relación causal por presencia de elementos clave."
-                puntaje = 1.0
-            else:
-                evidencia_contraria = "Falta elementos para inferir causalidad."
-        elif pregunta_id == "Q5" and tiene_target:
-            respuesta = "Sí"
-            evidencia = f"Meta alineada al Decálogo: {patterns['target'][0].text}"
-            puntaje = 1.0
-        elif pregunta_id == "Q6":
-            # Aquí se debería buscar una explicación explícita, pero para simplificar, asumimos que si hay Q4, hay Q6.
-            if respuesta == "Sí" for pregunta in ["Q1", "Q2", "Q3", "Q4", "Q5"]: # Esto es pseudocódigo, no funcional.
-                respuesta = "Sí"
-                evidencia = "La lógica de intervención se infiere de la coherencia entre productos, resultados e impactos."
-                puntaje = 1.0
-            else:
-                evidencia_contraria = "No se encontró explicación explícita de la lógica de intervención."
+    def _analizar_evidencia(self, evidencia: Dict[str, List[Any]]) -> AnalisisEvidenciaDecalogo:
+        textos_indicadores = self._extraer_textos(evidencia, "indicadores", "metas")
+        indicador_scores = [self.scorer.calculate_feasibility_score(texto) for texto in textos_indicadores]
+
+        detecciones_por_tipo: Dict[ComponentType, List[DetectionResult]] = {component: [] for component in ComponentType}
+        for score in indicador_scores:
+            for deteccion in score.detailed_matches:
+                detecciones_por_tipo[deteccion.component_type].append(deteccion)
+
+        responsabilidades: List[ResponsibilityEntity] = []
+        for texto in self._extraer_textos(evidencia, "responsables"):
+            responsabilidades.extend(self.responsibility_detector.detect_entities(texto))
+
+        detecciones_por_tipo = {k: v for k, v in detecciones_por_tipo.items() if v}
+
+        return AnalisisEvidenciaDecalogo(
+            indicador_scores=indicador_scores,
+            detecciones_por_tipo=detecciones_por_tipo,
+            responsabilidades=responsabilidades,
+            recursos=len(evidencia.get("recursos", [])),
+            plazos=len(evidencia.get("plazos", [])),
+            riesgos=len(evidencia.get("riesgos", [])),
+        )
+
+from typing import List, Optional
+
+class Evaluador:
+    @staticmethod
+    def _seleccionar_mejor_deteccion(detecciones: List["DetectionResult"]) -> Optional["DetectionResult"]:
+        return max(detecciones, key=lambda d: d.confidence, default=None)
+
+    @staticmethod
+    def _seleccionar_mejor_responsable(responsables: List["ResponsibilityEntity"]) -> Optional["ResponsibilityEntity"]:
+        return max(responsables, key=lambda r: r.confidence, default=None)
+
+    @staticmethod
+    def _formatear_deteccion(deteccion: Optional["DetectionResult"]) -> str:
+        if not deteccion:
+            return ""
+        return f"{deteccion.matched_text} (conf. {deteccion.confidence:.2f})"
+
+    @staticmethod
+    def _formatear_responsable(responsable: Optional["ResponsibilityEntity"]) -> str:
+        if not responsable:
+            return ""
+        rol = responsable.role or responsable.entity_type.value
+        return f"{responsable.text} ({rol}, conf. {responsable.confidence:.2f})"
+
+    @staticmethod
+    def _valor_a_respuesta(valor: float) -> str:
+        if valor >= 0.75:
+            return "Sí"
+        if valor >= 0.4:
+            return "Parcial"
+        return "No"
+
+    @staticmethod
+    def _clamp(valor: float) -> float:
+        return max(0.0, min(1.0, valor))
+
+    def _crear_evaluacion(
+        self,
+        pregunta_id: str,
+        dimension: str,
+        punto_id: int,
+        valor: float,
+        evidencia: str,
+        descripcion: Optional[str] = None,
+    ) -> "EvaluacionPregunta":
+        valor = self._clamp(valor)
+        respuesta = self._valor_a_respuesta(valor)
+
+        # Construcción de evidencia textual priorizando descripción cuando aporta contexto.
+        if descripcion and evidencia:
+            evidencia_textual = f"{descripcion} → {evidencia}"
+        elif descripcion and valor > 0:
+            evidencia_textual = descripcion
+        else:
+            evidencia_textual = evidencia or ""
+
+        # Si el valor es 0, consignar explícitamente ausencia de evidencia a favor.
+        evidencia_contraria = (
+            "" if valor > 0
+            else "No se identificaron elementos que respondan a la pregunta con la evidencia disponible."
+        )
+
+        # Ensamblado final del objeto dominio
+        return EvaluacionPregunta(
+            pregunta_id=pregunta_id,
+            dimension=dimension,
+            punto_id=punto_id,
+            valor=valor,
+            respuesta=respuesta,
+            evidencia=evidencia_textual,
+            evidencia_contraria=evidencia_contraria,
+        )
 
         return EvaluacionPregunta(
             pregunta_id=pregunta_id,
-            dimension="DE-1",
+            dimension=dimension,
             punto_id=punto_id,
             respuesta=respuesta,
-            evidencia_textual=evidencia,
+            evidencia_textual=evidencia_textual,
             evidencia_contraria=evidencia_contraria,
-            puntaje=puntaje
+            puntaje=valor,
         )
 
-    def evaluar_dimension_de1(self, texto: str, punto_id: int) -> EvaluacionDimensionPunto:
-        """Evalúa la dimensión DE-1 para un punto específico."""
-        evaluaciones = []
-        for q_id in self.preguntas_de1.keys():
-            eval_pregunta = self.evaluar_pregunta_de1(texto, q_id, punto_id)
-            evaluaciones.append(eval_pregunta)
+    def evaluar_dimension_de1(
+        self, analisis: AnalisisEvidenciaDecalogo, evidencia: Dict[str, List[Any]], punto_id: int
+    ) -> EvaluacionDimensionPunto:
+        evaluaciones: List[EvaluacionPregunta] = []
+        max_score = analisis.max_score
+        baseline_dets = analisis.detecciones(ComponentType.BASELINE)
+        target_dets = analisis.detecciones(ComponentType.TARGET)
+        timeframe_dets = analisis.detecciones(ComponentType.TIME_HORIZON)
+        numerical_dets = analisis.detecciones(ComponentType.NUMERICAL)
+        date_dets = analisis.detecciones(ComponentType.DATE)
 
-        # Calcular puntaje base
+        mejor_numerico = self._seleccionar_mejor_deteccion(numerical_dets)
+        evaluaciones.append(
+            self._crear_evaluacion(
+                "Q1",
+                "DE-1",
+                punto_id,
+                max_score if mejor_numerico else 0.0,
+                self._formatear_deteccion(mejor_numerico),
+                self.preguntas_de1["Q1"],
+            )
+        )
+
+        mejor_responsable = self._seleccionar_mejor_responsable(analisis.responsabilidades)
+        valor_q2 = self._clamp(0.6 + 0.4 * max_score) if mejor_responsable else 0.0
+        evaluaciones.append(
+            self._crear_evaluacion(
+                "Q2",
+                "DE-1",
+                punto_id,
+                valor_q2,
+                self._formatear_responsable(mejor_responsable),
+                self.preguntas_de1["Q2"],
+            )
+        )
+
+        indicadores_cobertura = [bool(baseline_dets), bool(target_dets), bool(timeframe_dets)]
+        cobertura = sum(indicadores_cobertura) / len(indicadores_cobertura) if indicadores_cobertura else 0.0
+        evidencia_q3 = " | ".join(
+            filter(
+                None,
+                [
+                    self._formatear_deteccion(self._seleccionar_mejor_deteccion(baseline_dets)),
+                    self._formatear_deteccion(self._seleccionar_mejor_deteccion(target_dets)),
+                    self._formatear_deteccion(self._seleccionar_mejor_deteccion(timeframe_dets)),
+                ],
+            )
+        )
+        evaluaciones.append(
+            self._crear_evaluacion(
+                "Q3",
+                "DE-1",
+                punto_id,
+                max_score * cobertura,
+                evidencia_q3,
+                self.preguntas_de1["Q3"],
+            )
+        )
+
+        factor_responsable = 1.0 if mejor_responsable else 0.0
+        factor_recursos = 1.0 if analisis.recursos else 0.0
+        valor_q4 = self._clamp(0.4 * cobertura + 0.3 * max_score + 0.2 * factor_responsable + 0.1 * factor_recursos)
+        evidencia_q4 = "; ".join(filter(None, [evidencia_q3, self._formatear_responsable(mejor_responsable)]))
+        evaluaciones.append(
+            self._crear_evaluacion(
+                "Q4",
+                "DE-1",
+                punto_id,
+                valor_q4,
+                evidencia_q4,
+                self.preguntas_de1["Q4"],
+            )
+        )
+
+        mejor_impacto = self._seleccionar_mejor_deteccion(target_dets + date_dets)
+        valor_q5 = self._clamp(max_score if mejor_impacto else (max_score * 0.5 if target_dets else 0.0))
+        evaluaciones.append(
+            self._crear_evaluacion(
+                "Q5",
+                "DE-1",
+                punto_id,
+                valor_q5,
+                self._formatear_deteccion(mejor_impacto),
+                self.preguntas_de1["Q5"],
+            )
+        )
+
+        valor_q6 = self._clamp((valor_q4 + max_score + cobertura) / 3)
+        evaluaciones.append(
+            self._crear_evaluacion(
+                "Q6",
+                "DE-1",
+                punto_id,
+                valor_q6,
+                evidencia_q4 or evidencia_q3,
+                self.preguntas_de1["Q6"],
+            )
+        )
+
         puntaje_base = sum(e.puntaje for e in evaluaciones) / len(evaluaciones) if evaluaciones else 0.0
-
-        # Calcular matriz causal (simplificada para el ejemplo)
         matriz_causal = {
-            "C1": "Sí" if puntaje_base > 0.5 else "No",
-            "C2": "Sí" if puntaje_base > 0.5 else "No",
-            "C3": "Sí" if puntaje_base > 0.5 else "No",
-            "C4": "Sí" if puntaje_base > 0.5 else "No",
-            "Puntaje_Causalidad_Total": 20 if puntaje_base > 0.5 else 0,
-            "Factor_Causal": 1.0 if puntaje_base > 0.5 else 0.5
+            "C1": "Sí" if baseline_dets else "No",
+            "C2": "Sí" if target_dets else "No",
+            "C3": "Sí" if timeframe_dets else "No",
+            "C4": "Sí" if mejor_responsable else "No",
+            "Puntaje_Causalidad_Total": round(puntaje_base * 100, 2),
+            "Factor_Causal": round(0.5 + (cobertura / 2), 2),
         }
-
-        # Aplicar factor causal
-        puntaje_final = puntaje_base * matriz_causal["Factor_Causal"]
+        puntaje_final = self._clamp(puntaje_base * matriz_causal["Factor_Causal"])
 
         return EvaluacionDimensionPunto(
             punto_id=punto_id,
             dimension="DE-1",
             evaluaciones_preguntas=evaluaciones,
-            puntaje_dimension=puntaje_final * 100,  # Escalar a 100
-            matriz_causal=matriz_causal
+            puntaje_dimension=puntaje_final * 100,
+            matriz_causal=matriz_causal,
         )
 
-    def evaluar_punto_completo(self, texto: str, punto_id: int) -> EvaluacionPuntoCompleto:
-        """Evalúa un punto del Decálogo en las 4 dimensiones."""
-        evaluaciones_dimensiones = []
-        evaluaciones_dimensiones.append(self.evaluar_dimension_de1(texto, punto_id))
-        # En una versión completa, aquí se llamaría a evaluar_dimension_de2, de3, de4.
+    def evaluar_dimension_de2(
+        self, analisis: AnalisisEvidenciaDecalogo, evidencia: Dict[str, List[Any]], punto_id: int
+    ) -> EvaluacionDimensionPunto:
+        evaluaciones: List[EvaluacionPregunta] = []
+        max_score = analisis.max_score
+        baseline_dets = analisis.detecciones(ComponentType.BASELINE)
+        target_dets = analisis.detecciones(ComponentType.TARGET)
+        timeframe_dets = analisis.detecciones(ComponentType.TIME_HORIZON)
+        numerical_dets = analisis.detecciones(ComponentType.NUMERICAL)
 
-        # Para el ejemplo, asumimos puntajes fijos para DE-2, DE-3, DE-4.
-        puntaje_de2 = 75.0
-        puntaje_de3 = 80.0
-        puntaje_de4 = 70.0
+        evaluaciones.append(
+            self._crear_evaluacion(
+                "D1",
+                "DE-2",
+                punto_id,
+                max_score if baseline_dets else 0.0,
+                self._formatear_deteccion(self._seleccionar_mejor_deteccion(baseline_dets)),
+                self.preguntas_de2["D1"],
+            )
+        )
 
-        evaluaciones_dimensiones.append(EvaluacionDimensionPunto(punto_id, "DE-2", [], puntaje_de2))
-        evaluaciones_dimensiones.append(EvaluacionDimensionPunto(punto_id, "DE-3", [], puntaje_de3))
-        evaluaciones_dimensiones.append(EvaluacionDimensionPunto(punto_id, "DE-4", [], puntaje_de4))
+        evaluaciones.append(
+            self._crear_evaluacion(
+                "D2",
+                "DE-2",
+                punto_id,
+                max_score * 0.6 if baseline_dets else 0.0,
+                self._formatear_deteccion(self._seleccionar_mejor_deteccion(baseline_dets)),
+                self.preguntas_de2["D2"],
+            )
+        )
 
-        puntaje_agregado = sum(e.puntaje_dimension for e in evaluaciones_dimensiones) / len(evaluaciones_dimensiones)
+        evaluaciones.append(
+            self._crear_evaluacion(
+                "O1",
+                "DE-2",
+                punto_id,
+                max_score if target_dets else 0.0,
+                self._formatear_deteccion(self._seleccionar_mejor_deteccion(target_dets)),
+                self.preguntas_de2["O1"],
+            )
+        )
 
-        return EvaluacionPuntoCompleto(
+        cobertura_resultados = 0.5 * (1 if baseline_dets else 0) + 0.5 * (1 if target_dets else 0)
+        evidencia_o2 = " | ".join(
+            filter(
+                None,
+                [
+                    self._formatear_deteccion(self._seleccionar_mejor_deteccion(baseline_dets)),
+                    self._formatear_deteccion(self._seleccionar_mejor_deteccion(target_dets)),
+                ],
+            )
+        )
+        evaluaciones.append(
+            self._crear_evaluacion(
+                "O2",
+                "DE-2",
+                punto_id,
+                max_score * cobertura_resultados,
+                evidencia_o2,
+                self.preguntas_de2["O2"],
+            )
+        )
+
+        valor_t1 = self._clamp(0.4 + 0.1 * analisis.recursos) if analisis.recursos else 0.0
+        evaluaciones.append(
+            self._crear_evaluacion(
+                "T1",
+                "DE-2",
+                punto_id,
+                valor_t1,
+                self._obtener_muestra(evidencia, "recursos"),
+                self.preguntas_de2["T1"],
+            )
+        )
+
+        mejor_t2 = self._seleccionar_mejor_deteccion(numerical_dets + timeframe_dets)
+        evaluaciones.append(
+            self._crear_evaluacion(
+                "T2",
+                "DE-2",
+                punto_id,
+                max_score if mejor_t2 else 0.0,
+                self._formatear_deteccion(mejor_t2),
+                self.preguntas_de2["T2"],
+            )
+        )
+
+        indicadores_count = len(evidencia.get("indicadores", []))
+        valor_s1 = self._clamp(min(1.0, max_score + indicadores_count * 0.1))
+        evaluaciones.append(
+            self._crear_evaluacion(
+                "S1",
+                "DE-2",
+                punto_id,
+                valor_s1,
+                self._obtener_muestra(evidencia, "indicadores"),
+                self.preguntas_de2["S1"],
+            )
+        )
+
+        mejor_s2 = self._seleccionar_mejor_deteccion(timeframe_dets)
+        evidencia_plazos = self._formatear_deteccion(mejor_s2) or self._obtener_muestra(evidencia, "plazos")
+        valor_s2 = max_score if (timeframe_dets or analisis.plazos) else 0.0
+        evaluaciones.append(
+            self._crear_evaluacion(
+                "S2",
+                "DE-2",
+                punto_id,
+                valor_s2,
+                evidencia_plazos,
+                self.preguntas_de2["S2"],
+            )
+        )
+
+        puntaje_dimension = sum(e.puntaje for e in evaluaciones) / len(evaluaciones) if evaluaciones else 0.0
+        return EvaluacionDimensionPunto(
             punto_id=punto_id,
-            nombre_punto=PUNTOS_DECALOGO[punto_id].nombre,
-            evaluaciones_dimensiones=evaluaciones_dimensiones,
-            puntaje_agregado_punto=puntaje_agregado
+            dimension="DE-2",
+            evaluaciones_preguntas=evaluaciones,
+            puntaje_dimension=puntaje_dimension * 100,
         )
 
-    def evaluar_cluster_completo(self, texto: str, cluster_nombre: str) -> EvaluacionClusterCompleto:
-        """Evalúa un cluster completo del Decálogo."""
-        cluster_info = CLUSTERS_INFO[cluster_nombre]
-        evaluaciones_puntos = []
+    def evaluar_dimension_de3(
+        self, analisis: AnalisisEvidenciaDecalogo, evidencia: Dict[str, List[Any]], punto_id: int
+    ) -> EvaluacionDimensionPunto:
+        evaluaciones: List[EvaluacionPregunta] = []
+        max_score = analisis.max_score
+        numerical_dets = analisis.detecciones(ComponentType.NUMERICAL)
+        timeframe_dets = analisis.detecciones(ComponentType.TIME_HORIZON)
+        mejor_numerico = self._seleccionar_mejor_deteccion(numerical_dets)
+        mejor_plazo = self._seleccionar_mejor_deteccion(timeframe_dets)
+        mejor_responsable = self._seleccionar_mejor_responsable(analisis.responsabilidades)
 
-        for punto_id in cluster_info.puntos:
-            eval_punto = self.evaluar_punto_completo(texto, punto_id)
-            evaluaciones_puntos.append(eval_punto)
+        valor_g1 = self._clamp(0.5 + 0.1 * analisis.recursos) if analisis.recursos else 0.0
+        evaluaciones.append(
+            self._crear_evaluacion(
+                "G1",
+                "DE-3",
+                punto_id,
+                valor_g1,
+                self._obtener_muestra(evidencia, "recursos"),
+                self.preguntas_de3["G1"],
+            )
+        )
 
-        puntaje_agregado = sum(e.puntaje_agregado_punto for e in evaluaciones_puntos) / len(evaluaciones_puntos)
+        valor_g2 = self._clamp(0.6 if (analisis.plazos or mejor_plazo) else 0.0)
+        evaluaciones.append(
+            self._crear_evaluacion(
+                "G2",
+                "DE-3",
+                punto_id,
+                valor_g2,
+                self._formatear_deteccion(mejor_plazo) or self._obtener_muestra(evidencia, "plazos"),
+                self.preguntas_de3["G2"],
+            )
+        )
 
-        # Clasificación cualitativa
+        valor_a1 = max_score if mejor_numerico else 0.0
+        evaluaciones.append(
+            self._crear_evaluacion(
+                "A1",
+                "DE-3",
+                punto_id,
+                valor_a1,
+                self._formatear_deteccion(mejor_numerico),
+                self.preguntas_de3["A1"],
+            )
+        )
+
+        valor_a2 = self._clamp(0.4 * (1 if analisis.recursos else 0) + 0.4 * (1 if mejor_responsable else 0) + 0.2 * max_score)
+        evaluaciones.append(
+            self._crear_evaluacion(
+                "A2",
+                "DE-3",
+                punto_id,
+                valor_a2,
+                self._formatear_responsable(mejor_responsable),
+                self.preguntas_de3["A2"],
+            )
+        )
+
+        valor_r1 = self._clamp(0.5 + 0.1 * analisis.recursos) if analisis.recursos else 0.0
+        evaluaciones.append(
+            self._crear_evaluacion(
+                "R1",
+                "DE-3",
+                punto_id,
+                valor_r1,
+                self._obtener_muestra(evidencia, "recursos"),
+                self.preguntas_de3["R1"],
+            )
+        )
+
+        valor_r2 = self._clamp(0.7 if mejor_responsable else 0.0)
+        evaluaciones.append(
+            self._crear_evaluacion(
+                "R2",
+                "DE-3",
+                punto_id,
+                valor_r2,
+                self._formatear_responsable(mejor_responsable),
+                self.preguntas_de3["R2"],
+            )
+        )
+
+        valor_s1 = self._clamp(0.4 * max_score + 0.3 * (1 if timeframe_dets else 0) + 0.3 * (1 if analisis.plazos else 0))
+        evaluaciones.append(
+            self._crear_evaluacion(
+                "S1",
+                "DE-3",
+                punto_id,
+                valor_s1,
+                self._formatear_deteccion(mejor_plazo) or self._obtener_muestra(evidencia, "plazos"),
+                self.preguntas_de3["S1"],
+            )
+        )
+
+        valor_s2 = self._clamp(0.5 + 0.1 * analisis.riesgos) if analisis.riesgos else 0.0
+        evaluaciones.append(
+            self._crear_evaluacion(
+                "S2",
+                "DE-3",
+                punto_id,
+                valor_s2,
+                self._obtener_muestra(evidencia, "riesgos"),
+                self.preguntas_de3["S2"],
+            )
+        )
+
+        puntaje_dimension = sum(e.puntaje for e in evaluaciones) / len(evaluaciones) if evaluaciones else 0.0
+        return EvaluacionDimensionPunto(
+            punto_id=punto_id,
+            dimension="DE-3",
+            evaluaciones_preguntas=evaluaciones,
+            puntaje_dimension=puntaje_dimension * 100,
+        )
+
+    def evaluar_dimension_de4(
+        self, analisis: AnalisisEvidenciaDecalogo, evidencia: Dict[str, List[Any]], punto_id: int
+    ) -> EvaluacionDimensionPunto:
+        evaluaciones: List[EvaluacionPregunta] = []
+        baseline_dets = analisis.detecciones(ComponentType.BASELINE)
+        target_dets = analisis.detecciones(ComponentType.TARGET)
+        timeframe_dets = analisis.detecciones(ComponentType.TIME_HORIZON)
+        numerical_dets = analisis.detecciones(ComponentType.NUMERICAL)
+        best_responsable = self._seleccionar_mejor_responsable(analisis.responsabilidades)
+
+        cobertura_baseline = 1 if baseline_dets else 0
+        cobertura_target = 1 if target_dets else 0
+        cobertura_time = 1 if timeframe_dets or analisis.plazos else 0
+        cobertura_responsables = 1 if best_responsable else 0
+        cobertura_recursos = 1 if analisis.recursos else 0
+        cobertura_numerica = 1 if numerical_dets else 0
+
+        for idx, descripcion in enumerate(self.preguntas_de4, start=1):
+            pregunta_id = f"DE4_{idx}"
+            if idx == 1:
+                valor = self._clamp(0.6 * analisis.max_score + 0.4 * cobertura_baseline)
+                evidencia_texto = self._formatear_deteccion(self._seleccionar_mejor_deteccion(baseline_dets))
+            elif idx == 2:
+                valor = self._clamp((cobertura_baseline + cobertura_target + cobertura_time) / 3)
+                evidencia_texto = " | ".join(
+                    filter(
+                        None,
+                        [
+                            self._formatear_deteccion(self._seleccionar_mejor_deteccion(baseline_dets)),
+                            self._formatear_deteccion(self._seleccionar_mejor_deteccion(target_dets)),
+                            self._formatear_deteccion(self._seleccionar_mejor_deteccion(timeframe_dets)),
+                        ],
+                    )
+                )
+            elif idx == 3:
+                valor = self._clamp(0.5 * analisis.max_score + 0.5 * cobertura_target)
+                evidencia_texto = self._formatear_deteccion(self._seleccionar_mejor_deteccion(target_dets))
+            elif idx == 4:
+                valor = self._clamp(0.4 * cobertura_responsables + 0.4 * cobertura_recursos + 0.2 * analisis.max_score)
+                evidencia_texto = "; ".join(
+                    filter(
+                        None,
+                        [
+                            self._formatear_responsable(best_responsable),
+                            self._obtener_muestra(evidencia, "recursos"),
+                        ],
+                    )
+                )
+            elif idx == 5:
+                valor = self._clamp(0.5 * cobertura_time + 0.3 * cobertura_recursos + 0.2 * analisis.max_score)
+                evidencia_texto = self._obtener_muestra(evidencia, "plazos")
+            elif idx == 6:
+                valor = self._clamp(0.7 if best_responsable else 0.0)
+                evidencia_texto = self._formatear_responsable(best_responsable)
+            elif idx == 7:
+                valor = self._clamp(0.5 * cobertura_time + 0.3 * analisis.max_score + 0.2 * cobertura_numerica)
+                evidencia_texto = self._formatear_deteccion(self._seleccionar_mejor_deteccion(timeframe_dets)) or self._obtener_muestra(evidencia, "indicadores")
+            else:
+                valor = self._clamp((cobertura_target + cobertura_time + cobertura_numerica) / 3)
+                evidencia_texto = self._formatear_deteccion(self._seleccionar_mejor_deteccion(target_dets + numerical_dets))
+
+            evaluaciones.append(
+                self._crear_evaluacion(
+                    pregunta_id,
+                    "DE-4",
+                    punto_id,
+                    valor,
+                    evidencia_texto,
+                    descripcion,
+                )
+            )
+
+        puntaje_dimension = sum(e.puntaje for e in evaluaciones) / len(evaluaciones) if evaluaciones else 0.0
+        matriz_causal = {
+            "componentes_detectados": {
+                "baseline": bool(baseline_dets),
+                "target": bool(target_dets),
+                "plazos": bool(timeframe_dets or analisis.plazos),
+                "responsables": bool(analisis.responsabilidades),
+            },
+            "indicadores_analizados": len(analisis.indicador_scores),
+            "recursos_identificados": analisis.recursos,
+        }
+        return EvaluacionDimensionPunto(
+            punto_id=punto_id,
+            dimension="DE-4",
+            evaluaciones_preguntas=evaluaciones,
+            puntaje_dimension=puntaje_dimension * 100,
+            matriz_causal=matriz_causal,
+        )
+
+    def evaluar_punto_completo(
+        self, evidencia: Dict[str, List[Any]], punto_id: int
+    ) -> Tuple[EvaluacionPuntoCompleto, AnalisisEvidenciaDecalogo]:
+        analisis = self._analizar_evidencia(evidencia)
+        evaluaciones_dimensiones = [
+            self.evaluar_dimension_de1(analisis, evidencia, punto_id),
+            self.evaluar_dimension_de2(analisis, evidencia, punto_id),
+            self.evaluar_dimension_de3(analisis, evidencia, punto_id),
+            self.evaluar_dimension_de4(analisis, evidencia, punto_id),
+        ]
+        puntaje_agregado = (
+            sum(dim.puntaje_dimension for dim in evaluaciones_dimensiones) / len(evaluaciones_dimensiones)
+            if evaluaciones_dimensiones
+            else 0.0
+        )
+        dimension = self.contexto.dimensiones_por_id.get(punto_id)
+        nombre_punto = dimension.nombre if dimension else f"Punto {punto_id}"
+        return (
+            EvaluacionPuntoCompleto(
+                punto_id=punto_id,
+                nombre_punto=nombre_punto,
+                evaluaciones_dimensiones=evaluaciones_dimensiones,
+                puntaje_agregado_punto=puntaje_agregado,
+            ),
+            analisis,
+        )
+
+    def evaluar_cluster_completo(
+        self,
+        evidencias_por_punto: Dict[int, Dict[str, List[Any]]],
+        cluster: ClusterMetadata,
+    ) -> EvaluacionClusterCompleto:
+        evaluaciones_puntos: List[EvaluacionPuntoCompleto] = []
+        for punto_id in cluster.puntos:
+            evaluacion_punto, _ = self.evaluar_punto_completo(evidencias_por_punto.get(punto_id, {}), punto_id)
+            evaluaciones_puntos.append(evaluacion_punto)
+
+        puntaje_agregado = (
+            sum(e.puntaje_agregado_punto for e in evaluaciones_puntos) / len(evaluaciones_puntos)
+            if evaluaciones_puntos
+            else 0.0
+        )
+
         if puntaje_agregado >= 80:
             clasificacion = "Desempeño Óptimo"
         elif puntaje_agregado >= 60:
@@ -464,122 +811,163 @@ class IndustrialDecatalogoEvaluatorFull:
             clasificacion = "Desempeño Insuficiente"
 
         return EvaluacionClusterCompleto(
-            cluster_nombre=cluster_nombre,
+            cluster_nombre=cluster.titulo,
             evaluaciones_puntos=evaluaciones_puntos,
             puntaje_agregado_cluster=puntaje_agregado,
-            clasificacion_cualitativa=clasificacion
+            clasificacion_cualitativa=clasificacion,
         )
 
-    def generar_reporte_final(self, texto_pdt: str, nombre_plan: str) -> ReporteFinalDecatalogo:
-        """Genera el reporte final completo."""
-        # Evaluar todos los clusters
-        evaluaciones_clusters = []
-        for cluster_nombre in CLUSTERS_INFO.keys():
-            eval_cluster = self.evaluar_cluster_completo(texto_pdt, cluster_nombre)
-            evaluaciones_clusters.append(eval_cluster)
+    def generar_reporte_final(
+        self, evidencias_por_punto: Dict[int, Dict[str, List[Any]]], nombre_plan: str
+    ) -> ReporteFinalDecatalogo:
+        evaluaciones_clusters = [
+            self.evaluar_cluster_completo(evidencias_por_punto, cluster)
+            for cluster in self.contexto.clusters_por_id.values()
+        ]
+        evaluaciones_puntos = [
+            eval_punto
+            for eval_cluster in evaluaciones_clusters
+            for eval_punto in eval_cluster.evaluaciones_puntos
+        ]
+        evaluaciones_preguntas = [
+            eval_pregunta
+            for eval_punto in evaluaciones_puntos
+            for eval_dim in eval_punto.evaluaciones_dimensiones
+            for eval_pregunta in eval_dim.evaluaciones_preguntas
+        ]
 
-        # Flatten para reporte por punto y por pregunta
-        evaluaciones_puntos = [eval_punto for eval_cluster in evaluaciones_clusters for eval_punto in eval_cluster.evaluaciones_puntos]
-        evaluaciones_preguntas = [eval_pregunta for eval_punto in evaluaciones_puntos for eval_dim in eval_punto.evaluaciones_dimensiones for eval_pregunta in eval_dim.evaluaciones_preguntas]
-
-        # Resumen ejecutivo
-        puntajes_clusters = [e.puntaje_agregado_cluster for e in evaluaciones_clusters]
+        puntajes_clusters = [cluster.puntaje_agregado_cluster for cluster in evaluaciones_clusters]
         puntaje_global = sum(puntajes_clusters) / len(puntajes_clusters) if puntajes_clusters else 0.0
+
+        cluster_mejor = (
+            max(evaluaciones_clusters, key=lambda x: x.puntaje_agregado_cluster).cluster_nombre
+            if evaluaciones_clusters
+            else ""
+        )
+        cluster_peor = (
+            min(evaluaciones_clusters, key=lambda x: x.puntaje_agregado_cluster).cluster_nombre
+            if evaluaciones_clusters
+            else ""
+        )
 
         resumen_ejecutivo = {
             "puntaje_global": puntaje_global,
-            "cluster_mejor_desempeno": max(evaluaciones_clusters, key=lambda x: x.puntaje_agregado_cluster).cluster_nombre,
-            "cluster_peor_desempeno": min(evaluaciones_clusters, key=lambda x: x.puntaje_agregado_cluster).cluster_nombre,
+            "cluster_mejor_desempeno": cluster_mejor,
+            "cluster_peor_desempeno": cluster_peor,
             "numero_puntos_evaluados": len(evaluaciones_puntos),
-            "recomendacion_estrategica_global": "IMPLEMENTACIÓN RECOMENDADA" if puntaje_global >= 70 else "REDISEÑO PARCIAL REQUERIDO"
+            "recomendacion_estrategica_global": "IMPLEMENTACIÓN RECOMENDADA" if puntaje_global >= 70 else "REDISEÑO PARCIAL REQUERIDO",
         }
 
-        # Reporte macro
+        if puntaje_global >= 75:
+            alineacion = "ALTA"
+        elif puntaje_global >= 50:
+            alineacion = "MEDIA"
+        else:
+            alineacion = "BAJA"
+
         reporte_macro = {
-            "alineacion_global_decatalogo": "ALTA" if puntaje_global >= 75 else "MEDIA" if puntaje_global >= 50 else "BAJA",
-            "explicacion_extensa_cualitativa": f"El Plan de Desarrollo Territorial presenta un desempeño {'óptimo' if puntaje_global >= 80 else 'satisfactorio' if puntaje_global >= 60 else 'básico' if puntaje_global >= 40 else 'insuficiente'} en su alineación con el Decálogo de Derechos Humanos. Se recomienda {'implementar el plan con ajustes menores' if puntaje_global >= 70 else 'realizar un rediseño parcial enfocado en los clusters con menor desempeño'}."
+            "alineacion_global_decatalogo": alineacion,
+            "explicacion_extensa_cualitativa": (
+                "El Plan de Desarrollo Territorial presenta un desempeño "
+                f"{'óptimo' if puntaje_global >= 80 else 'satisfactorio' if puntaje_global >= 60 else 'básico' if puntaje_global >= 40 else 'insuficiente'} "
+                "en su alineación con el Decálogo de Derechos Humanos."
+            ),
         }
 
         return ReporteFinalDecatalogo(
             metadata={
                 "nombre_plan": nombre_plan,
                 "fecha_evaluacion": datetime.now().isoformat(),
-                "version_evaluador": "1.0-industrial-full"
+                "version_evaluador": "1.0-industrial-full",
             },
             resumen_ejecutivo=resumen_ejecutivo,
             reporte_macro=reporte_macro,
             reporte_meso_por_cluster=evaluaciones_clusters,
             reporte_por_punto=evaluaciones_puntos,
-            reporte_por_pregunta=evaluaciones_preguntas
+            reporte_por_pregunta=evaluaciones_preguntas,
         )
+def integrar_evaluador_decatalogo(
+    sistema: SistemaEvaluacionIndustrial, dimension: DimensionDecalogo
+) -> Optional[ResultadoDimensionIndustrial]:
+    """Integra el evaluador especializado del decálogo con la evaluación industrial."""
 
-# ==================== INTEGRACIÓN CON SISTEMA INDUSTRIAL ====================
-
-def integrar_evaluador_decatalogo(sistema: SistemaEvaluacionIndustrial, dimension: DimensionDecalogo) -> Optional[ResultadoDimensionIndustrial]:
-    """
-    Integra el evaluador del Decálogo con el sistema industrial principal.
-    
-    Args:
-        sistema: Sistema de evaluación industrial principal
-        dimension: Dimensión del decálogo a evaluar
-        
-    Returns:
-        Resultado de la evaluación industrial o None si hay error
-    """
     if not sistema.extractor:
         raise ValueError("Extractor no inicializado - Error industrial crítico")
 
     try:
-        # >>>>>>>> INTEGRACIÓN INDUSTRIAL DEL EVALUADOR DEL DECÁLOGO <<<<<<<<
         evaluador = IndustrialDecatalogoEvaluatorFull()
+        evidencia_dimension = sistema.extractor.extraer_variables_operativas(dimension)
+        matriz_trazabilidad = sistema.extractor.generar_matriz_trazabilidad(dimension)
+        cluster_metadata = DECALOGO_CONTEXT.cluster_por_dimension.get(dimension.id)
 
-        # Suponiendo que tienes el texto completo del PDT en sistema.loader.textos_originales
-        texto_completo_pdt = " ".join(sistema.loader.textos_originales[:1000])  # Primeras 1000 líneas para evaluación
-
-        # Identificar a qué cluster pertenece esta dimensión (mapeo que debes definir)
-        cluster_asociado = None
-        for cluster_nombre, cluster_info in CLUSTERS_INFO.items():
-            if dimension.id in cluster_info.puntos:
-                cluster_asociado = cluster_nombre
-                break
-
-        if cluster_asociado:
-            evaluacion_cluster = evaluador.evaluar_cluster_completo(texto_completo_pdt, cluster_asociado)
-
-            # Registrar advertencias si el puntaje es bajo
-            if evaluacion_cluster.puntaje_agregado_cluster < 60:
-                for eval_punto in evaluacion_cluster.evaluaciones_puntos:
-                    if eval_punto.puntaje_agregado_punto < 50:
-                        LOGGER.warning(f"⚠️  [DECÁLOGO] Punto {eval_punto.punto_id} en dimensión {dimension.id} tiene baja calidad: {eval_punto.puntaje_agregado_punto:.1f}")
-            
-            # Convertir evaluación del decálogo al formato del sistema principal
-            # Esta es una conversión simplificada para demostrar la integración
-            evaluacion_causal = EvaluacionCausalIndustrial(
-                consistencia_logica=evaluacion_cluster.puntaje_agregado_cluster / 100,
-                identificabilidad_causal=0.8,  # Valor por defecto
-                factibilidad_operativa=0.75,   # Valor por defecto
-                certeza_probabilistica=evaluacion_cluster.puntaje_agregado_cluster / 100,
-                robustez_causal=0.85,          # Valor por defecto
-                riesgos_implementacion=[],
-                supuestos_criticos=[],
-                evidencia_soporte=10,          # Valor por defecto
-                brechas_criticas=0
+        if not cluster_metadata:
+            LOGGER.warning(
+                "⚠️  [DECÁLOGO] Dimensión %s no se encuentra asociada a un cluster definido", dimension.id
             )
-            
-            resultado = ResultadoDimensionIndustrial(
-                dimension=dimension,
-                evaluacion_causal=evaluacion_causal,
-                evidencia={},  # En una implementación completa, se llenaría con evidencia real
-                brechas_identificadas=[],
-                recomendaciones=[f"Evaluar alineación con cluster {cluster_asociado}"],
-                timestamp_evaluacion=datetime.now().isoformat()
-            )
-            
-            return resultado
-        # >>>>>>>> FIN DE LA INTEGRACIÓN <<<<<<<<
+            return None
 
-        return None
+        evaluacion_punto, analisis = evaluador.evaluar_punto_completo(evidencia_dimension, dimension.id)
+        puntajes_dim = {
+            dim_eval.dimension: dim_eval.puntaje_dimension for dim_eval in evaluacion_punto.evaluaciones_dimensiones
+        }
 
-    except Exception as e:
-        LOGGER.error(f"❌ Error en integración del evaluador del decálogo: {e}")
+        consistencia_logica = puntajes_dim.get("DE-1", 0.0) / 100
+        factibilidad_operativa = puntajes_dim.get("DE-3", 0.0) / 100
+        robustez_causal = puntajes_dim.get("DE-4", 0.0) / 100
+        identificabilidad_causal = min(1.0, (consistencia_logica + robustez_causal) / 2)
+        certeza_probabilistica = analisis.max_score if analisis.indicador_scores else consistencia_logica
+
+        riesgos = [
+            entry.get("texto")
+            for entry in evidencia_dimension.get("riesgos", [])
+            if isinstance(entry, dict) and entry.get("texto")
+        ]
+        if not riesgos and factibilidad_operativa < 0.5:
+            riesgos.append("Planificación presupuestal con evidencia insuficiente según DE-3.")
+
+        evaluacion_causal = EvaluacionCausalIndustrial(
+            consistencia_logica=max(0.0, min(1.0, consistencia_logica)),
+            identificabilidad_causal=max(0.0, min(1.0, identificabilidad_causal)),
+            factibilidad_operativa=max(0.0, min(1.0, factibilidad_operativa)),
+            certeza_probabilistica=max(0.0, min(1.0, certeza_probabilistica)),
+            robustez_causal=max(0.0, min(1.0, robustez_causal)),
+            riesgos_implementacion=riesgos,
+            supuestos_criticos=[],
+            evidencia_soporte=len(analisis.indicador_scores),
+            brechas_criticas=sum(1 for score in puntajes_dim.values() if score < 60),
+        )
+
+        brechas_identificadas = [
+            f"{eval_dim.dimension} presenta puntaje {eval_dim.puntaje_dimension:.1f}/100; ampliar respaldo operativo."
+            for eval_dim in evaluacion_punto.evaluaciones_dimensiones
+            if eval_dim.puntaje_dimension < 60
+        ]
+
+        recomendaciones = [
+            f"Fortalecer evidencia trazable para {cluster_metadata.titulo} con base en los eslabones analizados."
+        ]
+        if factibilidad_operativa < 0.6:
+            recomendaciones.append("Reforzar programación financiera y responsabilidades operativas detectadas.")
+
+        resultado = ResultadoDimensionIndustrial(
+            dimension=dimension,
+            evaluacion_causal=evaluacion_causal,
+            evidencia=evidencia_dimension,
+            brechas_identificadas=brechas_identificadas,
+            recomendaciones=recomendaciones,
+            matriz_trazabilidad=matriz_trazabilidad,
+            timestamp_evaluacion=datetime.now().isoformat(),
+        )
+
+        LOGGER.info(
+            "✅ Evaluación decálogo integrada para dimensión %s (cluster %s): %.1f/100",
+            dimension.id,
+            cluster_metadata.titulo,
+            resultado.puntaje_final,
+        )
+
+        return resultado
+
+    except Exception as exc:
+        LOGGER.error(f"❌ Error en integración del evaluador del decálogo: {exc}")
         return None
