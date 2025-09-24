@@ -18,6 +18,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 import hashlib
 from datetime import datetime
+from text_truncation_logger import log_info_with_text, log_warning_with_text, log_error_with_text
 
 assert sys.version_info >= (3, 11), "Python 3.11 or higher is required"
 
@@ -553,7 +554,7 @@ def integrar_evaluador_decatalogo(sistema: SistemaEvaluacionIndustrial, dimensio
             if evaluacion_cluster.puntaje_agregado_cluster < 60:
                 for eval_punto in evaluacion_cluster.evaluaciones_puntos:
                     if eval_punto.puntaje_agregado_punto < 50:
-                        LOGGER.warning(f"⚠️  [DECÁLOGO] Punto {eval_punto.punto_id} en dimensión {dimension.id} tiene baja calidad: {eval_punto.puntaje_agregado_punto:.1f}")
+                        log_warning_with_text(LOGGER, f"⚠️  [DECÁLOGO] Punto {eval_punto.punto_id} en dimensión {dimension.id} tiene baja calidad: {eval_punto.puntaje_agregado_punto:.1f}")
             
             # Convertir evaluación del decálogo al formato del sistema principal
             # Esta es una conversión simplificada para demostrar la integración
@@ -584,5 +585,5 @@ def integrar_evaluador_decatalogo(sistema: SistemaEvaluacionIndustrial, dimensio
         return None
 
     except Exception as e:
-        LOGGER.error(f"❌ Error en integración del evaluador del decálogo: {e}")
+        log_error_with_text(LOGGER, f"❌ Error en integración del evaluador del decálogo: {e}")
         return None

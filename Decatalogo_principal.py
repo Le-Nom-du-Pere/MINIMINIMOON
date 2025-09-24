@@ -33,6 +33,10 @@ from sentence_transformers import SentenceTransformer, util
 import numpy as np
 import pandas as pd
 import torch
+from text_truncation_logger import (
+    log_info_with_text, log_warning_with_text, log_error_with_text, 
+    log_debug_with_text, truncate_text_for_log, get_truncation_logger
+)
 
 assert sys.version_info >= (3, 11), "Python 3.11 or higher is required"
 
@@ -50,16 +54,16 @@ LOGGER = logging.getLogger("EvaluacionPoliticasPublicasIndustrial")
 # -------------------- MODELOS AVANZADOS CON FALLBACK INDUSTRIAL --------------------
 try:
     NLP = spacy.load("es_core_news_lg")
-    LOGGER.info("✅ Modelo SpaCy cargado exitosamente")
+    log_info_with_text(LOGGER, "✅ Modelo SpaCy cargado exitosamente")
 except OSError as e:
-    LOGGER.error(f"❌ Error crítico cargando modelo SpaCy: {e}")
+    log_error_with_text(LOGGER, f"❌ Error crítico cargando modelo SpaCy: {e}")
     raise SystemExit("Modelo SpaCy no disponible. Ejecute: python -m spacy download es_core_news_lg")
 
 try:
     EMBEDDING_MODEL = SentenceTransformer("sentence-transformers/paraphrase-multilingual-mpnet-base-v2")
-    LOGGER.info("✅ Modelo de embeddings cargado exitosamente")
+    log_info_with_text(LOGGER, "✅ Modelo de embeddings cargado exitosamente")
 except Exception as e:
-    LOGGER.error(f"❌ Error crítico cargando modelo de embeddings: {e}")
+    log_error_with_text(LOGGER, f"❌ Error crítico cargando modelo de embeddings: {e}")
     raise SystemExit(f"Error cargando modelo de embeddings: {e}")
 
 
@@ -203,7 +207,7 @@ class OntologiaPoliticas:
                 indicadores_ods=indicadores_ods
             )
         except Exception as e:
-            LOGGER.error(f"❌ Error crítico cargando ontología industrial: {e}")
+            log_error_with_text(LOGGER, f"❌ Error crítico cargando ontología industrial: {e}")
             raise SystemExit("Fallo en carga de ontología - Requiere intervención manual")
 
     @staticmethod

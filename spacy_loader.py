@@ -6,6 +6,7 @@ from logging.handlers import RotatingFileHandler
 import spacy
 import spacy.cli
 from spacy.language import Language
+from text_truncation_logger import log_info_with_text, log_warning_with_text, log_error_with_text, log_debug_with_text
 
 # Import log configuration to set up environment variable support
 import log_config
@@ -73,7 +74,7 @@ class SpacyModelLoader:
         try:
             return spacy.load(model_name, disable=disable or [])
         except Exception as e:  # Catch all exceptions to prevent SystemExit
-            logger.debug(f"Failed to load model '{model_name}': {e}")
+            log_debug_with_text(logger, f"Failed to load model '{model_name}': {e}")
             return None
     
     def _download_model_with_retry(self, model_name: str) -> bool:
@@ -148,7 +149,7 @@ class SafeSpacyProcessor:
             }
         else:
             # Degraded mode - basic text processing
-            logger.warning(f"Processing text in degraded mode (no spaCy model available)")
+            log_warning_with_text(logger, f"Processing text in degraded mode (no spaCy model available)", text)
             return {
                 'tokens': text.split(),  # Basic whitespace tokenization
                 'lemmas': [],  # Not available in degraded mode
