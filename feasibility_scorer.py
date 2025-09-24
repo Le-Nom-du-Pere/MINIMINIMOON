@@ -90,6 +90,11 @@ class FeasibilityScorer:
             'low': 0.2
         }
         
+        # Override with CLI arguments if available
+        cli_workers = os.environ.get('CLI_WORKERS')
+        if cli_workers:
+            n_jobs = int(cli_workers)
+        
         # Parallel processing configuration
         self.enable_parallel = enable_parallel and JOBLIB_AVAILABLE
         self.n_jobs = n_jobs if n_jobs is not None else min(os.cpu_count() or 1, 8)
