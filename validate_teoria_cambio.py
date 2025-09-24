@@ -6,15 +6,16 @@ Validador industrial de última generación para implementación de Teoría de C
 Nivel de sofisticación: Estado del arte industrial - Nivel máximo
 """
 
+import statistics
 import time
 from dataclasses import dataclass
-from typing import Dict, List, Tuple, Optional
 from enum import Enum
-import statistics
+from typing import Dict, List, Optional, Tuple
 
 
 class ValidationTier(Enum):
     """Niveles de validación industrial"""
+
     BASIC = "Básico"
     ADVANCED = "Avanzado"
     INDUSTRIAL = "Industrial"
@@ -24,6 +25,7 @@ class ValidationTier(Enum):
 @dataclass
 class ValidationMetric:
     """Métrica de validación industrial"""
+
     name: str
     value: float
     unit: str
@@ -39,11 +41,11 @@ class IndustrialGradeValidator:
         self.metrics: List[ValidationMetric] = []
         self.validation_start_time: float = 0
         self.performance_benchmarks: Dict[str, float] = {
-            'import_time': 0.1,
-            'instance_creation': 0.05,
-            'graph_construction': 0.2,
-            'path_detection': 0.15,
-            'full_validation': 0.5
+            "import_time": 0.1,
+            "instance_creation": 0.05,
+            "graph_construction": 0.2,
+            "path_detection": 0.15,
+            "full_validation": 0.5,
         }
 
     def start_validation(self):
@@ -64,13 +66,15 @@ class IndustrialGradeValidator:
         start_time = time.time()
 
         try:
-            from teoria_cambio import TeoriaCambio, CategoriaCausal, ValidacionResultado
+            from teoria_cambio import CategoriaCausal, TeoriaCambio, ValidacionResultado
+
             import_time = time.time() - start_time
 
             metric = self.log_metric(
                 "Tiempo de Importación",
-                import_time, "segundos",
-                self.performance_benchmarks['import_time']
+                import_time,
+                "segundos",
+                self.performance_benchmarks["import_time"],
             )
 
             print(f"📦 IMPORTACIÓN INDUSTRIAL: {metric.status}")
@@ -86,7 +90,13 @@ class IndustrialGradeValidator:
         """Valida categorías causales con análisis exhaustivo"""
         from teoria_cambio import CategoriaCausal
 
-        expected_categories = ['INSUMOS', 'PROCESOS', 'PRODUCTOS', 'RESULTADOS', 'IMPACTOS']
+        expected_categories = [
+            "INSUMOS",
+            "PROCESOS",
+            "PRODUCTOS",
+            "RESULTADOS",
+            "IMPACTOS",
+        ]
         category_objects = list(CategoriaCausal)
         category_names = [cat.name for cat in category_objects]
 
@@ -120,7 +130,7 @@ class IndustrialGradeValidator:
 
     def _validate_causal_order(self, categories: List[CategoriaCausal]) -> bool:
         """Valida el orden lógico de las categorías causales"""
-        expected_order = ['INSUMOS', 'PROCESOS', 'PRODUCTOS', 'RESULTADOS', 'IMPACTOS']
+        expected_order = ["INSUMOS", "PROCESOS", "PRODUCTOS", "RESULTADOS", "IMPACTOS"]
         actual_order = [cat.name for cat in categories]
 
         # Verifica que el orden esperado esté preservado
@@ -132,7 +142,7 @@ class IndustrialGradeValidator:
 
     def validate_connection_matrix(self) -> Dict[Tuple[str, str], bool]:
         """Valida matriz completa de conexiones con análisis predictivo"""
-        from teoria_cambio import TeoriaCambio, CategoriaCausal
+        from teoria_cambio import CategoriaCausal, TeoriaCambio
 
         tc = TeoriaCambio()
         categories = list(CategoriaCausal)
@@ -146,7 +156,9 @@ class IndustrialGradeValidator:
                 connection_matrix[(origen.name, destino.name)] = is_valid
 
                 status_icon = "✅" if is_valid else "❌"
-                print(f"      {status_icon} {origen.name:>10} → {destino.name:<10} | Válido: {is_valid}")
+                print(
+                    f"      {status_icon} {origen.name:>10} → {destino.name:<10} | Válido: {is_valid}"
+                )
 
         return connection_matrix
 
@@ -161,28 +173,40 @@ class IndustrialGradeValidator:
         start_time = time.time()
         grafo = tc.construir_grafo_causal()
         graph_time = time.time() - start_time
-        performance_metrics.append(self.log_metric(
-            "Construcción de Grafo", graph_time, "segundos",
-            self.performance_benchmarks['graph_construction']
-        ))
+        performance_metrics.append(
+            self.log_metric(
+                "Construcción de Grafo",
+                graph_time,
+                "segundos",
+                self.performance_benchmarks["graph_construction"],
+            )
+        )
 
         # Benchmark de detección de caminos
         start_time = time.time()
         caminos = tc.detectar_caminos_completos(grafo)
         path_time = time.time() - start_time
-        performance_metrics.append(self.log_metric(
-            "Detección de Caminos", path_time, "segundos",
-            self.performance_benchmarks['path_detection']
-        ))
+        performance_metrics.append(
+            self.log_metric(
+                "Detección de Caminos",
+                path_time,
+                "segundos",
+                self.performance_benchmarks["path_detection"],
+            )
+        )
 
         # Benchmark de validación completa
         start_time = time.time()
         validacion = tc.validacion_completa(grafo)
         validation_time = time.time() - start_time
-        performance_metrics.append(self.log_metric(
-            "Validación Completa", validation_time, "segundos",
-            self.performance_benchmarks['full_validation']
-        ))
+        performance_metrics.append(
+            self.log_metric(
+                "Validación Completa",
+                validation_time,
+                "segundos",
+                self.performance_benchmarks["full_validation"],
+            )
+        )
 
         return performance_metrics
 
@@ -209,14 +233,18 @@ class IndustrialGradeValidator:
         print(f"\n📈 MÉTRICAS DE RENDIMIENTO:")
         for metric in self.metrics:
             color_icon = "🟢" if metric.status == "✅ PASÓ" else "🔴"
-            print(f"   {color_icon} {metric.name}: {metric.value:.4f}{metric.unit} "
-                  f"(Límite: {metric.threshold}{metric.unit}) - {metric.status}")
+            print(
+                f"   {color_icon} {metric.name}: {metric.value:.4f}{metric.unit} "
+                f"(Límite: {metric.threshold}{metric.unit}) - {metric.status}"
+            )
 
         # Recomendaciones industriales
         print(f"\n💡 RECOMENDACIONES DE GRADO INDUSTRIAL:")
         self._generate_industrial_recommendations()
 
-        print(f"\n🏆 VALIDACIÓN {'EXITOSA' if success_rate >= 90 else 'CON OBSERVACIONES'}")
+        print(
+            f"\n🏆 VALIDACIÓN {'EXITOSA' if success_rate >= 90 else 'CON OBSERVACIONES'}"
+        )
         return success_rate >= 90
 
     def _determine_quality_level(self, success_rate: float) -> str:
@@ -240,11 +268,17 @@ class IndustrialGradeValidator:
 
         for metric in failed_metrics:
             if "Tiempo" in metric.name:
-                print(f"   ⚡ Optimizar {metric.name}: Considerar caching o optimización de algoritmos")
+                print(
+                    f"   ⚡ Optimizar {metric.name}: Considerar caching o optimización de algoritmos"
+                )
             elif "Construcción" in metric.name:
-                print(f"   🏗️  Revisar arquitectura de {metric.name}: Evaluar patrones de diseño industrial")
+                print(
+                    f"   🏗️  Revisar arquitectura de {metric.name}: Evaluar patrones de diseño industrial"
+                )
             elif "Detección" in metric.name:
-                print(f"   🔍 Mejorar algoritmos de {metric.name}: Implementar técnicas de búsqueda eficiente")
+                print(
+                    f"   🔍 Mejorar algoritmos de {metric.name}: Implementar técnicas de búsqueda eficiente"
+                )
 
 
 def validate_teoria_cambio_industrial():
@@ -261,6 +295,7 @@ def validate_teoria_cambio_industrial():
         # 2. Validación de categorías causales
         print("\n2. 🏷️  VALIDACIÓN DE CATEGORÍAS CAUSALES")
         from teoria_cambio import CategoriaCausal
+
         categories_valid, missing = validator.validate_causal_categories()
 
         if not categories_valid:
@@ -278,6 +313,7 @@ def validate_teoria_cambio_industrial():
         # 5. Validación funcional avanzada
         print("\n5. 🧪 VALIDACIÓN FUNCIONAL AVANZADA")
         from teoria_cambio import TeoriaCambio
+
         tc = TeoriaCambio()
         grafo = tc.construir_grafo_causal()
 
@@ -286,8 +322,12 @@ def validate_teoria_cambio_industrial():
         caminos = tc.detectar_caminos_completos(grafo)
         sugerencias = tc.generar_sugerencias(grafo)
 
-        print(f"   ✅ Grafo causal: {len(grafo.nodes)} nodos, {len(grafo.edges)} conexiones")
-        print(f"   ✅ Validación completa: {'VÁLIDO' if validacion.es_valida else 'INVÁLIDO'}")
+        print(
+            f"   ✅ Grafo causal: {len(grafo.nodes)} nodos, {len(grafo.edges)} conexiones"
+        )
+        print(
+            f"   ✅ Validación completa: {'VÁLIDO' if validacion.es_valida else 'INVÁLIDO'}"
+        )
         print(f"   ✅ Caminos detectados: {len(caminos.caminos_completos)}")
         print(f"   ✅ Sugerencias generadas: {len(sugerencias.sugerencias)}")
 
@@ -305,6 +345,7 @@ def validate_teoria_cambio_industrial():
     except Exception as e:
         print(f"\n💥 FALLA CATASTRÓFICA EN VALIDACIÓN INDUSTRIAL: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
