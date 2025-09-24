@@ -1,12 +1,12 @@
 """
-Test cases for embedding model with fallback mechanism.
+Test cases for embedding model with LRU cache functionality.
 """
 
 import logging
 import unittest
 from unittest.mock import MagicMock, patch
-
 import numpy as np
+import logging
 
 from embedding_model import IndustrialEmbeddingModel, create_industrial_embedding_model
 
@@ -14,15 +14,30 @@ from embedding_model import IndustrialEmbeddingModel, create_industrial_embeddin
 logging.getLogger("embedding_model").setLevel(logging.ERROR)
 
 
-class TestEmbeddingModel(unittest.TestCase):
-    """Test cases for IndustrialEmbeddingModel with fallback mechanism."""
-
-    def setUp(self):
-        """Set up test fixtures."""
-        self.test_sentences = [
-            "This is a test sentence.",
-            "Another example for testing.",
-            "Testing the embedding model.",
+class TestLRUCacheEmbedding(unittest.TestCase):
+    """Test cases for LRU cache functionality in embedding model."""
+    
+    @patch('embedding_model.SentenceTransformer')
+    def setUp(self, mock_sentence_transformer):
+        """Set up test fixtures for LRU cache tests."""
+        # Mock model setup
+        mock_model = MagicMock()
+        mock_model.get_sentence_embedding_dimension.return_value = 768
+        
+        def mock_encode(*args, **kwargs):
+            texts = args[0] if args else kwargs.get('texts', [])
+            if isinstance(texts, str):
+                texts = [texts]
+            return np.random.rand(len(texts), 768)
+        
+        mock_model.encode = mock_encode
+        mock_sentence_transformer.return_value = mock_model
+        
+        self.model = IndustrialEmbeddingModel(preferred_model='primary_large')
+        self.test_documents = [
+            "First document about financial performance",
+            "Second document about revenue growth", 
+            "Third document about market analysis"
         ]
 
     @patch("embedding_model.SentenceTransformer")
@@ -199,6 +214,123 @@ class TestEmbeddingModel(unittest.TestCase):
         # Verify similarity scores are in valid range [-1, 1]
         self.assertTrue(np.all(similarity_scores >= -1))
         self.assertTrue(np.all(similarity_scores <= 1))
+=======
+class TestLRUCacheEmbedding(unittest.TestCase):
+    """Test cases for LRU cache functionality in embedding model."""
+    
+    @patch('embedding_model.SentenceTransformer')
+    def setUp(self, mock_sentence_transformer):
+        """Set up test fixtures for LRU cache tests."""
+        # Mock model setup
+        mock_model = MagicMock()
+        mock_model.get_sentence_embedding_dimension.return_value = 768
+        
+        def mock_encode(*args, **kwargs):
+            texts = args[0] if args else kwargs.get('texts', [])
+            if isinstance(texts, str):
+                texts = [texts]
+            return np.random.rand(len(texts), 768)
+        
+        mock_model.encode = mock_encode
+        mock_sentence_transformer.return_value = mock_model
+        
+        self.model = IndustrialEmbeddingModel(preferred_model='primary_large')
+        self.test_documents = [
+            "First document about financial performance",
+            "Second document about revenue growth", 
+            "Third document about market analysis"
+        ]
+        
+    def test_query_lru_cache_functionality(self):
+        """Test that identical queries are cached and reused."""
+        # Clear any existing cache
+        self.model._encode_query_cached.cache_clear()
+        
+        query = "financial performance metrics"
+        
+        # First call - should miss cache
+        result1 = self.model._encode_query_cached(query)
+        cache_info_1 = self.model._encode_query_cached.cache_info()
+        
+        # Second call with same query - should hit cache
+        result2 = self.model._encode_query_cached(query)
+        cache_info_2 = self.model._encode_query_cached.cache_info()
+        
+        # Verify cache hit occurred
+        self.assertEqual(cache_info_1.hits, 0)
+        self.assertEqual(cache_info_1.misses, 1)
+        self.assertEqual(cache_info_2.hits, 1)
+        self.assertEqual(cache_info_2.misses, 1)
+        
+        # Results should be identical
+        np.testing.assert_array_equal(result1, result2)
+        
+    def test_document_embeddings_caching(self):
+        """Test that document embeddings are cached and reused."""
+        cache_key = "test_docs"
+        
+        # First call - should compute embeddings
+        embeddings1 = self.model.set_document_embeddings(self.test_documents, cache_key)
+        
+        # Second call with same cache key - should reuse embeddings
+        embeddings2 = self.model.set_document_embeddings(self.test_documents, cache_key)
+        
+        # Should be the same object (cached)
+        self.assertIs(embeddings1, embeddings2)
+        self.assertEqual(self.model._doc_cache_key, cache_key)
+        
+    def test_search_documents_with_cache(self):
+        """Test semantic search using cached embeddings and queries."""
+        # Set up document cache
+        self.model.set_document_embeddings(self.test_documents, "search_test")
+        
+        # Clear query cache to test fresh
+        self.model._encode_query_cached.cache_clear()
+        
+        query = "revenue and growth"
+        
+        # First search
+        results1 = self.model.search_documents(query, k=2)
+        cache_info_1 = self.model._encode_query_cached.cache_info()
+        
+        # Second search with same query
+        results2 = self.model.search_documents(query, k=2) 
+        cache_info_2 = self.model._encode_query_cached.cache_info()
+        
+        # Verify query was cached
+        self.assertEqual(cache_info_1.misses, 1)
+        self.assertEqual(cache_info_2.hits, 1)
+        
+        # Results should be identical
+        self.assertEqual(results1, results2)
+        self.assertEqual(len(results1), 2)
+        
+    def test_cache_statistics(self):
+        """Test that cache statistics are properly reported."""
+        # Set up caches
+        self.model.set_document_embeddings(self.test_documents, "stats_test")
+        self.model._encode_query_cached("test query 1")
+        self.model._encode_query_cached("test query 2")
+        self.model._encode_query_cached("test query 1")  # cache hit
+        
+        stats = self.model.get_embedding_statistics()
+        
+        # Verify structure
+        self.assertIn('query_lru_cache', stats)
+        self.assertIn('document_cache', stats)
+        
+        lru_stats = stats['query_lru_cache']
+        self.assertIn('hits', lru_stats)
+        self.assertIn('misses', lru_stats)
+        self.assertIn('hit_rate', lru_stats)
+        self.assertIn('current_size', lru_stats)
+        self.assertIn('max_size', lru_stats)
+        
+        doc_stats = stats['document_cache']
+        self.assertEqual(doc_stats['cached_document_count'], len(self.test_documents))
+        self.assertEqual(doc_stats['cache_key'], "stats_test")
+        self.assertTrue(doc_stats['has_cached_documents'])
+>>>>>>> 4872831 (Implement LRU cache for query embeddings to optimize semantic search performance)
 
     @patch("embedding_model.SentenceTransformer")
     def test_semantic_search_basic(self, mock_sentence_transformer):

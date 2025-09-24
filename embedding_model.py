@@ -533,13 +533,6 @@ class EmbeddingCache:
         Returns:
             SHA-256 hash string as cache key.
         """
-=======
-        return None
-    
-    def _generate_cache_key(self, texts: List[str], normalize: bool, 
-                          instruction: Optional[str] = None, 
-                          instruction_strength: float = 0.4) -> str:
-        """Generate cache key for text embeddings."""
         cache_components = [
             str(hash(tuple(texts))),
             str(normalize),
@@ -1263,6 +1256,10 @@ class IndustrialEmbeddingModel:
         self._model_lock = threading.RLock()
         self._cache_lock = threading.RLock()
 
+        # Document embeddings cache for reuse across searches
+        self.embeddings_doc = None
+        self._doc_cache_key = None
+
         # Initialize model
         self._initialize_model_hierarchy(preferred_model)
 
@@ -1326,6 +1323,36 @@ class IndustrialEmbeddingModel:
             f"Failed to initialize any embedding model:\n{error_summary}"
         )
 
+    @lru_cache(maxsize=1000)
+    def _encode_query_cached(self, text: str, normalize_embeddings: bool = True, 
+                           instruction: Optional[str] = None, instruction_strength: float = 0.4) -> np.ndarray:
+        """
+        Internal cached method for encoding single query text.
+        Uses LRU cache to prevent redundant encoding operations during semantic searches.
+        """
+        return self._encode_single_query(text, normalize_embeddings, instruction, instruction_strength)
+
+    def _encode_single_query(self, text: str, normalize_embeddings: bool = True, 
+                           instruction: Optional[str] = None, instruction_strength: float = 0.4) -> np.ndarray:
+        """Internal method for encoding a single query text without caching."""
+        try:
+            embeddings = self._encode_with_recovery(
+                [text], 
+                1, 
+                normalize_embeddings
+            )
+            
+            if instruction and instruction.strip():
+                embeddings = self._apply_advanced_instruction_transform(
+                    embeddings, instruction, instruction_strength
+                )
+                
+            return embeddings[0]  # Return single embedding for query
+            
+        except Exception as e:
+            logger.error(f"Query encoding failed for text: {text[:50]}...")
+            raise EmbeddingComputationError(f"Failed to encode query: {str(e)}")
+
     @performance_monitor
     def encode(
         self,
@@ -1356,9 +1383,17 @@ class IndustrialEmbeddingModel:
 
         # Input validation and normalization
         if isinstance(texts, str):
-            texts = [texts]
+            # For single text queries, use the LRU cached method for better performance
+            if len(texts.strip()) > 0:
+                return np.array([self._encode_query_cached(texts, normalize_embeddings, instruction, instruction_strength)])
+            else:
+                return np.array([]).reshape(0, self.model_config.dimension)
         elif not texts:
             return np.array([]).reshape(0, self.model_config.dimension)
+
+        # For batch processing, check if it's a single query that can be cached
+        if len(texts) == 1 and texts[0].strip():
+            return np.array([self._encode_query_cached(texts[0], normalize_embeddings, instruction, instruction_strength)])
 
         # Cache key generation for new caching system
         cache_key = None
@@ -2264,6 +2299,108 @@ class IndustrialEmbeddingModel:
             logger.error(f"Performance optimization failed: {str(e)}")
             return {"error": str(e), "changes_made": []}
 
+    def set_document_embeddings(self, documents: List[str], cache_key: str = None) -> np.ndarray:
+        """
+        Set and cache document embeddings for reuse across multiple search calls.
+        
+        Args:
+            documents: List of document texts to embed
+            cache_key: Optional cache key for the document set
+            
+        Returns:
+            Document embeddings matrix
+        """
+        if cache_key and cache_key == self._doc_cache_key and self.embeddings_doc is not None:
+            logger.debug("Reusing cached document embeddings")
+            return self.embeddings_doc
+            
+        # Encode documents without using query cache (batch processing)
+        self.embeddings_doc = self._encode_documents_batch(documents)
+        self._doc_cache_key = cache_key
+        
+        logger.debug(f"Cached embeddings for {len(documents)} documents")
+        return self.embeddings_doc
+        
+    def _encode_documents_batch(self, documents: List[str]) -> np.ndarray:
+        """Encode documents in batches without using the query LRU cache."""
+        if not documents:
+            return np.array([]).reshape(0, self.model_config.dimension)
+            
+        try:
+            batch_size = self._calculate_optimal_batch_size(len(documents))
+            return self._encode_with_recovery(documents, batch_size, True)
+        except Exception as e:
+            logger.error(f"Document batch encoding failed: {str(e)}")
+            raise EmbeddingComputationError(f"Failed to encode documents: {str(e)}")
+    
+    def search_documents(self, query: str, k: int = 10, 
+                        instruction: Optional[str] = None,
+                        instruction_strength: float = 0.4) -> List[Tuple[int, float]]:
+        """
+        Search documents using cached embeddings and query LRU cache.
+        
+        Args:
+            query: Search query text
+            k: Number of results to return
+            instruction: Optional semantic instruction
+            instruction_strength: Instruction influence strength
+            
+        Returns:
+            List of (document_index, similarity_score) tuples
+        """
+        if self.embeddings_doc is None:
+            raise ValueError("Document embeddings not set. Call set_document_embeddings() first.")
+        
+        # Use cached query encoding
+        query_embedding = self._encode_query_cached(
+            query, 
+            normalize_embeddings=True,
+            instruction=instruction,
+            instruction_strength=instruction_strength
+        )
+        
+        # Compute similarities with document embeddings
+        similarities = cosine_similarity(
+            self.embeddings_doc,
+            query_embedding.reshape(1, -1)
+        ).ravel()
+        
+        # Get top-k results
+        top_indices = np.argsort(-similarities)[:k]
+        return [(int(idx), float(similarities[idx])) for idx in top_indices]
+
+    def get_embedding_statistics(self) -> Dict[str, Any]:
+        """Get comprehensive embedding statistics including LRU cache performance."""
+        # Get LRU cache stats
+        query_cache_info = self._encode_query_cached.cache_info()
+        
+        stats = {
+            'quality_metrics': dict(self.quality_metrics),
+            'cache_statistics': self.embedding_cache.stats() if self.embedding_cache else {},
+            'query_lru_cache': {
+                'hits': query_cache_info.hits,
+                'misses': query_cache_info.misses,
+                'current_size': query_cache_info.currsize,
+                'max_size': query_cache_info.maxsize,
+                'hit_rate': query_cache_info.hits / (query_cache_info.hits + query_cache_info.misses) if (query_cache_info.hits + query_cache_info.misses) > 0 else 0.0
+            },
+            'document_cache': {
+                'has_cached_documents': self.embeddings_doc is not None,
+                'cached_document_count': len(self.embeddings_doc) if self.embeddings_doc is not None else 0,
+                'cache_key': self._doc_cache_key
+            }
+        }
+        
+        if self.model_config:
+            stats['model_information'] = {
+                'name': self.model_config.name,
+                'dimension': self.model_config.dimension,
+                'quality_tier': self.model_config.quality_tier,
+                'max_sequence_length': self.model_config.max_seq_length
+            }
+            
+        return stats
+
     def __enter__(self):
         """Context manager entry."""
         return self
@@ -2272,13 +2409,11 @@ class IndustrialEmbeddingModel:
         """Context manager exit with cleanup."""
         try:
             # Shutdown thread pool
-            self.thread_pool.shutdown(wait=True, timeout=30.0)
+            self.thread_pool.shutdown(wait=True)
 
             # Log final diagnostics
-            final_diagnostics = self.get_comprehensive_diagnostics()
-            logger.info(
-                f"Industrial embedding model shutdown. Final stats: {final_diagnostics['performance_metrics']}"
-            )
+            final_stats = self.get_embedding_statistics()
+            logger.info(f"Industrial embedding model shutdown. Final LRU cache stats: {final_stats.get('query_lru_cache', {})}")
 
         except Exception as e:
             logger.error(f"Cleanup failed: {str(e)}")
@@ -2371,59 +2506,88 @@ def production_deployment_example():
         # Generate embeddings with full feature set
         start_time = time.perf_counter()
 
-        document_embeddings = model.encode(
-            documents,
-            instruction=instruction,
-            instruction_strength=0.45,
-            quality_check=True,
+        # Set up document cache for reuse across multiple searches
+        model.set_document_embeddings(documents, cache_key="demo_docs")
+
+        # First search - will encode query and cache it
+        results1 = model.search_documents(
+            query, 
+            k=5, 
+            instruction=instruction, 
+            instruction_strength=0.45
         )
 
-        query_embedding = model.encode(
-            query, instruction=instruction, instruction_strength=0.45
+        # Second search with same query - will use LRU cache
+        results2 = model.search_documents(
+            query, 
+            k=3, 
+            instruction=instruction, 
+            instruction_strength=0.45
+        )
+
+        # Third search with different query - will encode new query
+        results3 = model.search_documents(
+            "revenue growth and financial performance", 
+            k=4,
+            instruction=instruction,
+            instruction_strength=0.45
+        )
+
+        # Fourth search repeating second query - will use LRU cache again  
+        results4 = model.search_documents(
+            "revenue growth and financial performance", 
+            k=2
         )
 
         encoding_time = time.perf_counter() - start_time
 
-        print(f"\nEncoding completed in {encoding_time:.3f}s")
-        print(f"Document embeddings shape: {document_embeddings.shape}")
-        print(f"Query embedding shape: {query_embedding.shape}")
+        print(f"\nSearch Results (with LRU query caching):")
+        print(f"First search results: {len(results1)} documents")
+        for idx, (doc_idx, score) in enumerate(results1):
+            print(f"  {idx + 1}. Score: {score:.3f} - {documents[doc_idx][:80]}...")
+            
+        # Show cache statistics
+        cache_stats = model.get_embedding_statistics()
+        print(f"\nLRU Cache Performance:")
+        lru_stats = cache_stats.get('query_lru_cache', {})
+        print(f"  Cache Hits: {lru_stats.get('hits', 0)}")
+        print(f"  Cache Misses: {lru_stats.get('misses', 0)}")
+        print(f"  Hit Rate: {lru_stats.get('hit_rate', 0):.1%}")
+        print(f"  Current Cache Size: {lru_stats.get('current_size', 0)}")
+        print(f"  Max Cache Size: {lru_stats.get('max_size', 0)}")
+        
+        doc_cache = cache_stats.get('document_cache', {})
+        print(f"\nDocument Cache:")
+        print(f"  Cached Documents: {doc_cache.get('cached_document_count', 0)}")
+        print(f"  Cache Key: {doc_cache.get('cache_key', 'None')}")
 
-        # Standard similarity ranking
-        similarities = model.compute_similarity(
-            document_embeddings, query_embedding.reshape(1, -1)
-        ).ravel()
+        print(f"\nTotal processing time: {encoding_time:.3f}s")
+        print(f"Document embeddings cached: {model.embeddings_doc.shape if model.embeddings_doc is not None else 'None'}")
 
-        standard_ranking = np.argsort(-similarities)
+        # Advanced MMR with cached embeddings
+        query_embedding_for_mmr = model._encode_query_cached(
+            query, 
+            normalize_embeddings=True,
+            instruction=instruction,
+            instruction_strength=0.45
+        )
 
-        print(f"\n{'Standard Similarity Ranking:':<40}")
+        print(f"\n{'MMR Ranking with Cached Query:':<40}")
         print(f"{'=' * 80}")
-        for i, doc_idx in enumerate(standard_ranking[:5]):
-            print(f"{i + 1}. Score: {similarities[doc_idx]:.4f}")
+
+        mmr_results = model.rerank_with_mmr(
+            query_embedding_for_mmr,
+            model.embeddings_doc,
+            k=5,
+            algorithm='cosine_mmr',
+            lambda_param=0.7,
+            return_scores=True
+        )
+
+        for i, (doc_idx, score) in enumerate(mmr_results):
+            print(f"{i + 1}. MMR Score: {score:.4f}")
             print(f"   {documents[doc_idx]}")
             print()
-
-        # Advanced MMR with different algorithms
-        mmr_algorithms = ["cosine_mmr", "euclidean_mmr", "clustering_mmr"]
-
-        for algorithm in mmr_algorithms:
-            print(f"\n{f'MMR Ranking ({algorithm}):':<40}")
-            print(f"{'=' * 80}")
-
-            mmr_results = model.rerank_with_mmr(
-                query_embedding,
-                document_embeddings,
-                k=5,
-                algorithm=algorithm,
-                lambda_param=0.7,
-                return_scores=True,
-            )
-
-            for i, (doc_idx, score) in enumerate(mmr_results):
-                print(
-                    f"{i + 1}. MMR Score: {score:.4f} | Sim: {similarities[doc_idx]:.4f}"
-                )
-                print(f"   {documents[doc_idx]}")
-                print()
 
         # Comprehensive numeric semantic analysis
         print(f"\n{'Numeric Semantic Analysis:':<40}")
