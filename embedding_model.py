@@ -1325,6 +1325,94 @@ class IndustrialEmbeddingModel:
             raise EmbeddingComputationError(f"Failed to compute {metric} similarity: {str(e)}")
 
     @performance_monitor
+    def semantic_search(
+            self,
+            query: Union[str, np.ndarray],
+            documents: List[str],
+            pages: Optional[List[str]] = None,
+            k: int = 10,
+            instruction: Optional[str] = None,
+            return_scores: bool = True
+    ) -> Union[List[Tuple[int, str, str]], List[Tuple[int, str, str, float]]]:
+        """
+        Efficient semantic search using torch.topk for top-k retrieval.
+        
+        Args:
+            query: Query string or embedding vector
+            documents: List of document texts to search
+            pages: Optional list of page identifiers (same length as documents)
+            k: Number of top results to return
+            instruction: Optional semantic instruction
+            return_scores: Whether to include similarity scores
+            
+        Returns:
+            List of (index, page, text) or (index, page, text, score) tuples
+        """
+        if not documents:
+            return []
+        
+        k = min(k, len(documents))
+        
+        try:
+            # Generate query embedding if string provided
+            if isinstance(query, str):
+                query_embedding = self.encode([query], instruction=instruction)[0]
+            else:
+                query_embedding = query
+                
+            # Generate document embeddings
+            document_embeddings = self.encode(documents, instruction=instruction)
+            
+            # Convert to torch tensors for efficient computation
+            query_tensor = torch.from_numpy(query_embedding).float()
+            doc_tensor = torch.from_numpy(document_embeddings).float()
+            
+            # Compute cosine similarities
+            # Normalize embeddings for cosine similarity
+            query_normalized = torch.nn.functional.normalize(query_tensor.unsqueeze(0), dim=1)
+            docs_normalized = torch.nn.functional.normalize(doc_tensor, dim=1)
+            
+            # Compute similarity scores
+            similarities = torch.mm(docs_normalized, query_normalized.t()).squeeze()
+            
+            # Use torch.topk for efficient top-k retrieval
+            topk_scores, topk_indices = torch.topk(similarities, k=k, largest=True, sorted=True)
+            
+            # Convert back to numpy and Python types
+            topk_scores = topk_scores.cpu().numpy()
+            topk_indices = topk_indices.cpu().numpy()
+            
+            # Create parallel arrays for pages and texts if pages not provided
+            if pages is None:
+                pages = [f"page_{i}" for i in range(len(documents))]
+            elif len(pages) != len(documents):
+                logger.warning(f"Pages length ({len(pages)}) doesn't match documents length ({len(documents)})")
+                pages = [f"page_{i}" for i in range(len(documents))]
+            
+            # Direct mapping from topk indices to (page, text) pairs
+            results = []
+            for i, idx in enumerate(topk_indices):
+                idx_int = int(idx)
+                page = pages[idx_int]
+                text = documents[idx_int]
+                score = float(topk_scores[i])
+                
+                if return_scores:
+                    results.append((idx_int, page, text, score))
+                else:
+                    results.append((idx_int, page, text))
+            
+            self.quality_metrics['total_embeddings'] += len(documents) + 1
+            logger.info(f"Semantic search completed: {len(results)} results for query")
+            
+            return results
+            
+        except Exception as e:
+            logger.error(f"Semantic search failed: {str(e)}")
+            # Return empty results on failure
+            return []
+
+    @performance_monitor
     def rerank_with_mmr(
             self,
             query_embedding: np.ndarray,
