@@ -1,4 +1,4 @@
-2# -*- coding: utf-8 -*-
+2  # -*- coding: utf-8 -*-
 """
 decatalogo_evaluator_full.py
 Versión: 1.0 — Evaluador Industrial Completo del Decálogo de Derechos Humanos
@@ -20,6 +20,7 @@ from datetime import datetime
 # Configuración de logging para integrarse con el sistema principal
 LOGGER = logging.getLogger("DecatalogoEvaluatorFull")
 
+
 # Compatibilidad con el sistema principal - definiciones simuladas
 # En un entorno real, estas serían importadas del sistema principal
 
@@ -28,41 +29,49 @@ class TeoriaCambio:
     """Simulación de la clase TeoriaCambio del sistema principal"""
     pass
 
+
 @dataclass
 class DimensionDecalogo:
     """Simulación de la clase DimensionDecalogo del sistema principal"""
     id: int
     nombre: str
 
+
 @dataclass
 class TipoCadenaValor:
     """Simulación de la clase TipoCadenaValor del sistema principal"""
     pass
+
 
 @dataclass
 class EslabonCadena:
     """Simulación de la clase EslabonCadena del sistema principal"""
     pass
 
+
 @dataclass
 class OntologiaPoliticas:
     """Simulación de la clase OntologiaPoliticas del sistema principal"""
     pass
+
 
 @dataclass
 class SistemaEvaluacionIndustrial:
     """Simulación de la clase SistemaEvaluacionIndustrial del sistema principal"""
     pass
 
+
 @dataclass
 class ResultadoDimensionIndustrial:
     """Simulación de la clase ResultadoDimensionIndustrial del sistema principal"""
     pass
 
+
 @dataclass
 class EvaluacionCausalIndustrial:
     """Simulación de la clase EvaluacionCausalIndustrial del sistema principal"""
     pass
+
 
 # ==================== DEFINICIONES FIJAS (SIN CAMBIOS) ====================
 
@@ -72,18 +81,22 @@ class PuntoDecalogo:
     id: int
     nombre: str
 
+
 PUNTOS_DECALOGO = {
-    1: PuntoDecalogo(1, "Prevención de la violencia y protección de la población frente al conflicto armado y la violencia generada por GDO"),
+    1: PuntoDecalogo(1,
+                     "Prevención de la violencia y protección de la población frente al conflicto armado y la violencia generada por GDO"),
     2: PuntoDecalogo(2, "Derechos de las mujeres e igualdad de género"),
     3: PuntoDecalogo(3, "Ambiente sano, cambio climático, prevención y atención de desastres"),
     4: PuntoDecalogo(4, "Derechos económicos, sociales y culturales"),
     5: PuntoDecalogo(5, "Derechos de las víctimas y construcción de paz"),
     6: PuntoDecalogo(6, "Derecho al buen futuro de la niñez, adolescencia, juventud y entornos protectores"),
     7: PuntoDecalogo(7, "Tierras y territorios"),
-    8: PuntoDecalogo(8, "Líderes y lideresas, defensores y defensoras de derechos humanos, comunitarios, sociales, ambientales, de la tierra, el territorio y de la naturaleza"),
+    8: PuntoDecalogo(8,
+                     "Líderes y lideresas, defensores y defensoras de derechos humanos, comunitarios, sociales, ambientales, de la tierra, el territorio y de la naturaleza"),
     9: PuntoDecalogo(9, "Crisis de derechos de personas privadas de la libertad"),
     10: PuntoDecalogo(10, "Migración transfronteriza en la Selva del Darién")
 }
+
 
 class DimensionEvaluacion(Enum):
     DE1 = "Lógica de Intervención y Coherencia Interna"
@@ -91,12 +104,14 @@ class DimensionEvaluacion(Enum):
     DE3 = "Planificación y Adecuación Presupuestal"
     DE4 = "Cadena de Valor"
 
+
 @dataclass
 class ClusterInfo:
     """Información estructurada de los clusters del Decálogo."""
     nombre: str
     puntos: List[int]
     logica_agrupacion: str
+
 
 # Definición FIJA de Clusters (TAL CUAL EL DOCUMENTO)
 CLUSTERS_INFO = {
@@ -122,6 +137,7 @@ CLUSTERS_INFO = {
     )
 }
 
+
 # ==================== DETECCIÓN AVANZADA DE PATRONES Y RESPONSABILIDADES ====================
 
 @dataclass
@@ -132,6 +148,7 @@ class PatternMatch:
     start: int
     end: int
     confidence: float = 1.0
+
 
 class IndustrialPatternDetector:
     """Detecta patrones de línea base, meta y plazo en texto español con alta precisión."""
@@ -239,6 +256,7 @@ class IndustrialPatternDetector:
                 ))
         return matches
 
+
 # ==================== EVALUADOR INDUSTRIAL COMPLETO ====================
 
 @dataclass
@@ -252,6 +270,7 @@ class EvaluacionPregunta:
     evidencia_contraria: str
     puntaje: float
 
+
 @dataclass
 class EvaluacionDimensionPunto:
     """Evaluación de una dimensión para un punto específico del Decálogo."""
@@ -261,6 +280,7 @@ class EvaluacionDimensionPunto:
     puntaje_dimension: float
     matriz_causal: Optional[Dict[str, Any]] = None
 
+
 @dataclass
 class EvaluacionPuntoCompleto:
     """Evaluación completa de un punto del Decálogo en las 4 dimensiones."""
@@ -269,6 +289,7 @@ class EvaluacionPuntoCompleto:
     evaluaciones_dimensiones: List[EvaluacionDimensionPunto]
     puntaje_agregado_punto: float
 
+
 @dataclass
 class EvaluacionClusterCompleto:
     """Evaluación completa de un cluster del Decálogo."""
@@ -276,6 +297,7 @@ class EvaluacionClusterCompleto:
     evaluaciones_puntos: List[EvaluacionPuntoCompleto]
     puntaje_agregado_cluster: float
     clasificacion_cualitativa: str
+
 
 @dataclass
 class ReporteFinalDecatalogo:
@@ -286,6 +308,7 @@ class ReporteFinalDecatalogo:
     reporte_meso_por_cluster: List[EvaluacionClusterCompleto]
     reporte_por_punto: List[EvaluacionPuntoCompleto]
     reporte_por_pregunta: List[EvaluacionPregunta]
+
 
 class IndustrialDecatalogoEvaluatorFull:
     """
@@ -401,7 +424,7 @@ class IndustrialDecatalogoEvaluatorFull:
             puntaje = 1.0
         elif pregunta_id == "Q6":
             # Aquí se debería buscar una explicación explícita, pero para simplificar, asumimos que si hay Q4, hay Q6.
-            if respuesta == "Sí" for pregunta in ["Q1", "Q2", "Q3", "Q4", "Q5"]: # Esto es pseudocódigo, no funcional.
+            if respuesta == "Sí" for pregunta in["Q1", "Q2", "Q3", "Q4", "Q5"]:  # Esto es pseudocódigo, no funcional.
                 respuesta = "Sí"
                 evidencia = "La lógica de intervención se infiere de la coherencia entre productos, resultados e impactos."
                 puntaje = 1.0
@@ -510,8 +533,11 @@ class IndustrialDecatalogoEvaluatorFull:
             evaluaciones_clusters.append(eval_cluster)
 
         # Flatten para reporte por punto y por pregunta
-        evaluaciones_puntos = [eval_punto for eval_cluster in evaluaciones_clusters for eval_punto in eval_cluster.evaluaciones_puntos]
-        evaluaciones_preguntas = [eval_pregunta for eval_punto in evaluaciones_puntos for eval_dim in eval_punto.evaluaciones_dimensiones for eval_pregunta in eval_dim.evaluaciones_preguntas]
+        evaluaciones_puntos = [eval_punto for eval_cluster in evaluaciones_clusters for eval_punto in
+                               eval_cluster.evaluaciones_puntos]
+        evaluaciones_preguntas = [eval_pregunta for eval_punto in evaluaciones_puntos for eval_dim in
+                                  eval_punto.evaluaciones_dimensiones for eval_pregunta in
+                                  eval_dim.evaluaciones_preguntas]
 
         # Resumen ejecutivo
         puntajes_clusters = [e.puntaje_agregado_cluster for e in evaluaciones_clusters]
@@ -519,8 +545,10 @@ class IndustrialDecatalogoEvaluatorFull:
 
         resumen_ejecutivo = {
             "puntaje_global": puntaje_global,
-            "cluster_mejor_desempeno": max(evaluaciones_clusters, key=lambda x: x.puntaje_agregado_cluster).cluster_nombre,
-            "cluster_peor_desempeno": min(evaluaciones_clusters, key=lambda x: x.puntaje_agregado_cluster).cluster_nombre,
+            "cluster_mejor_desempeno": max(evaluaciones_clusters,
+                                           key=lambda x: x.puntaje_agregado_cluster).cluster_nombre,
+            "cluster_peor_desempeno": min(evaluaciones_clusters,
+                                          key=lambda x: x.puntaje_agregado_cluster).cluster_nombre,
             "numero_puntos_evaluados": len(evaluaciones_puntos),
             "recomendacion_estrategica_global": "IMPLEMENTACIÓN RECOMENDADA" if puntaje_global >= 70 else "REDISEÑO PARCIAL REQUERIDO"
         }
@@ -543,6 +571,7 @@ class IndustrialDecatalogoEvaluatorFull:
             reporte_por_punto=evaluaciones_puntos,
             reporte_por_pregunta=evaluaciones_preguntas
         )
+
 
 # ==================== INTEGRACIÓN CON SISTEMA INDUSTRIAL ====================
 
