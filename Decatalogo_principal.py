@@ -1012,6 +1012,113 @@ class DimensionDecalogo:
 DECALOGO_INDUSTRIAL = cargar_decalogo_industrial()
 
 
+@dataclass(frozen=True)
+class ClusterMetadata:
+    """Metadatos consolidados de los clusters del decálogo."""
+
+    cluster_id: str
+    titulo: str
+    nombre_dimension: str
+    puntos: List[int]
+    logica_agrupacion: str
+
+
+@dataclass(frozen=True)
+class DecalogoContext:
+    """Contenedor con el decálogo industrial y su metadata asociada."""
+
+    dimensiones_por_id: Dict[int, DimensionDecalogo]
+    clusters_por_id: Dict[str, ClusterMetadata]
+    cluster_por_dimension: Dict[int, ClusterMetadata]
+
+
+_CLUSTER_DEFINITIONS = {
+    "CLUSTER 1": {
+        "titulo": "CLUSTER 1: PAZ, SEGURIDAD Y PROTECCIÓN DE DEFENSORES",
+        "puntos": [1, 5, 8],
+        "logica": (
+            "Estos tres puntos comparten una matriz común centrada en la seguridad humana, la "
+            "protección de la vida y la construcción de paz territorial. Abordan las dinámicas del "
+            "conflicto armado, sus víctimas y quienes defienden derechos en contextos de riesgo."
+        ),
+    },
+    "CLUSTER 2": {
+        "titulo": "CLUSTER 2: DERECHOS DE GRUPOS POBLACIONALES",
+        "puntos": [2, 6, 9],
+        "logica": (
+            "Agrupa derechos de poblaciones que enfrentan vulnerabilidades específicas y requieren "
+            "enfoques diferenciales. Comparten la necesidad de políticas focalizadas, sistemas de "
+            "protección especializados y transformación de patrones culturales discriminatorios."
+        ),
+    },
+    "CLUSTER 3": {
+        "titulo": "CLUSTER 3: TERRITORIO, AMBIENTE Y DESARROLLO SOSTENIBLE",
+        "puntos": [3, 7],
+        "logica": (
+            "Ambos puntos abordan la relación sociedad-territorio desde una perspectiva de "
+            "sostenibilidad, justicia ambiental y equidad en el acceso a recursos. Comparten la visión "
+            "del territorio como base para el desarrollo y la vida digna."
+        ),
+    },
+    "CLUSTER 4": {
+        "titulo": "CLUSTER 4: DERECHOS SOCIALES FUNDAMENTALES Y CRISIS HUMANITARIAS",
+        "puntos": [4, 10],
+        "logica": (
+            "Aunque el punto 10 es altamente específico territorialmente, comparte con los derechos "
+            "sociales la dimensión de respuesta a necesidades básicas y dignidad humana. Ambos "
+            "requieren capacidad institucional para garantizar mínimos vitales y atención humanitaria."
+        ),
+    },
+}
+
+
+_DECALOGO_CONTEXT_CACHE: Optional[DecalogoContext] = None
+
+
+def obtener_decalogo_contexto() -> DecalogoContext:
+    """Factory centralizado que entrega el decálogo validado y sus metadatos de cluster."""
+
+    global _DECALOGO_CONTEXT_CACHE
+    if _DECALOGO_CONTEXT_CACHE is not None:
+        return _DECALOGO_CONTEXT_CACHE
+
+    dimensiones_por_id = {dimension.id: dimension for dimension in DECALOGO_INDUSTRIAL}
+
+    clusters_por_id: Dict[str, ClusterMetadata] = {}
+    cluster_por_dimension: Dict[int, ClusterMetadata] = {}
+
+    for cluster_id, data in _CLUSTER_DEFINITIONS.items():
+        puntos = data["puntos"]
+        nombre_dimension = next(
+            (
+                dimensiones_por_id[punto].cluster
+                for punto in puntos
+                if punto in dimensiones_por_id
+            ),
+            data["titulo"],
+        )
+
+        metadata = ClusterMetadata(
+            cluster_id=cluster_id,
+            titulo=data["titulo"],
+            nombre_dimension=nombre_dimension,
+            puntos=puntos,
+            logica_agrupacion=data["logica"],
+        )
+        clusters_por_id[cluster_id] = metadata
+
+        for punto_id in puntos:
+            cluster_por_dimension[punto_id] = metadata
+
+    _DECALOGO_CONTEXT_CACHE = DecalogoContext(
+        dimensiones_por_id=dimensiones_por_id,
+        clusters_por_id=clusters_por_id,
+        cluster_por_dimension=cluster_por_dimension,
+    )
+
+    return _DECALOGO_CONTEXT_CACHE
+
+
 # ==================== SISTEMA DE EXTRACCIÓN AVANZADA INDUSTRIAL ====================
 class ExtractorEvidenciaIndustrial:
     """Sistema industrial de minería textual con embeddings contextuales y análisis causal avanzado"""
