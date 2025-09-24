@@ -1,6 +1,4 @@
-# coding=utf-8
-### ASSISTANT
-# !/usr/bin/env python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Sistema Integral de Evaluación de Cadenas de Valor en Planes de Desarrollo Municipal
@@ -16,6 +14,7 @@ import logging
 import os
 import re
 import statistics
+import sys
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -30,8 +29,9 @@ from sentence_transformers import SentenceTransformer, util
 
 import numpy as np
 import pandas as pd
-import sys
 import torch
+
+assert sys.version_info >= (3, 11), "Python 3.11 or higher is required"
 
 # -------------------- CONFIGURACIÓN ACADÉMICA INDUSTRIAL --------------------
 logging.basicConfig(

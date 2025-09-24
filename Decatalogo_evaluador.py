@@ -12,11 +12,14 @@ Enfoque: Calidad del dato de entrada para garantizar la robustez del análisis c
 import re
 import logging
 import json
+import sys
 from typing import Dict, List, Any, Tuple, Optional, Set
 from dataclasses import dataclass, field
 from enum import Enum
 import hashlib
 from datetime import datetime
+
+assert sys.version_info >= (3, 11), "Python 3.11 or higher is required"
 
 # Importar componentes del sistema industrial principal
 from Decatalogo_principal import (
@@ -370,7 +373,7 @@ class IndustrialDecatalogoEvaluatorFull:
             puntaje = 1.0
         elif pregunta_id == "Q6":
             # Aquí se debería buscar una explicación explícita, pero para simplificar, asumimos que si hay Q4, hay Q6.
-            if respuesta == "Sí" for pregunta in ["Q1", "Q2", "Q3", "Q4", "Q5"]: # Esto es pseudocódigo, no funcional.
+            if all(pattern_type in patterns and patterns[pattern_type] for pattern_type in ['baseline', 'target', 'quantitative']):
                 respuesta = "Sí"
                 evidencia = "La lógica de intervención se infiere de la coherencia entre productos, resultados e impactos."
                 puntaje = 1.0
