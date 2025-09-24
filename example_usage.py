@@ -1,131 +1,234 @@
-# coding=utf-8
+#!/usr/bin/env python3
 """
-Example usage of the embedding model with fallback mechanism.
+Example usage of industrial embedding model with memory management and caching.
+This demonstrates advanced features including torch memory optimization and disk caching.
 """
 
-from embedding_model import create_embedding_model
+from embedding_model import IndustrialEmbeddingModel, create_embedding_model
 import numpy as np
+import torch
+import time
+import gc
 
-def main():
-    """Demonstrate the embedding model with fallback mechanism."""
+
+def demo_memory_managed_embedding():
+    """Demonstrate memory-managed embedding with torch optimizations."""
+    print("=== Memory-Managed Embedding Demo ===")
     
-    print("=== Embedding Model with Fallback Demo ===\n")
+    # Create embedding model with memory management
+    model = IndustrialEmbeddingModel(
+        preferred_model='primary_large',
+        memory_threshold=0.8,
+        enable_disk_cache=True
+    )
     
-    # Create embedding model (will try MPNet first, fallback to MiniLM if needed)
-    print("1. Initializing embedding model...")
-    try:
-        model = create_embedding_model()
-        print("✓ Model initialized successfully!")
-        
-        # Display model information
-        info = model.get_model_info()
-        print(f"   Model: {info['model_name']}")
-        print(f"   Dimension: {info['embedding_dimension']}")
-        print(f"   Using fallback: {'Yes' if info['is_fallback'] else 'No'}")
-        
-    except Exception as e:
-        print(f"✗ Failed to initialize model: {e}")
-        return
+    # Show initial memory usage
+    if hasattr(model, 'memory_manager'):
+        print(f"Initial memory usage: {model.memory_manager.get_memory_usage():.1%}")
+        print(f"Available memory: {model.memory_manager.get_available_memory_gb():.2f} GB")
     
-    print("\n2. Encoding sample sentences...")
-    
-    # Sample sentences for demonstration
+    # Test sentences
     sentences = [
         "The quick brown fox jumps over the lazy dog.",
-        "Machine learning models can process natural language.",
-        "Embedding vectors represent semantic meaning of text.",
-        "This is a completely different topic about cooking.",
-        "Neural networks learn patterns from data."
+        "Python is a versatile programming language.",  
+        "Machine learning transforms how we process data.",
+        "Natural language processing enables human-computer interaction.",
+        "Deep learning models require significant computational resources.",
+        "Efficient memory management is crucial for large-scale processing."
     ]
     
-    try:
-        # Encode sentences
-        embeddings = model.encode(sentences, show_progress_bar=True)
-        print(f"✓ Generated embeddings with shape: {embeddings.shape}")
-        
-        # Calculate and display similarities
-        print("\n3. Computing similarity matrix...")
-        similarity_matrix = model.similarity(embeddings, embeddings)
-        
-        print("\nSimilarity Matrix:")
-        print("                    ", end="")
-        for i in range(len(sentences)):
-            print(f"Sent{i+1:2d}", end=" ")
-        print()
-        
-        for i, sentence in enumerate(sentences):
-            print(f"Sentence {i+1:2d}: ", end="")
-            for j in range(len(sentences)):
-                print(f"{similarity_matrix[i][j]:5.2f}", end=" ")
-            print(f" | {sentence[:40]}...")
-        
-        # Find most similar pair (excluding self-similarity)
-        print("\n4. Finding most similar sentence pairs...")
-        max_similarity = 0
-        best_pair = (0, 0)
-        
-        for i in range(len(sentences)):
-            for j in range(i + 1, len(sentences)):
-                if similarity_matrix[i][j] > max_similarity:
-                    max_similarity = similarity_matrix[i][j]
-                    best_pair = (i, j)
-        
-        print(f"Most similar pair (similarity: {max_similarity:.4f}):")
-        print(f"  Sentence {best_pair[0]+1}: {sentences[best_pair[0]]}")
-        print(f"  Sentence {best_pair[1]+1}: {sentences[best_pair[1]]}")
-        
-    except Exception as e:
-        print(f"✗ Error during processing: {e}")
-        return
+    # Generate embeddings with memory monitoring
+    print("\nGenerating embeddings with memory optimization...")
+    start_time = time.time()
     
-    print("\n5. Testing with different batch sizes...")
+    with torch.no_grad():  # Demonstrate explicit no_grad usage
+        embeddings = model.encode(sentences, enable_caching=True)
     
-    # Test different configurations
-    test_sentences = ["Test sentence " + str(i) for i in range(50)]
+    end_time = time.time()
     
-    try:
-        # Test with default batch size
-        embeddings_default = model.encode(test_sentences)
-        print(f"✓ Default batch encoding: {embeddings_default.shape}")
-        
-        # Test with custom batch size
-        embeddings_custom = model.encode(test_sentences, batch_size=8)
-        print(f"✓ Custom batch encoding: {embeddings_custom.shape}")
-        
-        # Verify results are similar
-        difference = np.mean(np.abs(embeddings_default - embeddings_custom))
-        print(f"✓ Batch size difference (should be ~0): {difference:.6f}")
-        
-    except Exception as e:
-        print(f"✗ Error during batch testing: {e}")
+    print(f"Generated {len(embeddings)} embeddings")
+    print(f"Embedding shape: {embeddings.shape}")
+    print(f"Embedding dtype: {embeddings.dtype}")
+    print(f"Processing time: {end_time - start_time:.3f} seconds")
     
-    print("\n=== Demo completed successfully! ===")
+    # Show final memory usage
+    if hasattr(model, 'memory_manager'):
+        print(f"Final memory usage: {model.memory_manager.get_memory_usage():.1%}")
+    
+    # Show cache statistics
+    if hasattr(model.embedding_cache, 'stats'):
+        cache_stats = model.embedding_cache.stats()
+        print(f"Cache size: {cache_stats.get('size', 'N/A')}")
+    
+    print()
+    return embeddings
 
 
-def test_fallback_scenario():
-    """Demonstrate forced fallback scenario."""
+def demo_chunked_processing():
+    """Demonstrate chunked processing for large datasets."""
+    print("=== Chunked Processing Demo ===")
     
-    print("\n=== Testing Fallback Scenario ===")
+    model = IndustrialEmbeddingModel(
+        preferred_model='secondary_efficient',
+        memory_threshold=0.7
+    )
     
-    try:
-        # Force fallback to MiniLM
-        model = create_embedding_model(force_fallback=True)
+    # Create large dataset
+    large_dataset = [f"Document {i}: This is a test document for chunked processing." for i in range(100)]
+    
+    print(f"Processing {len(large_dataset)} documents...")
+    start_time = time.time()
+    
+    # Process with automatic chunking based on memory
+    embeddings = model.encode(large_dataset, batch_size=16)
+    
+    end_time = time.time()
+    
+    print(f"Processed {len(embeddings)} embeddings")
+    print(f"Shape: {embeddings.shape}")
+    print(f"Processing time: {end_time - start_time:.3f} seconds")
+    print(f"Rate: {len(large_dataset)/(end_time - start_time):.1f} docs/second")
+    
+    # Show memory cleanup stats
+    if hasattr(model, 'quality_metrics'):
+        cleanups = model.quality_metrics.get('memory_cleanups', 0)
+        print(f"Memory cleanups performed: {cleanups}")
+    
+    print()
+
+
+def demo_disk_caching():
+    """Demonstrate disk caching with torch.save/load."""
+    print("=== Disk Caching Demo ===")
+    
+    model = IndustrialEmbeddingModel(
+        enable_disk_cache=True,
+        cache_size=1000
+    )
+    
+    test_texts = [
+        "This text will be cached to disk",
+        "Another cached text example",
+        "Disk caching improves performance"
+    ]
+    
+    # First encoding - will cache to disk
+    print("First encoding (caching)...")
+    start_time = time.time()
+    embeddings1 = model.encode(test_texts)
+    first_time = time.time() - start_time
+    
+    # Second encoding - should hit cache
+    print("Second encoding (from cache)...")
+    start_time = time.time()
+    embeddings2 = model.encode(test_texts) 
+    second_time = time.time() - start_time
+    
+    print(f"First encoding time: {first_time:.4f}s")
+    print(f"Second encoding time: {second_time:.4f}s")
+    print(f"Cache speedup: {first_time/second_time:.1f}x")
+    
+    # Verify identical results
+    np.testing.assert_array_equal(embeddings1, embeddings2)
+    print("Cache consistency verified ✓")
+    
+    print()
+
+
+def demo_adaptive_batch_sizing():
+    """Demonstrate adaptive batch sizing based on memory."""
+    print("=== Adaptive Batch Sizing Demo ===")
+    
+    model = IndustrialEmbeddingModel(preferred_model='primary_large')
+    
+    # Test different memory scenarios
+    test_sizes = [10, 50, 100, 200, 500]
+    
+    print("Size | Batch | Time  | Rate")
+    print("-" * 30)
+    
+    for size in test_sizes:
+        texts = [f"Test document {i}" for i in range(size)]
         
-        info = model.get_model_info()
-        print(f"✓ Forced fallback successful!")
-        print(f"   Model: {info['model_name']}")
-        print(f"   Dimension: {info['embedding_dimension']}")
-        print(f"   Using fallback: {info['is_fallback']}")
+        # Calculate optimal batch size
+        optimal_batch = model._calculate_optimal_batch_size(size)
         
-        # Test encoding with fallback model
-        test_sentence = "Testing fallback model functionality."
-        embedding = model.encode(test_sentence)
-        print(f"✓ Fallback encoding successful: shape {embedding.shape}")
+        start_time = time.time()
+        embeddings = model.encode(texts, batch_size=optimal_batch)
+        end_time = time.time()
         
-    except Exception as e:
-        print(f"✗ Fallback test failed: {e}")
+        rate = size / (end_time - start_time)
+        print(f"{size:4d} | {optimal_batch:5d} | {end_time-start_time:.3f}s | {rate:4.0f}/s")
+    
+    print()
+
+
+def demo_instruction_learning():
+    """Demonstrate instruction-based transformations."""
+    print("=== Instruction Learning Demo ===")
+    
+    model = IndustrialEmbeddingModel(
+        enable_instruction_learning=True,
+        preferred_model='primary_large'
+    )
+    
+    texts = [
+        "The stock market reached new highs",
+        "Company profits increased significantly",
+        "Economic indicators show positive trends"
+    ]
+    
+    instruction = "Focus on financial and economic concepts"
+    
+    print("Encoding with instruction transformation...")
+    
+    # Encode with instruction
+    embeddings_with_instruction = model.encode(
+        texts,
+        instruction=instruction,
+        instruction_strength=0.6
+    )
+    
+    # Encode without instruction for comparison
+    embeddings_without = model.encode(texts)
+    
+    # Compare similarity to instruction
+    from sklearn.metrics.pairwise import cosine_similarity
+    
+    # Encode instruction itself
+    instruction_embedding = model.encode([instruction])
+    
+    # Calculate similarities
+    sim_with = cosine_similarity(embeddings_with_instruction, instruction_embedding).mean()
+    sim_without = cosine_similarity(embeddings_without, instruction_embedding).mean()
+    
+    print(f"Similarity to instruction with transformation: {sim_with:.4f}")
+    print(f"Similarity to instruction without transformation: {sim_without:.4f}")
+    print(f"Instruction effectiveness: {sim_with - sim_without:.4f}")
+    
+    print()
 
 
 if __name__ == "__main__":
-    main()
-    test_fallback_scenario()
+    print("Industrial Embedding Model - Advanced Usage Demo")
+    print("=" * 60)
+    print()
+    
+    try:
+        demo_memory_managed_embedding()
+        demo_chunked_processing()
+        demo_disk_caching()
+        demo_adaptive_batch_sizing()
+        demo_instruction_learning()
+        
+        print("All advanced demos completed successfully!")
+        
+        # Final memory cleanup
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        
+    except Exception as e:
+        print(f"Demo failed with error: {e}")
+        import traceback
+        traceback.print_exc()

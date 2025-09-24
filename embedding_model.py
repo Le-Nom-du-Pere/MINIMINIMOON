@@ -12,6 +12,7 @@ Advanced semantic embedding system with enterprise-level features:
 """
 
 import asyncio
+import gc
 import hashlib
 import json
 import logging
@@ -31,6 +32,8 @@ from contextlib import contextmanager
 
 import numpy as np
 import scipy.stats as stats
+import torch
+import psutil
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances
 from sklearn.decomposition import PCA
@@ -168,6 +171,172 @@ class InstructionProfile:
     last_used: float = field(default_factory=time.time)
     effectiveness_score: float = 0.0
     semantic_coherence: float = 0.0
+
+
+class MemoryManager:
+    """Advanced memory management system with automatic cleanup."""
+    
+    def __init__(self, memory_threshold: float = 0.85):
+        self.memory_threshold = memory_threshold
+        self._lock = threading.RLock()
+    
+    def get_memory_usage(self) -> float:
+        """Get current memory usage as percentage."""
+        return psutil.virtual_memory().percent / 100.0
+    
+    def get_available_memory_gb(self) -> float:
+        """Get available memory in GB."""
+        return psutil.virtual_memory().available / (1024**3)
+    
+    def should_trigger_cleanup(self) -> bool:
+        """Check if memory cleanup should be triggered."""
+        return self.get_memory_usage() > self.memory_threshold
+    
+    def cleanup_memory(self):
+        """Force garbage collection and CUDA cache cleanup."""
+        with self._lock:
+            gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+    
+    @contextmanager
+    def managed_operation(self):
+        """Context manager for memory-managed operations."""
+        initial_memory = self.get_memory_usage()
+        try:
+            if self.should_trigger_cleanup():
+                self.cleanup_memory()
+            yield
+        finally:
+            final_memory = self.get_memory_usage()
+            if final_memory > self.memory_threshold:
+                self.cleanup_memory()
+
+
+class EmbeddingCache:
+    """Advanced embedding cache with disk serialization and memory management."""
+    
+    def __init__(self, cache_dir: str = ".embedding_cache", max_memory_size: int = 1000, 
+                 max_disk_size_gb: float = 10.0):
+        self.cache_dir = Path(cache_dir)
+        self.cache_dir.mkdir(exist_ok=True)
+        self.max_memory_size = max_memory_size
+        self.max_disk_size_gb = max_disk_size_gb
+        
+        # In-memory cache for frequent access
+        self._memory_cache = {}
+        self._access_times = {}
+        self._access_counts = defaultdict(int)
+        self._lock = threading.RLock()
+        
+        # Track disk usage
+        self._disk_files = set()
+        self._update_disk_files()
+    
+    def _update_disk_files(self):
+        """Update list of cached files on disk."""
+        self._disk_files = set(self.cache_dir.glob("*.pt"))
+    
+    def _get_disk_usage_gb(self) -> float:
+        """Get current disk cache usage in GB."""
+        total_size = sum(f.stat().st_size for f in self._disk_files if f.exists())
+        return total_size / (1024**3)
+    
+    def _cleanup_disk_cache(self):
+        """Clean up oldest disk cache files when size limit exceeded."""
+        if self._get_disk_usage_gb() <= self.max_disk_size_gb:
+            return
+        
+        # Sort files by access time
+        files_with_times = [(f, f.stat().st_atime) for f in self._disk_files if f.exists()]
+        files_with_times.sort(key=lambda x: x[1])  # Oldest first
+        
+        # Remove oldest files until under limit
+        while files_with_times and self._get_disk_usage_gb() > self.max_disk_size_gb:
+            oldest_file, _ = files_with_times.pop(0)
+            try:
+                oldest_file.unlink()
+                self._disk_files.discard(oldest_file)
+            except OSError:
+                continue
+    
+    def _generate_cache_key(self, texts: List[str], normalize: bool, 
+                          instruction: Optional[str] = None, 
+                          instruction_strength: float = 0.4) -> str:
+        """Generate cache key for text embeddings."""
+        cache_components = [
+            str(hash(tuple(texts))),
+            str(normalize),
+            instruction or "",
+            str(instruction_strength)
+        ]
+        return hashlib.sha256("|".join(cache_components).encode()).hexdigest()
+    
+    def get(self, cache_key: str) -> Optional[torch.Tensor]:
+        """Get cached embeddings, checking memory first then disk."""
+        with self._lock:
+            # Check memory cache first
+            if cache_key in self._memory_cache:
+                self._access_times[cache_key] = time.time()
+                self._access_counts[cache_key] += 1
+                return self._memory_cache[cache_key]
+            
+            # Check disk cache
+            cache_file = self.cache_dir / f"{cache_key}.pt"
+            if cache_file.exists():
+                try:
+                    embeddings = torch.load(cache_file, map_location='cpu')
+                    
+                    # Promote to memory cache if there's space
+                    if len(self._memory_cache) < self.max_memory_size:
+                        self._memory_cache[cache_key] = embeddings
+                        self._access_times[cache_key] = time.time()
+                        self._access_counts[cache_key] += 1
+                    
+                    return embeddings
+                except Exception as e:
+                    logger.warning(f"Failed to load cached embeddings: {e}")
+                    try:
+                        cache_file.unlink()
+                        self._disk_files.discard(cache_file)
+                    except OSError:
+                        pass
+            
+            return None
+    
+    def put(self, cache_key: str, embeddings: torch.Tensor):
+        """Store embeddings in cache with memory and disk management."""
+        with self._lock:
+            # Always store to memory cache if there's space
+            if len(self._memory_cache) < self.max_memory_size:
+                self._memory_cache[cache_key] = embeddings
+                self._access_times[cache_key] = time.time()
+                self._access_counts[cache_key] = 1
+            else:
+                # Evict least recently used item from memory
+                if self._memory_cache:
+                    lru_key = min(self._access_times.keys(), 
+                                key=lambda k: self._access_times[k])
+                    self._memory_cache.pop(lru_key, None)
+                    self._access_times.pop(lru_key, None)
+                    self._access_counts.pop(lru_key, None)
+                
+                # Add new item to memory
+                self._memory_cache[cache_key] = embeddings
+                self._access_times[cache_key] = time.time()
+                self._access_counts[cache_key] = 1
+            
+            # Also save to disk for persistence
+            try:
+                cache_file = self.cache_dir / f"{cache_key}.pt"
+                torch.save(embeddings, cache_file)
+                self._disk_files.add(cache_file)
+                
+                # Clean up disk cache if needed
+                self._cleanup_disk_cache()
+                
+            except Exception as e:
+                logger.warning(f"Failed to save embeddings to disk cache: {e}")
 
 
 class AdaptiveCache:
@@ -622,7 +791,9 @@ class IndustrialEmbeddingModel:
             cache_size: int = 50000,
             enable_instruction_learning: bool = True,
             thread_pool_size: int = 4,
-            performance_monitoring: bool = True
+            performance_monitoring: bool = True,
+            memory_threshold: float = 0.85,
+            enable_disk_cache: bool = True
     ):
         """Initialize industrial embedding model."""
 
@@ -631,8 +802,15 @@ class IndustrialEmbeddingModel:
         self.model_config = None
         self.tokenizer = None
 
-        # Advanced caching system
-        self.embedding_cache = AdaptiveCache(cache_size, ttl_seconds=7200) if enable_adaptive_caching else None
+        # Memory management
+        self.memory_manager = MemoryManager(memory_threshold)
+
+        # Advanced caching system with disk serialization
+        if enable_disk_cache:
+            self.embedding_cache = EmbeddingCache(max_memory_size=cache_size)
+        else:
+            self.embedding_cache = AdaptiveCache(cache_size, ttl_seconds=7200) if enable_adaptive_caching else None
+        
         self.instruction_profiles = {}
 
         # Performance and monitoring
@@ -650,7 +828,8 @@ class IndustrialEmbeddingModel:
             'cache_hits': 0,
             'model_switches': 0,
             'instruction_applications': 0,
-            'error_count': 0
+            'error_count': 0,
+            'memory_cleanups': 0
         }
 
         # Thread safety
@@ -744,48 +923,70 @@ class IndustrialEmbeddingModel:
         elif not texts:
             return np.array([]).reshape(0, self.model_config.dimension)
 
-        # Cache key generation
+        # Cache key generation for new caching system
         cache_key = None
         if enable_caching and self.embedding_cache:
-            cache_components = [
-                str(hash(tuple(texts))),
-                str(normalize_embeddings),
-                instruction or "",
-                str(instruction_strength)
-            ]
-            cache_key = hashlib.sha256("|".join(cache_components).encode()).hexdigest()[:16]
-
-            cached_result = self.embedding_cache.get(cache_key)
-            if cached_result is not None:
-                self.quality_metrics['cache_hits'] += 1
-                logger.metric('embedding_cache_hit')
-                return cached_result
+            if hasattr(self.embedding_cache, '_generate_cache_key'):
+                # New EmbeddingCache system
+                cache_key = self.embedding_cache._generate_cache_key(
+                    texts, normalize_embeddings, instruction, instruction_strength
+                )
+                cached_result = self.embedding_cache.get(cache_key)
+                if cached_result is not None:
+                    self.quality_metrics['cache_hits'] += 1
+                    logger.metric('embedding_cache_hit')
+                    # Convert tensor back to numpy for backward compatibility
+                    return cached_result.numpy() if isinstance(cached_result, torch.Tensor) else cached_result
+            else:
+                # Legacy AdaptiveCache system
+                cache_components = [
+                    str(hash(tuple(texts))),
+                    str(normalize_embeddings),
+                    instruction or "",
+                    str(instruction_strength)
+                ]
+                cache_key = hashlib.sha256("|".join(cache_components).encode()).hexdigest()[:16]
+                
+                cached_result = self.embedding_cache.get(cache_key)
+                if cached_result is not None:
+                    self.quality_metrics['cache_hits'] += 1
+                    logger.metric('embedding_cache_hit')
+                    return cached_result
 
         try:
-            # Determine optimal batch size
+            # Determine optimal batch size with memory considerations
             if batch_size is None:
                 batch_size = self._calculate_optimal_batch_size(len(texts))
 
-            # Generate embeddings with error recovery
-            embeddings = self._encode_with_recovery(
+            # Generate embeddings with error recovery and memory management
+            embeddings_tensor = self._encode_with_recovery(
                 texts, batch_size, normalize_embeddings
             )
 
+            # Convert to numpy for instruction transformation compatibility
+            embeddings_np = embeddings_tensor.numpy() if isinstance(embeddings_tensor, torch.Tensor) else embeddings_tensor
+
             # Apply instruction transformation if specified
             if instruction and instruction.strip():
-                embeddings = self._apply_advanced_instruction_transform(
-                    embeddings, instruction, instruction_strength
+                embeddings_np = self._apply_advanced_instruction_transform(
+                    embeddings_np, instruction, instruction_strength
                 )
                 self.quality_metrics['instruction_applications'] += 1
 
             # Quality validation if requested
             if quality_check:
-                quality_score = self._assess_embedding_quality(embeddings)
+                quality_score = self._assess_embedding_quality(embeddings_np)
                 logger.debug(f"Embedding quality score: {quality_score:.3f}")
 
-            # Cache successful results
+            # Cache successful results (store as tensor for new cache system)
             if enable_caching and self.embedding_cache and cache_key:
-                self.embedding_cache.put(cache_key, embeddings)
+                if hasattr(self.embedding_cache, '_generate_cache_key'):
+                    # New EmbeddingCache expects tensors
+                    cache_tensor = torch.from_numpy(embeddings_np).to(dtype=torch.float32) if isinstance(embeddings_np, np.ndarray) else embeddings_tensor
+                    self.embedding_cache.put(cache_key, cache_tensor)
+                else:
+                    # Legacy cache expects numpy arrays
+                    self.embedding_cache.put(cache_key, embeddings_np)
 
             # Update metrics
             self.quality_metrics['total_embeddings'] += len(texts)
@@ -796,7 +997,7 @@ class IndustrialEmbeddingModel:
                 self.performance_stats['batch_sizes'].append(len(texts))
 
             logger.debug(f"Encoded {len(texts)} texts in {encode_time:.3f}s")
-            return embeddings
+            return embeddings_np
 
         except Exception as e:
             self.quality_metrics['error_count'] += 1
@@ -804,40 +1005,70 @@ class IndustrialEmbeddingModel:
             raise EmbeddingComputationError(f"Failed to encode texts: {str(e)}")
 
     def _calculate_optimal_batch_size(self, num_texts: int) -> int:
-        """Calculate optimal batch size based on model and system constraints."""
+        """Calculate optimal batch size based on model, system constraints, and memory."""
         base_batch_size = self.model_config.batch_size
-
-        # Adjust based on text count
-        if num_texts < base_batch_size // 2:
-            return num_texts
-        elif num_texts > base_batch_size * 10:
-            return base_batch_size * 2  # Larger batches for bulk processing
+        
+        # Get available memory
+        available_memory_gb = self.memory_manager.get_available_memory_gb()
+        memory_usage = self.memory_manager.get_memory_usage()
+        
+        # Adjust batch size based on memory constraints
+        if memory_usage > 0.8:  # High memory usage
+            memory_factor = 0.5
+        elif memory_usage > 0.6:  # Medium memory usage
+            memory_factor = 0.75
+        elif available_memory_gb < 2.0:  # Low available memory
+            memory_factor = 0.6
         else:
-            return base_batch_size
+            memory_factor = 1.0
+        
+        adjusted_batch_size = max(1, int(base_batch_size * memory_factor))
+        
+        # Adjust based on text count
+        if num_texts < adjusted_batch_size // 2:
+            return num_texts
+        elif num_texts > adjusted_batch_size * 10:
+            return min(adjusted_batch_size * 2, 128)  # Cap maximum batch size
+        else:
+            return adjusted_batch_size
 
     def _encode_with_recovery(
             self,
             texts: List[str],
             batch_size: int,
             normalize: bool
-    ) -> np.ndarray:
-        """Encode with automatic error recovery and retry logic."""
+    ) -> torch.Tensor:
+        """Encode with automatic error recovery, retry logic, and memory management."""
         max_retries = 3
         retry_delay = 1.0
 
         for attempt in range(max_retries):
             try:
-                with self._model_lock:
-                    embeddings = self.model.encode(
-                        texts,
-                        batch_size=batch_size,
-                        normalize_embeddings=normalize,
-                        show_progress_bar=False,
-                        convert_to_numpy=True
-                    )
-
-                # Ensure correct data type and shape
-                embeddings = np.asarray(embeddings, dtype=np.float32)
+                # Use memory-managed operation
+                with self.memory_manager.managed_operation():
+                    with self._model_lock:
+                        # Process in chunks if needed
+                        if len(texts) > batch_size * 4 and self.memory_manager.should_trigger_cleanup():
+                            return self._encode_in_chunks(texts, batch_size, normalize)
+                        
+                        # Use torch.no_grad() context for memory efficiency
+                        with torch.no_grad():
+                            embeddings = self.model.encode(
+                                texts,
+                                batch_size=batch_size,
+                                normalize_embeddings=normalize,
+                                show_progress_bar=False,
+                                convert_to_numpy=False,  # Keep as tensor initially
+                                convert_to_tensor=True
+                            )
+                        
+                        # Ensure float32 dtype for memory efficiency
+                        if embeddings.dtype != torch.float32:
+                            embeddings = embeddings.to(dtype=torch.float32)
+                        
+                        # Move to CPU to free GPU memory
+                        if embeddings.device != torch.device('cpu'):
+                            embeddings = embeddings.cpu()
 
                 if embeddings.shape[0] != len(texts):
                     raise EmbeddingComputationError(
@@ -848,6 +1079,11 @@ class IndustrialEmbeddingModel:
             except Exception as e:
                 if attempt < max_retries - 1:
                     logger.warning(f"Encoding attempt {attempt + 1} failed: {str(e)}, retrying in {retry_delay}s")
+                    
+                    # Force cleanup on error
+                    self.memory_manager.cleanup_memory()
+                    self.quality_metrics['memory_cleanups'] += 1
+                    
                     time.sleep(retry_delay)
                     retry_delay *= 2  # Exponential backoff
 
@@ -855,6 +1091,40 @@ class IndustrialEmbeddingModel:
                     batch_size = max(1, batch_size // 2)
                 else:
                     raise EmbeddingComputationError(f"All encoding attempts failed: {str(e)}")
+    
+    def _encode_in_chunks(self, texts: List[str], batch_size: int, normalize: bool) -> torch.Tensor:
+        """Encode large text collections in memory-efficient chunks."""
+        chunk_results = []
+        total_chunks = (len(texts) + batch_size - 1) // batch_size
+        
+        logger.info(f"Processing {len(texts)} texts in {total_chunks} chunks of size {batch_size}")
+        
+        for i in range(0, len(texts), batch_size):
+            chunk_texts = texts[i:i + batch_size]
+            
+            # Process chunk with memory management
+            with self.memory_manager.managed_operation():
+                with torch.no_grad():
+                    chunk_embeddings = self.model.encode(
+                        chunk_texts,
+                        batch_size=len(chunk_texts),  # Process full chunk at once
+                        normalize_embeddings=normalize,
+                        show_progress_bar=False,
+                        convert_to_numpy=False,
+                        convert_to_tensor=True
+                    )
+                    
+                    # Ensure float32 and move to CPU
+                    chunk_embeddings = chunk_embeddings.to(dtype=torch.float32, device='cpu')
+                    chunk_results.append(chunk_embeddings)
+            
+            # Force cleanup between chunks for large datasets
+            if i % (batch_size * 10) == 0 and i > 0:
+                self.memory_manager.cleanup_memory()
+                self.quality_metrics['memory_cleanups'] += 1
+        
+        # Combine all chunks
+        return torch.cat(chunk_results, dim=0)
 
     def _apply_advanced_instruction_transform(
             self,
@@ -873,10 +1143,13 @@ class IndustrialEmbeddingModel:
         # Get or create instruction profile
         if instruction_hash not in self.instruction_profiles:
             try:
-                # Encode instruction
-                instruction_embedding = self._encode_with_recovery(
-                    [instruction], batch_size=1, normalize=True
-                )[0]
+                # Encode instruction with memory management
+                with self.memory_manager.managed_operation():
+                    with torch.no_grad():
+                        instruction_tensor = self._encode_with_recovery(
+                            [instruction], batch_size=1, normalize=True
+                        )
+                        instruction_embedding = instruction_tensor[0].numpy() if isinstance(instruction_tensor, torch.Tensor) else instruction_tensor[0]
 
                 # Create profile
                 profile = InstructionProfile(

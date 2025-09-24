@@ -5,16 +5,19 @@ Test cases for embedding model with fallback mechanism.
 import unittest
 from unittest.mock import patch, MagicMock
 import numpy as np
+import torch
+import tempfile
+import shutil
 import logging
 
-from embedding_model import EmbeddingModel, create_embedding_model
+from embedding_model import IndustrialEmbeddingModel, create_embedding_model
 
 # Suppress logs during testing
 logging.getLogger('embedding_model').setLevel(logging.ERROR)
 
 
-class TestEmbeddingModel(unittest.TestCase):
-    """Test cases for EmbeddingModel with fallback mechanism."""
+class TestIndustrialEmbeddingModel(unittest.TestCase):
+    """Test cases for IndustrialEmbeddingModel with memory management and caching."""
     
     def setUp(self):
         """Set up test fixtures."""
@@ -23,169 +26,137 @@ class TestEmbeddingModel(unittest.TestCase):
             "Another example for testing.",
             "Testing the embedding model."
         ]
+        self.temp_cache_dir = tempfile.mkdtemp()
+    
+    def tearDown(self):
+        """Clean up test fixtures."""
+        if hasattr(self, 'temp_cache_dir'):
+            shutil.rmtree(self.temp_cache_dir, ignore_errors=True)
     
     @patch('embedding_model.SentenceTransformer')
-    def test_primary_model_success(self, mock_sentence_transformer):
-        """Test successful loading of primary MPNet model."""
-        # Mock successful primary model loading
+    def test_memory_managed_encoding(self, mock_sentence_transformer):
+        """Test memory-managed encoding with torch.no_grad()."""
+        # Mock model
         mock_model = MagicMock()
-        mock_model.get_sentence_embedding_dimension.return_value = 768
+        mock_model.encode.return_value = torch.randn(3, 768, dtype=torch.float32)
+        mock_sentence_transformer.return_value = mock_model
+        
+        # Initialize model with memory management
+        embedding_model = IndustrialEmbeddingModel(
+            preferred_model='primary_large',
+            memory_threshold=0.8
+        )
+        
+        # Test encoding
+        embeddings = embedding_model.encode(self.test_sentences)
+        
+        # Verify output format
+        self.assertIsInstance(embeddings, np.ndarray)
+        self.assertEqual(embeddings.dtype, np.float32)
+        self.assertEqual(embeddings.shape, (3, 768))
+    
+    @patch('embedding_model.SentenceTransformer')
+    def test_disk_cache_functionality(self, mock_sentence_transformer):
+        """Test disk caching with torch.save/load."""
+        # Mock model  
+        mock_model = MagicMock()
+        test_embeddings = torch.randn(2, 768, dtype=torch.float32)
+        mock_model.encode.return_value = test_embeddings
+        mock_sentence_transformer.return_value = mock_model
+        
+        # Initialize model with disk caching
+        embedding_model = IndustrialEmbeddingModel(
+            enable_disk_cache=True,
+            cache_size=100
+        )
+        
+        # Override cache directory for testing
+        embedding_model.embedding_cache.cache_dir = self.temp_cache_dir
+        
+        # First encoding - should cache to disk
+        test_texts = ["First text", "Second text"]
+        embeddings1 = embedding_model.encode(test_texts)
+        
+        # Verify cache file was created
+        cache_files = list(embedding_model.embedding_cache.cache_dir.glob("*.pt"))
+        self.assertTrue(len(cache_files) > 0)
+        
+        # Second encoding - should hit cache
+        mock_model.encode.reset_mock()
+        embeddings2 = embedding_model.encode(test_texts)
+        
+        # Verify cache was used (model.encode not called again)
+        self.assertFalse(mock_model.encode.called)
+        np.testing.assert_array_equal(embeddings1, embeddings2)
+    
+    @patch('embedding_model.SentenceTransformer')
+    @patch('psutil.virtual_memory')
+    def test_memory_adaptive_batch_size(self, mock_memory, mock_sentence_transformer):
+        """Test adaptive batch sizing based on memory constraints."""
+        # Mock model
+        mock_model = MagicMock()
+        mock_model.encode.return_value = torch.randn(10, 768, dtype=torch.float32)
+        mock_sentence_transformer.return_value = mock_model
+        
+        # Mock high memory usage scenario
+        mock_memory_info = MagicMock()
+        mock_memory_info.percent = 85.0  # High memory usage
+        mock_memory_info.available = 1024**3  # 1GB available
+        mock_memory.return_value = mock_memory_info
+        
+        # Initialize model
+        embedding_model = IndustrialEmbeddingModel(preferred_model='primary_large')
+        
+        # Test batch size calculation
+        test_texts = ["text"] * 100
+        batch_size = embedding_model._calculate_optimal_batch_size(len(test_texts))
+        
+        # Should be reduced due to high memory usage
+        self.assertLess(batch_size, embedding_model.model_config.batch_size)
+    
+    @patch('embedding_model.SentenceTransformer')
+    def test_chunked_processing(self, mock_sentence_transformer):
+        """Test chunked processing for large datasets."""
+        # Mock model
+        mock_model = MagicMock()
+        
+        def mock_encode(texts, **kwargs):
+            # Return appropriately sized tensor for each chunk
+            return torch.randn(len(texts), 768, dtype=torch.float32)
+        
+        mock_model.encode.side_effect = mock_encode
+        mock_sentence_transformer.return_value = mock_model
+        
+        # Initialize model with small batch size to force chunking
+        embedding_model = IndustrialEmbeddingModel(preferred_model='fallback_fast')
+        
+        # Process large dataset
+        large_texts = ["text"] * 200
+        embeddings = embedding_model.encode(large_texts, batch_size=32)
+        
+        # Verify output shape
+        self.assertEqual(embeddings.shape, (200, 384))  # fallback_fast has 384 dims
+        
+        # Verify multiple encode calls were made (chunking happened)
+        self.assertGreater(mock_model.encode.call_count, 1)
+    
+    @patch('embedding_model.SentenceTransformer') 
+    def test_torch_tensor_dtype_consistency(self, mock_sentence_transformer):
+        """Test that all tensors use float32 dtype."""
+        # Mock model with different dtype
+        mock_model = MagicMock()
+        mock_model.encode.return_value = torch.randn(2, 768, dtype=torch.float64)  # Wrong dtype
         mock_sentence_transformer.return_value = mock_model
         
         # Initialize model
-        embedding_model = EmbeddingModel()
+        embedding_model = IndustrialEmbeddingModel(preferred_model='primary_large')
         
-        # Verify primary model was loaded
-        self.assertEqual(embedding_model.model_name, EmbeddingModel.PRIMARY_MODEL)
-        self.assertEqual(embedding_model.embedding_dimension, 768)
-        self.assertFalse(embedding_model.get_model_info()['is_fallback'])
-    
-    @patch('embedding_model.SentenceTransformer')
-    def test_fallback_mechanism(self, mock_sentence_transformer):
-        """Test fallback to MiniLM when MPNet fails."""
-        # Mock primary model failure and successful fallback
-        def side_effect(model_name):
-            if model_name == EmbeddingModel.PRIMARY_MODEL:
-                raise Exception("Primary model failed to load")
-            else:
-                mock_model = MagicMock()
-                mock_model.get_sentence_embedding_dimension.return_value = 384
-                return mock_model
+        # Test encoding
+        embeddings = embedding_model.encode(["test1", "test2"])
         
-        mock_sentence_transformer.side_effect = side_effect
-        
-        # Initialize model (should fallback)
-        embedding_model = EmbeddingModel()
-        
-        # Verify fallback model was loaded
-        self.assertEqual(embedding_model.model_name, EmbeddingModel.FALLBACK_MODEL)
-        self.assertEqual(embedding_model.embedding_dimension, 384)
-        self.assertTrue(embedding_model.get_model_info()['is_fallback'])
-    
-    @patch('embedding_model.SentenceTransformer')
-    def test_both_models_fail(self, mock_sentence_transformer):
-        """Test exception when both models fail to load."""
-        # Mock both models failing
-        mock_sentence_transformer.side_effect = Exception("All models failed")
-        
-        # Should raise RuntimeError
-        with self.assertRaises(RuntimeError) as context:
-            EmbeddingModel()
-        
-        self.assertIn("Both primary and fallback models failed", str(context.exception))
-    
-    @patch('embedding_model.SentenceTransformer')
-    def test_force_fallback(self, mock_sentence_transformer):
-        """Test forcing fallback to MiniLM."""
-        # Mock successful fallback model
-        mock_model = MagicMock()
-        mock_model.get_sentence_embedding_dimension.return_value = 384
-        mock_sentence_transformer.return_value = mock_model
-        
-        # Force fallback
-        embedding_model = EmbeddingModel(force_fallback=True)
-        
-        # Verify only fallback model was attempted
-        mock_sentence_transformer.assert_called_once_with(EmbeddingModel.FALLBACK_MODEL)
-        self.assertEqual(embedding_model.model_name, EmbeddingModel.FALLBACK_MODEL)
-        self.assertTrue(embedding_model.get_model_info()['is_fallback'])
-    
-    @patch('embedding_model.SentenceTransformer')
-    def test_encode_functionality(self, mock_sentence_transformer):
-        """Test encoding functionality."""
-        # Mock model
-        mock_model = MagicMock()
-        mock_model.get_sentence_embedding_dimension.return_value = 384
-        mock_embeddings = np.random.rand(3, 384)
-        mock_model.encode.return_value = mock_embeddings
-        mock_sentence_transformer.return_value = mock_model
-        
-        # Initialize and test encoding
-        embedding_model = EmbeddingModel()
-        result = embedding_model.encode(self.test_sentences)
-        
-        # Verify encoding was called correctly
-        mock_model.encode.assert_called_once()
-        np.testing.assert_array_equal(result, mock_embeddings)
-    
-    @patch('embedding_model.SentenceTransformer')
-    def test_batch_size_optimization(self, mock_sentence_transformer):
-        """Test batch size optimization based on model type."""
-        # Test with MPNet (primary)
-        mock_model = MagicMock()
-        mock_model.get_sentence_embedding_dimension.return_value = 768
-        mock_sentence_transformer.return_value = mock_model
-        
-        embedding_model = EmbeddingModel()
-        embedding_model.model_name = EmbeddingModel.PRIMARY_MODEL
-        
-        batch_size = embedding_model._get_optimal_batch_size()
-        self.assertEqual(batch_size, 16)
-        
-        # Test with MiniLM (fallback)
-        embedding_model.model_name = EmbeddingModel.FALLBACK_MODEL
-        batch_size = embedding_model._get_optimal_batch_size()
-        self.assertEqual(batch_size, 32)
-    
-    @patch('embedding_model.SentenceTransformer')
-    def test_model_info(self, mock_sentence_transformer):
-        """Test model info retrieval."""
-        mock_model = MagicMock()
-        mock_model.get_sentence_embedding_dimension.return_value = 384
-        mock_sentence_transformer.return_value = mock_model
-        
-        embedding_model = EmbeddingModel(force_fallback=True)
-        info = embedding_model.get_model_info()
-        
-        expected_info = {
-            "model_name": EmbeddingModel.FALLBACK_MODEL,
-            "embedding_dimension": 384,
-            "is_fallback": True,
-            "primary_model": EmbeddingModel.PRIMARY_MODEL,
-            "fallback_model": EmbeddingModel.FALLBACK_MODEL
-        }
-        
-        self.assertEqual(info, expected_info)
-    
-    @patch('embedding_model.SentenceTransformer')
-    def test_factory_function(self, mock_sentence_transformer):
-        """Test create_embedding_model factory function."""
-        mock_model = MagicMock()
-        mock_model.get_sentence_embedding_dimension.return_value = 768
-        mock_sentence_transformer.return_value = mock_model
-        
-        # Test normal creation
-        model1 = create_embedding_model()
-        self.assertIsInstance(model1, EmbeddingModel)
-        
-        # Test with force_fallback
-        model2 = create_embedding_model(force_fallback=True)
-        self.assertIsInstance(model2, EmbeddingModel)
-    
-    @patch('embedding_model.SentenceTransformer')
-    def test_similarity_calculation(self, mock_sentence_transformer):
-        """Test similarity calculation between embeddings."""
-        mock_model = MagicMock()
-        mock_model.get_sentence_embedding_dimension.return_value = 384
-        mock_sentence_transformer.return_value = mock_model
-        
-        embedding_model = EmbeddingModel()
-        
-        # Create mock embeddings
-        embeddings1 = np.random.rand(2, 384)
-        embeddings2 = np.random.rand(2, 384)
-        
-        # Test similarity calculation
-        similarity_scores = embedding_model.similarity(embeddings1, embeddings2)
-        
-        # Verify output shape
-        self.assertEqual(similarity_scores.shape, (2, 2))
-        
-        # Verify similarity scores are in valid range [-1, 1]
-        self.assertTrue(np.all(similarity_scores >= -1))
-        self.assertTrue(np.all(similarity_scores <= 1))
+        # Verify output is float32
+        self.assertEqual(embeddings.dtype, np.float32)
 
 
 if __name__ == '__main__':
-    # Run tests
-    unittest.main(verbosity=2)
+    unittest.main()
