@@ -1,4 +1,3 @@
-# coding=utf-8
 """
 Quick test for CUDA device configuration.
 """
