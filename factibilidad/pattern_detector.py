@@ -18,11 +18,12 @@ class PatternDetector:
     """Detects baseline, target, and timeframe patterns in Spanish text."""
 
     def __init__(self):
-        self.baseline_patterns = self._compile_baseline_patterns()
-        self.target_patterns = self._compile_target_patterns()
-        self.timeframe_patterns = self._compile_timeframe_patterns()
+        self.baseline_patterns = PatternDetector._compile_baseline_patterns()
+        self.target_patterns = PatternDetector._compile_target_patterns()
+        self.timeframe_patterns = PatternDetector._compile_timeframe_patterns()
 
-    def _compile_baseline_patterns(self) -> List[re.Pattern]:
+    @staticmethod
+    def _compile_baseline_patterns() -> List[re.Pattern]:
         """Compile regex patterns for baseline indicators."""
         patterns = [
             r'\b(?:línea\s+base|linea\s+base|línea\s+de\s+base|linea\s+de\s+base)\b',
@@ -39,7 +40,8 @@ class PatternDetector:
         ]
         return [re.compile(p, re.IGNORECASE) for p in patterns]
 
-    def _compile_target_patterns(self) -> List[re.Pattern]:
+    @staticmethod
+    def _compile_target_patterns() -> List[re.Pattern]:
         """Compile regex patterns for target indicators."""
         patterns = [
             r'\b(?:meta|metas)\b',
@@ -59,7 +61,8 @@ class PatternDetector:
         ]
         return [re.compile(p, re.IGNORECASE) for p in patterns]
 
-    def _compile_timeframe_patterns(self) -> List[re.Pattern]:
+    @staticmethod
+    def _compile_timeframe_patterns() -> List[re.Pattern]:
         """Compile regex patterns for timeframe indicators."""
         patterns = [
             # Absolute years
@@ -102,12 +105,13 @@ class PatternDetector:
             Dictionary with pattern types as keys and lists of matches as values
         """
         return {
-            'baseline': self._find_matches(text, self.baseline_patterns, 'baseline'),
-            'target': self._find_matches(text, self.target_patterns, 'target'),
-            'timeframe': self._find_matches(text, self.timeframe_patterns, 'timeframe')
+            'baseline': PatternDetector._find_matches(text, self.baseline_patterns, 'baseline'),
+            'target': PatternDetector._find_matches(text, self.target_patterns, 'target'),
+            'timeframe': PatternDetector._find_matches(text, self.timeframe_patterns, 'timeframe')
         }
 
-    def _find_matches(self, text: str, patterns: List[re.Pattern], pattern_type: str) -> List[PatternMatch]:
+    @staticmethod
+    def _find_matches(text: str, patterns: List[re.Pattern], pattern_type: str) -> List[PatternMatch]:
         """Find all matches for a specific pattern type."""
         matches: List[PatternMatch] = []
         for pattern in patterns:
@@ -155,11 +159,11 @@ class PatternDetector:
             cluster = {'baseline': [baseline], 'target': [], 'timeframe': []}
 
             for target in target_matches:
-                if self._within_proximity(baseline, target, proximity_window):
+                if PatternDetector._within_proximity(baseline, target, proximity_window):
                     cluster['target'].append(target)
 
             for timeframe in timeframe_matches:
-                if self._within_proximity(baseline, timeframe, proximity_window):
+                if PatternDetector._within_proximity(baseline, timeframe, proximity_window):
                     cluster['timeframe'].append(timeframe)
 
             if cluster['target'] and cluster['timeframe']:
@@ -177,7 +181,8 @@ class PatternDetector:
 
         return clusters
 
-    def _within_proximity(self, a: PatternMatch, b: PatternMatch, proximity_window: int) -> bool:
+    @staticmethod
+    def _within_proximity(a: PatternMatch, b: PatternMatch, proximity_window: int) -> bool:
         """Check if two matches are within the specified proximity window."""
         distance = min(
             abs(a.start - b.end),

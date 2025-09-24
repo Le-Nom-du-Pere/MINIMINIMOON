@@ -210,7 +210,8 @@ class FeasibilityScorer:
             ]
         }
     
-    def _normalize_text(self, text: str) -> str:
+    @staticmethod
+    def _normalize_text(text: str) -> str:
         """Normalize text using Unicode NFKC normalization for consistent character representation."""
         return unicodedata.normalize('NFKC', text)
     
@@ -218,7 +219,7 @@ class FeasibilityScorer:
         """Detect all components in the given text using regex patterns."""
         results = []
         # Apply Unicode normalization before processing
-        normalized_text = self._normalize_text(text)
+        normalized_text = FeasibilityScorer._normalize_text(text)
         text_lower = normalized_text.lower()
         
         for component_type, patterns in self.detection_patterns.items():
@@ -241,7 +242,7 @@ class FeasibilityScorer:
     def _has_quantitative_component(self, text: str, component_type: ComponentType) -> bool:
         """Check if a component has quantitative elements nearby."""
         # Apply Unicode normalization before processing
-        normalized_text = self._normalize_text(text)
+        normalized_text = FeasibilityScorer._normalize_text(text)
         text_lower = normalized_text.lower()
         
         # Find component mentions
@@ -293,7 +294,7 @@ class FeasibilityScorer:
             )
         
         # Apply Unicode normalization at entry point
-        normalized_text = self._normalize_text(text)
+        normalized_text = FeasibilityScorer._normalize_text(text)
         detected_components = self.detect_components(normalized_text)
         component_types = set(result.component_type for result in detected_components)
         
@@ -994,7 +995,7 @@ The feasibility scorer evaluates indicator quality by detecting three core compo
         rows = []
         for plan_filename, score in results.items():
             # Generate overall recommendation based on quality tier
-            recommendation = self._get_recommendation_spanish(score.quality_tier)
+            recommendation = FeasibilityScorer._get_recommendation_spanish(score.quality_tier)
             
             # Count component types
             components = score.components_detected
@@ -1026,7 +1027,7 @@ The feasibility scorer evaluates indicator quality by detecting three core compo
             row = {
                 'archivo_plan': plan_filename,
                 'puntuacion_factibilidad': round(score.feasibility_score, 3),
-                'nivel_calidad': self._translate_quality_tier_spanish(score.quality_tier),
+                'nivel_calidad': FeasibilityScorer._translate_quality_tier_spanish(score.quality_tier),
                 'linea_base_cuantitativa': 'Sí' if score.has_quantitative_baseline else 'No',
                 'meta_cuantitativa': 'Sí' if score.has_quantitative_target else 'No',
                 'componentes_detectados': components_str,
@@ -1068,13 +1069,14 @@ The feasibility scorer evaluates indicator quality by detecting three core compo
     
     def translate_quality_tier_spanish(self, tier: str) -> str:
         """Public wrapper to translate quality tier to Spanish."""
-        return self._translate_quality_tier_spanish(tier)
+        return FeasibilityScorer._translate_quality_tier_spanish(tier)
 
     def get_recommendation_spanish(self, quality_tier: str) -> str:
         """Public wrapper to obtain recommendation in Spanish for a quality tier."""
-        return self._get_recommendation_spanish(quality_tier)
+        return FeasibilityScorer._get_recommendation_spanish(quality_tier)
 
-    def _translate_quality_tier_spanish(self, tier: str) -> str:
+    @staticmethod
+    def _translate_quality_tier_spanish(tier: str) -> str:
         """Translate quality tier to Spanish."""
         translations = {
             'high': 'Alto',
@@ -1085,7 +1087,8 @@ The feasibility scorer evaluates indicator quality by detecting three core compo
         }
         return translations.get(tier, tier)
 
-    def _get_recommendation_spanish(self, quality_tier: str) -> str:
+    @staticmethod
+    def _get_recommendation_spanish(quality_tier: str) -> str:
         """Generate recommendation in Spanish based on quality tier."""
         recommendations = {
             'high': 'Indicador de alta calidad. Mantener el nivel de especificidad.',
@@ -1130,7 +1133,7 @@ The feasibility scorer evaluates indicator quality by detecting three core compo
         rows = []
         for plan_filename, score in results.items():
             # Generate overall recommendation based on quality tier
-            recommendation = self._get_recommendation_spanish(score.quality_tier)
+            recommendation = FeasibilityScorer._get_recommendation_spanish(score.quality_tier)
             
             # Count component types
             components = score.components_detected
@@ -1162,7 +1165,7 @@ The feasibility scorer evaluates indicator quality by detecting three core compo
             row = [
                 plan_filename,
                 f"{score.feasibility_score:.3f}",
-                self._translate_quality_tier_spanish(score.quality_tier),
+                FeasibilityScorer._translate_quality_tier_spanish(score.quality_tier),
                 'Sí' if score.has_quantitative_baseline else 'No',
                 'Sí' if score.has_quantitative_target else 'No',
                 components_str,
