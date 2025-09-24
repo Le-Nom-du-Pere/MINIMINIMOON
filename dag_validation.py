@@ -36,11 +36,13 @@ from datetime import datetime
 from enum import Enum, auto
 from typing import List, Tuple, Dict, Set, Any
 
-import Counter
+from collections import Counter
 import networkx as nx
 import numpy as np
 import scipy.stats as stats
 import seaborn as sns
+
+from json_utils import safe_json_dump, safe_json_dumps
 
 
 class GraphType(Enum):
@@ -884,7 +886,7 @@ class AdvancedDAGValidator:
 
         filepath = f"{filename}.json"
         with open(filepath, 'w') as f:
-            json.dump(data, f, indent=2)
+            safe_json_dump(data, f)
 
         return filepath
 
@@ -921,7 +923,7 @@ class AdvancedDAGValidator:
                 </div>
 
                 <h2>Graph Statistics</h2>
-                <pre>{json.dumps(result.graph_statistics, indent=2)}</pre>
+                <pre>{safe_json_dumps(result.graph_statistics)}</pre>
             </div>
         </body>
         </html>
@@ -992,7 +994,7 @@ class AdvancedDAGValidator:
         - Effect Size: {result.effect_size:.4f}
 
         GRAPH STATISTICS:
-        {json.dumps(result.graph_statistics, indent=2)}
+        {safe_json_dumps(result.graph_statistics)}
 
         QUALITY INDICATORS:
         - Reproducible: {result.reproducible}
