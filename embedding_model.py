@@ -1840,14 +1840,15 @@ class IndustrialEmbeddingModel:
 
     @performance_monitor
     def semantic_search(
-        self,
-        query: Union[str, np.ndarray],
-        documents: List[str],
-        pages: Optional[List[str]] = None,
-        k: int = 10,
-        instruction: Optional[str] = None,
-        return_scores: bool = True,
-    ) -> Union[List[Tuple[int, str, str]], List[Tuple[int, str, str, float]]]:
+            self,
+            query: Union[str, np.ndarray],
+            documents: List[str],
+            pages: Optional[List[str]] = None,
+            k: int = 10,
+            instruction: Optional[str] = None,
+            return_scores: bool = True
+    ) -> List[Tuple[int, str, str, float]]:
+
         """
         Efficient semantic search using torch.topk for top-k retrieval.
 
@@ -1938,14 +1939,14 @@ class IndustrialEmbeddingModel:
 
     @performance_monitor
     def rerank_with_mmr(
-        self,
-        query_embedding: np.ndarray,
-        document_embeddings: np.ndarray,
-        k: int,
-        algorithm: str = "cosine_mmr",
-        lambda_param: float = 0.7,
-        return_scores: bool = True,
-    ) -> Union[List[int], List[Tuple[int, float]]]:
+            self,
+            query_embedding: np.ndarray,
+            document_embeddings: np.ndarray,
+            k: int,
+            algorithm: str = 'cosine_mmr',
+            lambda_param: float = 0.7,
+            return_scores: bool = True
+    ) -> List[Tuple[int, float]]:
         """Advanced MMR re-ranking with multiple algorithms."""
 
         try:
@@ -1957,10 +1958,7 @@ class IndustrialEmbeddingModel:
                 lambda_param=lambda_param,
             )
 
-            if return_scores:
-                return results
-            else:
-                return [idx for idx, _ in results]
+            return results
 
         except Exception as e:
             logger.error(f"MMR reranking failed: {str(e)}")
@@ -1971,10 +1969,7 @@ class IndustrialEmbeddingModel:
                 ).ravel()
                 top_indices = np.argsort(-similarities)[:k]
 
-                if return_scores:
-                    return [(int(idx), float(similarities[idx])) for idx in top_indices]
-                else:
-                    return [int(idx) for idx in top_indices]
+                return [(int(idx), float(similarities[idx])) for idx in top_indices]
             except Exception as fallback_error:
                 logger.error(
                     f"Fallback ranking also failed: {str(fallback_error)}")

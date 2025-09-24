@@ -1786,10 +1786,10 @@ class IndustrialDemoRunner:
         """Create comprehensive industrial-grade test suite."""
         return [
             # Basic normalization scenarios
-            ("basic_quotes", '"Hello World" vs "Hello World" and \'single quotes\''),
-            ("accented_basic", "café résumé naïve Zürich"),
-            ("em_dash_test", "Text—with—em—dashes vs Text-with-hyphens"),
-            ("ellipsis_test", "Wait… vs Wait... for response"),
+            ('basic_quotes', '"Hello World" vs "Hello World" and \'single quotes\''),
+            ('accented_basic', 'café résumé naïve Zürich'),
+            ('em_dash_test', 'Text—with—em—dashes vs Text-with-hyphens'),
+            ('ellipsis_test', 'Wait… vs Wait... for response'),
             # Decomposition/composition edge cases
             ("composed_accents", "café éclair résumé Zürich naïve"),
             (

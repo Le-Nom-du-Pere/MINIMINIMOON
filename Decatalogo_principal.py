@@ -28,14 +28,13 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Any
 
 import networkx as nx
+# Manejo robusto de pdfplumber con fallback
 try:
-    # Manejo robusto de pdfplumber con fallback
     import pdfplumber
     PDFPLUMBER_AVAILABLE = True
 except ImportError:
     PDFPLUMBER_AVAILABLE = False
     pdfplumber = None
-    LOGGER.warning("⚠️  pdfplumber no disponible. Algunas funciones de extracción de PDF pueden no estar disponibles.")
 import spacy
 from joblib import Parallel, delayed
 # Manejo robusto de sentence_transformers con fallback
