@@ -1,4 +1,3 @@
-# coding=utf-8
 import math
 from typing import List, Dict, Tuple
 from .pattern_detector import PatternDetector, PatternMatch
