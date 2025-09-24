@@ -5,7 +5,7 @@ Demonstration script showing the feasibility scorer in action.
 """
 
 import logging
-from feasibility_scorer import FeasibilityScorer, ComponentType
+from feasibility_scorer import FeasibilityScorer
 
 
 def main():

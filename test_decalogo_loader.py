@@ -1,8 +1,4 @@
-import pytest
-import tempfile
-import os
-from pathlib import Path
-from unittest.mock import patch, mock_open
+from unittest.mock import patch
 from decalogo_loader import load_decalogo_industrial, get_decalogo_industrial, DECALOGO_INDUSTRIAL_TEMPLATE
 
 

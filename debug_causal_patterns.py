@@ -1,5 +1,4 @@
 from causal_pattern_detector import CausalPatternDetector
-import re
 
 detector = CausalPatternDetector()
 

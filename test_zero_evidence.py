@@ -2,8 +2,6 @@
 """
 Test script for zero evidence support functionality in feasibility_scorer.py
 """
-
-import sys
 import logging
 from feasibility_scorer import FeasibilityScorer
 

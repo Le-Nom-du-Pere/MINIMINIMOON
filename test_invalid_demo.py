@@ -5,9 +5,6 @@ import logging
 # Set LOG_LEVEL environment variable to an invalid value
 os.environ['LOG_LEVEL'] = 'INVALID_LEVEL'
 
-# Import log configuration (this will configure logging and show warning)
-import log_config
-
 # Test logging at different levels
 logger = logging.getLogger('demo')
 

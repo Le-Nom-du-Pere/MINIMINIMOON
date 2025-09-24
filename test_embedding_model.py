@@ -5,7 +5,6 @@ Test cases for embedding model with fallback mechanism.
 import unittest
 from unittest.mock import patch, MagicMock
 import numpy as np
-import torch
 import logging
 
 from embedding_model import IndustrialEmbeddingModel, create_industrial_embedding_model

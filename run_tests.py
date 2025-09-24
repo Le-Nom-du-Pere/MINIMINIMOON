@@ -5,8 +5,7 @@ Tests the feasibility scorer functionality.
 """
 
 import sys
-import traceback
-from feasibility_scorer import FeasibilityScorer, ComponentType, BatchScoreResult
+from feasibility_scorer import FeasibilityScorer, ComponentType
 
 
 class TestRunner:

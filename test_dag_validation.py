@@ -3,7 +3,7 @@ Tests for deterministic Monte Carlo DAG validation.
 """
 
 import unittest
-from dag_validation import AdvancedDAGValidator, MonteCarloAdvancedResult, AdvancedGraphNode
+from dag_validation import AdvancedDAGValidator
 
 
 class TestDAGValidator(unittest.TestCase):

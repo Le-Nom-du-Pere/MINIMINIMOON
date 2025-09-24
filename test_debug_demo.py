@@ -5,9 +5,6 @@ import logging
 # Set LOG_LEVEL environment variable to DEBUG
 os.environ['LOG_LEVEL'] = 'DEBUG'
 
-# Import log configuration (this will configure logging with DEBUG level)
-import log_config
-
 # Test logging at different levels
 logger = logging.getLogger('demo')
 

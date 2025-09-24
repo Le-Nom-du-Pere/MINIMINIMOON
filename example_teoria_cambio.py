@@ -88,7 +88,7 @@ if not NETWORKX_AVAILABLE:
     
     nx = MockNetworkX()
 
-from teoria_cambio import TeoriaCambio, CategoriaCausal, ValidacionResultado
+from teoria_cambio import TeoriaCambio, CategoriaCausal
 
 
 def ejemplo_teoria_cambio_completa():

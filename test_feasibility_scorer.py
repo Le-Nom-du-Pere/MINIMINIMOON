@@ -6,10 +6,8 @@ Tests precision and recall of quality detection patterns.
 import pytest
 import unicodedata
 import tempfile
-import os
-import logging
 from pathlib import Path
-from feasibility_scorer import FeasibilityScorer, ComponentType, IndicatorScore
+from feasibility_scorer import FeasibilityScorer, ComponentType
 from typing import List, Dict, Any
 
 

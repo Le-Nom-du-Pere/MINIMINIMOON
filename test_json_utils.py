@@ -4,7 +4,6 @@ Test suite for JSON utilities with NaN/Inf handling
 """
 
 import json
-import math
 import tempfile
 import os
 import numpy as np

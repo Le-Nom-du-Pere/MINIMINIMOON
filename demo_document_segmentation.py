@@ -5,7 +5,6 @@ Demonstrates the dual-criteria document segmentation system with various documen
 """
 
 from document_segmenter import DocumentSegmenter
-import json
 
 
 def main():

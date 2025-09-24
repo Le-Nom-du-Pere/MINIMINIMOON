@@ -9,7 +9,6 @@ import os
 import time
 import threading
 import logging
-import signal
 from typing import Optional, Dict, Any, Callable
 from dataclasses import dataclass
 from enum import Enum

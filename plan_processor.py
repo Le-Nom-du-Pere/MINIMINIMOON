@@ -4,16 +4,13 @@ Plan Processing with Retry Logic and Error Handling
 This module implements retry logic with exponential backoff for transient I/O errors
 during plan processing, with comprehensive error logging and classification.
 """
-
-import os
 import time
 import logging
 import traceback
-import tempfile
 from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional, Tuple, Union
 from pathlib import Path
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from enum import Enum
 import json
 import hashlib

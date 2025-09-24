@@ -3,7 +3,6 @@ Test suite for Contradiction Detection Module
 """
 
 import unittest
-from unittest.mock import patch, Mock
 from contradiction_detector import (
     ContradictionDetector, 
     ContradictionMatch, 

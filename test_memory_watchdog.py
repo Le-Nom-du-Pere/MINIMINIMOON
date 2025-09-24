@@ -4,7 +4,6 @@ Test suite for memory monitoring watchdog functionality.
 
 import os
 import time
-import threading
 import multiprocessing
 from unittest import mock
 import pytest

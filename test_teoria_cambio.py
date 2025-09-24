@@ -1,6 +1,6 @@
 import unittest
 import networkx as nx
-from teoria_cambio import TeoriaCambio, CategoriaCausal, ValidacionResultado
+from teoria_cambio import TeoriaCambio, CategoriaCausal
 
 
 class TestTeoriaCambioValidacion(unittest.TestCase):

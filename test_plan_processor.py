@@ -8,16 +8,14 @@ retry logic, error classification, and logging functionality.
 import unittest
 import tempfile
 import time
-import json
 import os
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime, timezone
 
 from plan_processor import (
-    PlanProcessor, FeasibilityPlanProcessor, ErrorClassifier, ErrorLogger,
+    FeasibilityPlanProcessor, ErrorClassifier, ErrorLogger,
     ErrorType, TransientErrorType, PermanentErrorType, RetryConfig,
-    PlanProcessingError, ProcessingResult, create_sample_plans
+    PlanProcessingError, create_sample_plans
 )
 
 

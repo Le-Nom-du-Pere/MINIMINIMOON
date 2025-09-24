@@ -285,7 +285,6 @@ class TestEdgeCases:
 
 def run_all_tests():
     """Run all test classes manually."""
-    import traceback
     
     test_classes = [
         TestTextReference,

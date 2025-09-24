@@ -4,9 +4,6 @@ from pathlib import Path
 from typing import Optional
 from text_truncation_logger import log_info_with_text, log_warning_with_text, log_error_with_text
 
-# Import log configuration to set up environment variable support
-import log_config
-
 logger = logging.getLogger(__name__)
 
 # Hardcoded template data for fallback

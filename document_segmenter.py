@@ -11,7 +11,6 @@ import statistics
 from collections import defaultdict, Counter
 from dataclasses import dataclass, field
 from typing import List, Dict, Tuple, Optional, Any
-import spacy
 from spacy_loader import SpacyModelLoader
 
 # Configure logging

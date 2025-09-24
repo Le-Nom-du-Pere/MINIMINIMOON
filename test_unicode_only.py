@@ -4,7 +4,7 @@ Test script specifically for Unicode normalization functionality.
 """
 
 import unicodedata
-from feasibility_scorer import FeasibilityScorer, ComponentType
+from feasibility_scorer import FeasibilityScorer
 
 
 def test_unicode_normalization():

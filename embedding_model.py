@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple, Union, Callable
 from functools import wraps, lru_cache
-from collections import defaultdict, deque
+from collections import defaultdict
 from contextlib import contextmanager
 
 import numpy as np

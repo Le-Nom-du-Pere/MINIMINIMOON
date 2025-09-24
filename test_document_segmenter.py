@@ -5,8 +5,7 @@ Comprehensive tests for dual-criteria document segmentation.
 """
 
 import unittest
-from unittest.mock import Mock, patch
-import statistics
+from unittest.mock import patch
 from document_segmenter import DocumentSegmenter, SegmentMetrics, SegmentationStats
 
 

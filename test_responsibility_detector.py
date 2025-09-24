@@ -2,7 +2,7 @@
 Test suite for ResponsibilityDetector
 """
 import pytest
-from responsibility_detector import ResponsibilityDetector, EntityType, ResponsibilityEntity
+from responsibility_detector import ResponsibilityDetector, EntityType
 
 
 class TestResponsibilityDetector:
