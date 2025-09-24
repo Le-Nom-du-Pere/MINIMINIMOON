@@ -1445,7 +1445,7 @@ class PDFLoaderIndustrial:
                     for sentencia in doc.sents:
                         texto = sentencia.text.strip()
                         # Filtrar sentencias muy cortas o sin sustantivos/verbos
-                        if len(texto) >= 20 and self._tiene_contenido_sustancial(texto):
+                        if len(texto) >= 20 and self._tiene_contenido_sustancial(sentencia):
                             buffer.append(texto)
                             # Crear segmentos de 2-4 sentencias con coherencia temática
                             if len(buffer) >= 3 or (len(buffer) >= 2 and self._detectar_cambio_tematico(buffer)):
@@ -1472,12 +1472,11 @@ class PDFLoaderIndustrial:
             self.logger.error(f"❌ Error crítico segmentando {self.nombre_plan}: {e}")
             return False
 
-    def _tiene_contenido_sustancial(self, texto: str) -> bool:
-        """Verifica si el texto tiene contenido sustancial para análisis"""
-        doc = NLP(texto)
+    def _tiene_contenido_sustancial(self, doc: spacy.tokens.Doc) -> bool:
+        """Verifica si el Doc procesado tiene contenido sustancial para análisis"""
         tiene_sustantivos = any(token.pos_ in ["NOUN", "PROPN"] for token in doc)
         tiene_verbos = any(token.pos_ == "VERB" for token in doc)
-        return tiene_sustantivos and tiene_verbos and len(texto.split()) >= 5
+        return tiene_sustantivos and tiene_verbos and len(doc) >= 5
 
     def _detectar_cambio_tematico(self, buffer: List[str]) -> bool:
         """Detecta cambios temáticos para segmentación inteligente"""
