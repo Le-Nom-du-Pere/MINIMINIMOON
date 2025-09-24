@@ -2,12 +2,66 @@
 # -*- coding: utf-8 -*-
 """
 Sistema Integral de Evaluación de Cadenas de Valor en Planes de Desarrollo Municipal
-Versión: 8.1 — Marco Teórico-Institucional con Análisis Causal Multinivel, Batch Processing, 
+==================================================================================
+
+Comprehensive evaluation framework for value chains in municipal development plans
+based on Institutional Analysis and Development (IAD) and Theory of Change (ToC)
+methodologies with advanced causal analysis and parallel processing capabilities.
+
+This module provides a complete framework for evaluating public policy effectiveness
+through sophisticated causal modeling, institutional analysis, and quantitative
+assessment methods. It integrates multiple theoretical frameworks to provide
+robust policy evaluation capabilities.
+
+Version: 8.1 — Marco Teórico-Institucional con Análisis Causal Multinivel, Batch Processing, 
 Certificación de Rigor y Selección Global Top-K con Heap
-Framework basado en Institutional Analysis and Development (IAD) + Theory of Change (ToC)
-con triangulación metodológica cualitativa-cuantitativa, verificación causal y certeza probabilística.
-Autor: Dr. en Políticas Públicas
-Enfoque: Evaluación estructural con econometría de políticas, minería causal y procesamiento paralelo industrial.
+
+Key Features:
+    - Institutional Analysis and Development (IAD) framework integration
+    - Theory of Change (ToC) modeling with causal graph construction
+    - Multilevel causal analysis with econometric validation
+    - Industrial-grade batch processing and parallel execution
+    - Comprehensive policy ontology with ODS indicator mapping
+    - Advanced embedding models for semantic analysis
+    - Statistical validation and reproducibility certification
+    - PDF document processing and analysis capabilities
+
+Classes:
+    NivelAnalisis: Enumeration of analysis levels (MACRO, MESO, MICRO)
+    TipoCadenaValor: Value chain types (INSUMOS, PROCESOS, PRODUCTOS, RESULTADOS, IMPACTOS)
+    TeoriaCambio: Formal theory of change representation with causal DAG
+    EslabonCadena: Industrial value chain link model
+    OntologiaPoliticas: Industrial policy ontology system
+    DimensionDecalogo: Complete dimension specification with validation
+
+Functions:
+    cargar_decalogo_industrial: Load and validate industrial decalog from JSON
+    generar_template_dimension: Generate structured dimension template
+    _cargar_indicadores_ods: Load ODS indicators with fallback system
+
+Constants:
+    LOGGER: Industrial-grade logger instance
+    NLP: SpaCy language model (Spanish)
+    EMBEDDING_MODEL: Sentence transformer model for semantic analysis
+
+Raises:
+    SystemExit: When critical models fail to load or validation errors occur
+    ValueError: When configuration parameters are invalid
+    OSError: When model files are not accessible
+
+Example:
+    >>> # Load decalog and perform evaluation
+    >>> decalogo = cargar_decalogo_industrial()
+    >>> ontologia = OntologiaPoliticas.cargar_estandar()
+    >>> # Process evaluation with comprehensive analysis
+    
+Note:
+    Requires Python 3.11+ and extensive dependencies including spaCy models,
+    sentence transformers, and scientific computing libraries. All operations
+    are designed for production environments with comprehensive error handling.
+
+Author: Dr. en Políticas Públicas
+Focus: Structural evaluation with policy econometrics, causal mining and industrial parallel processing
 """
 import argparse
 import atexit
@@ -90,12 +144,36 @@ except Exception as e:
 
 # ==================== MARCO TEÓRICO-INSTITUCIONAL INDUSTRIAL ====================
 class NivelAnalisis(Enum):
+    """
+    Analysis levels for institutional framework evaluation.
+    
+    Defines the three primary levels of institutional analysis following
+    the IAD (Institutional Analysis and Development) framework.
+    
+    Attributes:
+        MACRO: Institutional level - Constitutional and policy framework
+        MESO: Organizational level - Collective choice and coordination
+        MICRO: Operational level - Day-to-day operational activities
+    """
     MACRO = "Institucional"
     MESO = "Organizacional"
     MICRO = "Operacional"
 
 
 class TipoCadenaValor(Enum):
+    """
+    Value chain types for comprehensive policy evaluation.
+    
+    Represents the complete value chain from inputs to final impacts,
+    following international development evaluation standards.
+    
+    Attributes:
+        INSUMOS: Financial, human, and physical resources
+        PROCESOS: Institutional transformation processes
+        PRODUCTOS: Deliverable goods and services
+        RESULTADOS: Behavioral and institutional changes
+        IMPACTOS: Welfare and human development outcomes
+    """
     INSUMOS = "Recursos financieros, humanos y físicos"
     PROCESOS = "Transformación institucional"
     PRODUCTOS = "Bienes/servicios entregables"
@@ -105,16 +183,37 @@ class TipoCadenaValor(Enum):
 
 @dataclass(frozen=True)
 class TeoriaCambio:
-    """Representación formal de teoría de cambio como DAG causal con verificación matemática.
+    """
+    Formal theory of change representation as causal DAG with mathematical verification.
     
-    Esta clase modela una teoría de cambio como un grafo dirigido acíclico (DAG) causal,
-    implementando métodos de identificabilidad según Pearl (2009) y análisis de robustez.
+    Implements a rigorous theory of change model using directed acyclic graphs (DAG)
+    for causal inference and identification following Pearl (2009) methodology.
     
-    Attributes:
-        supuestos_causales: Lista de supuestos causales fundamentales.
-        mediadores: Diccionario de mediadores categorizados por tipo.
-        resultados_intermedios: Lista de resultados intermedios esperados.
-        precondiciones: Lista de precondiciones necesarias.
+    Args:
+        supuestos_causales (List[str]): List of causal assumptions
+        mediadores (Dict[str, List[str]]): Mediator variables by category
+        resultados_intermedios (List[str]): Intermediate outcome variables
+        precondiciones (List[str]): Required preconditions for validity
+        
+    Methods:
+        verificar_identificabilidad: Verify identification conditions per Pearl (2009)
+        construir_grafo_causal: Build causal graph for path analysis and d-separation
+        calcular_coeficiente_causal: Calculate causal robustness coefficient
+        
+    Example:
+        >>> teoria = TeoriaCambio(
+        ...     supuestos_causales=["X → Y", "Y → Z"],
+        ...     mediadores={"institucionales": ["gobierno", "organizaciones"]},
+        ...     resultados_intermedios=["mejora_servicios"],
+        ...     precondiciones=["recursos_disponibles"]
+        ... )
+        >>> if teoria.verificar_identificabilidad():
+        ...     grafo = teoria.construir_grafo_causal()
+        
+    Note:
+        Immutable dataclass ensuring theoretical consistency and reproducibility.
+        All causal relationships must satisfy identification conditions.
+
     """
     supuestos_causales: List[str]
     mediadores: Dict[str, List[str]]
@@ -122,24 +221,31 @@ class TeoriaCambio:
     precondiciones: List[str]
 
     def verificar_identificabilidad(self) -> bool:
-        """Verifica condiciones de identificabilidad según Pearl (2009).
+        """
+        Verify identification conditions according to Pearl (2009).
         
-        Evalúa si la teoría de cambio cumple con los criterios básicos
-        de identificabilidad causal para análisis estadístico válido.
+        Checks that the theory of change satisfies basic identification
+        requirements for causal inference validity.
         
         Returns:
-            bool: True si la teoría es identificable, False en caso contrario.
+            bool: True if identification conditions are met
+
         """
         return len(self.supuestos_causales) > 0 and len(self.mediadores) > 0 and len(self.resultados_intermedios) > 0
 
     def construir_grafo_causal(self) -> nx.DiGraph:
-        """Construye grafo causal para análisis de paths y d-separación.
+        """
+        Build causal graph for path analysis and d-separation.
         
-        Crea un grafo dirigido NetworkX que representa la estructura causal
-        de la teoría de cambio, incluyendo nodos, aristas y pesos.
+        Creates a NetworkX directed graph representing the causal structure
+        for advanced path analysis and causal identification testing.
         
         Returns:
-            nx.DiGraph: Grafo dirigido con la estructura causal completa.
+            nx.DiGraph: Directed graph with causal relationships
+            
+        Raises:
+            ValueError: If graph construction fails due to invalid structure
+
         """
         G = nx.DiGraph()
         # Nodos base obligatorios
@@ -161,13 +267,19 @@ class TeoriaCambio:
         return G
 
     def calcular_coeficiente_causal(self) -> float:
-        """Calcula coeficiente de robustez causal basado en conectividad y paths.
+        """
+        Calculate causal robustness coefficient based on connectivity and paths.
         
-        Computa un índice de robustez causal basado en la proporción de
-        paths causales válidos en el grafo construido.
+        Computes a robustness measure for the causal model based on the ratio
+        of valid causal paths to total possible paths in the graph structure.
         
         Returns:
-            float: Coeficiente de robustez causal entre 0.0 y 1.0.
+            float: Causal robustness coefficient (0.0-1.0)
+                  Higher values indicate stronger causal structure
+                  
+        Note:
+            Returns 0.3 for minimal graphs, 0.5 as fallback for computation errors.
+
         """
         G = self.construir_grafo_causal()
         if len(G.nodes) < 3:
@@ -191,19 +303,44 @@ class TeoriaCambio:
 
 @dataclass(frozen=True)
 class EslabonCadena:
-    """Modelo industrial de eslabón de cadena de valor con métricas cuantitativas.
+    """
+    Industrial value chain link model with quantitative metrics.
     
-    Representa un eslabón individual en la cadena de valor de políticas públicas,
-    incluyendo indicadores, capacidades, puntos críticos y métricas temporales.
+    Represents a single link in the value chain with comprehensive
+    performance metrics, temporal constraints, and validation logic.
     
-    Attributes:
-        id: Identificador único del eslabón.
-        tipo: Tipo de cadena de valor (INSUMOS, PROCESOS, PRODUCTOS, etc.).
-        indicadores: Lista de indicadores asociados al eslabón.
-        capacidades_requeridas: Capacidades necesarias para el eslabón.
-        puntos_criticos: Puntos críticos identificados.
-        ventana_temporal: Tupla con rango temporal en meses (mínimo, máximo).
-        kpi_ponderacion: Factor de ponderación para cálculos de KPI.
+    Args:
+        id (str): Unique identifier for the chain link
+        tipo (TipoCadenaValor): Type of value chain component
+        indicadores (List[str]): Performance indicators list
+        capacidades_requeridas (List[str]): Required institutional capacities
+        puntos_criticos (List[str]): Critical success factors
+        ventana_temporal (Tuple[int, int]): Temporal window (min-max months)
+        kpi_ponderacion (float, optional): KPI weighting factor. Defaults to 1.0.
+        
+    Methods:
+        calcular_lead_time: Calculate expected lead time with confidence interval
+        generar_hash: Generate unique hash for industrial traceability
+        
+    Raises:
+        ValueError: When KPI weighting is outside valid range or temporal window invalid
+        
+    Example:
+        >>> eslabon = EslabonCadena(
+        ...     id="proc_1",
+        ...     tipo=TipoCadenaValor.PROCESOS,
+        ...     indicadores=["eficiencia", "calidad"],
+        ...     capacidades_requeridas=["personal_capacitado"],
+        ...     puntos_criticos=["coordinacion"],
+        ...     ventana_temporal=(6, 12),
+        ...     kpi_ponderacion=1.2
+        ... )
+        >>> lead_time = eslabon.calcular_lead_time()
+        
+    Note:
+        Immutable dataclass with industrial validation for production environments.
+        All temporal and performance constraints are validated at initialization.
+
     """
     id: str
     tipo: TipoCadenaValor
@@ -214,37 +351,38 @@ class EslabonCadena:
     kpi_ponderacion: float = 1.0  # Ponderación para cálculo de KPI
 
     def __post_init__(self):
-        """Validación industrial de datos post-inicialización.
+        """
+        Validate industrial data constraints.
         
         Raises:
-            ValueError: Si la ponderación KPI está fuera del rango válido o
-                       si la ventana temporal es inválida.
+            ValueError: If KPI weighting or temporal window is invalid
         """
-        # Validación industrial de datos
+
         if not (0 <= self.kpi_ponderacion <= 2.0):
             raise ValueError("KPI ponderación debe estar entre 0 y 2.0")
         if self.ventana_temporal[0] > self.ventana_temporal[1]:
             raise ValueError("Ventana temporal inválida")
 
     def calcular_lead_time(self) -> float:
-        """Calcula lead time esperado con intervalo de confianza.
-        
-        Computa el tiempo promedio esperado para completar el eslabón
-        basado en la ventana temporal especificada.
+        """
+        Calculate expected lead time with confidence interval.
         
         Returns:
-            float: Lead time promedio en meses.
+            float: Expected lead time in months (average of min-max window)
+
         """
         return (self.ventana_temporal[0] + self.ventana_temporal[1]) / 2.0
 
     def generar_hash(self) -> str:
-        """Genera hash único para trazabilidad industrial.
+        """
+        Generate unique hash for industrial traceability.
         
-        Crea un hash MD5 único basado en los atributos clave del eslabón
-        para propósitos de trazabilidad y verificación de integridad.
+        Creates MD5 hash from key components for tracking and validation
+        in industrial processing environments.
         
         Returns:
-            str: Hash MD5 hexadecimal del eslabón.
+            str: MD5 hash string for unique identification
+
         """
         data = f"{self.id}|{self.tipo.value}|{sorted(self.indicadores)}|{sorted(self.capacidades_requeridas)}"
         return hashlib.md5(data.encode('utf-8')).hexdigest()
@@ -253,17 +391,35 @@ class EslabonCadena:
 # ==================== ONTOLOGÍA DE POLÍTICAS PÚBLICAS INDUSTRIAL ====================
 @dataclass
 class OntologiaPoliticas:
-    """Sistema ontológico industrial con validación cruzada y trazabilidad.
+    """
+    Industrial ontological system with cross-validation and traceability.
     
-    Sistema integral de ontología para políticas públicas que incluye dimensiones
-    temáticas, relaciones causales e indicadores ODS con validación robusta.
+    Comprehensive policy ontology system with standardized dimensions,
+    causal relationships, and ODS indicator mapping for systematic
+    policy evaluation and analysis.
     
-    Attributes:
-        dimensiones: Diccionario de dimensiones temáticas y sus componentes.
-        relaciones_causales: Mapeo de relaciones causales entre conceptos.
-        indicadores_ods: Indicadores asociados a Objetivos de Desarrollo Sostenible.
-        fecha_creacion: Timestamp ISO de creación de la ontología.
-        version: Versión del sistema ontológico.
+    Args:
+        dimensiones (Dict[str, List[str]]): Policy dimensions by category
+        relaciones_causales (Dict[str, List[str]]): Causal relationship mapping
+        indicadores_ods (Dict[str, List[str]]): ODS indicators by goal
+        fecha_creacion (str, optional): Creation timestamp in ISO format
+        version (str, optional): Ontology version. Defaults to "2.0-industrial"
+        
+    Class Methods:
+        cargar_estandar: Load standard ontology with robust validation
+        
+    Static Methods:
+        _cargar_indicadores_ods: Load ODS indicators with fallback system
+        
+    Example:
+        >>> ontologia = OntologiaPoliticas.cargar_estandar()
+        >>> dimensiones_sociales = ontologia.dimensiones["social"]
+        >>> print(f"Dimensiones sociales: {len(dimensiones_sociales)}")
+        
+    Note:
+        Includes comprehensive fallback mechanisms and validation systems
+        for production reliability. All data is validated against standards.
+
     """
     dimensiones: Dict[str, List[str]]
     relaciones_causales: Dict[str, List[str]]
@@ -273,16 +429,22 @@ class OntologiaPoliticas:
 
     @classmethod
     def cargar_estandar(cls) -> 'OntologiaPoliticas':
-        """Carga ontología con validación industrial robusta y fallback jerárquico.
+        """
+        Load standard ontology with robust industrial validation and hierarchical fallback.
         
-        Inicializa una ontología estándar con dimensiones predefinidas,
-        relaciones causales validadas e indicadores ODS estructurados.
+        Loads the standard policy ontology with comprehensive validation,
+        including fallback mechanisms for missing or corrupted data sources.
         
         Returns:
-            OntologiaPoliticas: Instancia de ontología completamente inicializada.
+            OntologiaPoliticas: Fully validated ontology instance
             
         Raises:
-            SystemExit: Si falla la carga crítica de la ontología.
+            SystemExit: When critical ontology loading fails requiring manual intervention
+            
+        Note:
+            Includes automatic generation of missing indicator files and
+            comprehensive validation of all ontology components.
+
         """
         try:
             dimensiones_industrial = {
@@ -318,16 +480,22 @@ class OntologiaPoliticas:
 
     @staticmethod
     def _cargar_indicadores_ods(ruta: Path) -> Dict[str, List[str]]:
-        """Carga indicadores ODS con sistema de fallback industrial.
+        """
+        Load ODS indicators with industrial fallback system.
         
-        Carga indicadores de Objetivos de Desarrollo Sostenible desde archivo JSON,
-        con sistema de fallback robusto que genera templates si es necesario.
+        Loads Sustainable Development Goals (ODS) indicators from file with
+        comprehensive fallback to base indicators if file is missing or invalid.
         
         Args:
-            ruta: Ruta del archivo JSON con indicadores ODS.
+            ruta (Path): Path to ODS indicators JSON file
             
         Returns:
-            Dict[str, List[str]]: Diccionario de indicadores ODS por objetivo.
+            Dict[str, List[str]]: Dictionary mapping ODS goals to indicator lists
+            
+        Note:
+            Automatically generates template file if missing and validates
+            data structure integrity. Falls back to base indicators on any error.
+
         """
         indicadores_base = {
             "ods1": ["tasa_pobreza", "protección_social", "vulnerabilidad_económica"],
@@ -365,17 +533,34 @@ class OntologiaPoliticas:
 
 # ==================== SISTEMA DE CARGA DINÁMICA DEL DECÁLOGO INDUSTRIAL ====================
 def cargar_decalogo_industrial() -> List[Any]:
-    """Carga el decálogo industrial completo desde JSON con validación de esquema.
+    """
+    Load complete industrial decalog from JSON with comprehensive schema validation.
     
-    Esta función carga y valida el decálogo industrial desde un archivo JSON,
-    aplicando validación exhaustiva de esquema y construcción de objetos complejos.
+    Loads and validates the complete 10-dimension policy evaluation framework
+    from JSON file with exhaustive validation of structure, content, and
+    theoretical consistency.
     
     Returns:
-        List[Any]: Lista de dimensiones del decálogo validadas e instanciadas.
+        List[Any]: List of validated DimensionDecalogo instances
         
     Raises:
-        SystemExit: Si falla la validación o carga del decálogo.
-        ValueError: Si la estructura del JSON es inválida.
+        SystemExit: When validation fails or critical errors require manual intervention
+        ValueError: When dimension structure or theory of change is invalid
+        
+    Note:
+        Performs comprehensive validation including:
+        - Schema structure validation (exactly 10 dimensions)
+        - Theory of change identification verification
+        - Value chain link validation with industrial constraints
+        - Causal graph consistency checks
+        
+    Example:
+        >>> decalogo = cargar_decalogo_industrial()
+        >>> print(f"Loaded {len(decalogo)} validated dimensions")
+        >>> primera_dimension = decalogo[0]
+        >>> if primera_dimension.teoria_cambio.verificar_identificabilidad():
+        ...     print("Theory of change is identifiable")
+
     """
     json_path = Path("decalogo_industrial.json")
 

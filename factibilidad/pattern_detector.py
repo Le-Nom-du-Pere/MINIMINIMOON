@@ -1,3 +1,33 @@
+# coding=utf-8
+"""
+Pattern Detection Module for Policy Indicator Analysis
+======================================================
+
+Advanced pattern detection system for identifying baseline values, targets,
+and timeframes in Spanish policy documents using comprehensive regex patterns.
+
+This module provides specialized pattern detection capabilities for policy analysis,
+focusing on identification of key components that determine indicator feasibility
+and quality. It supports Spanish language patterns with high accuracy and includes
+sophisticated overlap resolution and clustering algorithms.
+
+Classes:
+    PatternMatch: Represents a pattern match with position and confidence information
+    PatternDetector: Main detector for baseline, target, and timeframe patterns
+
+Example:
+    >>> detector = PatternDetector()
+    >>> patterns = detector.detect_patterns(
+    ...     "Reducir la línea base de pobreza del 25% actual a una meta del 15% para el año 2025"
+    ... )
+    >>> for pattern_type, matches in patterns.items():
+    ...     print(f"{pattern_type}: {len(matches)} matches")
+    
+Note:
+    All patterns are optimized for Spanish policy documents and include
+    comprehensive coverage of terminology used in municipal development plans.
+"""
+
 import re
 from typing import List, Dict
 from dataclasses import dataclass
@@ -5,7 +35,19 @@ from dataclasses import dataclass
 
 @dataclass
 class PatternMatch:
-    """Represents a pattern match with position and type information."""
+    """
+    Represents a pattern match with position and type information.
+    
+    Comprehensive representation of detected patterns including position,
+    confidence, and classification information for advanced analysis.
+    
+    Args:
+        pattern_type (str): Type of pattern matched ("baseline", "target", "timeframe")
+        text (str): Actual matched text content
+        start (int): Start position in original text
+        end (int): End position in original text
+        confidence (float, optional): Match confidence level (0.0-1.0). Defaults to 1.0.
+    """
     pattern_type: str
     text: str
     start: int
@@ -14,16 +56,32 @@ class PatternMatch:
 
 
 class PatternDetector:
-    """Detects baseline, target, and timeframe patterns in Spanish text.
+    """
+    Advanced detector for baseline, target, and timeframe patterns in Spanish text.
     
-    This class provides comprehensive pattern detection capabilities for identifying
-    baseline values, targets/objectives, and temporal indicators in Spanish text
-    using compiled regular expressions.
+    Comprehensive pattern detection system specifically designed for Spanish policy
+    documents and municipal development plans. Includes sophisticated regex patterns,
+    overlap resolution, and clustering capabilities for high-accuracy detection.
     
     Attributes:
-        baseline_patterns: Compiled regex patterns for baseline detection.
-        target_patterns: Compiled regex patterns for target detection.
-        timeframe_patterns: Compiled regex patterns for timeframe detection.
+        baseline_patterns (List[re.Pattern]): Compiled baseline detection patterns
+        target_patterns (List[re.Pattern]): Compiled target/goal detection patterns  
+        timeframe_patterns (List[re.Pattern]): Compiled temporal framework patterns
+        
+    Methods:
+        detect_patterns: Detect all pattern types in text
+        find_pattern_clusters: Find text segments with all three pattern types
+        
+    Example:
+        >>> detector = PatternDetector()
+        >>> text = "Mejorar la línea base educativa del 70% a una meta del 85% en 2025"
+        >>> results = detector.detect_patterns(text)
+        >>> clusters = detector.find_pattern_clusters(text)
+    
+    Note:
+        All patterns are case-insensitive and optimized for Spanish policy terminology.
+        Includes comprehensive overlap resolution to prevent duplicate matches.
+
     """
 
     def __init__(self):
@@ -33,24 +91,19 @@ class PatternDetector:
         self.timeframe_patterns = self._compile_timeframe_patterns()
 
     def _compile_baseline_patterns(self) -> List[re.Pattern]:
-        """Compile regex patterns for baseline indicators.
-        
-        Creates compiled regular expressions for detecting various forms
-        of baseline references in Spanish text.
-        
-        Returns:
-            List of compiled regex pattern objects for baseline detection.
         """
-
-    @staticmethod
-    def _compile_baseline_patterns() -> List[re.Pattern]:
-        """Compile regex patterns for baseline indicators.
+        Compile comprehensive regex patterns for baseline indicators.
         
-        Creates compiled regular expressions for detecting various forms
-        of baseline references in Spanish text.
+        Creates and compiles regex patterns for detecting baseline references
+        in Spanish policy text including various synonyms and expressions.
         
         Returns:
-            List of compiled regex pattern objects for baseline detection.
+            List[re.Pattern]: List of compiled regex patterns for baseline detection
+            
+        Note:
+            Patterns include both formal terms (línea base) and informal expressions
+            (situación actual, punto de partida) commonly used in policy documents.
+
         """
         patterns = [
             r'\b(?:línea\s+base|linea\s+base|línea\s+de\s+base|linea\s+de\s+base)\b',
@@ -67,15 +120,20 @@ class PatternDetector:
         ]
         return [re.compile(p, re.IGNORECASE) for p in patterns]
 
-    @staticmethod
-    def _compile_target_patterns() -> List[re.Pattern]:
-        """Compile regex patterns for target indicators.
+    def _compile_target_patterns(self) -> List[re.Pattern]:
+        """
+        Compile comprehensive regex patterns for target/goal indicators.
         
-        Creates compiled regular expressions for detecting various forms
-        of target, goal, and objective references in Spanish text.
+        Creates and compiles regex patterns for detecting target and goal references
+        including objectives, aspirations, and expected outcomes.
         
         Returns:
-            List of compiled regex pattern objects for target detection.
+            List[re.Pattern]: List of compiled regex patterns for target detection
+            
+        Note:
+            Includes both direct terms (meta, objetivo) and action verbs (alcanzar, lograr)
+            commonly used to express targets in policy documents.
+
         """
         patterns = [
             r'\b(?:meta|metas)\b',
@@ -95,16 +153,21 @@ class PatternDetector:
         ]
         return [re.compile(p, re.IGNORECASE) for p in patterns]
 
-    @staticmethod
-    def _compile_timeframe_patterns() -> List[re.Pattern]:
-        """Compile regex patterns for timeframe indicators.
+    def _compile_timeframe_patterns(self) -> List[re.Pattern]:
+        """
+        Compile comprehensive regex patterns for timeframe indicators.
         
-        Creates compiled regular expressions for detecting various forms
-        of temporal references including absolute dates, relative time
-        expressions, and administrative periods in Spanish text.
+        Creates and compiles regex patterns for detecting temporal references
+        including absolute dates, relative periods, and administrative timeframes.
         
         Returns:
-            List of compiled regex pattern objects for timeframe detection.
+            List[re.Pattern]: List of compiled regex patterns for timeframe detection
+            
+        Note:
+            Covers multiple temporal expression types including specific years (2025),
+            relative periods (próximos 3 años), quarters, months, and administrative
+            periods (vigencia, PDD periods).
+
         """
         patterns = [
             # Absolute years
@@ -137,18 +200,25 @@ class PatternDetector:
         return [re.compile(p, re.IGNORECASE) for p in patterns]
 
     def detect_patterns(self, text: str) -> Dict[str, List[PatternMatch]]:
-        """Detect all pattern types in the given text.
-        
-        Analyzes input text to identify baseline, target, and timeframe patterns
-        using the compiled regular expressions.
+        """
+        Detect all pattern types in the given text with comprehensive analysis.
+
+        Performs comprehensive pattern detection across all supported types
+        including baseline references, targets/goals, and timeframe indicators
+        with sophisticated overlap resolution.
 
         Args:
-            text: The text to analyze for pattern detection.
+            text (str): The text to analyze for pattern detection
 
         Returns:
-            Dictionary with pattern types as keys and lists of PatternMatch
-            objects as values, containing detected patterns with position
-            and confidence information.
+            Dict[str, List[PatternMatch]]: Dictionary with pattern types as keys 
+                                         ('baseline', 'target', 'timeframe') and 
+                                         lists of PatternMatch objects as values
+                                         
+        Note:
+            Automatically removes overlapping matches, keeping the longest/most
+            specific match when multiple patterns overlap in the same text region.
+
         """
         return {
             'baseline': PatternDetector._find_matches(text, self.baseline_patterns, 'baseline'),
@@ -156,20 +226,23 @@ class PatternDetector:
             'timeframe': PatternDetector._find_matches(text, self.timeframe_patterns, 'timeframe')
         }
 
-    @staticmethod
-    def _find_matches(text: str, patterns: List[re.Pattern], pattern_type: str) -> List[PatternMatch]:
-        """Find all matches for a specific pattern type.
-        
-        Applies all patterns of a given type to the text and filters out
-        overlapping matches, preferring longer matches when conflicts occur.
+    def _find_matches(self, text: str, patterns: List[re.Pattern], pattern_type: str) -> List[PatternMatch]:
+        """
+        Find all matches for a specific pattern type with overlap resolution.
         
         Args:
-            text: Text to search for patterns.
-            patterns: List of compiled regex patterns to apply.
-            pattern_type: Type identifier for the patterns being applied.
+            text (str): Text to search for patterns
+            patterns (List[re.Pattern]): Compiled regex patterns to apply
+            pattern_type (str): Type identifier for the patterns being matched
             
         Returns:
-            List of non-overlapping PatternMatch objects found in the text.
+            List[PatternMatch]: List of non-overlapping pattern matches, sorted by position
+                               with preference for longer matches when overlaps occur
+                               
+        Note:
+            Implements sophisticated overlap resolution that keeps the longest match
+            when multiple patterns overlap, ensuring no duplicate or conflicting matches.
+
         """
         matches: List[PatternMatch] = []
         for pattern in patterns:
@@ -202,14 +275,29 @@ class PatternDetector:
         patterns co-occur within a specified character distance, indicating
         comprehensive indicator descriptions.
 
+        Identifies coherent text segments that contain baseline, target, and timeframe
+        patterns within the specified proximity window, indicating complete indicator
+        specifications that are likely to be high-quality and actionable.
+
         Args:
-            text: The text to analyze for pattern clustering.
-            proximity_window: Maximum character distance between patterns
-                            for them to be considered part of the same cluster.
+            text (str): The text to analyze for pattern clusters
+            proximity_window (int, optional): Maximum character distance between patterns
+                                            to be considered part of the same cluster. 
+                                            Defaults to 500 characters.
 
         Returns:
-            List of dictionaries containing cluster information including
-            start/end positions, extracted text, matches by type, and span length.
+            List[Dict]: List of dictionaries containing cluster information with keys:
+                       - 'start': Start position of cluster in text
+                       - 'end': End position of cluster in text  
+                       - 'text': Actual text content of the cluster
+                       - 'matches': Dictionary with pattern matches by type
+                       - 'span': Total character span of the cluster
+                       
+        Note:
+            Only returns clusters that contain at least one match from each of the
+            three pattern types (baseline, target, timeframe), indicating complete
+            indicator specifications with measurable components.
+
         """
         all_matches = self.detect_patterns(text)
         clusters: List[Dict] = []
@@ -244,20 +332,26 @@ class PatternDetector:
 
         return clusters
 
-    @staticmethod
-    def _within_proximity(a: PatternMatch, b: PatternMatch, proximity_window: int) -> bool:
-        """Check if two matches are within the specified proximity window.
+    def _within_proximity(self, a: PatternMatch, b: PatternMatch, proximity_window: int) -> bool:
+        """
+        Check if two matches are within the specified proximity window.
         
-        Calculates the minimum distance between two pattern matches and
-        determines if they fall within the specified proximity threshold.
+        Calculates the minimum distance between two pattern matches to determine
+        if they should be considered part of the same indicator cluster.
         
         Args:
-            a: First pattern match to compare.
-            b: Second pattern match to compare.
-            proximity_window: Maximum distance in characters for proximity.
+            a (PatternMatch): First pattern match
+            b (PatternMatch): Second pattern match
+            proximity_window (int): Maximum allowed distance in characters
             
         Returns:
-            True if the matches are within the proximity window, False otherwise.
+            bool: True if matches are within proximity window, False otherwise
+            
+        Note:
+            Uses minimum distance calculation considering all possible position
+            combinations (start-to-start, end-to-end, start-to-end, end-to-start)
+            to accurately measure pattern proximity regardless of match lengths.
+
         """
         distance = min(
             abs(a.start - b.end),

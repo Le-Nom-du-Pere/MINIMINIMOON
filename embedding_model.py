@@ -1,13 +1,49 @@
 """
 Industrial-Grade Embedding Model Framework
 ==========================================
-Advanced semantic embedding system with enterprise-level features:
-- Multi-modal embedding pipeline with dynamic model selection
-- Adaptive instruction-aware transformations with learned parameters
-- Production-grade MMR with advanced diversity algorithms
-- Statistical numeracy analysis with machine learning validation
-- Comprehensive monitoring, profiling, and observability
-- Industrial-strength error recovery and fault tolerance
+
+Advanced semantic embedding system with enterprise-level features for production environments.
+
+This module provides a comprehensive framework for text embeddings with robust error handling,
+caching mechanisms, and performance optimization. It supports multiple embedding models with
+automatic fallback strategies and includes advanced features like statistical analysis,
+memory management, and comprehensive monitoring.
+
+Key Features:
+    - Multi-modal embedding pipeline with dynamic model selection
+    - Adaptive instruction-aware transformations with learned parameters  
+    - Production-grade MMR with advanced diversity algorithms
+    - Statistical numeracy analysis with machine learning validation
+    - Comprehensive monitoring, profiling, and observability
+    - Industrial-strength error recovery and fault tolerance
+    - Advanced caching with disk serialization and memory management
+    - Thread-safe operations for concurrent processing
+
+Classes:
+    ProductionLogger: Thread-safe structured logger for production environments
+    EmbeddingCache: Advanced embedding cache with disk serialization
+    AdaptiveCache: High-performance adaptive cache with intelligent eviction
+    StatisticalNumericsAnalyzer: Advanced statistical analysis for numeric content
+    MemoryManager: Advanced memory management system with automatic cleanup
+    EmbeddingModel: Core embedding model with fallback mechanism
+
+Functions:
+    performance_monitor: Decorator for monitoring function performance
+    create_embedding_model: Factory function for creating embedding models
+
+Exceptions:
+    EmbeddingModelError: Base exception for embedding model operations
+    ModelInitializationError: Exception raised when model initialization fails
+    EmbeddingComputationError: Exception raised during embedding computation
+
+Example:
+    >>> model = create_embedding_model()
+    >>> embeddings = model.encode(["Hello world", "How are you?"])
+    >>> print(f"Generated {len(embeddings)} embeddings")
+
+Note:
+    All warnings are suppressed for production use. Memory usage is actively monitored
+    and managed to prevent OOM errors in production environments.
 """
 
 import asyncio
@@ -60,6 +96,27 @@ class ProductionLogger:
         _metrics: Thread-safe counter for various metrics.
         _timings: Thread-safe collection of timing measurements.
         _lock: RLock for thread synchronization.
+    
+    Thread-safe structured logger for production environments.
+    
+    Provides comprehensive logging capabilities with metric collection, timing measurements,
+    and thread-safe operations for concurrent processing environments.
+    
+    Args:
+        name (str): Name of the logger instance
+        level (int, optional): Logging level. Defaults to logging.INFO.
+        
+    Attributes:
+        logger (logging.Logger): The underlying logger instance
+        _metrics (defaultdict): Thread-safe metric collection
+        _timings (defaultdict): Thread-safe timing collection 
+        _lock (threading.RLock): Reentrant lock for thread safety
+        
+    Example:
+        >>> logger = ProductionLogger("MyApp")
+        >>> logger.info("Application started")
+        >>> logger.metric("requests_processed", 5)
+        >>> logger.timing("request_duration", 0.123)
     """
 
     def __init__(self, name: str, level: int = logging.INFO):
@@ -86,21 +143,11 @@ class ProductionLogger:
         self._lock = threading.RLock()
 
     def metric(self, name: str, value: Union[int, float] = 1):
-        """Record a metric value in a thread-safe manner.
-
-        Args:
-            name: Metric name identifier.
-            value: Numeric value to add to the metric.
         """
         with self._lock:
             self._metrics[name] += value
 
     def timing(self, name: str, duration: float):
-        """Record a timing measurement in a thread-safe manner.
-
-        Args:
-            name: Timing operation name.
-            duration: Duration in seconds.
         """
         with self._lock:
             self._timings[name].append(duration)
@@ -109,12 +156,7 @@ class ProductionLogger:
                 self._timings[name] = self._timings[name][-1000:]
 
     def get_metrics(self) -> Dict[str, Any]:
-        """Get collected metrics and statistics.
-
-        Returns:
-            Dictionary containing timing statistics and metric counters,
-            including average times, percentiles, and counts.
-        """
+        """Get current metrics with thread-safe access."""
         with self._lock:
             stats = {}
             for name, values in self._timings.items():
@@ -129,39 +171,6 @@ class ProductionLogger:
             return stats
 
     def info(self, msg: str, **kwargs):
-        """Log an info-level message.
-
-        Args:
-            msg: Message to log.
-            **kwargs: Additional context for structured logging.
-        """
-        self.logger.info(msg, extra=kwargs)
-
-    def error(self, msg: str, **kwargs):
-        """Log an error-level message.
-
-        Args:
-            msg: Error message to log.
-            **kwargs: Additional context for structured logging.
-        """
-        self.logger.error(msg, extra=kwargs)
-
-    def warning(self, msg: str, **kwargs):
-        """Log a warning-level message.
-
-        Args:
-            msg: Warning message to log.
-            **kwargs: Additional context for structured logging.
-        """
-        self.logger.warning(msg, extra=kwargs)
-
-    def debug(self, msg: str, **kwargs):
-        """Log a debug-level message.
-
-        Args:
-            msg: Debug message to log.
-            **kwargs: Additional context for structured logging.
-        """
         self.logger.debug(msg, extra=kwargs)
 
 
@@ -228,20 +237,7 @@ atexit.register(dump_monitoring_state)
 
 
 def performance_monitor(func):
-    """Decorator for monitoring function performance and collecting metrics.
-
-    This decorator tracks execution time, success/failure rates, and logs
-    performance metrics for monitored functions.
-
-    Args:
-        func: Function to be monitored.
-
-    Returns:
-        Wrapped function with performance monitoring capabilities.
-
-    Raises:
-        Re-raises any exceptions from the wrapped function after logging.
-    """
+    """Performance monitoring decorator for function timing and error tracking."""
 
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -295,24 +291,6 @@ class EmbeddingComputationError(EmbeddingModelError):
 
 @dataclass
 class ModelConfiguration:
-    """Configuration for embedding models with performance characteristics.
-
-    This dataclass encapsulates all configuration parameters for embedding models,
-    including performance metrics and operational settings for optimal model selection.
-
-    Attributes:
-        name: Model identifier name.
-        batch_size: Optimal batch size for this model.
-        dimension: Embedding vector dimensionality.
-        max_seq_length: Maximum sequence length supported.
-        quality_tier: Quality tier classification (e.g., 'high', 'medium', 'low').
-        memory_footprint_mb: Approximate memory usage in megabytes.
-        avg_encode_time_ms: Average encoding time in milliseconds.
-        supports_instruction: Whether model supports instruction-following.
-        pooling_mode: Token pooling strategy (default: "mean").
-        normalization_default: Whether to normalize embeddings by default.
-    """
-
     name: str
     batch_size: int
     dimension: int
@@ -327,20 +305,6 @@ class ModelConfiguration:
 
 @dataclass
 class InstructionProfile:
-    """Profile for instruction-based transformations.
-
-    This dataclass tracks the usage and effectiveness of specific instruction
-    embeddings for performance optimization and caching strategies.
-
-    Attributes:
-        instruction_hash: Unique hash identifier for the instruction.
-        embedding: Cached embedding vector for the instruction.
-        usage_count: Number of times this instruction has been used.
-        last_used: Timestamp of last usage.
-        effectiveness_score: Measured effectiveness score for this instruction.
-        semantic_coherence: Semantic coherence score with target embeddings.
-    """
-
     instruction_hash: str
     embedding: np.ndarray
     usage_count: int = 0
@@ -350,16 +314,6 @@ class InstructionProfile:
 
 
 class MemoryManager:
-    """Advanced memory management system with automatic cleanup.
-
-    This class provides intelligent memory monitoring and cleanup capabilities
-    for embedding operations, preventing OOM errors during intensive processing.
-
-    Attributes:
-        memory_threshold: Memory usage threshold (0.0-1.0) that triggers cleanup.
-        _lock: Thread synchronization lock for memory operations.
-    """
-
     def __init__(self, memory_threshold: float = 0.85):
         """Initialize memory manager with specified threshold.
 
@@ -370,34 +324,18 @@ class MemoryManager:
         self._lock = threading.RLock()
 
     def get_memory_usage(self) -> float:
-        """Get current memory usage as percentage.
-
-        Returns:
-            Memory usage as a float between 0.0 and 1.0.
         """
         return psutil.virtual_memory().percent / 100.0
 
     def get_available_memory_gb(self) -> float:
-        """Get available memory in GB.
-
-        Returns:
-            Available memory in gigabytes.
         """
         return psutil.virtual_memory().available / (1024**3)
 
     def should_trigger_cleanup(self) -> bool:
-        """Check if memory cleanup should be triggered.
-
-        Returns:
-            True if memory usage exceeds threshold, False otherwise.
         """
         return self.get_memory_usage() > self.memory_threshold
 
     def cleanup_memory(self):
-        """Force garbage collection and CUDA cache cleanup.
-
-        Performs synchronized cleanup of Python garbage collector and
-        CUDA memory cache if available.
         """
         with self._lock:
             gc.collect()
@@ -3232,7 +3170,6 @@ class EmbeddingModelBenchmark:
 
     def generate_report(self) -> str:
         """Generate comprehensive benchmark report."""
-
         if not self.benchmark_results:
             return "No benchmark results available. Run benchmark first."
 

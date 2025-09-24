@@ -1,8 +1,45 @@
 """
 Feasibility Scorer for Indicator Quality Assessment
+===================================================
 
-This module implements a weighted quality assessment system that evaluates indicators
-based on the presence of baseline values, targets/goals, and time horizons.
+Advanced quality assessment system for policy indicators with comprehensive
+detection capabilities and statistical validation.
+
+This module implements a sophisticated weighted quality assessment system that evaluates
+policy indicators based on the presence and quality of baseline values, targets/goals,
+and time horizons. It uses advanced pattern recognition, Unicode normalization, and
+parallel processing for robust indicator analysis in production environments.
+
+The scorer provides comprehensive analysis including:
+- Multilingual pattern detection (Spanish/English)
+- Unicode normalization for consistent text processing
+- Quantitative component detection and validation
+- Parallel processing capabilities for large datasets
+- Detailed confidence scoring and quality classification
+- Comprehensive logging and performance monitoring
+
+Classes:
+    ComponentType: Enumeration of detectable component types
+    DetectionResult: Individual component detection result
+    IndicatorScore: Comprehensive indicator quality score
+    BatchScoreResult: Batch processing results with performance metrics
+    FeasibilityScorer: Main scoring engine with advanced capabilities
+
+Functions:
+    All scoring and detection methods are encapsulated within the FeasibilityScorer class
+
+Example:
+    >>> scorer = FeasibilityScorer(enable_parallel=True)
+    >>> score = scorer.calculate_feasibility_score(
+    ...     "Reducir la tasa de pobreza del 25% actual a 15% para el año 2025"
+    ... )
+    >>> print(f"Feasibility score: {score.feasibility_score:.2f}")
+    >>> print(f"Quality tier: {score.quality_tier}")
+
+Note:
+    All text processing includes Unicode normalization to ensure consistent
+    handling of accented characters and different text encodings. The system
+    is designed for production use with comprehensive error handling.
 """
 
 import os
@@ -34,6 +71,19 @@ except ImportError:
 
 
 class ComponentType(Enum):
+    """
+    Enumeration of detectable component types in policy indicators.
+    
+    Defines the key components that determine indicator quality and feasibility
+    for effective policy evaluation and monitoring.
+    
+    Attributes:
+        BASELINE: Baseline or current state values
+        TARGET: Goals, targets, or desired outcomes  
+        TIME_HORIZON: Temporal frameworks and deadlines
+        NUMERICAL: Quantitative values and metrics
+        DATE: Specific dates and temporal references
+    """
     BASELINE = "baseline"
     TARGET = "target"
     TIME_HORIZON = "time_horizon"
@@ -43,6 +93,15 @@ class ComponentType(Enum):
 
 @dataclass
 class DetectionResult:
+    """
+    Individual component detection result with position and confidence.
+    
+    Args:
+        component_type (ComponentType): Type of component detected
+        matched_text (str): Actual text that matched the pattern
+        confidence (float): Confidence level of the match (0.0-1.0)
+        position (int): Character position where match was found
+    """
     component_type: ComponentType
     matched_text: str
     confidence: float
@@ -51,6 +110,17 @@ class DetectionResult:
 
 @dataclass
 class IndicatorScore:
+    """
+    Comprehensive indicator quality score with detailed analysis.
+    
+    Args:
+        feasibility_score (float): Overall feasibility score (0.0-1.0)
+        components_detected (List[ComponentType]): List of detected component types
+        detailed_matches (List[DetectionResult]): Detailed pattern matches
+        has_quantitative_baseline (bool): Whether quantitative baseline was detected
+        has_quantitative_target (bool): Whether quantitative target was detected
+        quality_tier (str): Quality classification ("high", "medium", "low", "poor", "insufficient")
+    """
     feasibility_score: float
     components_detected: List[ComponentType]
     detailed_matches: List[DetectionResult]
@@ -61,6 +131,16 @@ class IndicatorScore:
 
 @dataclass
 class BatchScoreResult:
+    """
+    Batch processing results with comprehensive performance metrics.
+    
+    Args:
+        scores (List[IndicatorScore]): Individual indicator scores
+        total_indicators (int): Total number of indicators processed
+        execution_time (str): Human-readable execution time
+        duracion_segundos (float): Execution duration in seconds
+        planes_por_minuto (float): Processing rate (indicators per minute)
+    """
     scores: List[IndicatorScore]
     total_indicators: int
     execution_time: str
@@ -69,20 +149,50 @@ class BatchScoreResult:
 
 
 class FeasibilityScorer:
-    """Assesses indicator quality by detecting baseline values, targets/goals, and time horizons using regex patterns and named entity recognition.
+    """
+    Advanced feasibility scorer for policy indicator quality assessment.
     
-    This class implements a weighted quality assessment system that evaluates indicators
-    based on the presence of baseline values, targets/goals, and time horizons with
-    support for parallel processing and comprehensive pattern matching.
+    Comprehensive assessment engine that evaluates policy indicators using advanced
+    pattern recognition, multilingual support, and statistical validation methods.
+    Includes parallel processing capabilities for large-scale analysis.
     
+    The scorer uses a weighted scoring system based on the presence and quality of:
+    - Baseline values (40% weight)
+    - Targets/goals (40% weight)  
+    - Time horizons (20% weight)
+    - Quantitative components (10% bonus each)
+    
+    Args:
+        enable_parallel (bool, optional): Enable parallel processing. Defaults to True.
+        n_jobs (int, optional): Number of parallel jobs. Defaults to None (auto-detect).
+        backend (str, optional): Parallel backend ('loky', 'threading'). Defaults to 'loky'.
+        
     Attributes:
-        detection_patterns: Dictionary of regex patterns organized by component type.
-        weights: Scoring weights for different component types.
-        quality_thresholds: Thresholds for quality tier classification.
-        enable_parallel: Whether parallel processing is enabled.
-        n_jobs: Number of parallel jobs for batch processing.
-        backend: Parallel processing backend ('loky' or 'threading').
-        logger: Logger instance for performance monitoring.
+        detection_patterns (Dict): Compiled regex patterns by component type
+        weights (Dict): Component weighting factors for scoring
+        quality_thresholds (Dict): Quality tier classification thresholds
+        logger (logging.Logger): Performance and error logger
+        
+    Methods:
+        calculate_feasibility_score: Score single indicator
+        batch_score: Score multiple indicators with optional parallel processing
+        detect_components: Detect all components in text
+        batch_score_with_monitoring: Score with comprehensive performance monitoring
+        get_detection_rules_documentation: Get complete documentation of detection rules
+        
+    Example:
+        >>> scorer = FeasibilityScorer(enable_parallel=True, n_jobs=4)
+        >>> result = scorer.calculate_feasibility_score(
+        ...     "Aumentar cobertura de salud del 60% actual al 85% en 2025"
+        ... )
+        >>> print(f"Score: {result.feasibility_score:.2f}")
+        >>> print(f"Tier: {result.quality_tier}")
+        
+    Note:
+        All text processing includes Unicode NFKC normalization for consistent
+        handling of composed/decomposed characters and encoding variations.
+        The system supports both Spanish and English pattern detection.
+
     """
     
     def __init__(self, enable_parallel=True, n_jobs=None, backend='loky'):
@@ -122,10 +232,12 @@ class FeasibilityScorer:
         self._setup_logging()
     
     def _setup_logging(self):
-        """Setup performance logging.
+        """
+        Setup comprehensive performance and error logging.
         
-        Configures logging with appropriate handlers and formatters for
-        performance monitoring and debugging purposes.
+        Configures logging with appropriate formatters and handlers for
+        production monitoring and debugging capabilities.
+
         """
         if not self.logger.handlers:
             handler = logging.StreamHandler()
@@ -136,16 +248,22 @@ class FeasibilityScorer:
             self.logger.addHandler(handler)
             self.logger.setLevel(logging.INFO)
     
-    @staticmethod
-    def _initialize_patterns() -> Dict[ComponentType, List[Dict]]:
-        """Initialize regex patterns for detecting indicator components in Spanish and English.
+    def _initialize_patterns(self) -> Dict[ComponentType, List[Dict]]:
+        """
+        Initialize comprehensive regex patterns for multilingual component detection.
         
-        Creates comprehensive pattern dictionaries for detecting baseline values,
-        targets, time horizons, numerical values, and dates in both Spanish and English.
+        Creates and compiles regex patterns for detecting baseline values, targets,
+        time horizons, numerical values, and dates in both Spanish and English text.
         
         Returns:
-            Dictionary mapping ComponentType to lists of pattern dictionaries
-            with pattern, confidence, and language information.
+            Dict[ComponentType, List[Dict]]: Dictionary mapping component types to
+                                           lists of pattern dictionaries with regex,
+                                           confidence, and language information
+                                           
+        Note:
+            Patterns are optimized for policy indicator analysis and include
+            confidence levels based on specificity and reliability of detection.
+
         """
         return {
             ComponentType.BASELINE: [
@@ -240,30 +358,38 @@ class FeasibilityScorer:
             ]
         }
     
-    @staticmethod
-    def _normalize_text(text: str) -> str:
-        """Normalize text using Unicode NFKC normalization for consistent character representation.
+    def _normalize_text(self, text: str) -> str:
+        """
+        Normalize text using Unicode NFKC normalization for consistent character representation.
         
         Args:
-            text: Input text to normalize.
+            text (str): Input text to normalize
             
         Returns:
-            Unicode-normalized text string.
+            str: Normalized text with consistent Unicode representation
+            
+        Note:
+            Uses NFKC normalization to handle composed/decomposed characters,
+            compatibility characters, and encoding variations consistently.
+
         """
         return unicodedata.normalize('NFKC', text)
     
     def detect_components(self, text: str) -> List[DetectionResult]:
-        """Detect all components in the given text using regex patterns.
-        
-        Applies pattern matching to identify baseline values, targets, time horizons,
-        numerical values, and dates with confidence scoring and position tracking.
+        """
+        Detect all components in the given text using comprehensive regex patterns.
         
         Args:
-            text: Input text to analyze for indicator components.
+            text (str): Text to analyze for indicator components
             
         Returns:
-            List of DetectionResult objects with component type, matched text,
-            confidence score, and position information.
+            List[DetectionResult]: List of detected components with confidence scores
+                                  and position information
+                                  
+        Note:
+            Applies Unicode normalization before pattern matching to ensure
+            consistent detection across different text encodings and formats.
+
         """
         results = []
         # Apply Unicode normalization before processing
@@ -288,18 +414,23 @@ class FeasibilityScorer:
         return results
     
     def _has_quantitative_component(self, text: str, component_type: ComponentType) -> bool:
-        """Check if a component has quantitative elements nearby.
+        """
+        Check if a component has quantitative elements in nearby context.
         
-        Analyzes text context around component mentions to determine if
-        quantitative values are present within a proximity window.
+        Analyzes text around component mentions to determine if quantitative
+        values are associated with baseline or target components.
         
         Args:
-            text: Text to analyze for quantitative components.
-            component_type: Type of component to check for quantitative elements.
+            text (str): Text to analyze
+            component_type (ComponentType): Component type to check for quantitative association
             
         Returns:
-            True if quantitative elements are found near component mentions,
-            False otherwise.
+            bool: True if quantitative elements are found within 30 characters of component mentions
+            
+        Note:
+            Uses a 30-character context window around component mentions to identify
+            associated numerical values, percentages, or quantitative indicators.
+
         """
         # Apply Unicode normalization before processing
         normalized_text = FeasibilityScorer._normalize_text(text)
@@ -329,22 +460,36 @@ class FeasibilityScorer:
         return False
     
     def calculate_feasibility_score(self, text: str) -> IndicatorScore:
-        """Calculate feasibility score based on detected components and their quality.
+        """
+        Calculate comprehensive feasibility score based on detected components and quality.
         
-        Implements a comprehensive scoring system that evaluates indicator quality
-        based on the presence and quality of baseline values, targets, and temporal elements.
-        
-        Requirements for positive score:
-        - Must have both baseline and target components
-        - Higher scores for quantitative baselines and targets
-        - Bonus for time horizons, numerical values, and dates
+        Implements sophisticated scoring algorithm with mandatory requirements and
+        bonus components for comprehensive indicator quality assessment.
         
         Args:
-            text: Input text containing the indicator description.
+            text (str): Indicator text to evaluate
             
         Returns:
-            IndicatorScore object with feasibility score, detected components,
-            quantitative analysis, and quality tier classification.
+            IndicatorScore: Comprehensive score with detailed analysis
+            
+        Scoring Requirements:
+            - Must have both baseline and target components for positive score
+            - Base score: 0.8 (0.4 baseline + 0.4 target)  
+            - Quantitative bonuses: +0.2 each for quantitative baseline and target
+            - Component bonuses: +0.2 time horizon, +0.1 numerical, +0.1 dates
+            - Confidence weighting: Final score multiplied by average pattern confidence
+            
+        Quality Tiers:
+            - "high": ≥0.8 score
+            - "medium": ≥0.5 score  
+            - "low": ≥0.2 score
+            - "poor": <0.2 score
+            - "insufficient": Missing baseline or target
+            
+        Note:
+            All text processing includes Unicode normalization for consistent
+            handling of different character encodings and compositions.
+
         """
         # Check for zero evidence support condition first
         if evidencia_soporte is not None and evidencia_soporte == 0:

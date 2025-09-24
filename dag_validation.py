@@ -1,26 +1,53 @@
 """
-DETERMINISTIC MONTE CARLO SAMPLING FOR ADVANCED DAG VALIDATION
-================================================================
+Deterministic Monte Carlo Sampling for Advanced DAG Validation
+==============================================================
 
 Enhanced version with sophisticated statistical testing, multiple validation methods,
-and comprehensive reporting capabilities.
+and comprehensive reporting capabilities for directed acyclic graph analysis.
 
-Features:
-- Multiple statistical tests (Acyclicity, Connectivity, Path Analysis)
-- Advanced graph metrics and topological analysis
-- Bayesian posterior probability calculations
-- Confidence intervals and sensitivity analysis
-- Export capabilities for academic/publication-ready results
-- Parallel processing for large graphs
-- Interactive visualization support
-- Hypothesis testing framework
+This module provides a comprehensive framework for validating directed acyclic graphs (DAGs)
+using advanced statistical methods including Monte Carlo sampling, Bayesian analysis, and
+multiple hypothesis testing approaches. Designed for production environments requiring
+rigorous statistical validation of causal models and graph structures.
 
 Statistical Framework:
-- Frequentist p-values with multiple testing corrections
-- Bayesian posterior probabilities for acyclicity
-- Effect size measurements and power analysis
-- Bootstrap confidence intervals
-- Sensitivity to edge perturbations
+    - Frequentist p-values with multiple testing corrections
+    - Bayesian posterior probabilities for acyclicity
+    - Effect size measurements and power analysis  
+    - Bootstrap confidence intervals
+    - Sensitivity to edge perturbations
+
+Key Features:
+    - Multiple statistical tests (Acyclicity, Connectivity, Path Analysis)
+    - Advanced graph metrics and topological analysis
+    - Bayesian posterior probability calculations
+    - Confidence intervals and sensitivity analysis
+    - Export capabilities for academic/publication-ready results
+    - Parallel processing for large graphs
+    - Interactive visualization support
+    - Hypothesis testing framework
+
+Classes:
+    GraphType: Types of graph structures for analysis
+    StatisticalTest: Available statistical tests enumeration
+    AdvancedGraphNode: Enhanced node representation with metadata
+    MonteCarloAdvancedResult: Comprehensive results from Monte Carlo testing
+    HypothesisTestResult: Results of formal statistical hypothesis testing
+    AdvancedDAGValidator: Sophisticated DAG validation with multiple statistical approaches
+
+Functions:
+    _create_advanced_seed: Create deterministic seed with salt for variability
+
+Example:
+    >>> validator = AdvancedDAGValidator(GraphType.CAUSAL_DAG)
+    >>> validator.add_node("treatment", role="intervention")
+    >>> validator.add_node("outcome", dependencies={"treatment"}, role="outcome")
+    >>> result = validator.calculate_acyclicity_pvalue_advanced("test_dag")
+    >>> print(f"P-value: {result.p_value:.4f}")
+
+Note:
+    All statistical tests are designed with proper multiple testing corrections
+    and include comprehensive sensitivity analysis for robust inference.
 """
 
 import hashlib
@@ -44,7 +71,18 @@ from json_utils import safe_json_dump, safe_json_dumps
 
 
 class GraphType(Enum):
-    """Types of graph structures for analysis."""
+    """
+    Types of graph structures for analysis.
+    
+    Defines different categories of directed graphs that can be analyzed
+    with specialized validation approaches for each type.
+    
+    Attributes:
+        CAUSAL_DAG: Causal directed acyclic graph
+        BAYESIAN_NETWORK: Bayesian network structure
+        STRUCTURAL_MODEL: Structural equation model
+        THEORY_OF_CHANGE: Theory of change logical model
+    """
     CAUSAL_DAG = auto()
     BAYESIAN_NETWORK = auto()
     STRUCTURAL_MODEL = auto()
@@ -52,7 +90,19 @@ class GraphType(Enum):
 
 
 class StatisticalTest(Enum):
-    """Available statistical tests."""
+    """
+    Available statistical tests for graph validation.
+    
+    Comprehensive set of statistical tests for validating different
+    aspects of graph structure and properties.
+    
+    Attributes:
+        ACYCLICITY: Test for absence of cycles in the graph
+        CONNECTIVITY: Test for graph connectivity properties
+        PATH_ANALYSIS: Test for path validity and structure
+        SENSITIVITY: Test for sensitivity to edge perturbations
+        ROBUSTNESS: Test for overall structural robustness
+    """
     ACYCLICITY = auto()
     CONNECTIVITY = auto()
     PATH_ANALYSIS = auto()
@@ -62,7 +112,35 @@ class StatisticalTest(Enum):
 
 @dataclass
 class AdvancedGraphNode:
-    """Enhanced node representation with metadata and metrics."""
+    """
+    Enhanced node representation with metadata and metrics.
+    
+    Comprehensive node representation that includes dependencies, metadata,
+    centrality measures, and role classification for advanced graph analysis.
+    
+    Args:
+        name (str): Node identifier name
+        dependencies (Set[str]): Set of parent node names
+        metadata (Dict[str, Any], optional): Additional node metadata. Defaults to empty dict.
+        centrality_measures (Dict[str, float], optional): Centrality metrics. Defaults to empty dict.
+        role (str, optional): Node role in analysis. Defaults to "variable".
+                              Options: "variable", "intervention", "outcome", "mediator"
+        
+    Methods:
+        __post_init__: Initialize default metadata if not provided
+        
+    Example:
+        >>> node = AdvancedGraphNode(
+        ...     name="treatment",
+        ...     dependencies=set(),
+        ...     role="intervention",
+        ...     metadata={"study_id": "RCT_001"}
+        ... )
+        
+    Note:
+        Automatically initializes default metadata including creation timestamp,
+        node type, and confidence level if not explicitly provided.
+    """
     name: str
     dependencies: Set[str]
     metadata: Dict[str, Any] = field(default_factory=dict)
@@ -70,7 +148,12 @@ class AdvancedGraphNode:
     role: str = "variable"  # variable, intervention, outcome, mediator
 
     def __post_init__(self):
-        """Initialize default metadata."""
+        """
+        Initialize default metadata if not provided.
+        
+        Sets up standard metadata fields including creation timestamp,
+        node type classification, and default confidence level.
+        """
         if not self.metadata:
             self.metadata = {
                 "created": datetime.now().isoformat(),
@@ -139,7 +222,23 @@ class HypothesisTestResult:
 
 @staticmethod
 def _create_advanced_seed(plan_name: str, salt: str = "") -> int:
-    """Create deterministic seed with salt for additional variability."""
+    """
+    Create deterministic seed with salt for additional variability.
+    
+    Generates a deterministic but variable seed based on plan name, optional salt,
+    and current date for reproducible yet flexible random number generation.
+    
+    Args:
+        plan_name (str): Base plan name for seed generation
+        salt (str, optional): Additional salt for variability. Defaults to "".
+        
+    Returns:
+        int: Deterministic seed value for random number generation
+        
+    Note:
+        Uses SHA512 hashing for robust seed generation with 8-byte seed space
+        for enhanced randomization quality in statistical sampling.
+    """
     combined_string = f"{plan_name}{salt}{datetime.now().strftime('%Y%m%d')}"
     hash_obj = hashlib.sha512(combined_string.encode('utf-8'))
     seed_bytes = hash_obj.digest()[:8]  # Use 8 bytes for larger seed space
@@ -160,6 +259,40 @@ class AdvancedDAGValidator:
         validation_history: List of previous validation results.
         hypothesis_tests: List of formal statistical hypothesis test results.
         config: Configuration parameters for validation algorithms.
+    
+    Comprehensive validation system for directed acyclic graphs incorporating multiple
+    statistical testing methods, Bayesian analysis, sensitivity testing, and advanced
+    graph metrics. Designed for rigorous validation of causal models and structural graphs.
+    
+    Args:
+        graph_type (GraphType, optional): Type of graph being analyzed. 
+                                         Defaults to GraphType.CAUSAL_DAG.
+    
+    Attributes:
+        graph_nodes (Dict[str, AdvancedGraphNode]): Dictionary of graph nodes
+        graph_type (GraphType): Graph type classification
+        validation_history (List[MonteCarloAdvancedResult]): Historical validation results
+        hypothesis_tests (List[HypothesisTestResult]): Completed hypothesis tests
+        config (Dict): Advanced configuration parameters
+        
+    Methods:
+        add_node: Add node with enhanced metadata and role specification
+        add_edge: Add directed edge with optional weight parameter
+        add_causal_pathway: Add entire causal pathway with optional weights
+        calculate_acyclicity_pvalue_advanced: Advanced p-value calculation
+        perform_sensitivity_analysis: Sensitivity analysis by edge perturbation
+        calculate_bayesian_posterior: Bayesian posterior probability calculation
+        
+    Example:
+        >>> validator = AdvancedDAGValidator(GraphType.CAUSAL_DAG)
+        >>> validator.add_node("X", role="intervention")
+        >>> validator.add_node("Y", dependencies={"X"}, role="outcome")
+        >>> result = validator.calculate_acyclicity_pvalue_advanced("test")
+        >>> print(f"Acyclicity p-value: {result.p_value:.4f}")
+        
+    Note:
+        All statistical methods include proper multiple testing corrections and
+        comprehensive sensitivity analysis for robust causal inference.
     """
 
     def __init__(self, graph_type: GraphType = GraphType.CAUSAL_DAG):
@@ -192,10 +325,10 @@ class AdvancedDAGValidator:
         """Add a node with enhanced metadata and role specification.
         
         Args:
-            name: Unique identifier for the node.
-            dependencies: Set of node names that this node depends on.
-            role: Role of the node in the causal model ('variable', 'intervention', 'outcome', 'mediator').
-            metadata: Additional metadata dictionary for the node.
+            name (str): Unique identifier for the node.
+            dependencies (Set[str], optional): Set of node names that this node depends on.
+            role (str): Role of the node in the causal model ('variable', 'intervention', 'outcome', 'mediator').
+            metadata (Dict[str, Any], optional): Additional metadata dictionary for the node.
         """
         if dependencies is None:
             dependencies = set()
@@ -213,9 +346,14 @@ class AdvancedDAGValidator:
         """Add a directed edge with optional weight parameter.
         
         Args:
-            from_node: Source node name.
-            to_node: Target node name.
-            weight: Edge weight for causal strength (default: 1.0).
+            from_node (str): Source node name.
+            to_node (str): Target node name.
+            weight (float): Edge weight for causal strength (default: 1.0).
+            weight (float, optional): Edge weight for analysis. Defaults to 1.0.
+            
+        Note:
+            Automatically creates nodes if they don't exist. Edge weight is stored
+            in the target node's metadata for later analysis.
         """
         if to_node not in self.graph_nodes:
             self.add_node(to_node, role="variable")
