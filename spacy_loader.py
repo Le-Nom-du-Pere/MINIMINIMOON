@@ -1,6 +1,8 @@
 import logging
 import time
+import os
 from typing import Optional, Any
+from logging.handlers import RotatingFileHandler
 import spacy
 import spacy.cli
 from spacy.language import Language
@@ -67,7 +69,7 @@ class SpacyModelLoader:
         """
         try:
             return spacy.load(model_name, disable=disable or [])
-        except (IOError, OSError, ImportError, AttributeError) as e:
+        except Exception as e:  # Catch all exceptions to prevent SystemExit
             logger.debug(f"Failed to load model '{model_name}': {e}")
             return None
     
@@ -158,10 +160,84 @@ class SafeSpacyProcessor:
         return self.model is not None and not self.loader.is_degraded_mode()
 
 
+def setup_logging():
+    """
+    Setup logging with RotatingFileHandler and configurable log directory.
+    Falls back to current working directory if LOG_DIR is not set or not writable.
+    """
+    # Get log directory from environment variable or fallback to current directory
+    log_dir = os.getenv('LOG_DIR', os.getcwd())
+    
+    # Ensure log directory exists and is writable
+    try:
+        os.makedirs(log_dir, exist_ok=True)
+        # Test if directory is writable
+        test_file = os.path.join(log_dir, '.write_test')
+        with open(test_file, 'w') as f:
+            f.write('test')
+        os.remove(test_file)
+    except (PermissionError, OSError, IOError) as e:
+        # Fallback to current working directory
+        warning_msg = f"Cannot write to LOG_DIR '{log_dir}': {e}. Falling back to current directory."
+        log_dir = os.getcwd()
+        # Log warning to console since file logging isn't set up yet
+        print(f"WARNING: {warning_msg}")
+        
+        # Try current directory as final fallback
+        try:
+            test_file = os.path.join(log_dir, '.write_test')
+            with open(test_file, 'w') as f:
+                f.write('test')
+            os.remove(test_file)
+        except (PermissionError, OSError, IOError) as fallback_e:
+            print(f"WARNING: Cannot write to fallback directory '{log_dir}': {fallback_e}")
+            return  # Skip file logging setup if no writable directory available
+    
+    log_file = os.path.join(log_dir, 'spacy_loader.log')
+    
+    # Configure root logger
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.INFO)
+    
+    # Remove existing handlers to avoid duplicates
+    for handler in root_logger.handlers[:]:
+        root_logger.removeHandler(handler)
+    
+    try:
+        # Setup RotatingFileHandler with appropriate parameters
+        file_handler = RotatingFileHandler(
+            filename=log_file,
+            maxBytes=10 * 1024 * 1024,  # 10MB per file
+            backupCount=5,  # Keep 5 backup files
+            encoding='utf-8'
+        )
+        file_formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        )
+        file_handler.setFormatter(file_formatter)
+        root_logger.addHandler(file_handler)
+        
+        # Also add console handler for immediate feedback
+        console_handler = logging.StreamHandler()
+        console_formatter = logging.Formatter('%(levelname)s - %(message)s')
+        console_handler.setFormatter(console_formatter)
+        root_logger.addHandler(console_handler)
+        
+        logger.info(f"Logging configured successfully. Log files in: {log_dir}")
+        
+    except (PermissionError, OSError, IOError) as e:
+        print(f"WARNING: Failed to setup file logging: {e}. Using console logging only.")
+        # Fallback to console-only logging
+        console_handler = logging.StreamHandler()
+        console_formatter = logging.Formatter('%(levelname)s - %(message)s')
+        console_handler.setFormatter(console_formatter)
+        root_logger.addHandler(console_handler)
+
+
 # Example usage and testing functions
 def example_usage():
-    """Demonstrate the robust spaCy model loading."""
-    logging.basicConfig(level=logging.INFO)
+    """Demonstrate the robust spaCy model loading with enhanced logging."""
+    setup_logging()
     
     # Test with a common model
     processor = SafeSpacyProcessor("en_core_web_sm")
