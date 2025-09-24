@@ -83,7 +83,8 @@ if not NETWORKX_AVAILABLE:
     class MockNetworkX:
         DiGraph = MockDiGraph
 
-        def has_path(self, graph, source, target):
+        @staticmethod
+        def has_path(graph, source, target):
             return graph.has_path(source, target)
 
         def shortest_path(self, graph, source, target):

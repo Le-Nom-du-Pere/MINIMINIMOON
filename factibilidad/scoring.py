@@ -60,7 +60,8 @@ class FactibilidadScorer:
             'donde', 'cuando', 'como', 'entre', 'durante', 'antes', 'después'
         }
     
-    def _validate_weights(self, w1: float, w2: float, w3: float) -> None:
+    @staticmethod
+    def _validate_weights(w1: float, w2: float, w3: float) -> None:
         """
         Validate that weights sum to a meaningful range for score calibration.
         
@@ -185,7 +186,8 @@ class FactibilidadScorer:
         
         return score_final
     
-    def _count_causal_connections(self, all_matches: Dict[str, List[PatternMatch]]) -> int:
+    @staticmethod
+    def _count_causal_connections(all_matches: Dict[str, List[PatternMatch]]) -> int:
         """
         Count causal connections based on detected patterns.
         
@@ -320,7 +322,8 @@ class FactibilidadScorer:
             'count': len(clusters)
         }
     
-    def _generate_analysis(self, matches: Dict[str, List[PatternMatch]], 
+    @staticmethod
+    def _generate_analysis(matches: Dict[str, List[PatternMatch]], 
                           clusters: List[Dict]) -> Dict:
         """Generate human-readable analysis of the scoring."""
         analysis = {

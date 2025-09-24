@@ -123,11 +123,13 @@ class ContradictionDetector:
         self.compiled_actions = [re.compile(p, re.IGNORECASE | re.UNICODE) for p in self.action_patterns]
         self.compiled_quantitative = [re.compile(p, re.IGNORECASE | re.UNICODE) for p in self.quantitative_patterns]
     
-    def _normalize_text(self, text: str) -> str:
+    @staticmethod
+    def _normalize_text(text: str) -> str:
         """Normalize text using Unicode NFKC normalization."""
         return unicodedata.normalize('NFKC', text)
     
-    def _find_pattern_matches(self, text: str, patterns: List[re.Pattern], pattern_type: str) -> List[Tuple[str, int, int]]:
+    @staticmethod
+    def _find_pattern_matches(text: str, patterns: List[re.Pattern], pattern_type: str) -> List[Tuple[str, int, int]]:
         """Find all matches for a given pattern type."""
         matches = []
         for pattern in patterns:
@@ -141,8 +143,8 @@ class ContradictionDetector:
         end = min(len(text), center_pos + self.context_window // 2)
         return text[start:end].strip()
     
-    def _calculate_contradiction_confidence(self, 
-                                         adversative_pos: int,
+    @staticmethod
+    def _calculate_contradiction_confidence(adversative_pos: int,
                                          goal_matches: List[Tuple[str, int, int]],
                                          action_matches: List[Tuple[str, int, int]],
                                          quantitative_matches: List[Tuple[str, int, int]]) -> float:
@@ -166,7 +168,8 @@ class ContradictionDetector:
         
         return min(1.0, confidence)
     
-    def _determine_risk_level(self, confidence: float, context_complexity: int) -> RiskLevel:
+    @staticmethod
+    def _determine_risk_level(confidence: float, context_complexity: int) -> RiskLevel:
         """Determine risk level based on confidence and context complexity."""
         # Adjust confidence based on context complexity
         adjusted_confidence = confidence * (1 + context_complexity * 0.1)

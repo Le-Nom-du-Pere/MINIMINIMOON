@@ -136,7 +136,8 @@ class FeasibilityScorer:
             self.logger.addHandler(handler)
             self.logger.setLevel(logging.INFO)
     
-    def _initialize_patterns(self) -> Dict[ComponentType, List[Dict]]:
+    @staticmethod
+    def _initialize_patterns() -> Dict[ComponentType, List[Dict]]:
         """Initialize regex patterns for detecting indicator components in Spanish and English.
         
         Creates comprehensive pattern dictionaries for detecting baseline values,
@@ -239,7 +240,8 @@ class FeasibilityScorer:
             ]
         }
     
-    def _normalize_text(self, text: str) -> str:
+    @staticmethod
+    def _normalize_text(text: str) -> str:
         """Normalize text using Unicode NFKC normalization for consistent character representation.
         
         Args:
@@ -589,7 +591,8 @@ class FeasibilityScorer:
             planes_por_minuto=planes_por_minuto
         )
     
-    def get_detection_rules_documentation(self) -> str:
+    @staticmethod
+    def get_detection_rules_documentation() -> str:
         """Return comprehensive documentation of detection rules."""
         doc = """
 # Feasibility Scorer Detection Rules Documentation
@@ -723,7 +726,8 @@ The feasibility scorer evaluates indicator quality by detecting three core compo
         # Ensure score is between 0.0 and 1.0
         return max(0.0, min(1.0, final_score))
     
-    def _detect_monetary_values(self, text: str) -> float:
+    @staticmethod
+    def _detect_monetary_values(text: str) -> float:
         """Detect monetary amounts and return normalized score."""
         monetary_patterns = [
             # Colombian pesos with COP
@@ -768,7 +772,8 @@ The feasibility scorer evaluates indicator quality by detecting three core compo
         
         return min(base_score + precision_bonus, 1.0)
     
-    def _detect_temporal_indicators(self, text: str) -> float:
+    @staticmethod
+    def _detect_temporal_indicators(text: str) -> float:
         """Detect dates and temporal indicators."""
         temporal_patterns = [
             # Year patterns (YYYY)
@@ -821,7 +826,8 @@ The feasibility scorer evaluates indicator quality by detecting three core compo
         
         return min(score, 1.0)
     
-    def _detect_measurement_terminology(self, text: str) -> float:
+    @staticmethod
+    def _detect_measurement_terminology(text: str) -> float:
         """Detect measurement and evaluation terminology."""
         terminology_patterns = [
             # Baseline terminology
@@ -872,7 +878,8 @@ The feasibility scorer evaluates indicator quality by detecting three core compo
         
         return min(richness_score + measurement_bonus, 1.0)
     
-    def _calculate_structure_penalty(self, text: str) -> float:
+    @staticmethod
+    def _calculate_structure_penalty(text: str) -> float:
         """Calculate penalty for indicators in titles/bullets without values."""
         # Check for title/bullet point patterns
         title_patterns = [
@@ -1141,11 +1148,13 @@ The feasibility scorer evaluates indicator quality by detecting three core compo
         
         return str(output_path)
     
-    def translate_quality_tier_spanish(self, tier: str) -> str:
+    @staticmethod
+    def translate_quality_tier_spanish(tier: str) -> str:
         """Public wrapper to translate quality tier to Spanish."""
         return FeasibilityScorer._translate_quality_tier_spanish(tier)
 
-    def get_recommendation_spanish(self, quality_tier: str) -> str:
+    @staticmethod
+    def get_recommendation_spanish(quality_tier: str) -> str:
         """Public wrapper to obtain recommendation in Spanish for a quality tier."""
         return FeasibilityScorer._get_recommendation_spanish(quality_tier)
 
@@ -1173,7 +1182,8 @@ The feasibility scorer evaluates indicator quality by detecting three core compo
         }
         return recommendations.get(quality_tier, 'Evaluación pendiente.')
     
-    def _generate_csv_fallback(self, results: Dict[str, IndicatorScore], output_dir: str = ".") -> str:
+    @staticmethod
+    def _generate_csv_fallback(results: Dict[str, IndicatorScore], output_dir: str = ".") -> str:
         """
         Fallback CSV generation without pandas dependency.
         
