@@ -30,6 +30,8 @@ import spacy
 from joblib import Parallel, delayed
 from sentence_transformers import SentenceTransformer, util
 
+from device_config import add_device_args, configure_device_from_args, get_device_config
+
 import numpy as np
 import pandas as pd
 import torch
@@ -60,8 +62,11 @@ except OSError as e:
     raise SystemExit("Modelo SpaCy no disponible. Ejecute: python -m spacy download es_core_news_lg")
 
 try:
+    from device_config import to_device
     EMBEDDING_MODEL = SentenceTransformer("sentence-transformers/paraphrase-multilingual-mpnet-base-v2")
+    EMBEDDING_MODEL = to_device(EMBEDDING_MODEL)
     log_info_with_text(LOGGER, "✅ Modelo de embeddings cargado exitosamente")
+    log_info_with_text(LOGGER, f"✅ Modelo configurado en dispositivo: {get_device_config().get_device()}")
 except Exception as e:
     log_error_with_text(LOGGER, f"❌ Error crítico cargando modelo de embeddings: {e}")
     raise SystemExit(f"Error cargando modelo de embeddings: {e}")
@@ -2567,6 +2572,9 @@ Ejemplos de uso:
         """
     )
     
+    # Configure device
+    parser = add_device_args(parser)
+    
     parser.add_argument(
         "input_path",
         help="Directorio con archivos PDF o archivo PDF individual"
@@ -2591,6 +2599,17 @@ Ejemplos de uso:
     input_path = Path(args.input_path).expanduser()
     output_dir = Path("resultados_evaluacion_industrial")
     output_dir.mkdir(exist_ok=True)
+    
+    # Configure device
+    device_config = configure_device_from_args(args)
+    LOGGER.info(f"🔧 Dispositivo configurado: {device_config.get_device()}")
+    
+    # Get device information
+    device_info = device_config.get_device_info()
+    LOGGER.info(f"🖥️  Tipo de dispositivo: {device_info['device_type']}")
+    LOGGER.info(f"🔢 Hilos de PyTorch: {device_info['num_threads']}")
+    if device_info['cuda_available'] and device_info['device_type'] == 'cuda':
+        LOGGER.info(f"🚀 CUDA disponible: {device_info['cuda_device_count']} dispositivos")
 
     # Inicializar sistema de monitoreo industrial
     sistema_monitoreo = SistemaMonitoreoIndustrial()
