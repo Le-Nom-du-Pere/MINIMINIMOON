@@ -1,129 +1,73 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Industrial Unicode Normalization Analysis Framework
-===================================================
+INDUSTRIAL UNICODE NORMALIZATION ANALYSIS FRAMEWORK
+==================================================
 
 FULLY IMPLEMENTATION-READY - NO MOCKS, NO PLACEHOLDERS
 100% FUNCTIONAL WITH ZERO DEPENDENCIES BEYOND STANDARD LIBRARY
 
-A comprehensive framework for Unicode text normalization analysis and comparison
-with enterprise-level features including performance monitoring, concurrent processing,
-and multiple export formats. Designed for production environments requiring
-robust text processing and analysis capabilities.
-
-This module provides complete Unicode normalization analysis including:
-- Multi-form normalization comparison (NFC, NFD, NFKC, NFKD)
-- Comprehensive pattern detection and analysis
-- Statistical analysis of character differences
-- Performance monitoring and optimization
-- Thread-safe concurrent processing
-- Multiple export formats (HTML, JSON, CSV)
-- Memory-efficient processing for large datasets
+Features:
+✅ Complete implementation with all functions defined
+✅ Zero external dependencies beyond Python standard library
+✅ Full error handling and edge case coverage
+✅ Production-ready logging and monitoring
+✅ Complete HTML/JSON/CSV export functionality
+✅ Thread-safe concurrent processing
+✅ Memory-efficient large file handling
+✅ Comprehensive Unicode normalization analysis
+✅ Real-time performance monitoring
+✅ Industrial-grade exception handling
 
 Version: 3.0.0 - INDUSTRIAL PRODUCTION READY
 License: MIT
-
-Features:
-    ✅ Complete implementation with all functions defined
-    ✅ Zero external dependencies beyond Python standard library
-    ✅ Full error handling and edge case coverage
-    ✅ Production-ready logging and monitoring
-    ✅ Complete HTML/JSON/CSV export functionality
-    ✅ Thread-safe concurrent processing
-    ✅ Memory-efficient large file handling
-    ✅ Comprehensive Unicode normalization analysis
-    ✅ Real-time performance monitoring
-    ✅ Industrial-grade exception handling
-
-Classes:
-    NormalizationForm: Unicode normalization forms enumeration
-    AnalysisLevel: Analysis depth levels enumeration
-    PatternCategory: Pattern categories for analysis
-    AnalysisMetrics: Comprehensive analysis metrics dataclass
-    ComparisonResult: Normalization comparison results dataclass
-    CharacterDifference: Individual character difference dataclass
-    PatternRegistry: Centralized pattern registry with complete implementations
-    PerformanceMonitor: Thread-safe performance monitoring system
-    IndustrialUnicodeAnalyzer: Main analyzer class with comprehensive features
-
-Functions:
-    normalize_unicode: Normalize Unicode text to specified form
-    find_quotes: Find all quote positions in text
-    count_words: Count words with Unicode support
-    extract_unicode_scripts: Extract Unicode script information
-    get_unicode_script: Determine Unicode script from code point
-
-Exceptions:
-    UnicodeAnalyzerError: Base exception for Unicode analyzer
-    ConfigurationError: Configuration-related errors
-    ProcessingError: Text processing errors
-    ExportError: Export operation errors
-
-Example:
-    >>> analyzer = IndustrialUnicodeAnalyzer()
-    >>> result = analyzer.compare_normalizations("Café naïve")
-    >>> analyzer.export_results([result], "results.html", "html")
-
-Note:
-    All operations are thread-safe and designed for concurrent processing.
-    Memory usage is actively monitored and optimized for large-scale operations.
 """
 
-import csv
-import gc
-import gzip
-import hashlib
-import json
-import logging
-import os
 import re
 import sys
-import threading
+import json
+import csv
 import time
+import logging
+import threading
 import traceback
 import unicodedata
-import warnings
-from collections import defaultdict
-from concurrent.futures import ThreadPoolExecutor, TimeoutError, as_completed
+import hashlib
+import gc
+import os
+import gzip
+from abc import ABC, abstractmethod
+from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError
 from contextlib import contextmanager
-from dataclasses import asdict, dataclass, field, replace
-from datetime import datetime, timezone
-from enum import Enum
-from functools import lru_cache
+from dataclasses import dataclass, field, asdict
+from enum import Enum, auto
+from functools import lru_cache, wraps
 from pathlib import Path
-from statistics import mean, median, stdev
 from typing import (
-    IO,
-    Any,
-    Callable,
-    Dict,
-    Iterator,
-    List,
-    NamedTuple,
-    Optional,
-    Set,
-    Tuple,
-    Union,
+    Dict, List, Tuple, Optional, Union, Callable, Iterator,
+    Any, NamedTuple, Set, IO
 )
+from collections import defaultdict, Counter, deque
+from statistics import mean, median, stdev, mode
+from datetime import datetime, timezone
+from io import StringIO
+import warnings
+
 
 # ============================================================================
 # CORE ENUMS AND CONFIGURATION
 # ============================================================================
 
-
 class NormalizationForm(Enum):
     """Unicode normalization forms."""
-
-    NFC = "NFC"
-    NFD = "NFD"
-    NFKC = "NFKC"
-    NFKD = "NFKD"
+    NFC = 'NFC'
+    NFD = 'NFD'
+    NFKC = 'NFKC'
+    NFKD = 'NFKD'
 
 
 class AnalysisLevel(Enum):
     """Analysis depth levels."""
-
     BASIC = 1
     STANDARD = 2
     COMPREHENSIVE = 3
@@ -132,7 +76,6 @@ class AnalysisLevel(Enum):
 
 class PatternCategory(Enum):
     """Pattern categories for analysis."""
-
     QUOTES = "quotes"
     PUNCTUATION = "punctuation"
     WHITESPACE = "whitespace"
@@ -147,10 +90,9 @@ class PatternCategory(Enum):
 # DATA STRUCTURES
 # ============================================================================
 
-@dataclass
+@dataclass(frozen=True)
 class AnalysisMetrics:
     """Comprehensive analysis metrics."""
-
     pattern_matches: Dict[str, int] = field(default_factory=dict)
     character_count: int = 0
     byte_size: int = 0
@@ -166,7 +108,6 @@ class AnalysisMetrics:
 @dataclass
 class ComparisonResult:
     """Normalization comparison results."""
-
     text_id: str
     original_text: str
     normalized_forms: Dict[str, str] = field(default_factory=dict)
@@ -174,14 +115,12 @@ class ComparisonResult:
     metrics_after: Dict[str, AnalysisMetrics] = field(default_factory=dict)
     differences_detected: List[Dict[str, Any]] = field(default_factory=list)
     recommendations: List[str] = field(default_factory=list)
-    timestamp: datetime = field(
-        default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 @dataclass
 class CharacterDifference:
     """Individual character difference."""
-
     position: int
     original: str
     normalized: str
@@ -196,28 +135,23 @@ class CharacterDifference:
 # EXCEPTIONS
 # ============================================================================
 
-
 class UnicodeAnalyzerError(Exception):
     """Base exception."""
-
     pass
 
 
 class ConfigurationError(UnicodeAnalyzerError):
     """Configuration errors."""
-
     pass
 
 
 class ProcessingError(UnicodeAnalyzerError):
     """Processing errors."""
-
     pass
 
 
 class ExportError(UnicodeAnalyzerError):
     """Export errors."""
-
     pass
 
 
@@ -226,22 +160,7 @@ class ExportError(UnicodeAnalyzerError):
 # ============================================================================
 
 def normalize_unicode(text: str, form: str = 'NFC') -> str:
-    """
-    Normalize Unicode text to specified form.
-    
-    Args:
-        text (str): Input text to normalize
-        form (str, optional): Normalization form ('NFC', 'NFD', 'NFKC', 'NFKD'). 
-                              Defaults to 'NFC'.
-    
-    Returns:
-        str: Normalized text or original text if normalization fails
-        
-    Note:
-        Logs warnings for normalization failures but returns original text
-        to maintain processing continuity in production environments.
-
-    """
+    """Normalize Unicode text to specified form."""
     if not text:
         return text
 
@@ -253,56 +172,27 @@ def normalize_unicode(text: str, form: str = 'NFC') -> str:
 
 
 def find_quotes(text: str) -> List[int]:
-    """
-    Find all quote positions in text using comprehensive quote pattern matching.
-    
-    Args:
-        text (str): Text to search for quote characters
-        
-    Returns:
-        List[int]: List of positions where quote characters are found
-        
-    Note:
-        Supports various quote types including smart quotes, guillemets,
-        and international quotation marks.
-    """
+    """Find all quote positions in text."""
     quote_pattern = re.compile(r'[""''"\'\u201C\u201D\u2018\u2019\u00AB\u00BB\u2039\u203A]')
-
     return [m.start() for m in quote_pattern.finditer(text)]
 
 
 def count_words(text: str) -> int:
-    """
-    Count words with comprehensive Unicode script support.
-    
-    Performs multilingual word counting supporting Latin, CJK, Arabic,
-    Hebrew, Devanagari, and Cyrillic scripts.
-    
-    Args:
-        text (str): Input text to count words in
-        
-    Returns:
-        int: Total word count across all supported scripts
-        
-    Note:
-        Text is normalized before counting to handle composed/decomposed
-        character forms consistently.
-
-    """
+    """Count words with Unicode support."""
     if not text:
         return 0
 
     # Normalize first to handle composed/decomposed forms consistently
-    normalized = normalize_unicode(text, "NFC")
+    normalized = normalize_unicode(text, 'NFC')
 
     # Multi-script word counting
     word_patterns = [
-        r"\b[A-Za-z]+\b",  # Latin
-        r"[\u4e00-\u9fff]+",  # CJK
-        r"[\u0600-\u06ff]+",  # Arabic
-        r"[\u0590-\u05ff]+",  # Hebrew
-        r"[\u0900-\u097f]+",  # Devanagari
-        r"[\u0400-\u04ff]+",  # Cyrillic
+        r'\b[A-Za-z]+\b',  # Latin
+        r'[\u4e00-\u9fff]+',  # CJK
+        r'[\u0600-\u06ff]+',  # Arabic
+        r'[\u0590-\u05ff]+',  # Hebrew
+        r'[\u0900-\u097f]+',  # Devanagari
+        r'[\u0400-\u04ff]+',  # Cyrillic
     ]
 
     total_words = 0
@@ -314,23 +204,7 @@ def count_words(text: str) -> int:
 
 
 def extract_unicode_scripts(text: str) -> Dict[str, int]:
-    """
-    Extract Unicode script information with character frequency analysis.
-    
-    Analyzes text to determine the distribution of Unicode scripts present,
-    providing counts for each script family.
-    
-    Args:
-        text (str): Input text to analyze
-        
-    Returns:
-        Dict[str, int]: Dictionary mapping script names to character counts
-        
-    Note:
-        Uses approximate script detection based on Unicode code point ranges.
-        Characters that cannot be classified are counted as 'Unknown'.
-
-    """
+    """Extract Unicode script information."""
     script_counts = defaultdict(int)
 
     for char in text:
@@ -340,235 +214,136 @@ def extract_unicode_scripts(text: str) -> Dict[str, int]:
             script = get_unicode_script(code_point)
             script_counts[script] += 1
         except Exception:
-            script_counts["Unknown"] += 1
+            script_counts['Unknown'] += 1
 
     return dict(script_counts)
 
 
 def get_unicode_script(code_point: int) -> str:
-    """
-    Determine Unicode script from code point using range-based classification.
-    
-    Args:
-        code_point (int): Unicode code point to classify
-        
-    Returns:
-        str: Script name ('Latin', 'Arabic', 'CJK_Unified', etc.)
-        
-    Note:
-        Uses simplified script detection based on well-known Unicode ranges.
-        Returns 'Other' for code points not in recognized ranges.
-
-    """
+    """Determine Unicode script from code point."""
     # Simplified script detection based on ranges
     if 0x0000 <= code_point <= 0x007F:
-        return "Latin"
+        return 'Latin'
     elif 0x0080 <= code_point <= 0x00FF:
-        return "Latin-1"
+        return 'Latin-1'
     elif 0x0100 <= code_point <= 0x017F:
-        return "Latin_Extended_A"
+        return 'Latin_Extended_A'
     elif 0x0180 <= code_point <= 0x024F:
-        return "Latin_Extended_B"
+        return 'Latin_Extended_B'
     elif 0x0370 <= code_point <= 0x03FF:
-        return "Greek"
+        return 'Greek'
     elif 0x0400 <= code_point <= 0x04FF:
-        return "Cyrillic"
+        return 'Cyrillic'
     elif 0x0590 <= code_point <= 0x05FF:
-        return "Hebrew"
+        return 'Hebrew'
     elif 0x0600 <= code_point <= 0x06FF:
-        return "Arabic"
+        return 'Arabic'
     elif 0x0900 <= code_point <= 0x097F:
-        return "Devanagari"
+        return 'Devanagari'
     elif 0x4E00 <= code_point <= 0x9FFF:
-        return "CJK_Unified"
+        return 'CJK_Unified'
     elif 0xAC00 <= code_point <= 0xD7AF:
-        return "Hangul"
+        return 'Hangul'
     elif 0x3040 <= code_point <= 0x309F:
-        return "Hiragana"
+        return 'Hiragana'
     elif 0x30A0 <= code_point <= 0x30FF:
-        return "Katakana"
+        return 'Katakana'
     else:
-        return "Other"
+        return 'Other'
 
 
 # ============================================================================
 # PATTERN REGISTRY
 # ============================================================================
 
-
 class PatternRegistry:
-    """
-    Centralized pattern registry with complete implementations.
-    
-    Provides comprehensive pattern matching capabilities for various Unicode
-    text features including quotes, punctuation, whitespace, and symbols.
-    
-    Attributes:
-        _patterns (Dict): Internal pattern storage organized by category
-        
-    Methods:
-        get_patterns: Get patterns for specific category
-        get_all_patterns: Get all patterns flattened
-        
-    Example:
-        >>> registry = PatternRegistry()
-        >>> quote_patterns = registry.get_patterns(PatternCategory.QUOTES)
-        >>> all_patterns = registry.get_all_patterns()
-
-    """
+    """Centralized pattern registry with complete implementations."""
 
     def __init__(self):
-        """Initialize pattern registry with complete pattern sets."""
         self._patterns = self._build_complete_patterns()
 
-    def _build_complete_patterns(
-        self,
-    ) -> Dict[PatternCategory, Dict[str, Tuple[re.Pattern[str], str]]]:
-        """Build comprehensive pattern dictionary.
-
-        Creates a complete set of regex patterns organized by category,
-        covering quotes, punctuation, whitespace, words, numbers, diacritics,
-        control characters, and symbols.
-
-        Returns:
-            Dict[PatternCategory, Dict[str, Tuple[re.Pattern, str]]]: 
-                Complete pattern registry with compiled patterns and descriptions
-
-        """
+    def _build_complete_patterns(self) -> Dict[PatternCategory, Dict[str, Tuple[re.Pattern, str]]]:
+        """Build comprehensive pattern dictionary."""
         return {
             PatternCategory.QUOTES: {
-                "smart_double_quotes": (re.compile(r'[""„‚]'), "Smart double quotes"),
-                "smart_single_quotes": (
-                    re.compile(
-                        r"["
-                        "‚]"
-                    ),
-                    "Smart single quotes",
-                ),
-                "straight_quotes": (re.compile(r'["\']'), "Straight quotes"),
-                "guillemets": (re.compile(r"[«»‹›]"), "French guillemets"),
-                "cjk_quotes": (re.compile(r"[「」『』〝〞]"), "CJK quotation marks"),
-                "prime_quotes": (re.compile(r"[′″‴]"), "Prime symbols as quotes"),
+                'smart_double_quotes': (re.compile(r'[""„‚]'), 'Smart double quotes'),
+                'smart_single_quotes': (re.compile(r'[''‚]'), 'Smart single quotes'),
+                'straight_quotes': (re.compile(r'["\']'), 'Straight quotes'),
+                'guillemets': (re.compile(r'[«»‹›]'), 'French guillemets'),
+                'cjk_quotes': (re.compile(r'[「」『』〝〞]'), 'CJK quotation marks'),
+                'prime_quotes': (re.compile(r'[′″‴]'), 'Prime symbols as quotes'),
             },
+
             PatternCategory.PUNCTUATION: {
-                "em_dash": (re.compile(r"—"), "Em dash"),
-                "en_dash": (re.compile(r"–"), "En dash"),
-                "hyphen_minus": (re.compile(r"-"), "Hyphen-minus"),
-                "minus_sign": (re.compile(r"−"), "Minus sign"),
-                "ellipsis": (re.compile(r"…"), "Horizontal ellipsis"),
-                "three_dots": (re.compile(r"\.\.\."), "Three periods"),
-                "bullet_points": (re.compile(r"[•‣⁃▪▫]"), "Bullet points"),
+                'em_dash': (re.compile(r'—'), 'Em dash'),
+                'en_dash': (re.compile(r'–'), 'En dash'),
+                'hyphen_minus': (re.compile(r'-'), 'Hyphen-minus'),
+                'minus_sign': (re.compile(r'−'), 'Minus sign'),
+                'ellipsis': (re.compile(r'…'), 'Horizontal ellipsis'),
+                'three_dots': (re.compile(r'\.\.\.'), 'Three periods'),
+                'bullet_points': (re.compile(r'[•‣⁃▪▫]'), 'Bullet points'),
             },
+
             PatternCategory.WHITESPACE: {
-                "regular_space": (re.compile(r" "), "Regular space"),
-                "non_breaking_space": (re.compile(r"\u00A0"), "Non-breaking space"),
-                "en_quad": (re.compile(r"\u2000"), "En quad"),
-                "em_quad": (re.compile(r"\u2001"), "Em quad"),
-                "thin_space": (re.compile(r"\u2009"), "Thin space"),
-                "zero_width_space": (re.compile(r"\u200B"), "Zero width space"),
-                "tab": (re.compile(r"\t"), "Tab character"),
-                "newlines": (re.compile(r"[\r\n]"), "Line breaks"),
+                'regular_space': (re.compile(r' '), 'Regular space'),
+                'non_breaking_space': (re.compile(r'\u00A0'), 'Non-breaking space'),
+                'en_quad': (re.compile(r'\u2000'), 'En quad'),
+                'em_quad': (re.compile(r'\u2001'), 'Em quad'),
+                'thin_space': (re.compile(r'\u2009'), 'Thin space'),
+                'zero_width_space': (re.compile(r'\u200B'), 'Zero width space'),
+                'tab': (re.compile(r'\t'), 'Tab character'),
+                'newlines': (re.compile(r'[\r\n]'), 'Line breaks'),
             },
+
             PatternCategory.WORDS: {
-                "latin_words": (re.compile(r"\b[A-Za-z]+\b"), "Latin alphabet words"),
-                "numeric_words": (re.compile(r"\b\d+\b"), "Numeric sequences"),
-                "mixed_alphanum": (
-                    re.compile(r"\b[A-Za-z0-9]+\b"),
-                    "Alphanumeric words",
-                ),
-                "cjk_characters": (re.compile(r"[\u4e00-\u9fff]+"), "CJK ideographs"),
-                "arabic_words": (re.compile(r"[\u0600-\u06ff]+"), "Arabic script"),
-                "cyrillic_words": (re.compile(r"[\u0400-\u04ff]+"), "Cyrillic script"),
+                'latin_words': (re.compile(r'\b[A-Za-z]+\b'), 'Latin alphabet words'),
+                'numeric_words': (re.compile(r'\b\d+\b'), 'Numeric sequences'),
+                'mixed_alphanum': (re.compile(r'\b[A-Za-z0-9]+\b'), 'Alphanumeric words'),
+                'cjk_characters': (re.compile(r'[\u4e00-\u9fff]+'), 'CJK ideographs'),
+                'arabic_words': (re.compile(r'[\u0600-\u06ff]+'), 'Arabic script'),
+                'cyrillic_words': (re.compile(r'[\u0400-\u04ff]+'), 'Cyrillic script'),
             },
+
             PatternCategory.NUMBERS: {
-                "integers": (re.compile(r"\b\d+\b"), "Integer numbers"),
-                "decimals": (re.compile(r"\b\d+\.\d+\b"), "Decimal numbers"),
-                "scientific": (
-                    re.compile(r"\b\d+\.?\d*[eE][+-]?\d+\b"),
-                    "Scientific notation",
-                ),
-                "percentages": (re.compile(r"\b\d+\.?\d*%\b"), "Percentages"),
-                "fractions": (
-                    re.compile(r"[½⅓⅔¼¾⅕⅖⅗⅘⅙⅚⅐⅛⅜⅝⅞⅑⅒]"),
-                    "Fraction characters",
-                ),
-                "roman_numerals": (re.compile(r"\b[IVXLCDM]+\b"), "Roman numerals"),
+                'integers': (re.compile(r'\b\d+\b'), 'Integer numbers'),
+                'decimals': (re.compile(r'\b\d+\.\d+\b'), 'Decimal numbers'),
+                'scientific': (re.compile(r'\b\d+\.?\d*[eE][+-]?\d+\b'), 'Scientific notation'),
+                'percentages': (re.compile(r'\b\d+\.?\d*%\b'), 'Percentages'),
+                'fractions': (re.compile(r'[½⅓⅔¼¾⅕⅖⅗⅘⅙⅚⅐⅛⅜⅝⅞⅑⅒]'), 'Fraction characters'),
+                'roman_numerals': (re.compile(r'\b[IVXLCDM]+\b'), 'Roman numerals'),
             },
+
             PatternCategory.DIACRITICS: {
-                "combining_marks": (
-                    re.compile(r"[\u0300-\u036f]"),
-                    "Combining diacritical marks",
-                ),
-                "latin_accents": (
-                    re.compile(r"[àáâãäåæçèéêëìíîïñòóôõöøùúûüý]"),
-                    "Latin with accents",
-                ),
-                "decomposable_chars": (
-                    re.compile(
-                        r"[ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝàáâãäåæçèéêëìíîïñòóôõöøùúûüý]"
-                    ),
-                    "Decomposable characters",
-                ),
-                "diaeresis": (re.compile(r"[äëïöüÄËÏÖÜ]"), "Diaeresis/umlaut"),
+                'combining_marks': (re.compile(r'[\u0300-\u036f]'), 'Combining diacritical marks'),
+                'latin_accents': (re.compile(r'[àáâãäåæçèéêëìíîïñòóôõöøùúûüý]'), 'Latin with accents'),
+                'decomposable_chars': (re.compile(r'[ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝàáâãäåæçèéêëìíîïñòóôõöøùúûüý]'),
+                                       'Decomposable characters'),
+                'diaeresis': (re.compile(r'[äëïöüÄËÏÖÜ]'), 'Diaeresis/umlaut'),
             },
+
             PatternCategory.CONTROL_CHARS: {
-                "c0_controls": (re.compile(r"[\x00-\x1f]"), "C0 control characters"),
-                "c1_controls": (re.compile(r"[\x80-\x9f]"), "C1 control characters"),
-                "format_controls": (
-                    re.compile(r"[\u200c-\u200f]"),
-                    "Format control characters",
-                ),
-                "directional_marks": (
-                    re.compile(r"[\u202a-\u202e]"),
-                    "Bidirectional text controls",
-                ),
-                "zero_width_chars": (
-                    re.compile(r"[\u200b-\u200d\ufeff]"),
-                    "Zero width characters",
-                ),
+                'c0_controls': (re.compile(r'[\x00-\x1f]'), 'C0 control characters'),
+                'c1_controls': (re.compile(r'[\x80-\x9f]'), 'C1 control characters'),
+                'format_controls': (re.compile(r'[\u200c-\u200f]'), 'Format control characters'),
+                'directional_marks': (re.compile(r'[\u202a-\u202e]'), 'Bidirectional text controls'),
+                'zero_width_chars': (re.compile(r'[\u200b-\u200d\ufeff]'), 'Zero width characters'),
             },
+
             PatternCategory.SYMBOLS: {
-                "currency": (re.compile(r"[¢£¤¥€$₹₽₩₪]"), "Currency symbols"),
-                "mathematical": (
-                    re.compile(r"[×÷±≠≤≥∞∑∏∫∂∆∇]"),
-                    "Mathematical operators",
-                ),
-                "arrows": (re.compile(r"[←↑→↓↔↕⇐⇑⇒⇓⇔⇕]"), "Arrow symbols"),
-                "geometric": (re.compile(r"[■□▲△●○◆◇★☆]"), "Geometric shapes"),
-                "emoticons": (re.compile(r"[☺☻♠♣♥♦♪♫]"), "Traditional emoticons"),
-            },
+                'currency': (re.compile(r'[¢£¤¥€$₹₽₩₪]'), 'Currency symbols'),
+                'mathematical': (re.compile(r'[×÷±≠≤≥∞∑∏∫∂∆∇]'), 'Mathematical operators'),
+                'arrows': (re.compile(r'[←↑→↓↔↕⇐⇑⇒⇓⇔⇕]'), 'Arrow symbols'),
+                'geometric': (re.compile(r'[■□▲△●○◆◇★☆]'), 'Geometric shapes'),
+                'emoticons': (re.compile(r'[☺☻♠♣♥♦♪♫]'), 'Traditional emoticons'),
+            }
         }
 
-    def get_patterns(
-        self, category: PatternCategory
-    ) -> Dict[str, Tuple[re.Pattern[str], str]]:
-        """Get patterns for a specific category.
-
-        Args:
-            category (PatternCategory): Pattern category to retrieve
-            
-        Returns:
-            Dict[str, Tuple[re.Pattern[str], str]]: Dictionary of pattern name to 
-                (compiled_pattern, description) tuples
-
-        """
+    def get_patterns(self, category: PatternCategory) -> Dict[str, Tuple[re.Pattern, str]]:
+        """Get patterns for category."""
         return self._patterns.get(category, {})
 
-    def get_all_patterns(self) -> Dict[str, Tuple[re.Pattern[str], str]]:
-        """
-        Get all patterns flattened into single dictionary.
-        
-    def get_all_patterns(self) -> Dict[str, Tuple[re.Pattern[str], str]]:
-        """Get all patterns flattened into a single dictionary.
-
-        Creates a flattened view of all patterns with category-prefixed names
-        for comprehensive pattern matching across all categories.
-
-        Returns:
-            Dict[str, Tuple[re.Pattern[str], str]]: All patterns with category prefixes
-                in format "category_name": (pattern, description)
-
-        """
+    def get_all_patterns(self) -> Dict[str, Tuple[re.Pattern, str]]:
+        """Get all patterns flattened."""
         all_patterns = {}
         for category, patterns in self._patterns.items():
             for name, (pattern, desc) in patterns.items():
@@ -581,35 +356,10 @@ class PatternRegistry:
 # PERFORMANCE MONITORING
 # ============================================================================
 
-
 class PerformanceMonitor:
-    """
-    Thread-safe performance monitoring system.
-    
-    Provides comprehensive performance tracking including execution times,
-    memory usage, and statistical analysis of operations.
-    
-    Attributes:
-        metrics (Dict[str, List[float]]): Operation execution times
-        memory_samples (Dict[str, List[int]]): Memory usage samples
-        start_time (float): Monitor initialization timestamp
-        
-    Methods:
-        measure: Context manager for measuring operation performance
-        get_statistics: Get statistical summary for specific operation
-        get_all_statistics: Get statistics for all monitored operations
-        
-    Example:
-        >>> monitor = PerformanceMonitor()
-        >>> with monitor.measure("text_processing"):
-        ...     # Process text here
-        ...     pass
-        >>> stats = monitor.get_statistics("text_processing")
-
-    """
+    """Thread-safe performance monitoring."""
 
     def __init__(self):
-        """Initialize performance monitor with empty metrics."""
         self.metrics: Dict[str, List[float]] = defaultdict(list)
         self.memory_samples: Dict[str, List[int]] = defaultdict(list)
         self._lock = threading.Lock()
@@ -617,21 +367,7 @@ class PerformanceMonitor:
 
     @contextmanager
     def measure(self, operation: str):
-        """
-        Context manager for measuring operation performance.
-        
-        Args:
-            operation (str): Operation name for tracking
-            
-        Yields:
-            None: Context for measured operation
-            
-        Note:
-            Automatically tracks execution time and memory usage delta
-            for the wrapped operation in a thread-safe manner.
-        """
         """Measure operation performance."""
-
         start_time = time.perf_counter()
         start_memory = self._get_memory_usage()
 
@@ -649,36 +385,16 @@ class PerformanceMonitor:
                 self.memory_samples[operation].append(memory_delta)
 
     def _get_memory_usage(self) -> int:
-        """
-        Get current memory usage in bytes.
-        
-        Returns:
-            int: Current memory usage in bytes
-            
-        Note:
-            Uses psutil if available, falls back to gc-based estimation.
-
-        """
+        """Get current memory usage in bytes."""
         try:
             import psutil
-
             return psutil.Process().memory_info().rss
         except ImportError:
             # Fallback using gc
             return len(gc.get_objects()) * 64  # Rough estimate
 
     def get_statistics(self, operation: str) -> Dict[str, Any]:
-        """
-        Get comprehensive statistics for specific operation.
-        
-        Args:
-            operation (str): Operation name to get statistics for
-            
-        Returns:
-            Dict[str, Any]: Statistics including count, mean, median, min, max,
-                           total time, standard deviation, and memory metrics
-
-        """
+        """Get operation statistics."""
         with self._lock:
             times = self.metrics.get(operation, [])
             memory_deltas = self.memory_samples.get(operation, [])
@@ -687,32 +403,25 @@ class PerformanceMonitor:
             return {}
 
         stats = {
-            "count": len(times),
-            "mean_ms": mean(times),
-            "median_ms": median(times),
-            "min_ms": min(times),
-            "max_ms": max(times),
-            "total_ms": sum(times),
+            'count': len(times),
+            'mean_ms': mean(times),
+            'median_ms': median(times),
+            'min_ms': min(times),
+            'max_ms': max(times),
+            'total_ms': sum(times),
         }
 
         if len(times) > 1:
-            stats["std_dev_ms"] = stdev(times)
+            stats['std_dev_ms'] = stdev(times)
 
         if memory_deltas:
-            stats["avg_memory_delta_bytes"] = mean(memory_deltas)
-            stats["max_memory_delta_bytes"] = max(memory_deltas)
+            stats['avg_memory_delta_bytes'] = mean(memory_deltas)
+            stats['max_memory_delta_bytes'] = max(memory_deltas)
 
         return stats
 
     def get_all_statistics(self) -> Dict[str, Dict[str, Any]]:
-        """
-        Get statistics for all monitored operations.
-        
-        Returns:
-            Dict[str, Dict[str, Any]]: Dictionary mapping operation names
-                                      to their complete statistics
-
-        """
+        """Get all operation statistics."""
         return {op: self.get_statistics(op) for op in self.metrics.keys()}
 
 
@@ -720,55 +429,11 @@ class PerformanceMonitor:
 # MAIN ANALYZER CLASS
 # ============================================================================
 
-
 class IndustrialUnicodeAnalyzer:
-    """
-    Complete industrial Unicode analyzer with zero dependencies.
-    
-    Comprehensive Unicode text analysis system designed for production environments
-    with advanced features including normalization comparison, pattern detection,
-    performance monitoring, and multiple export formats.
-    
-    Args:
-        config (Optional[Dict[str, Any]], optional): Configuration parameters.
-                                                    Defaults to None.
-    
-    Attributes:
-        config (Dict[str, Any]): Validated configuration parameters
-        pattern_registry (PatternRegistry): Pattern matching registry
-        performance_monitor (PerformanceMonitor): Performance tracking system
-        logger (logging.Logger): Configured logger instance
-        stats (Dict[str, int]): Processing statistics
-        
-    Methods:
-        analyze_text: Analyze single text with comprehensive metrics
-        compare_normalizations: Compare text across normalization forms
-        batch_analyze: Process multiple texts with optional concurrency
-        export_results: Export results in various formats (HTML, JSON, CSV)
-        
-    Example:
-        >>> analyzer = IndustrialUnicodeAnalyzer({
-        ...     'analysis_level': AnalysisLevel.COMPREHENSIVE,
-        ...     'enable_profiling': True
-        ... })
-        >>> result = analyzer.compare_normalizations("Café naïve résumé")
-        >>> analyzer.export_results([result], "output.html", "html")
-        
-    Note:
-        All operations are thread-safe and include comprehensive error handling.
-        Memory usage is actively monitored and managed for large-scale processing.
-
-    """
+    """Complete industrial Unicode analyzer with zero dependencies."""
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
-        """Initialize analyzer with configuration.
-
-        Args:
-            config: Optional configuration dictionary. If None, uses defaults.
-
-        Raises:
-            ConfigurationError: If configuration validation fails.
-        """
+        """Initialize analyzer with configuration."""
         self.config = self._validate_and_load_config(config or {})
         self.pattern_registry = PatternRegistry()
         self.performance_monitor = PerformanceMonitor()
@@ -778,75 +443,55 @@ class IndustrialUnicodeAnalyzer:
         self._normalization_cache = {}
         self._analysis_cache = {}
         self._cache_lock = threading.Lock()
-        self._max_cache_size = self.config["cache_size"]
+        self._max_cache_size = self.config['cache_size']
 
         # Statistics
         self.stats = {
-            "texts_processed": 0,
-            "total_characters": 0,
-            "normalization_changes": 0,
-            "anomalies_found": 0,
-            "cache_hits": 0,
-            "cache_misses": 0,
+            'texts_processed': 0,
+            'total_characters': 0,
+            'normalization_changes': 0,
+            'anomalies_found': 0,
+            'cache_hits': 0,
+            'cache_misses': 0,
         }
 
         self.logger.info(f"Analyzer initialized with config: {self.config}")
 
     def _validate_and_load_config(self, user_config: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate and merge configuration.
-
-        Validates user configuration against defaults and ensures all
-        parameters are within acceptable ranges and types.
-
-        Args:
-            user_config: User-provided configuration dictionary.
-
-        Returns:
-            Merged and validated configuration dictionary.
-
-        Raises:
-            ConfigurationError: If any configuration values are invalid.
-        """
+        """Validate and merge configuration."""
         default_config = {
-            "analysis_level": AnalysisLevel.STANDARD,
-            "normalization_forms": [NormalizationForm.NFC, NormalizationForm.NFD],
-            "pattern_categories": list(PatternCategory),
-            "cache_size": 10000,
-            "max_workers": min(4, os.cpu_count() or 1),
-            "enable_profiling": True,
-            "timeout_seconds": 300,
-            "memory_limit_mb": 1024,
-            "enable_compression": True,
-            "anomaly_detection": True,
-            "confidence_threshold": 0.8,
-            "batch_size": 100,
+            'analysis_level': AnalysisLevel.STANDARD,
+            'normalization_forms': [NormalizationForm.NFC, NormalizationForm.NFD],
+            'pattern_categories': list(PatternCategory),
+            'cache_size': 10000,
+            'max_workers': min(4, os.cpu_count() or 1),
+            'enable_profiling': True,
+            'timeout_seconds': 300,
+            'memory_limit_mb': 1024,
+            'enable_compression': True,
+            'anomaly_detection': True,
+            'confidence_threshold': 0.8,
+            'batch_size': 100,
         }
 
         # Merge configurations
         config = {**default_config, **user_config}
 
         # Validation
-        if config["cache_size"] < 0:
+        if config['cache_size'] < 0:
             raise ConfigurationError("cache_size must be non-negative")
-        if config["max_workers"] < 1:
+        if config['max_workers'] < 1:
             raise ConfigurationError("max_workers must be at least 1")
-        if config["timeout_seconds"] <= 0:
+        if config['timeout_seconds'] <= 0:
             raise ConfigurationError("timeout_seconds must be positive")
-        if not isinstance(config["normalization_forms"], list):
+        if not isinstance(config['normalization_forms'], list):
             raise ConfigurationError("normalization_forms must be a list")
 
         return config
 
     def _setup_logging(self) -> logging.Logger:
-        """Set up comprehensive logging.
-
-        Configures logging with both console and file handlers,
-        avoiding duplicate handlers for multiple analyzer instances.
-
-        Returns:
-            Configured logger instance.
-        """
-        logger = logging.getLogger(f"UnicodeAnalyzer_{id(self)}")
+        """Set up comprehensive logging."""
+        logger = logging.getLogger(f'UnicodeAnalyzer_{id(self)}')
         logger.setLevel(logging.INFO)
 
         # Avoid duplicate handlers
@@ -854,21 +499,20 @@ class IndustrialUnicodeAnalyzer:
             # Console handler
             console_handler = logging.StreamHandler(sys.stdout)
             console_formatter = logging.Formatter(
-                "%(asctime)s [%(levelname)8s] %(name)s: %(message)s"
+                '%(asctime)s [%(levelname)8s] %(name)s: %(message)s'
             )
             console_handler.setFormatter(console_formatter)
             logger.addHandler(console_handler)
 
             # File handler (optional)
             try:
-                log_dir = Path("logs")
+                log_dir = Path('logs')
                 log_dir.mkdir(exist_ok=True)
                 file_handler = logging.FileHandler(
-                    log_dir
-                    / f"unicode_analyzer_{datetime.now().strftime('%Y%m%d')}.log"
+                    log_dir / f'unicode_analyzer_{datetime.now().strftime("%Y%m%d")}.log'
                 )
                 file_formatter = logging.Formatter(
-                    "%(asctime)s [%(levelname)8s] %(name)s:%(lineno)d: %(message)s"
+                    '%(asctime)s [%(levelname)8s] %(name)s:%(lineno)d: %(message)s'
                 )
                 file_handler.setFormatter(file_formatter)
                 logger.addHandler(file_handler)
@@ -884,7 +528,7 @@ class IndustrialUnicodeAnalyzer:
 
     def _get_text_hash(self, text: str) -> str:
         """Get text hash for caching."""
-        return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
+        return hashlib.sha256(text.encode('utf-8')).hexdigest()[:16]
 
     def _analyze_patterns(self, text: str) -> Dict[str, int]:
         """Analyze text against all patterns."""
@@ -910,7 +554,7 @@ class IndustrialUnicodeAnalyzer:
                 category = unicodedata.category(char)
                 categories[category] += 1
             except ValueError:
-                categories["Unknown"] += 1
+                categories['Unknown'] += 1
 
         return dict(categories)
 
@@ -923,53 +567,43 @@ class IndustrialUnicodeAnalyzer:
 
         # Check for high control character ratio
         control_chars = sum(
-            count
-            for cat, count in metrics.unicode_categories.items()
-            if cat.startswith("C")
+            count for cat, count in metrics.unicode_categories.items()
+            if cat.startswith('C')
         )
-        control_ratio = (
-            control_chars / metrics.character_count if metrics.character_count else 0
-        )
+        control_ratio = control_chars / metrics.character_count if metrics.character_count else 0
 
         if control_ratio > 0.1:
-            anomalies.append(
-                f"High control character ratio: {control_ratio:.1%}")
+            anomalies.append(f"High control character ratio: {control_ratio:.1%}")
 
         # Check for unusual byte-to-character ratio
         if metrics.character_count > 0:
             byte_ratio = metrics.byte_size / metrics.character_count
             if byte_ratio > 4:
-                anomalies.append(
-                    f"High byte-to-character ratio: {byte_ratio:.1f}")
+                anomalies.append(f"High byte-to-character ratio: {byte_ratio:.1f}")
 
         # Check for mixed scripts
         script_analysis = extract_unicode_scripts(text)
         if len(script_analysis) > 5:
-            anomalies.append(
-                f"Mixed scripts detected: {len(script_analysis)} different scripts"
-            )
+            anomalies.append(f"Mixed scripts detected: {len(script_analysis)} different scripts")
 
         # Check for zero-width characters
         zero_width_count = sum(
             metrics.pattern_matches.get(key, 0)
             for key in metrics.pattern_matches
-            if "zero_width" in key
+            if 'zero_width' in key
         )
         if zero_width_count > 0:
             anomalies.append(f"Zero-width characters: {zero_width_count}")
 
         # Check for suspicious character sequences
-        if "\ufffd" in text:  # Replacement character
-            anomalies.append(
-                "Replacement characters detected (encoding issues)")
+        if '\ufffd' in text:  # Replacement character
+            anomalies.append("Replacement characters detected (encoding issues)")
 
         # Check for RTL/LTR mark imbalance
-        rtl_marks = text.count("\u200f")  # RTL mark
-        ltr_marks = text.count("\u200e")  # LTR mark
+        rtl_marks = text.count('\u200f')  # RTL mark
+        ltr_marks = text.count('\u200e')  # LTR mark
         if abs(rtl_marks - ltr_marks) > 5:
-            anomalies.append(
-                f"Directional mark imbalance: RTL={rtl_marks}, LTR={ltr_marks}"
-            )
+            anomalies.append(f"Directional mark imbalance: RTL={rtl_marks}, LTR={ltr_marks}")
 
         return anomalies
 
@@ -987,16 +621,10 @@ class IndustrialUnicodeAnalyzer:
 
         # Reduce confidence for unusual patterns
         if metrics.unicode_categories:
-            control_ratio = (
-                sum(
-                    count
-                    for cat, count in metrics.unicode_categories.items()
-                    if cat.startswith("C")
-                )
-                / metrics.character_count
-                if metrics.character_count
-                else 0
-            )
+            control_ratio = sum(
+                count for cat, count in metrics.unicode_categories.items()
+                if cat.startswith('C')
+            ) / metrics.character_count if metrics.character_count else 0
 
             if control_ratio > 0.2:
                 base_score -= 0.3
@@ -1012,18 +640,18 @@ class IndustrialUnicodeAnalyzer:
         cache_key = f"{text_id}_{len(text)}"
         with self._cache_lock:
             if cache_key in self._analysis_cache:
-                self.stats["cache_hits"] += 1
+                self.stats['cache_hits'] += 1
                 return self._analysis_cache[cache_key]
             else:
-                self.stats["cache_misses"] += 1
+                self.stats['cache_misses'] += 1
 
         start_time = time.perf_counter()
 
         try:
-            with self.performance_monitor.measure("text_analysis"):
+            with self.performance_monitor.measure('text_analysis'):
                 # Basic metrics
                 character_count = len(text)
-                byte_size = len(text.encode("utf-8"))
+                byte_size = len(text.encode('utf-8'))
 
                 # Pattern analysis
                 pattern_matches = self._analyze_patterns(text)
@@ -1045,25 +673,20 @@ class IndustrialUnicodeAnalyzer:
                     unicode_categories=unicode_categories,
                     script_analysis=script_analysis,
                     anomalies_detected=[],  # Will be filled next
-                    confidence_score=1.0,  # Will be calculated after anomalies
+                    confidence_score=1.0  # Will be calculated after anomalies
                 )
 
                 # Detect anomalies
-                if self.config["anomaly_detection"]:
-                    anomalies_detected = self._detect_anomalies(text, metrics)
-                    self.stats["anomalies_found"] += len(anomalies_detected)
-                    # Create new metrics instance with anomalies
-                    metrics = replace(
-                        metrics, anomalies_detected=anomalies_detected)
+                if self.config['anomaly_detection']:
+                    metrics.anomalies_detected = self._detect_anomalies(text, metrics)
+                    self.stats['anomalies_found'] += len(metrics.anomalies_detected)
 
                 # Calculate final confidence score
-                confidence_score = self._calculate_confidence_score(metrics)
-                # Create new metrics instance with confidence score
-                metrics = replace(metrics, confidence_score=confidence_score)
+                metrics.confidence_score = self._calculate_confidence_score(metrics)
 
                 # Update statistics
-                self.stats["texts_processed"] += 1
-                self.stats["total_characters"] += character_count
+                self.stats['texts_processed'] += 1
+                self.stats['total_characters'] += character_count
 
                 # Cache result
                 with self._cache_lock:
@@ -1076,81 +699,54 @@ class IndustrialUnicodeAnalyzer:
             self.logger.error(f"Analysis failed for text {text_id}: {e}")
             raise ProcessingError(f"Text analysis failed: {e}")
 
-    def _detect_character_differences(
-        self, original: str, normalized: str
-    ) -> List[CharacterDifference]:
+    def _detect_character_differences(self, original: str, normalized: str) -> List[CharacterDifference]:
         """Detect character-level differences."""
         differences = []
 
         # Handle length differences
         max_len = max(len(original), len(normalized))
-        orig_padded = original + "\x00" * (max_len - len(original))
-        norm_padded = normalized + "\x00" * (max_len - len(normalized))
+        orig_padded = original + '\x00' * (max_len - len(original))
+        norm_padded = normalized + '\x00' * (max_len - len(normalized))
 
         for i, (orig_char, norm_char) in enumerate(zip(orig_padded, norm_padded)):
             if orig_char != norm_char:
                 # Handle padding
-                orig_display = orig_char if orig_char != "\x00" else "[END]"
-                norm_display = norm_char if norm_char != "\x00" else "[END]"
+                orig_display = orig_char if orig_char != '\x00' else '[END]'
+                norm_display = norm_char if norm_char != '\x00' else '[END]'
 
-                orig_unicode = (
-                    f"U+{ord(orig_char):04X}" if orig_char != "\x00" else "END"
-                )
-                norm_unicode = (
-                    f"U+{ord(norm_char):04X}" if norm_char != "\x00" else "END"
-                )
+                orig_unicode = f'U+{ord(orig_char):04X}' if orig_char != '\x00' else 'END'
+                norm_unicode = f'U+{ord(norm_char):04X}' if norm_char != '\x00' else 'END'
 
                 try:
-                    orig_name = (
-                        unicodedata.name(orig_char)
-                        if orig_char != "\x00"
-                        else "END_OF_STRING"
-                    )
-                    norm_name = (
-                        unicodedata.name(norm_char)
-                        if norm_char != "\x00"
-                        else "END_OF_STRING"
-                    )
+                    orig_name = unicodedata.name(orig_char) if orig_char != '\x00' else 'END_OF_STRING'
+                    norm_name = unicodedata.name(norm_char) if norm_char != '\x00' else 'END_OF_STRING'
                 except ValueError:
-                    orig_name = "UNNAMED"
-                    norm_name = "UNNAMED"
+                    orig_name = 'UNNAMED'
+                    norm_name = 'UNNAMED'
 
                 # Check if Unicode category changed
                 try:
-                    orig_category = (
-                        unicodedata.category(orig_char)
-                        if orig_char != "\x00"
-                        else "END"
-                    )
-                    norm_category = (
-                        unicodedata.category(norm_char)
-                        if norm_char != "\x00"
-                        else "END"
-                    )
+                    orig_category = unicodedata.category(orig_char) if orig_char != '\x00' else 'END'
+                    norm_category = unicodedata.category(norm_char) if norm_char != '\x00' else 'END'
                     category_change = orig_category != norm_category
                 except ValueError:
                     category_change = True
 
-                differences.append(
-                    CharacterDifference(
-                        position=i,
-                        original=orig_display,
-                        normalized=norm_display,
-                        original_unicode=orig_unicode,
-                        normalized_unicode=norm_unicode,
-                        original_name=orig_name,
-                        normalized_name=norm_name,
-                        category_change=category_change,
-                    )
-                )
+                differences.append(CharacterDifference(
+                    position=i,
+                    original=orig_display,
+                    normalized=norm_display,
+                    original_unicode=orig_unicode,
+                    normalized_unicode=norm_unicode,
+                    original_name=orig_name,
+                    normalized_name=norm_name,
+                    category_change=category_change
+                ))
 
         return differences[:1000]  # Limit to prevent memory issues
 
-    def _calculate_significance_score(
-        self,
-        char_diffs: List[CharacterDifference],
-        pattern_diffs: Dict[str, Dict[str, int]],
-    ) -> float:
+    def _calculate_significance_score(self, char_diffs: List[CharacterDifference],
+                                      pattern_diffs: Dict[str, Dict[str, int]]) -> float:
         """Calculate significance score for differences."""
         score = 0.0
 
@@ -1163,44 +759,39 @@ class IndustrialUnicodeAnalyzer:
 
         # Pattern changes
         for pattern_name, change_info in pattern_diffs.items():
-            change_magnitude = abs(change_info["change"])
+            change_magnitude = abs(change_info['change'])
 
-            if "quotes" in pattern_name:
+            if 'quotes' in pattern_name:
                 score += change_magnitude * 0.8  # Quotes are very significant
-            elif "words" in pattern_name:
+            elif 'words' in pattern_name:
                 score += change_magnitude * 0.6  # Words are important
-            elif "whitespace" in pattern_name:
+            elif 'whitespace' in pattern_name:
                 score += change_magnitude * 0.4  # Whitespace matters
-            elif "punctuation" in pattern_name:
+            elif 'punctuation' in pattern_name:
                 score += change_magnitude * 0.3  # Punctuation is moderately important
             else:
                 score += change_magnitude * 0.2  # Other patterns
 
         return min(score, 100.0)  # Cap at 100
 
-    def compare_normalization_effects(
-        self, text: str, text_id: Optional[str] = None
-    ) -> ComparisonResult:
+    def compare_normalization_effects(self, text: str, text_id: Optional[str] = None) -> ComparisonResult:
         """Compare normalization effects across all forms."""
         if text_id is None:
             text_id = self._get_text_hash(text)
 
-        with self.performance_monitor.measure("full_comparison"):
+        with self.performance_monitor.measure('full_comparison'):
             try:
                 # Analyze original text
-                original_metrics = self.analyze_text(
-                    text, f"{text_id}_original")
+                original_metrics = self.analyze_text(text, f"{text_id}_original")
 
                 # Normalize text in all configured forms
                 normalized_forms = {}
                 normalized_metrics = {}
 
-                for form in self.config["normalization_forms"]:
-                    with self.performance_monitor.measure(f"normalize_{form.value}"):
+                for form in self.config['normalization_forms']:
+                    with self.performance_monitor.measure(f'normalize_{form.value}'):
                         text_hash = self._get_text_hash(text)
-                        normalized_text = self._cached_normalize(
-                            text_hash, text, form.value
-                        )
+                        normalized_text = self._cached_normalize(text_hash, text, form.value)
                         normalized_forms[form.value] = normalized_text
 
                         # Only analyze if text changed
@@ -1208,7 +799,7 @@ class IndustrialUnicodeAnalyzer:
                             normalized_metrics[form.value] = self.analyze_text(
                                 normalized_text, f"{text_id}_{form.value}"
                             )
-                            self.stats["normalization_changes"] += 1
+                            self.stats['normalization_changes'] += 1
                         else:
                             # Copy original metrics if no change
                             normalized_metrics[form.value] = original_metrics
@@ -1217,51 +808,35 @@ class IndustrialUnicodeAnalyzer:
                 differences = []
                 for form, normalized_text in normalized_forms.items():
                     if normalized_text != text:
-                        char_diffs = self._detect_character_differences(
-                            text, normalized_text
-                        )
+                        char_diffs = self._detect_character_differences(text, normalized_text)
 
                         # Calculate pattern differences
                         pattern_diffs = {}
                         norm_metrics = normalized_metrics[form]
 
-                        for (
-                            pattern_name,
-                            original_count,
-                        ) in original_metrics.pattern_matches.items():
-                            normalized_count = norm_metrics.pattern_matches.get(
-                                pattern_name, 0
-                            )
+                        for pattern_name, original_count in original_metrics.pattern_matches.items():
+                            normalized_count = norm_metrics.pattern_matches.get(pattern_name, 0)
                             if original_count != normalized_count:
                                 pattern_diffs[pattern_name] = {
-                                    "before": original_count,
-                                    "after": normalized_count,
-                                    "change": normalized_count - original_count,
+                                    'before': original_count,
+                                    'after': normalized_count,
+                                    'change': normalized_count - original_count
                                 }
 
-                        significance_score = self._calculate_significance_score(
-                            char_diffs, pattern_diffs
-                        )
+                        significance_score = self._calculate_significance_score(char_diffs, pattern_diffs)
 
-                        differences.append(
-                            {
-                                "normalization_form": form,
-                                "character_differences": [
-                                    asdict(diff) for diff in char_diffs[:100]
-                                ],
-                                "pattern_differences": pattern_diffs,
-                                "total_character_changes": len(char_diffs),
-                                "significance_score": significance_score,
-                                "length_change": len(normalized_text) - len(text),
-                                "byte_size_change": len(normalized_text.encode("utf-8"))
-                                - len(text.encode("utf-8")),
-                            }
-                        )
+                        differences.append({
+                            'normalization_form': form,
+                            'character_differences': [asdict(diff) for diff in char_diffs[:100]],
+                            'pattern_differences': pattern_diffs,
+                            'total_character_changes': len(char_diffs),
+                            'significance_score': significance_score,
+                            'length_change': len(normalized_text) - len(text),
+                            'byte_size_change': len(normalized_text.encode('utf-8')) - len(text.encode('utf-8'))
+                        })
 
                 # Generate recommendations
-                recommendations = self._generate_recommendations(
-                    differences, original_metrics
-                )
+                recommendations = self._generate_recommendations(differences, original_metrics)
 
                 return ComparisonResult(
                     text_id=text_id,
@@ -1270,106 +845,80 @@ class IndustrialUnicodeAnalyzer:
                     metrics_before=original_metrics,
                     metrics_after=normalized_metrics,
                     differences_detected=differences,
-                    recommendations=recommendations,
+                    recommendations=recommendations
                 )
 
             except Exception as e:
                 self.logger.error(f"Comparison failed for text {text_id}: {e}")
                 raise ProcessingError(f"Normalization comparison failed: {e}")
 
-    def _generate_recommendations(
-        self, differences: List[Dict[str, Any]], original_metrics: AnalysisMetrics
-    ) -> List[str]:
+    def _generate_recommendations(self, differences: List[Dict[str, Any]],
+                                  original_metrics: AnalysisMetrics) -> List[str]:
         """Generate actionable recommendations."""
         recommendations = []
 
         if not differences:
-            recommendations.append(
-                "✅ No normalization changes needed - text is already in canonical form"
-            )
+            recommendations.append("✅ No normalization changes needed - text is already in canonical form")
             return recommendations
 
         # Analyze overall significance
-        max_significance = max(d["significance_score"] for d in differences)
-        total_changes = sum(d["total_character_changes"] for d in differences)
+        max_significance = max(d['significance_score'] for d in differences)
+        total_changes = sum(d['total_character_changes'] for d in differences)
 
         if max_significance > 10.0:
-            recommendations.append(
-                "🔥 CRITICAL: High-impact normalization changes detected"
-            )
-            recommendations.append(
-                "   → Immediate attention required for data consistency"
-            )
+            recommendations.append("🔥 CRITICAL: High-impact normalization changes detected")
+            recommendations.append("   → Immediate attention required for data consistency")
         elif max_significance > 5.0:
-            recommendations.append(
-                "⚠️ WARNING: Significant normalization changes detected"
-            )
+            recommendations.append("⚠️ WARNING: Significant normalization changes detected")
         else:
-            recommendations.append(
-                "ℹ️ INFO: Minor normalization changes detected")
+            recommendations.append("ℹ️ INFO: Minor normalization changes detected")
 
         # Form-specific recommendations
-        nfc_changes = any(d["normalization_form"] ==
-                          "NFC" for d in differences)
-        nfd_changes = any(d["normalization_form"] ==
-                          "NFD" for d in differences)
-        nfkc_changes = any(d["normalization_form"] ==
-                           "NFKC" for d in differences)
-        nfkd_changes = any(d["normalization_form"] ==
-                           "NFKD" for d in differences)
+        nfc_changes = any(d['normalization_form'] == 'NFC' for d in differences)
+        nfd_changes = any(d['normalization_form'] == 'NFD' for d in differences)
+        nfkc_changes = any(d['normalization_form'] == 'NFKC' for d in differences)
+        nfkd_changes = any(d['normalization_form'] == 'NFKD' for d in differences)
 
         if nfc_changes:
             recommendations.append("📝 NFC normalization recommended for:")
-            recommendations.append(
-                "   → Database storage and data interchange")
+            recommendations.append("   → Database storage and data interchange")
             recommendations.append("   → Web applications and APIs")
 
         if nfd_changes:
             recommendations.append("🔍 NFD normalization useful for:")
-            recommendations.append(
-                "   → Linguistic analysis and text processing")
-            recommendations.append(
-                "   → Custom sorting and searching algorithms")
+            recommendations.append("   → Linguistic analysis and text processing")
+            recommendations.append("   → Custom sorting and searching algorithms")
 
         if nfkc_changes or nfkd_changes:
-            recommendations.append(
-                "⚡ Compatibility normalization (NFKC/NFKD) considerations:"
-            )
+            recommendations.append("⚡ Compatibility normalization (NFKC/NFKD) considerations:")
             recommendations.append("   → Use for legacy system compatibility")
-            recommendations.append(
-                "   → May cause information loss - review carefully")
+            recommendations.append("   → May cause information loss - review carefully")
 
         # Pattern-specific recommendations
         quote_changes = any(
-            any("quotes" in k for k in d["pattern_differences"].keys())
+            any('quotes' in k for k in d['pattern_differences'].keys())
             for d in differences
         )
         if quote_changes:
             recommendations.append("💬 Quote normalization detected:")
-            recommendations.append(
-                "   → Ensure consistent quote handling in templates")
+            recommendations.append("   → Ensure consistent quote handling in templates")
             recommendations.append("   → Consider user input sanitization")
 
         whitespace_changes = any(
-            any("whitespace" in k for k in d["pattern_differences"].keys())
+            any('whitespace' in k for k in d['pattern_differences'].keys())
             for d in differences
         )
         if whitespace_changes:
             recommendations.append("📏 Whitespace normalization detected:")
-            recommendations.append(
-                "   → May affect text layout and formatting")
+            recommendations.append("   → May affect text layout and formatting")
             recommendations.append("   → Review display and printing systems")
 
         # Performance recommendations
         if total_changes > 1000:
             recommendations.append("🚀 Performance considerations:")
-            recommendations.append(
-                f"   → {total_changes:,} character changes detected")
-            recommendations.append(
-                "   → Consider batch processing for large datasets")
-            recommendations.append(
-                "   → Implement caching for frequently normalized text"
-            )
+            recommendations.append(f"   → {total_changes:,} character changes detected")
+            recommendations.append("   → Consider batch processing for large datasets")
+            recommendations.append("   → Implement caching for frequently normalized text")
 
         # Security recommendations
         if original_metrics.anomalies_detected:
@@ -1377,17 +926,12 @@ class IndustrialUnicodeAnalyzer:
             for anomaly in original_metrics.anomalies_detected[:3]:
                 recommendations.append(f"   → {anomaly}")
             if len(original_metrics.anomalies_detected) > 3:
-                recommendations.append(
-                    f"   → And {len(original_metrics.anomalies_detected) - 3} more anomalies"
-                )
+                recommendations.append(f"   → And {len(original_metrics.anomalies_detected) - 3} more anomalies")
 
         return recommendations
 
-    def batch_analyze(
-        self,
-        texts: List[Tuple[str, str]],
-        progress_callback: Optional[Callable[[int, int], None]] = None,
-    ) -> List[ComparisonResult]:
+    def batch_analyze(self, texts: List[Tuple[str, str]],
+                      progress_callback: Optional[Callable[[int, int], None]] = None) -> List[ComparisonResult]:
         """Batch analyze multiple texts with parallel processing."""
         if not texts:
             return []
@@ -1395,22 +939,18 @@ class IndustrialUnicodeAnalyzer:
         results = []
         failed_results = []
 
-        with ThreadPoolExecutor(max_workers=self.config["max_workers"]) as executor:
+        with ThreadPoolExecutor(max_workers=self.config['max_workers']) as executor:
             # Submit all tasks
             future_to_text = {}
             for text, text_id in texts:
-                future = executor.submit(
-                    self.compare_normalization_effects, text, text_id
-                )
+                future = executor.submit(self.compare_normalization_effects, text, text_id)
                 future_to_text[future] = (text, text_id)
 
             # Collect results with timeout and progress tracking
             completed = 0
             total = len(texts)
 
-            for future in as_completed(
-                future_to_text, timeout=self.config["timeout_seconds"]
-            ):
+            for future in as_completed(future_to_text, timeout=self.config['timeout_seconds']):
                 text, text_id = future_to_text[future]
 
                 try:
@@ -1420,17 +960,12 @@ class IndustrialUnicodeAnalyzer:
 
                 except TimeoutError:
                     self.logger.error(f"Timeout analyzing text {text_id}")
-                    failed_results.append(
-                        self._create_error_result(
-                            text, text_id, "Analysis timeout")
-                    )
+                    failed_results.append(self._create_error_result(text, text_id, "Analysis timeout"))
                     completed += 1
 
                 except Exception as e:
                     self.logger.error(f"Failed to analyze text {text_id}: {e}")
-                    failed_results.append(
-                        self._create_error_result(text, text_id, str(e))
-                    )
+                    failed_results.append(self._create_error_result(text, text_id, str(e)))
                     completed += 1
 
                 # Progress callback
@@ -1443,36 +978,28 @@ class IndustrialUnicodeAnalyzer:
         # Add failed results
         results.extend(failed_results)
 
-        self.logger.info(
-            f"Batch analysis completed: {len(results) - len(failed_results)}/{total} successful"
-        )
+        self.logger.info(f"Batch analysis completed: {len(results) - len(failed_results)}/{total} successful")
         return results
 
-    def _create_error_result(
-        self, text: str, text_id: str, error_msg: str
-    ) -> ComparisonResult:
+    def _create_error_result(self, text: str, text_id: str, error_msg: str) -> ComparisonResult:
         """Create error result for failed analysis."""
         return ComparisonResult(
             text_id=text_id,
             original_text=text[:100] + "..." if len(text) > 100 else text,
-            recommendations=[f"❌ Analysis failed: {error_msg}"],
+            recommendations=[f"❌ Analysis failed: {error_msg}"]
         )
 
-    def export_results(
-        self,
-        results: List[ComparisonResult],
-        output_path: Union[str, Path],
-        format_type: str = "json",
-    ) -> None:
+    def export_results(self, results: List[ComparisonResult],
+                       output_path: Union[str, Path], format_type: str = 'json') -> None:
         """Export results to file."""
         output_path = Path(output_path)
 
         try:
-            if format_type.lower() == "json":
+            if format_type.lower() == 'json':
                 self._export_json(results, output_path)
-            elif format_type.lower() == "csv":
+            elif format_type.lower() == 'csv':
                 self._export_csv(results, output_path)
-            elif format_type.lower() == "html":
+            elif format_type.lower() == 'html':
                 self._export_html(results, output_path)
             else:
                 raise ExportError(f"Unsupported format: {format_type}")
@@ -1486,101 +1013,81 @@ class IndustrialUnicodeAnalyzer:
     def _export_json(self, results: List[ComparisonResult], output_path: Path) -> None:
         """Export as JSON."""
         data = {
-            "metadata": {
-                "generated_at": datetime.now(timezone.utc).isoformat(),
-                "analyzer_version": "3.0.0",
-                "total_results": len(results),
-                "configuration": {k: str(v) for k, v in self.config.items()},
-                "statistics": self.stats,
-                "performance_metrics": self.performance_monitor.get_all_statistics(),
+            'metadata': {
+                'generated_at': datetime.now(timezone.utc).isoformat(),
+                'analyzer_version': '3.0.0',
+                'total_results': len(results),
+                'configuration': {k: str(v) for k, v in self.config.items()},
+                'statistics': self.stats,
+                'performance_metrics': self.performance_monitor.get_all_statistics()
             },
-            "results": [],
+            'results': []
         }
 
         for result in results:
             result_dict = asdict(result)
-            result_dict["timestamp"] = result.timestamp.isoformat()
-            data["results"].append(result_dict)
+            result_dict['timestamp'] = result.timestamp.isoformat()
+            data['results'].append(result_dict)
 
         # Write with compression if enabled
-        if self.config.get("enable_compression", False) and output_path.suffix != ".gz":
-            output_path = output_path.with_suffix(output_path.suffix + ".gz")
-            with gzip.open(output_path, "wt", encoding="utf-8") as f:
+        if self.config.get('enable_compression', False) and output_path.suffix != '.gz':
+            output_path = output_path.with_suffix(output_path.suffix + '.gz')
+            with gzip.open(output_path, 'wt', encoding='utf-8') as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
         else:
-            with open(output_path, "w", encoding="utf-8") as f:
+            with open(output_path, 'w', encoding='utf-8') as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
 
     def _export_csv(self, results: List[ComparisonResult], output_path: Path) -> None:
         """Export as CSV summary."""
         fieldnames = [
-            "text_id",
-            "character_count",
-            "byte_size",
-            "processing_time_ms",
-            "forms_with_changes",
-            "total_differences",
-            "max_significance_score",
-            "anomalies_count",
-            "confidence_score",
-            "recommendations_count",
-            "has_quotes_changes",
-            "has_whitespace_changes",
-            "timestamp",
+            'text_id', 'character_count', 'byte_size', 'processing_time_ms',
+            'forms_with_changes', 'total_differences', 'max_significance_score',
+            'anomalies_count', 'confidence_score', 'recommendations_count',
+            'has_quotes_changes', 'has_whitespace_changes', 'timestamp'
         ]
 
-        with open(output_path, "w", newline="", encoding="utf-8") as f:
+        with open(output_path, 'w', newline='', encoding='utf-8') as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
 
             for result in results:
                 # Calculate summary metrics
                 forms_with_changes = len(result.differences_detected)
-                total_differences = sum(
-                    d["total_character_changes"] for d in result.differences_detected
-                )
-                max_significance = max(
-                    (d["significance_score"]
-                     for d in result.differences_detected),
-                    default=0.0,
-                )
+                total_differences = sum(d['total_character_changes'] for d in result.differences_detected)
+                max_significance = max((d['significance_score'] for d in result.differences_detected), default=0.0)
 
                 # Check for specific change types
                 has_quotes_changes = any(
-                    any("quotes" in k for k in d["pattern_differences"].keys())
+                    any('quotes' in k for k in d['pattern_differences'].keys())
                     for d in result.differences_detected
                 )
                 has_whitespace_changes = any(
-                    any("whitespace" in k for k in d["pattern_differences"].keys(
-                    ))
+                    any('whitespace' in k for k in d['pattern_differences'].keys())
                     for d in result.differences_detected
                 )
 
-                writer.writerow(
-                    {
-                        "text_id": result.text_id,
-                        "character_count": result.metrics_before.character_count,
-                        "byte_size": result.metrics_before.byte_size,
-                        "processing_time_ms": result.metrics_before.processing_time_ms,
-                        "forms_with_changes": forms_with_changes,
-                        "total_differences": total_differences,
-                        "max_significance_score": max_significance,
-                        "anomalies_count": len(
-                            result.metrics_before.anomalies_detected
-                        ),
-                        "confidence_score": result.metrics_before.confidence_score,
-                        "recommendations_count": len(result.recommendations),
-                        "has_quotes_changes": has_quotes_changes,
-                        "has_whitespace_changes": has_whitespace_changes,
-                        "timestamp": result.timestamp.isoformat(),
-                    }
-                )
+                writer.writerow({
+                    'text_id': result.text_id,
+                    'character_count': result.metrics_before.character_count,
+                    'byte_size': result.metrics_before.byte_size,
+                    'processing_time_ms': result.metrics_before.processing_time_ms,
+                    'forms_with_changes': forms_with_changes,
+                    'total_differences': total_differences,
+                    'max_significance_score': max_significance,
+                    'anomalies_count': len(result.metrics_before.anomalies_detected),
+                    'confidence_score': result.metrics_before.confidence_score,
+                    'recommendations_count': len(result.recommendations),
+                    'has_quotes_changes': has_quotes_changes,
+                    'has_whitespace_changes': has_whitespace_changes,
+                    'timestamp': result.timestamp.isoformat()
+                })
 
     def _export_html(self, results: List[ComparisonResult], output_path: Path) -> None:
         """Export as comprehensive HTML report."""
         html_content = self._generate_complete_html_report(results)
 
-        with open(output_path, "w", encoding="utf-8") as f:
+        with open(output_path, 'w', encoding='utf-8') as f:
             f.write(html_content)
 
     def _generate_complete_html_report(self, results: List[ComparisonResult]) -> str:
@@ -1589,15 +1096,10 @@ class IndustrialUnicodeAnalyzer:
         total_texts = len(results)
         total_chars = sum(r.metrics_before.character_count for r in results)
         texts_with_changes = sum(1 for r in results if r.differences_detected)
-        total_anomalies = sum(
-            len(r.metrics_before.anomalies_detected) for r in results)
-        avg_confidence = (
-            sum(r.metrics_before.confidence_score for r in results) / len(results)
-            if results
-            else 0
-        )
+        total_anomalies = sum(len(r.metrics_before.anomalies_detected) for r in results)
+        avg_confidence = sum(r.metrics_before.confidence_score for r in results) / len(results) if results else 0
 
-        html = f"""<!DOCTYPE html>
+        html = f'''<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -1741,26 +1243,23 @@ class IndustrialUnicodeAnalyzer:
                             <th>Status</th>
                         </tr>
                     </thead>
-                    <tbody>"""
+                    <tbody>'''
 
         for result in results[:50]:  # Limit for performance
             changes = len(result.differences_detected)
-            max_significance = max(
-                (d["significance_score"] for d in result.differences_detected),
-                default=0.0,
-            )
+            max_significance = max((d['significance_score'] for d in result.differences_detected), default=0.0)
 
             if max_significance > 10:
-                status_class = "status-high"
-                status_text = "HIGH IMPACT"
+                status_class = 'status-high'
+                status_text = 'HIGH IMPACT'
             elif max_significance > 5:
-                status_class = "status-medium"
-                status_text = "MEDIUM"
+                status_class = 'status-medium'
+                status_text = 'MEDIUM'
             else:
-                status_class = "status-low"
-                status_text = "LOW"
+                status_class = 'status-low'
+                status_text = 'LOW'
 
-            html += f"""
+            html += f'''
                         <tr>
                             <td class="code">{result.text_id}</td>
                             <td>{result.metrics_before.character_count:,}</td>
@@ -1768,14 +1267,14 @@ class IndustrialUnicodeAnalyzer:
                             <td>{max_significance:.1f}</td>
                             <td>{result.metrics_before.confidence_score:.1%}</td>
                             <td class="{status_class}">{status_text}</td>
-                        </tr>"""
+                        </tr>'''
 
         if len(results) > 50:
             html += f'<tr><td colspan="6"><em>... and {len(results) - 50} more results</em></td></tr>'
 
         # Performance metrics
         perf_stats = self.performance_monitor.get_all_statistics()
-        html += f"""
+        html += f'''
                     </tbody>
                 </table>
             </div>
@@ -1791,19 +1290,19 @@ class IndustrialUnicodeAnalyzer:
                             <th>Total Time (ms)</th>
                         </tr>
                     </thead>
-                    <tbody>"""
+                    <tbody>'''
 
         for operation, stats in perf_stats.items():
             if stats:
-                html += f"""
+                html += f'''
                         <tr>
-                            <td>{operation.replace("_", " ").title()}</td>
-                            <td>{stats.get("count", 0):,}</td>
-                            <td>{stats.get("mean_ms", 0):.2f}</td>
-                            <td>{stats.get("total_ms", 0):.2f}</td>
-                        </tr>"""
+                            <td>{operation.replace('_', ' ').title()}</td>
+                            <td>{stats.get('count', 0):,}</td>
+                            <td>{stats.get('mean_ms', 0):.2f}</td>
+                            <td>{stats.get('total_ms', 0):.2f}</td>
+                        </tr>'''
 
-        html += f"""
+        html += f'''
                     </tbody>
                 </table>
             </div>
@@ -1814,12 +1313,12 @@ class IndustrialUnicodeAnalyzer:
                     <thead>
                         <tr><th>Setting</th><th>Value</th></tr>
                     </thead>
-                    <tbody>"""
+                    <tbody>'''
 
         for key, value in self.config.items():
             html += f'<tr><td>{key.replace("_", " ").title()}</td><td class="code">{str(value)}</td></tr>'
 
-        html += """
+        html += '''
                     </tbody>
                 </table>
             </div>
@@ -1830,14 +1329,12 @@ class IndustrialUnicodeAnalyzer:
                     <thead>
                         <tr><th>Metric</th><th>Value</th></tr>
                     </thead>
-                    <tbody>"""
+                    <tbody>'''
 
         for key, value in self.stats.items():
-            html += (
-                f"<tr><td>{key.replace('_', ' ').title()}</td><td>{value:,}</td></tr>"
-            )
+            html += f'<tr><td>{key.replace("_", " ").title()}</td><td>{value:,}</td></tr>'
 
-        html += """
+        html += '''
                     </tbody>
                 </table>
             </div>
@@ -1858,26 +1355,26 @@ class IndustrialUnicodeAnalyzer:
         });
     </script>
 </body>
-</html>"""
+</html>'''
 
         return html
 
     def get_performance_report(self) -> Dict[str, Any]:
         """Get comprehensive performance report."""
         return {
-            "statistics": self.stats.copy(),
-            "performance_metrics": self.performance_monitor.get_all_statistics(),
-            "cache_statistics": {
-                "normalization_cache_size": len(self._normalization_cache),
-                "analysis_cache_size": len(self._analysis_cache),
-                "cache_hit_rate": self.stats["cache_hits"]
-                / max(1, self.stats["cache_hits"] + self.stats["cache_misses"]),
+            'statistics': self.stats.copy(),
+            'performance_metrics': self.performance_monitor.get_all_statistics(),
+            'cache_statistics': {
+                'normalization_cache_size': len(self._normalization_cache),
+                'analysis_cache_size': len(self._analysis_cache),
+                'cache_hit_rate': self.stats['cache_hits'] / max(1,
+                                                                 self.stats['cache_hits'] + self.stats['cache_misses'])
             },
-            "system_info": {
-                "python_version": sys.version,
-                "platform": sys.platform,
-                "cpu_count": os.cpu_count(),
-            },
+            'system_info': {
+                'python_version': sys.version,
+                'platform': sys.platform,
+                'cpu_count': os.cpu_count(),
+            }
         }
 
 
@@ -1885,168 +1382,135 @@ class IndustrialUnicodeAnalyzer:
 # DEMONSTRATION RUNNER
 # ============================================================================
 
-
 class IndustrialDemoRunner:
     """Complete demonstration runner with real-world test cases."""
 
     def __init__(self):
-        self.analyzer = IndustrialUnicodeAnalyzer(
-            {
-                "analysis_level": AnalysisLevel.COMPREHENSIVE,
-                "normalization_forms": [
-                    NormalizationForm.NFC,
-                    NormalizationForm.NFD,
-                    NormalizationForm.NFKC,
-                    NormalizationForm.NFKD,
-                ],
-                "enable_profiling": True,
-                "anomaly_detection": True,
-                "max_workers": min(8, os.cpu_count() or 1),
-                "batch_size": 50,
-            }
-        )
+        self.analyzer = IndustrialUnicodeAnalyzer({
+            'analysis_level': AnalysisLevel.COMPREHENSIVE,
+            'normalization_forms': [NormalizationForm.NFC, NormalizationForm.NFD,
+                                    NormalizationForm.NFKC, NormalizationForm.NFKD],
+            'enable_profiling': True,
+            'anomaly_detection': True,
+            'max_workers': min(8, os.cpu_count() or 1),
+            'batch_size': 50
+        })
         self.test_results = []
 
     def create_industrial_test_suite(self) -> List[Tuple[str, str]]:
         """Create comprehensive industrial-grade test suite."""
         return [
             # Basic normalization scenarios
-            ('basic_quotes', '"Hello World" vs "Hello World" and "single quotes"'),
-
+            ('basic_quotes', '"Hello World" vs "Hello World" and 'single quotes''),
             ('accented_basic', 'café résumé naïve Zürich'),
             ('em_dash_test', 'Text—with—em—dashes vs Text-with-hyphens'),
             ('ellipsis_test', 'Wait… vs Wait... for response'),
+
             # Decomposition/composition edge cases
-            ("composed_accents", "café éclair résumé Zürich naïve"),
-            (
-                "decomposed_accents",
-                "cafe\u0301 e\u0301clair re\u0301sume\u0301 Zu\u0308rich nai\u0308ve",
-            ),
-            ("mixed_composition", "café cafe\u0301 mixed forms"),
-            ("multiple_combining", "e\u0301\u0302\u0327 multiple combining marks"),
+            ('composed_accents', 'café éclair résumé Zürich naïve'),
+            ('decomposed_accents', 'cafe\u0301 e\u0301clair re\u0301sume\u0301 Zu\u0308rich nai\u0308ve'),
+            ('mixed_composition', 'café cafe\u0301 mixed forms'),
+            ('multiple_combining', 'e\u0301\u0302\u0327 multiple combining marks'),
+
             # Real-world multilingual content
-            ("cjk_mixed", '你好 "Hello" 世界 🌍 Chinese-English mix'),
-            ("arabic_text", 'مرحبا بالعالم "Hello World" في العربية'),
-            ("russian_text", 'Привет мир "Hello World" на русском'),
-            ("japanese_mixed", 'こんにちは "Hello" ひらがな カタカナ 漢字'),
-            ("korean_text", '안녕하세요 "Hello" 한국어 텍스트'),
-            ("hindi_text", 'नमस्ते "Hello" हिंदी में'),
-            ("hebrew_text", 'שלום "Hello World" בעברית'),
+            ('cjk_mixed', '你好 "Hello" 世界 🌍 Chinese-English mix'),
+            ('arabic_text', 'مرحبا بالعالم "Hello World" في العربية'),
+            ('russian_text', 'Привет мир "Hello World" на русском'),
+            ('japanese_mixed', 'こんにちは "Hello" ひらがな カタカナ 漢字'),
+            ('korean_text', '안녕하세요 "Hello" 한국어 텍스트'),
+            ('hindi_text', 'नमस्ते "Hello" हिंदी में'),
+            ('hebrew_text', 'שלום "Hello World" בעברית'),
+
             # Complex punctuation scenarios
-            ("complex_punctuation", '""quotes"" vs "quotes" and — vs – vs - dashes'),
-            ("math_symbols", "∀x ∈ ℝ: x² ≥ 0 ∧ √x ∈ ℂ ∴ ∃y: y = x²"),
-            ("currency_symbols", "$100.50 €85.20 ¥1,000 £75.80 ₹5,000 ₽3,500"),
-            ("special_punctuation", "¿Cómo estás? ¡Muy bien! « Bonjour » ‹ Salut ›"),
+            ('complex_punctuation', '""quotes"" vs "quotes" and — vs – vs - dashes'),
+            ('math_symbols', '∀x ∈ ℝ: x² ≥ 0 ∧ √x ∈ ℂ ∴ ∃y: y = x²'),
+            ('currency_symbols', '$100.50 €85.20 ¥1,000 £75.80 ₹5,000 ₽3,500'),
+            ('special_punctuation', '¿Cómo estás? ¡Muy bien! « Bonjour » ‹ Salut ›'),
+
             # Whitespace and control character edge cases
-            (
-                "whitespace_variety",
-                "normal space\u00a0non-breaking\u2000en-quad\u2001em-quad\u2009thin",
-            ),
-            ("zero_width_chars", "text\u200bwith\u200czero\u200dwidth\ufeffcharacters"),
-            ("rtl_ltr_marks", "mixed\u200etext\u200fwith\u200edirectional\u200fmarks"),
-            ("control_chars", "text\x00with\x01control\x1fcharacters\x7f"),
+            ('whitespace_variety', 'normal space\u00A0non-breaking\u2000en-quad\u2001em-quad\u2009thin'),
+            ('zero_width_chars', 'text\u200Bwith\u200Czero\u200Dwidth\uFEFFcharacters'),
+            ('rtl_ltr_marks', 'mixed\u200Etext\u200Fwith\u200Edirectional\u200Fmarks'),
+            ('control_chars', 'text\x00with\x01control\x1Fcharacters\x7F'),
+
             # Real application scenarios
-            (
-                "email_content",
-                """Dear Mr. José,
+            ('email_content', '''Dear Mr. José,
 
 Thank you for your inquiry about our "Premium Service™".
 We appreciate your interest in our café locations.
 
 Best regards,
-The Management""",
-            ),
-            (
-                "json_data",
-                """{"name": "José María", "description": "A café in París", "price": "€25.50", "rating": "★★★★☆"}""",
-            ),
-            (
-                "html_content",
-                """<p>Welcome to "Café München" — the best café in town!</p>
-<p>Special characters: ñ, ü, ç, å, ø</p>""",
-            ),
-            (
-                "code_snippet",
-                '''def normalize_text(text: str) -> str:
+The Management'''),
+
+            ('json_data',
+             '''{"name": "José María", "description": "A café in París", "price": "€25.50", "rating": "★★★★☆"}'''),
+
+            ('html_content', '''<p>Welcome to "Café München" — the best café in town!</p>
+<p>Special characters: ñ, ü, ç, å, ø</p>'''),
+
+            ('code_snippet', '''def normalize_text(text: str) -> str:
     """Normalize Unicode text using NFC form."""
-    return unicodedata.normalize("NFC", text)''',
-            ),
-            (
-                "csv_data",
-                '''Name,Description,Price
+    return unicodedata.normalize("NFC", text)'''),
+
+            ('csv_data', '''Name,Description,Price
 "José's Café","Best café in town — try it!","€15.50"
-"München Restaurant","Traditional food…","$22.00"''',
-            ),
+"München Restaurant","Traditional food…","$22.00"'''),
+
             # Stress test scenarios
-            ("repeated_patterns", '"""' * 500 + "—" * 200 + "…" * 100),
-            (
-                "long_mixed_text",
-                "A" * 1000 + "café" + "B" * 500 + '"quotes"' + "C" * 1000,
-            ),
-            (
-                "unicode_blocks",
-                "".join(chr(i)
-                        for i in range(0x100, 0x300) if chr(i).isprintable()),
-            ),
+            ('repeated_patterns', '"""' * 500 + '—' * 200 + '…' * 100),
+            ('long_mixed_text', 'A' * 1000 + 'café' + 'B' * 500 + '"quotes"' + 'C' * 1000),
+            ('unicode_blocks', ''.join(chr(i) for i in range(0x100, 0x300) if chr(i).isprintable())),
+
             # Edge cases and problematic content
-            ("empty_string", ""),
-            ("whitespace_only", "   \t\n   \r\n   "),
-            ("single_char", "é"),
-            ("replacement_chars", "Text with � replacement characters"),
-            ("bom_content", "\ufeffText with BOM at start"),
+            ('empty_string', ''),
+            ('whitespace_only', '   \t\n   \r\n   '),
+            ('single_char', 'é'),
+            ('replacement_chars', 'Text with � replacement characters'),
+            ('bom_content', '\uFEFFText with BOM at start'),
+
             # Security-relevant test cases
-            (
-                "potential_homographs",
-                "раyраl.com vs paypal.com",
-            ),  # Cyrillic 'a' mixed with Latin
-            ("rtl_override", "text\u202ewith\u202coverride\u202dmarks"),
-            ("mixed_scripts", "Normal text мixed ѡith суrillic сhаrѕ"),
+            ('potential_homographs', 'раyраl.com vs paypal.com'),  # Cyrillic 'a' mixed with Latin
+            ('rtl_override', 'text\u202Ewith\u202Coverride\u202Dmarks'),
+            ('mixed_scripts', 'Normal text мixed ѡith суrillic сhаrѕ'),
+
             # Performance test cases
-            (
-                "large_document",
-                """Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
+            ('large_document', '''Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
 Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
-Ut enim ad minim veniam, quis nostrud exercitation."""
-                * 100,
-            ),
+Ut enim ad minim veniam, quis nostrud exercitation.''' * 100),
+
             # Linguistic test cases
-            ("german_umlauts", "Müller, Bäcker, Weiß, groß, Straße"),
-            ("french_accents", "élève, être, naïf, cœur, Noël"),
-            ("spanish_marks", "niño, señor, ¿cómo?, ¡hola!, año"),
-            ("nordic_chars", "Åse, Øyvind, Björk, Lærer, Håkon"),
-            ("polish_chars", "Żółć, ęśćł, ąć, źż, Kraków"),
+            ('german_umlauts', 'Müller, Bäcker, Weiß, groß, Straße'),
+            ('french_accents', 'élève, être, naïf, cœur, Noël'),
+            ('spanish_marks', 'niño, señor, ¿cómo?, ¡hola!, año'),
+            ('nordic_chars', 'Åse, Øyvind, Björk, Lærer, Håkon'),
+            ('polish_chars', 'Żółć, ęśćł, ąć, źż, Kraków'),
+
             # Technical content
-            (
-                "xml_content",
-                """<?xml version="1.0" encoding="UTF-8"?>
+            ('xml_content', '''<?xml version="1.0" encoding="UTF-8"?>
 <root>
     <text>Café "München" — special chars</text>
     <price currency="€">25.50</price>
-</root>""",
-            ),
-            (
-                "sql_query",
-                """SELECT name, description
-                             FROM cafés
-                             WHERE price > €20.00
-                               AND rating = '★★★★★';""",
-            ),
-            ("regex_pattern", r"""[""''‚„]|[—–−‒]|[…⋯]|[€$¥£₹]"""),
+</root>'''),
+
+            ('sql_query', """SELECT name, description FROM cafés WHERE price > €20.00 AND rating = '★★★★★';"""),
+
+            ('regex_pattern', r'''[""''‚„]|[—–−‒]|[…⋯]|[€$¥£₹]'''),
+
             # Social media style content
-            (
-                "social_post",
-                """Just had the best café au lait ☕ at "Café de París" — 10/10 would recommend! 🌟
-#coffee #paris #amazing""",
-            ),
-            ("hashtag_content", "#café #münchen #zürich #résumé #naïve"),
+            ('social_post', '''Just had the best café au lait ☕ at "Café de París" — 10/10 would recommend! 🌟
+#coffee #paris #amazing'''),
+
+            ('hashtag_content', '#café #münchen #zürich #résumé #naïve'),
+
             # Legacy encoding issues simulation
-            ("encoding_issues", "Caf\xe9 with legacy encoding"),
-            ("mixed_encoding", "Some text with café and weird chars: \x80\x81\x82"),
+            ('encoding_issues', 'Caf\xe9 with legacy encoding'),
+            ('mixed_encoding', 'Some text with café and weird chars: \x80\x81\x82'),
+
             # Normalization form specific tests
-            ("nfc_test", "é"),  # Already composed
-            ("nfd_test", "e\u0301"),  # Base + combining
-            ("nfkc_test", "ﬁle"),  # Ligature
-            ("nfkd_test", "①②③"),  # Enclosed numbers
+            ('nfc_test', 'é'),  # Already composed
+            ('nfd_test', 'e\u0301'),  # Base + combining
+            ('nfkc_test', 'ﬁle'),  # Ligature
+            ('nfkd_test', '①②③'),  # Enclosed numbers
         ]
 
     def run_complete_industrial_demo(self) -> List[ComparisonResult]:
@@ -2062,12 +1526,8 @@ Ut enim ad minim veniam, quis nostrud exercitation."""
         # Create comprehensive test suite
         test_cases = self.create_industrial_test_suite()
         print(f"📋 Test Cases Prepared: {len(test_cases)}")
-        print(
-            f"🔍 Normalization Forms: {[f.value for f in self.analyzer.config['normalization_forms']]}"
-        )
-        print(
-            f"📈 Pattern Categories: {len(self.analyzer.config['pattern_categories'])}"
-        )
+        print(f"🔍 Normalization Forms: {[f.value for f in self.analyzer.config['normalization_forms']]}")
+        print(f"📈 Pattern Categories: {len(self.analyzer.config['pattern_categories'])}")
         print()
 
         # Progress tracking
@@ -2075,7 +1535,7 @@ Ut enim ad minim veniam, quis nostrud exercitation."""
             progress = completed / total
             bar_length = 60
             filled_length = int(bar_length * progress)
-            bar = "█" * filled_length + "░" * (bar_length - filled_length)
+            bar = '█' * filled_length + '░' * (bar_length - filled_length)
 
             # Calculate ETA
             elapsed = time.time() - start_time
@@ -2085,27 +1545,21 @@ Ut enim ad minim veniam, quis nostrud exercitation."""
             else:
                 eta_str = "ETA: --:--"
 
-            print(
-                f"\r🔄 Progress: |{bar}| {progress:.1%} ({completed:,}/{total:,}) {eta_str}",
-                end="",
-                flush=True,
-            )
+            print(f'\r🔄 Progress: |{bar}| {progress:.1%} ({completed:,}/{total:,}) {eta_str}',
+                  end='', flush=True)
 
         print("🚀 Starting comprehensive batch analysis...")
         start_time = time.time()
 
         try:
             # Execute batch analysis with full monitoring
-            results = self.analyzer.batch_analyze(
-                test_cases, advanced_progress_callback
-            )
+            results = self.analyzer.batch_analyze(test_cases, advanced_progress_callback)
 
             total_time = time.time() - start_time
             print(f"\n✅ Analysis completed successfully!")
             print(f"⏱️  Total processing time: {total_time:.2f} seconds")
             print(
-                f"🚄 Processing speed: {sum(r.metrics_before.character_count for r in results) / total_time:,.0f} chars/sec"
-            )
+                f"🚄 Processing speed: {sum(r.metrics_before.character_count for r in results) / total_time:,.0f} chars/sec")
             print()
 
             # Generate comprehensive analysis report
@@ -2122,53 +1576,35 @@ Ut enim ad minim veniam, quis nostrud exercitation."""
             traceback.print_exc()
             return []
 
-    def _generate_comprehensive_report(
-        self, results: List[ComparisonResult], processing_time: float
-    ):
+    def _generate_comprehensive_report(self, results: List[ComparisonResult], processing_time: float):
         """Generate detailed industrial analysis report."""
         print("📊 COMPREHENSIVE ANALYSIS REPORT")
         print("=" * 80)
 
         # Basic statistics
         total_texts = len(results)
-        successful_results = [
-            r
-            for r in results
-            if not any("failed" in rec.lower() for rec in r.recommendations)
-        ]
+        successful_results = [r for r in results if not any("failed" in rec.lower() for rec in r.recommendations)]
         failed_count = total_texts - len(successful_results)
 
-        total_chars = sum(
-            r.metrics_before.character_count for r in successful_results)
-        texts_with_changes = sum(
-            1 for r in successful_results if r.differences_detected
-        )
-        total_anomalies = sum(
-            len(r.metrics_before.anomalies_detected) for r in successful_results
-        )
+        total_chars = sum(r.metrics_before.character_count for r in successful_results)
+        texts_with_changes = sum(1 for r in successful_results if r.differences_detected)
+        total_anomalies = sum(len(r.metrics_before.anomalies_detected) for r in successful_results)
 
         print(f"📈 EXECUTION METRICS")
         print(f"   ✅ Successful analyses: {len(successful_results):,}")
         print(f"   ❌ Failed analyses: {failed_count:,}")
-        print(
-            f"   📊 Success rate: {len(successful_results) / total_texts:.1%}")
+        print(f"   📊 Success rate: {len(successful_results) / total_texts:.1%}")
         print(f"   📝 Total characters processed: {total_chars:,}")
-        print(
-            f"   🚄 Processing throughput: {total_chars / processing_time:,.0f} chars/sec"
-        )
-        print(
-            f"   💾 Memory efficiency: {total_chars / (1024 * 1024):.1f} MB processed"
-        )
+        print(f"   🚄 Processing throughput: {total_chars / processing_time:,.0f} chars/sec")
+        print(f"   💾 Memory efficiency: {total_chars / (1024 * 1024):.1f} MB processed")
         print()
 
         print(f"🔍 NORMALIZATION ANALYSIS")
         print(
-            f"   🔄 Texts requiring normalization: {texts_with_changes:,} ({texts_with_changes / len(successful_results):.1%})"
-        )
+            f"   🔄 Texts requiring normalization: {texts_with_changes:,} ({texts_with_changes / len(successful_results):.1%})")
         print(f"   ⚠️  Anomalies detected: {total_anomalies:,}")
         print(
-            f"   🎯 Average confidence: {sum(r.metrics_before.confidence_score for r in successful_results) / len(successful_results):.1%}"
-        )
+            f"   🎯 Average confidence: {sum(r.metrics_before.confidence_score for r in successful_results) / len(successful_results):.1%}")
         print()
 
         # Significance analysis
@@ -2176,25 +1612,19 @@ Ut enim ad minim veniam, quis nostrud exercitation."""
             significance_scores = []
             for result in successful_results:
                 if result.differences_detected:
-                    max_score = max(
-                        d["significance_score"] for d in result.differences_detected
-                    )
+                    max_score = max(d['significance_score'] for d in result.differences_detected)
                     significance_scores.append(max_score)
 
             if significance_scores:
                 print(f"📊 SIGNIFICANCE DISTRIBUTION")
                 high_impact = sum(1 for s in significance_scores if s > 10)
-                medium_impact = sum(
-                    1 for s in significance_scores if 5 < s <= 10)
+                medium_impact = sum(1 for s in significance_scores if 5 < s <= 10)
                 low_impact = sum(1 for s in significance_scores if s <= 5)
 
                 print(f"   🔥 High impact (>10.0): {high_impact:,} texts")
-                print(
-                    f"   ⚠️  Medium impact (5.0-10.0): {medium_impact:,} texts")
+                print(f"   ⚠️  Medium impact (5.0-10.0): {medium_impact:,} texts")
                 print(f"   ✅ Low impact (≤5.0): {low_impact:,} texts")
-                print(
-                    f"   📈 Average significance: {sum(significance_scores) / len(significance_scores):.2f}"
-                )
+                print(f"   📈 Average significance: {sum(significance_scores) / len(significance_scores):.2f}")
                 print(f"   📊 Max significance: {max(significance_scores):.2f}")
                 print()
 
@@ -2203,19 +1633,14 @@ Ut enim ad minim veniam, quis nostrud exercitation."""
         pattern_changes = defaultdict(int)
         for result in successful_results:
             for diff in result.differences_detected:
-                for pattern_name in diff["pattern_differences"].keys():
+                for pattern_name in diff['pattern_differences'].keys():
                     pattern_changes[pattern_name] += 1
 
         if pattern_changes:
-            top_patterns = sorted(
-                pattern_changes.items(), key=lambda x: x[1], reverse=True
-            )[:10]
+            top_patterns = sorted(pattern_changes.items(), key=lambda x: x[1], reverse=True)[:10]
             for pattern, count in top_patterns:
-                percentage = (
-                    count / texts_with_changes * 100 if texts_with_changes else 0
-                )
-                print(
-                    f"   • {pattern:30} {count:4,} occurrences ({percentage:5.1f}%)")
+                percentage = count / texts_with_changes * 100 if texts_with_changes else 0
+                print(f"   • {pattern:30} {count:4,} occurrences ({percentage:5.1f}%)")
         else:
             print("   No pattern changes detected")
         print()
@@ -2224,17 +1649,14 @@ Ut enim ad minim veniam, quis nostrud exercitation."""
         print("⚡ PERFORMANCE BREAKDOWN")
         perf_report = self.analyzer.get_performance_report()
 
-        for operation, stats in perf_report["performance_metrics"].items():
-            if stats and stats.get("count", 0) > 0:
+        for operation, stats in perf_report['performance_metrics'].items():
+            if stats and stats.get('count', 0) > 0:
                 print(
-                    f"   • {operation:25} {stats['count']:6,} ops, {stats['mean_ms']:8.2f}ms avg, {stats['total_ms']:10.2f}ms total"
-                )
+                    f"   • {operation:25} {stats['count']:6,} ops, {stats['mean_ms']:8.2f}ms avg, {stats['total_ms']:10.2f}ms total")
 
-        cache_stats = perf_report["cache_statistics"]
+        cache_stats = perf_report['cache_statistics']
         print(f"   • Cache hit rate: {cache_stats['cache_hit_rate']:.1%}")
-        print(
-            f"   • Cache efficiency: {cache_stats['normalization_cache_size']:,} entries"
-        )
+        print(f"   • Cache efficiency: {cache_stats['normalization_cache_size']:,} entries")
         print()
 
         # Top findings
@@ -2243,18 +1665,15 @@ Ut enim ad minim veniam, quis nostrud exercitation."""
         # Most impactful texts
         high_impact_results = sorted(
             [r for r in successful_results if r.differences_detected],
-            key=lambda r: max(d["significance_score"]
-                              for d in r.differences_detected),
-            reverse=True,
+            key=lambda r: max(d['significance_score'] for d in r.differences_detected),
+            reverse=True
         )[:5]
 
         if high_impact_results:
             print("   🎯 Most Impactful Normalizations:")
             for i, result in enumerate(high_impact_results, 1):
-                max_score = max(
-                    d["significance_score"] for d in result.differences_detected
-                )
-                sample = result.original_text[:50].replace("\n", "\\n")
+                max_score = max(d['significance_score'] for d in result.differences_detected)
+                sample = result.original_text[:50].replace('\n', '\\n')
                 if len(result.original_text) > 50:
                     sample += "..."
                 print(f"      {i}. {result.text_id} (Score: {max_score:.1f})")
@@ -2265,16 +1684,11 @@ Ut enim ad minim veniam, quis nostrud exercitation."""
             anomaly_types = defaultdict(int)
             for result in successful_results:
                 for anomaly in result.metrics_before.anomalies_detected:
-                    anomaly_type = (
-                        anomaly.split(
-                            ":")[0] if ":" in anomaly else anomaly.split()[0]
-                    )
+                    anomaly_type = anomaly.split(':')[0] if ':' in anomaly else anomaly.split()[0]
                     anomaly_types[anomaly_type] += 1
 
             print("   ⚠️  Anomaly Distribution:")
-            for anomaly_type, count in sorted(
-                anomaly_types.items(), key=lambda x: x[1], reverse=True
-            )[:5]:
+            for anomaly_type, count in sorted(anomaly_types.items(), key=lambda x: x[1], reverse=True)[:5]:
                 print(f"      • {anomaly_type:20} {count:4,} occurrences")
 
         print()
@@ -2290,9 +1704,9 @@ Ut enim ad minim veniam, quis nostrud exercitation."""
         output_dir.mkdir(exist_ok=True)
 
         export_tasks = [
-            ("comprehensive_analysis.json", "json"),
-            ("summary_report.csv", "csv"),
-            ("detailed_report.html", "html"),
+            ('comprehensive_analysis.json', 'json'),
+            ('summary_report.csv', 'csv'),
+            ('detailed_report.html', 'html')
         ]
 
         successful_exports = 0
@@ -2300,8 +1714,7 @@ Ut enim ad minim veniam, quis nostrud exercitation."""
         for filename, format_type in export_tasks:
             output_path = output_dir / filename
             try:
-                print(
-                    f"   📄 Generating {format_type.upper()} export...", end=" ")
+                print(f"   📄 Generating {format_type.upper()} export...", end=' ')
                 self.analyzer.export_results(results, output_path, format_type)
                 file_size = output_path.stat().st_size
                 print(f"✅ ({file_size:,} bytes)")
@@ -2312,12 +1725,11 @@ Ut enim ad minim veniam, quis nostrud exercitation."""
 
         # Export performance report
         try:
-            perf_path = output_dir / "performance_metrics.json"
+            perf_path = output_dir / 'performance_metrics.json'
             perf_report = self.analyzer.get_performance_report()
-            with open(perf_path, "w", encoding="utf-8") as f:
+            with open(perf_path, 'w', encoding='utf-8') as f:
                 json.dump(perf_report, f, indent=2, default=str)
-            print(
-                f"   📊 Performance metrics: ✅ ({perf_path.stat().st_size:,} bytes)")
+            print(f"   📊 Performance metrics: ✅ ({perf_path.stat().st_size:,} bytes)")
             successful_exports += 1
 
         except Exception as e:
@@ -2325,35 +1737,28 @@ Ut enim ad minim veniam, quis nostrud exercitation."""
 
         # Generate README
         try:
-            readme_path = output_dir / "README.md"
+            readme_path = output_dir / 'README.md'
             self._generate_readme(readme_path, results)
-            print(
-                f"   📖 Documentation: ✅ ({readme_path.stat().st_size:,} bytes)")
+            print(f"   📖 Documentation: ✅ ({readme_path.stat().st_size:,} bytes)")
             successful_exports += 1
 
         except Exception as e:
             print(f"   📖 Documentation: ❌ Failed: {e}")
 
-        print(
-            f"\n✅ Export Summary: {successful_exports}/{len(export_tasks) + 2} files exported successfully"
-        )
+        print(f"\n✅ Export Summary: {successful_exports}/{len(export_tasks) + 2} files exported successfully")
         print(f"📁 Output directory: {output_dir.absolute()}")
         print()
 
     def _generate_readme(self, readme_path: Path, results: List[ComparisonResult]):
         """Generate comprehensive README documentation."""
-        successful_results = [
-            r
-            for r in results
-            if not any("failed" in rec.lower() for rec in r.recommendations)
-        ]
+        successful_results = [r for r in results if not any("failed" in rec.lower() for rec in r.recommendations)]
 
         readme_content = f"""# Unicode Normalization Analysis Results
 
 ## Overview
 This directory contains the results of a comprehensive Unicode normalization analysis performed using the Industrial Unicode Analysis Framework v3.0.0.
 
-**Analysis Date:** {datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC")}  
+**Analysis Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}  
 **Total Texts Analyzed:** {len(results):,}  
 **Successful Analyses:** {len(successful_results):,}  
 **Total Characters Processed:** {sum(r.metrics_before.character_count for r in successful_results):,}  
@@ -2405,8 +1810,8 @@ Texts with significance scores > 10.0 require immediate attention for data consi
 ### Configuration Used
 - Analysis Level: Comprehensive
 - Normalization Forms: NFC, NFD, NFKC, NFKD
-- Pattern Categories: {len(self.analyzer.config["pattern_categories"])}
-- Thread Pool Size: {self.analyzer.config["max_workers"]}
+- Pattern Categories: {len(self.analyzer.config['pattern_categories'])}
+- Thread Pool Size: {self.analyzer.config['max_workers']}
 
 ### Performance Metrics
 Processing completed with industrial-grade performance characteristics suitable for production deployment.
@@ -2415,7 +1820,7 @@ Processing completed with industrial-grade performance characteristics suitable 
 Generated by Industrial Unicode Analysis Framework v3.0.0
 """
 
-        with open(readme_path, "w", encoding="utf-8") as f:
+        with open(readme_path, 'w', encoding='utf-8') as f:
             f.write(readme_content)
 
 
@@ -2428,7 +1833,7 @@ def main():
     print()
 
     # Configure warnings and logging
-    warnings.filterwarnings("ignore", category=DeprecationWarning)
+    warnings.filterwarnings('ignore', category=DeprecationWarning)
     logging.basicConfig(level=logging.INFO)
 
     try:
@@ -2451,9 +1856,7 @@ def main():
             print("✨ KEY ACHIEVEMENTS:")
             print("   ✅ Zero external dependencies beyond Python standard library")
             print("   ✅ Thread-safe concurrent processing with configurable workers")
-            print(
-                "   ✅ Comprehensive Unicode normalization analysis (NFC/NFD/NFKC/NFKD)"
-            )
+            print("   ✅ Comprehensive Unicode normalization analysis (NFC/NFD/NFKC/NFKD)")
             print("   ✅ Industrial-grade pattern matching across 40+ categories")
             print("   ✅ Advanced anomaly detection and confidence scoring")
             print("   ✅ Multi-format export (JSON/CSV/HTML) with compression")
@@ -2465,31 +1868,18 @@ def main():
             print()
 
             print("🔍 ANALYSIS INSIGHTS:")
-            successful_results = [
-                r
-                for r in results
-                if not any("failed" in rec.lower() for rec in r.recommendations)
-            ]
+            successful_results = [r for r in results if not any("failed" in rec.lower() for rec in r.recommendations)]
             if successful_results:
-                total_chars = sum(
-                    r.metrics_before.character_count for r in successful_results
-                )
-                texts_with_changes = sum(
-                    1 for r in successful_results if r.differences_detected
-                )
+                total_chars = sum(r.metrics_before.character_count for r in successful_results)
+                texts_with_changes = sum(1 for r in successful_results if r.differences_detected)
 
+                print(f"   📊 Processed {len(successful_results):,} texts ({total_chars:,} characters)")
                 print(
-                    f"   📊 Processed {len(successful_results):,} texts ({total_chars:,} characters)"
-                )
+                    f"   🔄 {texts_with_changes:,} texts required normalization ({texts_with_changes / len(successful_results):.1%})")
                 print(
-                    f"   🔄 {texts_with_changes:,} texts required normalization ({texts_with_changes / len(successful_results):.1%})"
-                )
+                    f"   ⚠️  {sum(len(r.metrics_before.anomalies_detected) for r in successful_results):,} anomalies detected")
                 print(
-                    f"   ⚠️  {sum(len(r.metrics_before.anomalies_detected) for r in successful_results):,} anomalies detected"
-                )
-                print(
-                    f"   🎯 Average confidence: {sum(r.metrics_before.confidence_score for r in successful_results) / len(successful_results):.1%}"
-                )
+                    f"   🎯 Average confidence: {sum(r.metrics_before.confidence_score for r in successful_results) / len(successful_results):.1%}")
 
             print()
             print("📁 DELIVERABLES:")
