@@ -1,23 +1,24 @@
 # coding=utf-8
-import numpy as np
-import pandas as pd
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error
-import networkx as nx
-from scipy.stats import pearsonr, spearmanr
-from scipy.spatial.distance import pdist, squareform
-import torch
-import torch.nn as nn
-from torch.utils.data import DataLoader, TensorDataset
-import dcor
-import pygam
-from econml.dml import CausalForestDML
-from econml.iv.nnet import DeepIV
 import warnings
 
-warnings.filterwarnings('ignore')
+import dcor
+import networkx as nx
+import numpy as np
+import pandas as pd
+import pygam
+import torch
+import torch.nn as nn
+from econml.dml import CausalForestDML
+from econml.iv.nnet import DeepIV
+from scipy.spatial.distance import pdist, squareform
+from scipy.stats import pearsonr, spearmanr
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from torch.utils.data import DataLoader, TensorDataset
+
+warnings.filterwarnings("ignore")
 
 
 class IndustrialCausalPatternDetector:
@@ -43,7 +44,7 @@ class IndustrialCausalPatternDetector:
         numeric_columns = data.select_dtypes(include=[np.number]).columns
         scaler = StandardScaler()
         data[numeric_columns] = scaler.fit_transform(data[numeric_columns])
-        self.scalers['main'] = scaler
+        self.scalers["main"] = scaler
 
         return data
 
@@ -55,12 +56,12 @@ class IndustrialCausalPatternDetector:
         numeric_data = data.select_dtypes(include=[np.number])
 
         # Pearson相关系数
-        pearson_corr = numeric_data.corr(method='pearson')
-        results['pearson'] = pearson_corr
+        pearson_corr = numeric_data.corr(method="pearson")
+        results["pearson"] = pearson_corr
 
         # Spearman秩相关
-        spearman_corr = numeric_data.corr(method='spearman')
-        results['spearman'] = spearman_corr
+        spearman_corr = numeric_data.corr(method="spearman")
+        results["spearman"] = spearman_corr
 
         # 距离相关性 (Distance Correlation)
         cols = numeric_data.columns
@@ -72,24 +73,25 @@ class IndustrialCausalPatternDetector:
                 if i == j:
                     dist_corr_matrix[i, j] = 1.0
                 else:
-                    dcor_val = dcor.distance_correlation(numeric_data.iloc[:, i],
-                                                         numeric_data.iloc[:, j])
+                    dcor_val = dcor.distance_correlation(
+                        numeric_data.iloc[:, i], numeric_data.iloc[:, j]
+                    )
                     dist_corr_matrix[i, j] = dcor_val
                     dist_corr_matrix[j, i] = dcor_val
 
-        results['distance_correlation'] = pd.DataFrame(
+        results["distance_correlation"] = pd.DataFrame(
             dist_corr_matrix, columns=cols, index=cols
         )
 
         return results
 
-    def build_causal_graph(self, data, method='pc'):
+    def build_causal_graph(self, data, method="pc"):
         """
         构建因果图
         """
-        if method == 'pc':
+        if method == "pc":
             return self._pc_algorithm(data)
-        elif method == 'ges':
+        elif method == "ges":
             return self._ges_algorithm(data)
         else:
             raise ValueError("Unsupported method")
@@ -151,7 +153,7 @@ class IndustrialCausalPatternDetector:
             model_y=RandomForestRegressor(),
             model_t=RandomForestRegressor(),
             discrete_treatment=False,
-            cv=3
+            cv=3,
         )
 
         # 拟合模型
@@ -162,9 +164,9 @@ class IndustrialCausalPatternDetector:
         confidence_intervals = est.effect_interval(X, alpha=0.05)
 
         return {
-            'causal_effect': causal_effect,
-            'confidence_intervals': confidence_intervals,
-            'model': est
+            "causal_effect": causal_effect,
+            "confidence_intervals": confidence_intervals,
+            "model": est,
         }
 
     def deep_causal_inference(self, data, treatment, outcome, confounders):
@@ -173,28 +175,26 @@ class IndustrialCausalPatternDetector:
         """
         # 数据准备
         X = torch.tensor(data[confounders].values, dtype=torch.float32)
-        T = torch.tensor(data[treatment].values, dtype=torch.float32).unsqueeze(1)
-        Y = torch.tensor(data[outcome].values, dtype=torch.float32).unsqueeze(1)
+        T = torch.tensor(data[treatment].values,
+                         dtype=torch.float32).unsqueeze(1)
+        Y = torch.tensor(data[outcome].values,
+                         dtype=torch.float32).unsqueeze(1)
 
         # 构建神经网络模型
         class CausalNet(nn.Module):
             def __init__(self, input_dim):
                 super(CausalNet, self).__init__()
                 self.shared_layers = nn.Sequential(
-                    nn.Linear(input_dim, 128),
-                    nn.ReLU(),
-                    nn.Linear(128, 64),
-                    nn.ReLU()
+                    nn.Linear(input_dim, 128), nn.ReLU(
+                    ), nn.Linear(128, 64), nn.ReLU()
                 )
                 self.treatment_layer = nn.Sequential(
-                    nn.Linear(64, 32),
-                    nn.ReLU(),
-                    nn.Linear(32, 1)
+                    nn.Linear(64, 32), nn.ReLU(), nn.Linear(32, 1)
                 )
                 self.outcome_layer = nn.Sequential(
-                    nn.Linear(65, 32),  # 64 + 1 (treatment)
+                    nn.Linear(65, 32),
                     nn.ReLU(),
-                    nn.Linear(32, 1)
+                    nn.Linear(32, 1),  # 64 + 1 (treatment)
                 )
 
             def forward(self, x, t):
@@ -228,10 +228,7 @@ class IndustrialCausalPatternDetector:
             y_t0, _ = model(X, torch.zeros_like(T))
             causal_effect = (y_t1 - y_t0).numpy().flatten()
 
-        return {
-            'causal_effect': causal_effect,
-            'model': model
-        }
+        return {"causal_effect": causal_effect, "model": model}
 
     def gam_causal_analysis(self, data, treatment, outcome, confounders):
         """
@@ -243,7 +240,7 @@ class IndustrialCausalPatternDetector:
 
         # 构建GAM模型
         # 为每个特征创建spline项
-        formula = ' + '.join([f's({col})' for col in confounders + [treatment]])
+        formula = " + ".join([f"s({col})" for col in confounders + [treatment]])
 
         # 由于pygam的API限制，我们手动构建模型
         gam = pygam.GAM()
@@ -253,10 +250,7 @@ class IndustrialCausalPatternDetector:
         treatment_idx = X.columns.get_loc(treatment)
         treatment_effect = gam.coef_[treatment_idx]
 
-        return {
-            'treatment_effect': treatment_effect,
-            'model': gam
-        }
+        return {"treatment_effect": treatment_effect, "model": gam}
 
     def detect_anomalies_in_causal_patterns(self, data, reference_patterns):
         """
@@ -278,9 +272,9 @@ class IndustrialCausalPatternDetector:
                 anomaly_positions = np.where(diff > threshold)
 
                 anomalies[pattern_type] = {
-                    'score': anomaly_score,
-                    'positions': list(zip(anomaly_positions[0], anomaly_positions[1])),
-                    'details': diff
+                    "score": anomaly_score,
+                    "positions": list(zip(anomaly_positions[0], anomaly_positions[1])),
+                    "details": diff,
                 }
 
         return anomalies
@@ -300,9 +294,9 @@ class IndustrialCausalPatternDetector:
 
         # 存储结果
         self.results = {
-            'correlation_patterns': correlation_patterns,
-            'causal_graph': causal_graph,
-            'processed_data': processed_data
+            "correlation_patterns": correlation_patterns,
+            "causal_graph": causal_graph,
+            "processed_data": processed_data,
         }
 
         return self.results
@@ -321,13 +315,7 @@ def main():
     X4 = 0.7 * X3 + np.random.normal(0, 0.5, n_samples)
     Y = 1.2 * X3 + 0.8 * X4 + np.random.normal(0, 0.5, n_samples)
 
-    data = pd.DataFrame({
-        'X1': X1,
-        'X2': X2,
-        'X3': X3,
-        'X4': X4,
-        'Y': Y
-    })
+    data = pd.DataFrame({"X1": X1, "X2": X2, "X3": X3, "X4": X4, "Y": Y})
 
     # 初始化因果模式检测器
     detector = IndustrialCausalPatternDetector()
@@ -337,13 +325,17 @@ def main():
 
     # 执行特定因果推断
     if len(data.columns) >= 3:
-        confounders = ['X1', 'X2', 'X3']
-        treatment = 'X4'
-        outcome = 'Y'
+        confounders = ["X1", "X2", "X3"]
+        treatment = "X4"
+        outcome = "Y"
 
         # 确保列存在于数据中
         available_cols = [col for col in confounders if col in data.columns]
-        if treatment in data.columns and outcome in data.columns and len(available_cols) > 0:
+        if (
+            treatment in data.columns
+            and outcome in data.columns
+            and len(available_cols) > 0
+        ):
             try:
                 dml_result = detector.causal_inference_dml(
                     data, treatment, outcome, available_cols
