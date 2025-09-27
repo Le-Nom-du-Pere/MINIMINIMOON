@@ -1,367 +1,361 @@
-"""
-CAUSAL PATTERN DETECTOR
-======================
+# coding=utf-8
+import numpy as np
+import pandas as pd
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
+import networkx as nx
+from scipy.stats import pearsonr, spearmanr
+from scipy.spatial.distance import pdist, squareform
+import torch
+import torch.nn as nn
+from torch.utils.data import DataLoader, TensorDataset
+import dcor
+import pygam
+from econml.dml import CausalForestDML
+from econml.iv.nnet import DeepIV
+import warnings
 
-Detects causal connector patterns in Spanish text using regex-based pattern matching
-with Unicode normalization support. Includes semantic strength weighting and 
-precision optimization to minimize false positives.
-
-Features:
-- Unicode-normalized pattern matching
-- Weighted pattern scoring based on semantic strength
-- False positive mitigation through context analysis  
-- Comprehensive test coverage for Spanish causal connectors
-- Integration with existing text processing pipeline
-"""
-
-import re
-from typing import List, Dict, Tuple, Optional
-from dataclasses import dataclass
-from text_processor import normalize_unicode
-
-
-@dataclass
-class CausalMatch:
-    """Represents a causal pattern match with context and confidence scoring."""
-    connector: str
-    pattern_type: str
-    text: str
-    start: int
-    end: int
-    confidence: float
-    context_before: str = ""
-    context_after: str = ""
-    semantic_strength: float = 1.0
+warnings.filterwarnings('ignore')
 
 
-class CausalPatternDetector:
+class IndustrialCausalPatternDetector:
     """
-    Detects causal connector patterns in Spanish text with semantic strength weighting
-    and false positive reduction through context analysis.
+    工业级因果模式检测器，集成多种现代因果推断方法
     """
 
-    def __init__(self):
-        # Define causal connectors with their semantic strength weights
-        # Higher weights indicate stronger causal relationships, lower weights
-        # indicate potential for more false positives
-        self.causal_connectors = {
-            # Strong causal connectors (high confidence, less false positives)
-            'porque': 0.95,
-            'debido a': 0.90,
-            'a causa de': 0.90,
-            'por causa de': 0.85,
-            'como resultado de': 0.85,
-            'como consecuencia de': 0.85,
-            
-            # Medium strength connectors (moderate confidence)
-            'ya que': 0.80,
-            'puesto que': 0.80,
-            'dado que': 0.75,
-            'por lo que': 0.75,
-            'de manera que': 0.70,
-            'de modo que': 0.70,
-            
-            # NEW PATTERNS - with adjusted weights based on semantic analysis
-            'implica': 0.60,      # Lower weight - can be used in non-causal contexts
-            'conduce a': 0.75,    # Medium-high weight - usually indicates causation
-            'mediante': 0.50,     # Lower weight - often instrumental rather than causal
-            'por medio de': 0.55, # Similar to 'mediante' - instrumental usage
-            'tendencia a': 0.45,  # Lowest weight - often correlational rather than causal
-            
-            # Additional existing patterns
-            'genera': 0.70,
-            'produce': 0.70,
-            'provoca': 0.75,
-            'origina': 0.75,
-            'conlleva': 0.70,
-            'resulta en': 0.80,
-            'tiene como resultado': 0.85
-        }
-        
-        # Compile regex patterns with Unicode normalization
-        self.compiled_patterns = self._compile_causal_patterns()
-        
-        # Context patterns that reduce confidence (common false positive contexts)
-        self.false_positive_contexts = self._compile_false_positive_patterns()
+    def __init__(self, config=None):
+        self.config = config or {}
+        self.causal_graph = nx.DiGraph()
+        self.models = {}
+        self.scalers = {}
+        self.results = {}
 
-    def _compile_causal_patterns(self) -> Dict[str, re.Pattern]:
-        """Compile regex patterns for causal connectors with Unicode support."""
-        patterns = {}
-        
-        for connector, weight in self.causal_connectors.items():
-            # Normalize the connector for pattern matching
-            normalized_connector = normalize_unicode(connector)
-            
-            # Create flexible patterns that handle:
-            # - Word boundaries
-            # - Optional articles/prepositions
-            # - Accent variations
-            # - Case insensitivity
-            
-            if connector == 'implica':
-                # Handle verb conjugations: implica, implican, implicaba, etc.
-                pattern = r'\b(?:implica[rns]?|implicab[aa]|impliq[uúü]e?)\b'
-            elif connector == 'conduce a':
-                # Handle verb conjugations and preposition variations
-                # Including infinitive forms like 'conducir a'
-                pattern = r'\b(?:conduc(?:e|en|ir)(?:\s+a|\s+hacia|\s+al?))\b'
-            elif connector == 'mediante':
-                # Simple pattern but with boundary checks
-                pattern = r'\b(?:mediante)\b'
-            elif connector == 'por medio de':
-                # Allow some flexibility in preposition structure
-                pattern = r'\b(?:por\s+medio\s+de(?:\s+la|\s+el|\s+los|\s+las)?)\b'
-            elif connector == 'tendencia a':
-                # Match various forms of tendency expressions
-                pattern = r'\b(?:tendencia\s+a|tiend[eao]\s+a)\b'
-            else:
-                # For existing patterns, escape special regex characters
-                escaped = re.escape(normalized_connector)
-                pattern = r'\b(?:' + escaped + r')\b'
-            
-            patterns[connector] = re.compile(pattern, re.IGNORECASE | re.UNICODE)
-        
-        return patterns
+    def preprocess_data(self, data):
+        """
+        数据预处理模块
+        """
+        # 处理缺失值
+        data = data.fillna(data.mean())
 
-    @staticmethod
-    def _compile_false_positive_patterns() -> List[re.Pattern]:
-        """Compile patterns that indicate likely false positives."""
-        fp_patterns = [
-            # Question contexts - reduce confidence for interrogative sentences
-            r'[¿?].*?[?¿]',
-            
-            # Negation contexts - "no implica", "no conduce", etc.
-            r'\b(?:no|nunca|jamás)\s+(?:implica|conduce|mediante)',
-            
-            # Hypothetical contexts - "si implica", "podría conducir"
-            r'\b(?:si|cuando|podría|debería)\s+.*?(?:implica|conduce)',
-            
-            # Mathematical/technical contexts for "implica"
-            r'\b(?:ecuación|fórmula|teorema|proposición)\s+.*?implica',
-            
-            # Instrumental vs causal distinction for "mediante"
-            r'\b(?:método|técnica|herramienta|instrumento)\s+.*?mediante',
-            
-            # Statistical vs causal for "tendencia"
-            r'\b(?:estadística|correlación|datos|gráfico)\s+.*?tendencia'
-        ]
-        
-        return [re.compile(p, re.IGNORECASE | re.UNICODE) for p in fp_patterns]
+        # 标准化数值特征
+        numeric_columns = data.select_dtypes(include=[np.number]).columns
+        scaler = StandardScaler()
+        data[numeric_columns] = scaler.fit_transform(data[numeric_columns])
+        self.scalers['main'] = scaler
 
-    def detect_causal_patterns(self, text: str, context_window: int = 100) -> List[CausalMatch]:
-        """
-        Detect causal patterns in text with confidence scoring and context analysis.
-        
-        Args:
-            text: Input text to analyze
-            context_window: Character window for context extraction
-            
-        Returns:
-            List of CausalMatch objects with confidence scores
-        """
-        if not text:
-            return []
-        
-        # Normalize text for consistent pattern matching
-        normalized_text = normalize_unicode(text)
-        matches = []
-        
-        for connector, pattern in self.compiled_patterns.items():
-            base_confidence = self.causal_connectors[connector]
-            
-            for match in pattern.finditer(normalized_text):
-                start, end = match.span()
-                matched_text = match.group()
-                
-                # Extract context for analysis
-                context_start = max(0, start - context_window)
-                context_end = min(len(normalized_text), end + context_window)
-                context_before = normalized_text[context_start:start]
-                context_after = normalized_text[end:context_end]
-                full_context = normalized_text[context_start:context_end]
-                
-                # Calculate adjusted confidence based on context
-                adjusted_confidence = self._calculate_context_adjusted_confidence(
-                    base_confidence, full_context, connector
-                )
-                
-                # Determine pattern type based on connector characteristics
-                pattern_type = self._classify_pattern_type(connector)
-                
-                causal_match = CausalMatch(
-                    connector=connector,
-                    pattern_type=pattern_type,
-                    text=matched_text,
-                    start=start,
-                    end=end,
-                    confidence=adjusted_confidence,
-                    context_before=context_before.strip(),
-                    context_after=context_after.strip(),
-                    semantic_strength=base_confidence
-                )
-                
-                matches.append(causal_match)
-        
-        # Remove overlapping matches, preferring higher confidence
-        return self._resolve_overlapping_matches(matches)
+        return data
 
-    def _calculate_context_adjusted_confidence(self, base_confidence: float, 
-                                             context: str, connector: str) -> float:
+    def detect_correlation_patterns(self, data):
         """
-        Adjust confidence based on contextual clues that indicate false positives.
-        
-        Args:
-            base_confidence: Base semantic strength of the connector
-            context: Surrounding text context
-            connector: The specific connector being analyzed
-            
-        Returns:
-            Adjusted confidence score (0.0 to 1.0)
+        基于多种相关性度量的模式检测
         """
-        adjusted_confidence = base_confidence
-        
-        # Check for false positive patterns
-        for fp_pattern in self.false_positive_contexts:
-            if fp_pattern.search(context):
-                # Reduce confidence by 20-40% depending on pattern severity
-                if 'no ' in context.lower() or 'nunca ' in context.lower():
-                    adjusted_confidence *= 0.3  # Strong negation - major reduction
-                elif '¿' in context or '?' in context:
-                    adjusted_confidence *= 0.7  # Questions - moderate reduction
+        results = {}
+        numeric_data = data.select_dtypes(include=[np.number])
+
+        # Pearson相关系数
+        pearson_corr = numeric_data.corr(method='pearson')
+        results['pearson'] = pearson_corr
+
+        # Spearman秩相关
+        spearman_corr = numeric_data.corr(method='spearman')
+        results['spearman'] = spearman_corr
+
+        # 距离相关性 (Distance Correlation)
+        cols = numeric_data.columns
+        n_cols = len(cols)
+        dist_corr_matrix = np.zeros((n_cols, n_cols))
+
+        for i in range(n_cols):
+            for j in range(i, n_cols):
+                if i == j:
+                    dist_corr_matrix[i, j] = 1.0
                 else:
-                    adjusted_confidence *= 0.6  # Other contexts - moderate reduction
-        
-        # Check for conditional/hypothetical contexts
-        conditional_indicators = ['si ', 'cuando ', 'podría ', 'debería ', 'tal vez ', 'quizás ']
-        if any(indicator in context.lower() for indicator in conditional_indicators):
-            adjusted_confidence *= 0.6  # Conditional/hypothetical - reduce confidence
-        
-        # Connector-specific adjustments
-        if connector in ['implica']:
-            # Check for mathematical/logical contexts
-            math_indicators = ['ecuación', 'fórmula', 'teorema', 'lógica', 'matemática']
-            if any(indicator in context.lower() for indicator in math_indicators):
-                adjusted_confidence *= 0.4  # Likely logical implication, not causal
-        
-        elif connector in ['mediante', 'por medio de']:
-            # Check for instrumental vs causal usage
-            instrumental_indicators = ['método', 'técnica', 'herramienta', 'proceso', 'procedimiento']
-            if any(indicator in context.lower() for indicator in instrumental_indicators):
-                adjusted_confidence *= 0.5  # Likely instrumental, not causal
-        
-        elif connector == 'tendencia a':
-            # Check for statistical vs causal usage
-            stats_indicators = ['estadística', 'correlación', 'datos', 'porcentaje', 'gráfico']
-            if any(indicator in context.lower() for indicator in stats_indicators):
-                adjusted_confidence *= 0.3  # Likely statistical trend, not causal
-        
-        return max(0.0, min(1.0, adjusted_confidence))
+                    dcor_val = dcor.distance_correlation(numeric_data.iloc[:, i],
+                                                         numeric_data.iloc[:, j])
+                    dist_corr_matrix[i, j] = dcor_val
+                    dist_corr_matrix[j, i] = dcor_val
 
-    @staticmethod
-    def _classify_pattern_type(connector: str) -> str:
-        """Classify the type of causal pattern based on connector characteristics."""
-        if connector in ['porque', 'debido a', 'a causa de', 'por causa de']:
-            return 'direct_causation'
-        elif connector in ['como resultado de', 'como consecuencia de', 'resulta en']:
-            return 'result_causation'
-        elif connector in ['ya que', 'puesto que', 'dado que']:
-            return 'reason_causation'
-        elif connector in ['implica', 'conlleva']:
-            return 'implication_causation'
-        elif connector in ['conduce a', 'genera', 'produce', 'provoca']:
-            return 'generative_causation'
-        elif connector in ['mediante', 'por medio de']:
-            return 'instrumental_causation'
-        elif connector == 'tendencia a':
-            return 'tendency_causation'
+        results['distance_correlation'] = pd.DataFrame(
+            dist_corr_matrix, columns=cols, index=cols
+        )
+
+        return results
+
+    def build_causal_graph(self, data, method='pc'):
+        """
+        构建因果图
+        """
+        if method == 'pc':
+            return self._pc_algorithm(data)
+        elif method == 'ges':
+            return self._ges_algorithm(data)
         else:
-            return 'general_causation'
+            raise ValueError("Unsupported method")
 
-    def _resolve_overlapping_matches(self, matches: List[CausalMatch]) -> List[CausalMatch]:
+    def _pc_algorithm(self, data):
         """
-        Remove overlapping matches, preferring those with higher confidence scores.
-        
-        Args:
-            matches: List of causal matches potentially containing overlaps
-            
-        Returns:
-            List of non-overlapping matches
+        PC算法实现因果发现
         """
-        if not matches:
-            return []
-        
-        # Sort by confidence (descending) then by position
-        matches.sort(key=lambda x: (-x.confidence, x.start))
-        
-        filtered_matches = []
-        for match in matches:
-            # Check if this match overlaps with any already selected match
-            overlaps = any(
-                self._matches_overlap(match, existing) 
-                for existing in filtered_matches
-            )
-            
-            if not overlaps:
-                filtered_matches.append(match)
-        
-        # Sort final results by position
-        filtered_matches.sort(key=lambda x: x.start)
-        return filtered_matches
+        # 初始化完全无向图
+        g = nx.Graph()
+        variables = data.columns.tolist()
+        g.add_nodes_from(variables)
 
-    @staticmethod
-    def _matches_overlap(match1: CausalMatch, match2: CausalMatch) -> bool:
-        """Check if two matches overlap in text position."""
-        return not (match1.end <= match2.start or match2.end <= match1.start)
+        # 添加所有可能的边
+        for i in range(len(variables)):
+            for j in range(i + 1, len(variables)):
+                g.add_edge(variables[i], variables[j])
 
-    def calculate_pattern_statistics(self, text: str) -> Dict[str, any]:
+        # 逐步移除边 based on conditional independence tests
+        # 这里简化实现，实际应用中需要更复杂的条件独立性测试
+        removed_edges = []
+        for node in variables:
+            neighbors = list(g.neighbors(node))
+            if len(neighbors) > 1:
+                # 简化的条件独立性判断
+                for i in range(len(neighbors)):
+                    for j in range(i + 1, len(neighbors)):
+                        var1, var2 = neighbors[i], neighbors[j]
+                        if g.has_edge(var1, var2):
+                            corr = np.abs(data[var1].corr(data[var2]))
+                            # 如果两个邻居之间的相关性很低，则移除边
+                            if corr < 0.1:
+                                g.remove_edge(var1, var2)
+                                removed_edges.append((var1, var2))
+
+        # 转换为有向图（简化版）
+        dag = nx.DiGraph()
+        dag.add_nodes_from(g.nodes())
+        for edge in g.edges():
+            # 简单的因果方向判断（实际中需要更复杂的方法）
+            if data[edge[0]].corr(data[edge[1]]) > 0:
+                dag.add_edge(edge[0], edge[1])
+            else:
+                dag.add_edge(edge[1], edge[0])
+
+        return dag
+
+    def causal_inference_dml(self, data, treatment, outcome, confounders):
         """
-        Calculate comprehensive statistics about causal patterns in text.
-        
-        Args:
-            text: Text to analyze
-            
-        Returns:
-            Dictionary containing pattern statistics
+        使用Double Machine Learning进行因果推断
         """
-        matches = self.detect_causal_patterns(text)
-        
-        if not matches:
-            return {
-                'total_matches': 0,
-                'pattern_types': {},
-                'confidence_distribution': {},
-                'average_confidence': 0.0,
-                'high_confidence_matches': 0,
-                'potential_false_positives': 0
-            }
-        
-        # Pattern type distribution
-        pattern_types = {}
-        for match in matches:
-            pattern_types[match.pattern_type] = pattern_types.get(match.pattern_type, 0) + 1
-        
-        # Confidence distribution
-        high_conf = len([m for m in matches if m.confidence >= 0.8])
-        medium_conf = len([m for m in matches if 0.5 <= m.confidence < 0.8])
-        low_conf = len([m for m in matches if m.confidence < 0.5])
-        
-        confidence_distribution = {
-            'high_confidence': high_conf,
-            'medium_confidence': medium_conf,
-            'low_confidence': low_conf
-        }
-        
-        avg_confidence = sum(m.confidence for m in matches) / len(matches)
-        
+        # 准备数据
+        X = data[confounders]
+        T = data[treatment]
+        Y = data[outcome]
+
+        # 初始化Causal Forest DML模型
+        est = CausalForestDML(
+            model_y=RandomForestRegressor(),
+            model_t=RandomForestRegressor(),
+            discrete_treatment=False,
+            cv=3
+        )
+
+        # 拟合模型
+        est.fit(Y, T, X=X, W=None)
+
+        # 估计因果效应
+        causal_effect = est.effect(X)
+        confidence_intervals = est.effect_interval(X, alpha=0.05)
+
         return {
-            'total_matches': len(matches),
-            'pattern_types': pattern_types,
-            'confidence_distribution': confidence_distribution,
-            'average_confidence': avg_confidence,
-            'high_confidence_matches': high_conf,
-            'potential_false_positives': low_conf
+            'causal_effect': causal_effect,
+            'confidence_intervals': confidence_intervals,
+            'model': est
         }
 
-    def get_supported_patterns(self) -> Dict[str, float]:
-        """Return dictionary of supported causal patterns and their base weights."""
-        return self.causal_connectors.copy()
+    def deep_causal_inference(self, data, treatment, outcome, confounders):
+        """
+        使用深度学习方法进行因果推断
+        """
+        # 数据准备
+        X = torch.tensor(data[confounders].values, dtype=torch.float32)
+        T = torch.tensor(data[treatment].values, dtype=torch.float32).unsqueeze(1)
+        Y = torch.tensor(data[outcome].values, dtype=torch.float32).unsqueeze(1)
+
+        # 构建神经网络模型
+        class CausalNet(nn.Module):
+            def __init__(self, input_dim):
+                super(CausalNet, self).__init__()
+                self.shared_layers = nn.Sequential(
+                    nn.Linear(input_dim, 128),
+                    nn.ReLU(),
+                    nn.Linear(128, 64),
+                    nn.ReLU()
+                )
+                self.treatment_layer = nn.Sequential(
+                    nn.Linear(64, 32),
+                    nn.ReLU(),
+                    nn.Linear(32, 1)
+                )
+                self.outcome_layer = nn.Sequential(
+                    nn.Linear(65, 32),  # 64 + 1 (treatment)
+                    nn.ReLU(),
+                    nn.Linear(32, 1)
+                )
+
+            def forward(self, x, t):
+                shared = self.shared_layers(x)
+                t_pred = self.treatment_layer(shared)
+                y_input = torch.cat([shared, t], dim=1)
+                y_pred = self.outcome_layer(y_input)
+                return y_pred, t_pred
+
+        model = CausalNet(len(confounders))
+        optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+        criterion = nn.MSELoss()
+
+        # 训练模型
+        dataset = TensorDataset(X, T, Y)
+        dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
+
+        for epoch in range(100):
+            for x_batch, t_batch, y_batch in dataloader:
+                optimizer.zero_grad()
+                y_pred, t_pred = model(x_batch, t_batch)
+                loss = criterion(y_pred, y_batch) + criterion(t_pred, t_batch)
+                loss.backward()
+                optimizer.step()
+
+        # 估计因果效应
+        with torch.no_grad():
+            # 在治疗条件下
+            y_t1, _ = model(X, torch.ones_like(T))
+            # 在对照条件下
+            y_t0, _ = model(X, torch.zeros_like(T))
+            causal_effect = (y_t1 - y_t0).numpy().flatten()
+
+        return {
+            'causal_effect': causal_effect,
+            'model': model
+        }
+
+    def gam_causal_analysis(self, data, treatment, outcome, confounders):
+        """
+        使用广义可加模型(GAM)进行因果分析
+        """
+        # 准备数据
+        X = data[confounders + [treatment]]
+        y = data[outcome]
+
+        # 构建GAM模型
+        # 为每个特征创建spline项
+        formula = ' + '.join([f's({col})' for col in confounders + [treatment]])
+
+        # 由于pygam的API限制，我们手动构建模型
+        gam = pygam.GAM()
+        gam.fit(X, y)
+
+        # 提取治疗变量的影响
+        treatment_idx = X.columns.get_loc(treatment)
+        treatment_effect = gam.coef_[treatment_idx]
+
+        return {
+            'treatment_effect': treatment_effect,
+            'model': gam
+        }
+
+    def detect_anomalies_in_causal_patterns(self, data, reference_patterns):
+        """
+        检测因果模式中的异常
+        """
+        current_patterns = self.detect_correlation_patterns(data)
+
+        anomalies = {}
+        for pattern_type, current_matrix in current_patterns.items():
+            if pattern_type in reference_patterns:
+                reference_matrix = reference_patterns[pattern_type]
+
+                # 计算差异
+                diff = np.abs(current_matrix.values - reference_matrix.values)
+                anomaly_score = np.mean(diff)
+
+                # 识别具体异常位置
+                threshold = np.percentile(diff, 95)
+                anomaly_positions = np.where(diff > threshold)
+
+                anomalies[pattern_type] = {
+                    'score': anomaly_score,
+                    'positions': list(zip(anomaly_positions[0], anomaly_positions[1])),
+                    'details': diff
+                }
+
+        return anomalies
+
+    def generate_causal_report(self, data):
+        """
+        生成完整的因果分析报告
+        """
+        # 数据预处理
+        processed_data = self.preprocess_data(data)
+
+        # 相关性模式检测
+        correlation_patterns = self.detect_correlation_patterns(processed_data)
+
+        # 构建因果图
+        causal_graph = self.build_causal_graph(processed_data)
+
+        # 存储结果
+        self.results = {
+            'correlation_patterns': correlation_patterns,
+            'causal_graph': causal_graph,
+            'processed_data': processed_data
+        }
+
+        return self.results
+
+
+# 使用示例
+def main():
+    # 创建示例数据
+    np.random.seed(42)
+    n_samples = 1000
+
+    # 生成具有已知因果关系的数据
+    X1 = np.random.normal(0, 1, n_samples)
+    X2 = np.random.normal(0, 1, n_samples)
+    X3 = 0.5 * X1 + 0.3 * X2 + np.random.normal(0, 0.5, n_samples)
+    X4 = 0.7 * X3 + np.random.normal(0, 0.5, n_samples)
+    Y = 1.2 * X3 + 0.8 * X4 + np.random.normal(0, 0.5, n_samples)
+
+    data = pd.DataFrame({
+        'X1': X1,
+        'X2': X2,
+        'X3': X3,
+        'X4': X4,
+        'Y': Y
+    })
+
+    # 初始化因果模式检测器
+    detector = IndustrialCausalPatternDetector()
+
+    # 生成报告
+    results = detector.generate_causal_report(data)
+
+    # 执行特定因果推断
+    if len(data.columns) >= 3:
+        confounders = ['X1', 'X2', 'X3']
+        treatment = 'X4'
+        outcome = 'Y'
+
+        # 确保列存在于数据中
+        available_cols = [col for col in confounders if col in data.columns]
+        if treatment in data.columns and outcome in data.columns and len(available_cols) > 0:
+            try:
+                dml_result = detector.causal_inference_dml(
+                    data, treatment, outcome, available_cols
+                )
+                print("DML因果效应估计完成")
+            except Exception as e:
+                print(f"DML分析出错: {e}")
+
+    print("因果模式检测完成")
+    print(f"检测到的因果图节点: {list(results['causal_graph'].nodes())}")
+    print(f"检测到的因果图边: {list(results['causal_graph'].edges())}")
+
+
+if __name__ == "__main__":
+    main()
