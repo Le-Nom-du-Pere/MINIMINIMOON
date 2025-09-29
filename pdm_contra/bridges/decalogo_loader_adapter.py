@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 import jsonschema
-from jsonschema.validators import validator_for
+from jsonschema import validator_for, RefResolver
 
 SCHEMA_DIR = Path("schemas")
 
@@ -40,7 +40,7 @@ def _validate_payload(schema_name: str, payload: Dict[str, object]) -> None:
     schema = _load_schema(schema_name)
     validator_cls = validator_for(schema)
     validator_cls.check_schema(schema)
-    resolver = jsonschema.RefResolver(
+    resolver = RefResolver(
         base_uri=f"file://{SCHEMA_DIR.resolve()}/", referrer=schema
     )
     validator = validator_cls(schema, resolver=resolver)
