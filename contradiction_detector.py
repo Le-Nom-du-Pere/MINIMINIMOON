@@ -19,6 +19,7 @@ from __future__ import annotations
 import logging
 import re
 import unicodedata
+from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Optional, Pattern, Tuple
 
@@ -33,68 +34,28 @@ class RiskLevel(Enum):
     HIGH = "high"
 
 
+@dataclass(frozen=True)
 class ContradictionMatch:
-    """Contenedor inmutable (por convención) para una coincidencia de contradicción.
-
-    Usamos una clase simple en lugar de dataclass para evitar anotaciones de variable
-    si el analizador de código está configurado para Python 2.7.
-    """
-
-    def __init__(
-        self,
-        adversative_connector: str,
-        goal_keywords: List[str],
-        action_verbs: List[str],
-        quantitative_targets: List[str],
-        full_text: str,
-        start_pos: int,
-        end_pos: int,
-        risk_level: RiskLevel,
-        confidence: float,
-        context_window: str,
-    ) -> None:
-        self.adversative_connector = adversative_connector
-        self.goal_keywords = goal_keywords
-        self.action_verbs = action_verbs
-        self.quantitative_targets = quantitative_targets
-        self.full_text = full_text
-        self.start_pos = start_pos
-        self.end_pos = end_pos
-        self.risk_level = risk_level
-        self.confidence = confidence
-        self.context_window = context_window
-
-    def __repr__(self) -> str:
-        return (
-            f"ContradictionMatch(adversative_connector={self.adversative_connector!r}, "
-            f"confidence={self.confidence:.3f}, risk_level={self.risk_level})"
-        )
+    adversative_connector: str
+    goal_keywords: List[str]
+    action_verbs: List[str]
+    quantitative_targets: List[str]
+    full_text: str
+    start_pos: int  # absolute position in the original text
+    end_pos: int
+    risk_level: RiskLevel
+    confidence: float
+    context_window: str
 
 
+@dataclass
 class ContradictionAnalysis:
-    """Resultado agregado del análisis de contradicciones."""
-
-    def __init__(
-        self,
-        contradictions: List[ContradictionMatch],
-        total_contradictions: int,
-        risk_score: float,
-        risk_level: RiskLevel,
-        highest_confidence_contradiction: Optional[ContradictionMatch],
-        summary: Dict[str, int],
-    ) -> None:
-        self.contradictions = contradictions
-        self.total_contradictions = total_contradictions
-        self.risk_score = risk_score
-        self.risk_level = risk_level
-        self.highest_confidence_contradiction = highest_confidence_contradiction
-        self.summary = summary
-
-    def __repr__(self) -> str:
-        return (
-            f"ContradictionAnalysis(total={self.total_contradictions}, risk_score={self.risk_score:.3f}, "
-            f"risk_level={self.risk_level})"
-        )
+    contradictions: List[ContradictionMatch]
+    total_contradictions: int
+    risk_score: float
+    risk_level: RiskLevel
+    highest_confidence_contradiction: Optional[ContradictionMatch]
+    summary: Dict[str, int]
 
 
 class ContradictionDetector:
