@@ -21,7 +21,8 @@ from json_utils import (
 class TestDataCleaning:
     """Test data cleaning functionality"""
 
-    def test_clean_nan_values(self):
+    @staticmethod
+    def test_clean_nan_values():
         """Test NaN value replacement"""
         data = {"value": float("nan"), "normal": 42}
         cleaned = clean_data_for_json(data, nan_replacement=None)
@@ -31,7 +32,8 @@ class TestDataCleaning:
         cleaned = clean_data_for_json(data, nan_replacement="NaN")
         assert cleaned["value"] == "NaN"
 
-    def test_clean_inf_values(self):
+    @staticmethod
+    def test_clean_inf_values():
         """Test infinity value replacement"""
         data = {"pos_inf": float("inf"), "neg_inf": float(
             "-inf"), "normal": 42}
@@ -40,7 +42,8 @@ class TestDataCleaning:
         assert cleaned["neg_inf"] == "-Infinity"
         assert cleaned["normal"] == 42
 
-    def test_clean_nested_structures(self):
+    @staticmethod
+    def test_clean_nested_structures():
         """Test cleaning of nested data structures"""
         data = {
             "list": [1, float("nan"), 3, float("inf")],
@@ -54,7 +57,8 @@ class TestDataCleaning:
         assert cleaned["nested_dict"]["value"] is None
         assert cleaned["tuple"] == (1, "Infinity", 3)
 
-    def test_numpy_array_cleaning(self):
+    @staticmethod
+    def test_numpy_array_cleaning():
         """Test NumPy array handling"""
         data = {
             "numpy_array": np.array([1, np.nan, np.inf, -np.inf, 5]),
@@ -69,7 +73,8 @@ class TestDataCleaning:
         assert isinstance(cleaned["numpy_int"], int)
         assert isinstance(cleaned["numpy_float"], float)
 
-    def test_custom_replacements(self):
+    @staticmethod
+    def test_custom_replacements():
         """Test custom replacement values"""
         data = {"nan": float("nan"), "inf": float("inf"),
                 "neg_inf": float("-inf")}
@@ -88,7 +93,8 @@ class TestDataCleaning:
 class TestSafeJsonDump:
     """Test safe JSON dump functionality"""
 
-    def test_safe_json_dump_with_special_values(self):
+    @staticmethod
+    def test_safe_json_dump_with_special_values():
         """Test JSON dump with special float values"""
         data = {"nan": float("nan"), "inf": float("inf"), "normal": [1, 2, 3]}
 
@@ -107,7 +113,8 @@ class TestSafeJsonDump:
         finally:
             os.unlink(filename)
 
-    def test_default_json_parameters(self):
+    @staticmethod
+    def test_default_json_parameters():
         """Test that default JSON parameters are applied"""
         data = {"test": "value", "unicode": "café"}
 
@@ -126,7 +133,8 @@ class TestSafeJsonDump:
         finally:
             os.unlink(filename)
 
-    def test_parameter_override(self):
+    @staticmethod
+    def test_parameter_override():
         """Test that parameters can be overridden"""
         data = {"test": "value"}
 
@@ -148,7 +156,8 @@ class TestSafeJsonDump:
 class TestSafeJsonDumps:
     """Test safe JSON dumps functionality"""
 
-    def test_safe_json_dumps_with_special_values(self):
+    @staticmethod
+    def test_safe_json_dumps_with_special_values():
         """Test JSON dumps with special float values"""
         data = {"nan": float("nan"), "inf": float("inf"),
                 "list": [float("-inf"), 42]}
@@ -161,7 +170,8 @@ class TestSafeJsonDumps:
         assert parsed["inf"] == "Infinity"
         assert parsed["list"] == ["-Infinity", 42]
 
-    def test_json_dumps_formatting(self):
+    @staticmethod
+    def test_json_dumps_formatting():
         """Test JSON dumps formatting parameters"""
         data = {"key": "value", "number": 42}
 
@@ -175,7 +185,8 @@ class TestSafeJsonDumps:
 class TestSafeJsonWrite:
     """Test convenience write function"""
 
-    def test_safe_json_write(self):
+    @staticmethod
+    def test_safe_json_write():
         """Test writing JSON to file"""
         data = {"nan": float("nan"), "array": np.array([1, np.inf, 3])}
 
@@ -194,7 +205,8 @@ class TestSafeJsonWrite:
         finally:
             os.unlink(filename)
 
-    def test_encoding_parameter(self):
+    @staticmethod
+    def test_encoding_parameter():
         """Test custom encoding parameter"""
         data = {"unicode_test": "café"}
 
@@ -215,7 +227,8 @@ class TestSafeJsonWrite:
 class TestIntegration:
     """Integration tests for various scenarios"""
 
-    def test_complex_nested_structure(self):
+    @staticmethod
+    def test_complex_nested_structure():
         """Test complex nested structure with all special value types"""
         data = {
             "metadata": {

@@ -109,7 +109,8 @@ class TestErrorLogger(unittest.TestCase):
                 self.assertIn("Test traceback", content)
                 self.assertIn("transient", content)
 
-    def test_handles_logging_errors_gracefully(self):
+    @staticmethod
+    def test_handles_logging_errors_gracefully():
         # Test with invalid directory
         logger = ErrorLogger("/invalid/directory/path")
 

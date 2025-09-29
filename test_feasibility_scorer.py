@@ -166,7 +166,8 @@ class TestFeasibilityScorer:
     def scorer(self):
         return FeasibilityScorer()
 
-    def test_high_quality_indicators(self, scorer):
+    @staticmethod
+    def test_high_quality_indicators(scorer):
         """Test scoring of high-quality indicators."""
         indicators = TestDataset.get_high_quality_indicators()
 
@@ -203,7 +204,8 @@ class TestFeasibilityScorer:
                     f"Missing component {expected_component} in '{indicator_data['text']}'"
                 )
 
-    def test_medium_quality_indicators(self, scorer):
+    @staticmethod
+    def test_medium_quality_indicators(scorer):
         """Test scoring of medium-quality indicators."""
         indicators = TestDataset.get_medium_quality_indicators()
 
@@ -224,7 +226,8 @@ class TestFeasibilityScorer:
                 == indicator_data["has_quantitative_target"]
             )
 
-    def test_low_quality_indicators(self, scorer):
+    @staticmethod
+    def test_low_quality_indicators(scorer):
         """Test scoring of low-quality indicators."""
         indicators = TestDataset.get_low_quality_indicators()
 
@@ -245,7 +248,8 @@ class TestFeasibilityScorer:
                 == indicator_data["has_quantitative_target"]
             )
 
-    def test_insufficient_indicators(self, scorer):
+    @staticmethod
+    def test_insufficient_indicators(scorer):
         """Test scoring of insufficient indicators."""
         indicators = TestDataset.get_insufficient_indicators()
 
@@ -259,7 +263,8 @@ class TestFeasibilityScorer:
             assert result.has_quantitative_baseline == False
             assert result.has_quantitative_target == False
 
-    def test_mandatory_requirements(self, scorer):
+    @staticmethod
+    def test_mandatory_requirements(scorer):
         """Test that baseline and target are mandatory for positive scores."""
         # Only baseline
         result = scorer.calculate_feasibility_score(
@@ -278,7 +283,8 @@ class TestFeasibilityScorer:
         )
         assert result.feasibility_score > 0.0
 
-    def test_spanish_patterns(self, scorer):
+    @staticmethod
+    def test_spanish_patterns(scorer):
         """Test Spanish-specific pattern detection."""
         spanish_texts = [
             "línea base de 30% hasta meta de 60%",
@@ -293,7 +299,8 @@ class TestFeasibilityScorer:
                 f"Failed to detect Spanish patterns in: {text}"
             )
 
-    def test_english_patterns(self, scorer):
+    @staticmethod
+    def test_english_patterns(scorer):
         """Test English-specific pattern detection."""
         english_texts = [
             "baseline of 30% to target of 60%",
@@ -308,7 +315,8 @@ class TestFeasibilityScorer:
                 f"Failed to detect English patterns in: {text}"
             )
 
-    def test_numerical_detection(self, scorer):
+    @staticmethod
+    def test_numerical_detection(scorer):
         """Test numerical pattern detection."""
         numerical_texts = [
             "incrementar 25%",
@@ -324,7 +332,8 @@ class TestFeasibilityScorer:
             )
             assert numerical_detected, f"Failed to detect numerical pattern in: {text}"
 
-    def test_date_detection(self, scorer):
+    @staticmethod
+    def test_date_detection(scorer):
         """Test date pattern detection."""
         date_texts = [
             "para el año 2025",
@@ -341,7 +350,8 @@ class TestFeasibilityScorer:
             )
             assert date_detected, f"Failed to detect date pattern in: {text}"
 
-    def test_quantitative_component_detection(self, scorer):
+    @staticmethod
+    def test_quantitative_component_detection(scorer):
         """Test detection of quantitative baselines and targets."""
         # Quantitative baseline
         text1 = "línea base de 65% incrementar hasta meta general"
@@ -361,7 +371,8 @@ class TestFeasibilityScorer:
         assert result3.has_quantitative_baseline == True
         assert result3.has_quantitative_target == True
 
-    def test_batch_scoring(self, scorer):
+    @staticmethod
+    def test_batch_scoring(scorer):
         """Test batch scoring functionality with parallel processing."""
         indicators = [
             "línea base 50% meta 80% año 2025",
@@ -399,7 +410,8 @@ class TestFeasibilityScorer:
         results_no_parallel = scorer_no_parallel.batch_score(indicators)
         assert len(results_no_parallel) == 3
 
-    def test_parallel_processing_configuration(self):
+    @staticmethod
+    def test_parallel_processing_configuration():
         """Test parallel processing configuration and backend selection."""
         # Test default configuration
         scorer = FeasibilityScorer()
@@ -415,7 +427,8 @@ class TestFeasibilityScorer:
         scorer_disabled = FeasibilityScorer(enable_parallel=False)
         assert not scorer_disabled.enable_parallel
 
-    def test_picklable_scorer_copy(self, scorer):
+    @staticmethod
+    def test_picklable_scorer_copy(scorer):
         """Test that scorer can create picklable copies for parallel processing."""
         import pickle
 
@@ -441,7 +454,8 @@ class TestFeasibilityScorer:
             < 0.01
         )
 
-    def test_precision_recall_metrics(self, scorer):
+    @staticmethod
+    def test_precision_recall_metrics(scorer):
         """Test precision and recall of component detection."""
         all_indicators = (
             TestDataset.get_high_quality_indicators()
@@ -484,7 +498,8 @@ class TestFeasibilityScorer:
         assert baseline_recall >= 0.8, f"Baseline recall too low: {baseline_recall}"
         assert target_recall >= 0.8, f"Target recall too low: {target_recall}"
 
-    def test_unicode_normalization(self, scorer):
+    @staticmethod
+    def test_unicode_normalization(scorer):
         """Test Unicode normalization functionality and its impact on pattern matching."""
         # Test cases with various Unicode characters that should normalize
         test_cases = [
@@ -528,7 +543,8 @@ class TestFeasibilityScorer:
                 f"Component count differs for {case['description']}: original={len(original_components)}, normalized={len(normalized_components)}"
             )
 
-    def test_unicode_pattern_matching_improvement(self, scorer):
+    @staticmethod
+    def test_unicode_pattern_matching_improvement(scorer):
         """Test that Unicode normalization improves pattern matching reliability."""
         # Create test cases with Unicode variants that might cause matching issues
         unicode_variants = [
@@ -572,7 +588,8 @@ class TestFeasibilityScorer:
             f"Unicode normalization improvement rate too low: {improvement_rate}"
         )
 
-    def test_regex_match_consistency(self, scorer):
+    @staticmethod
+    def test_regex_match_consistency(scorer):
         """Test that regex patterns work consistently after Unicode normalization."""
         # Test patterns that might be sensitive to Unicode variants
         sensitive_patterns = [
@@ -626,7 +643,8 @@ class TestFeasibilityScorer:
                         f"Expected component {expected_component} missing from variant detection"
                     )
 
-    def test_documentation_generation(self, scorer):
+    @staticmethod
+    def test_documentation_generation(scorer):
         """Test documentation generation."""
         docs = scorer.get_detection_rules_documentation()
 
@@ -644,7 +662,8 @@ class TestCalcularCalidadEvidencia:
     def scorer(self):
         return FeasibilityScorer()
 
-    def test_empty_and_edge_cases(self, scorer):
+    @staticmethod
+    def test_empty_and_edge_cases(scorer):
         """Test handling of empty and edge case inputs."""
         # Empty string
         assert scorer.calcular_calidad_evidencia("") == 0.0
@@ -655,7 +674,8 @@ class TestCalcularCalidadEvidencia:
         # None-like content
         assert scorer.calcular_calidad_evidencia("   \n\t  ") == 0.0
 
-    def test_monetary_value_detection(self, scorer):
+    @staticmethod
+    def test_monetary_value_detection(scorer):
         """Test detection of monetary amounts."""
         # Colombian pesos
         high_monetary = [
@@ -684,7 +704,8 @@ class TestCalcularCalidadEvidencia:
         no_money = "Mejora general del sistema educativo"
         assert scorer.calcular_calidad_evidencia(no_money) <= 0.5
 
-    def test_temporal_indicator_detection(self, scorer):
+    @staticmethod
+    def test_temporal_indicator_detection(scorer):
         """Test detection of dates and temporal indicators."""
         # Years
         year_texts = [
@@ -733,7 +754,8 @@ class TestCalcularCalidadEvidencia:
             score = scorer.calcular_calidad_evidencia(text)
             assert score >= 0.05, f"Low periodicity score for: {text}"
 
-    def test_measurement_terminology_detection(self, scorer):
+    @staticmethod
+    def test_measurement_terminology_detection(scorer):
         """Test detection of measurement and evaluation terms."""
         # Baseline terminology
         baseline_texts = [
@@ -771,7 +793,8 @@ class TestCalcularCalidadEvidencia:
             score = scorer.calcular_calidad_evidencia(text)
             assert score >= 0.12, f"Low measurement score for: {text}"
 
-    def test_structure_penalty(self, scorer):
+    @staticmethod
+    def test_structure_penalty(scorer):
         """Test penalty for title/bullet indicators without values."""
         # Title-like without values (should get penalty)
         title_without_values = [
@@ -799,7 +822,8 @@ class TestCalcularCalidadEvidencia:
             # Should avoid penalty and score higher
             assert score >= 0.3, f"Low score despite values for: {text}"
 
-    def test_combined_scoring(self, scorer):
+    @staticmethod
+    def test_combined_scoring(scorer):
         """Test scoring with multiple quality indicators."""
         # High quality: monetary + temporal + terminology
         high_quality = [
@@ -834,7 +858,8 @@ class TestCalcularCalidadEvidencia:
             score = scorer.calcular_calidad_evidencia(text)
             assert score <= 0.3, f"High score for low quality text: {text}"
 
-    def test_unicode_normalization(self, scorer):
+    @staticmethod
+    def test_unicode_normalization(scorer):
         """Test Unicode normalization handling."""
         # Unicode variations that should normalize to same result
         unicode_variants = [
@@ -852,7 +877,8 @@ class TestCalcularCalidadEvidencia:
                 f"Unicode normalization failed: {scores}"
             )
 
-    def test_malformed_numbers(self, scorer):
+    @staticmethod
+    def test_malformed_numbers(scorer):
         """Test handling of malformed monetary/numeric values."""
         malformed_texts = [
             "Presupuesto: $..5 millones",
@@ -867,7 +893,8 @@ class TestCalcularCalidadEvidencia:
             assert isinstance(score, float)
             assert 0.0 <= score <= 1.0
 
-    def test_score_boundaries(self, scorer):
+    @staticmethod
+    def test_score_boundaries(scorer):
         """Test that scores are always within [0.0, 1.0] bounds."""
         test_texts = [
             "",  # Empty
@@ -899,7 +926,8 @@ class TestAtomicReportGeneration:
             "Aumentar el acceso a servicios de salud en la región",
         ]
 
-    def test_successful_report_generation(self, scorer, test_indicators):
+    @staticmethod
+    def test_successful_report_generation(scorer, test_indicators):
         """Test successful atomic report generation."""
         with tempfile.TemporaryDirectory() as temp_dir:
             report_path = Path(temp_dir) / "test_report.md"
@@ -919,7 +947,8 @@ class TestAtomicReportGeneration:
             assert "## Recommendations" in content
             assert f"Total indicators analyzed: {len(test_indicators)}" in content
 
-    def test_empty_indicators_error(self, scorer):
+    @staticmethod
+    def test_empty_indicators_error(scorer):
         """Test that empty indicators list raises ValueError."""
         with tempfile.TemporaryDirectory() as temp_dir:
             report_path = Path(temp_dir) / "test_report.md"
@@ -955,7 +984,8 @@ class TestAtomicReportGeneration:
             finally:
                 Path.rename = original_rename
 
-    def test_temporary_file_cleanup_on_error(self, scorer, test_indicators):
+    @staticmethod
+    def test_temporary_file_cleanup_on_error(scorer, test_indicators):
         """Test that temporary files are cleaned up when errors occur."""
         with tempfile.TemporaryDirectory() as temp_dir:
             report_path = Path(temp_dir) / "test_report.md"
@@ -1009,7 +1039,8 @@ class TestAtomicReportGeneration:
                 temp_report_path = Path(temp_dir) / f"test_report_{i}.md"
                 assert temp_report_path.exists()
 
-    def test_report_content_completeness(self, scorer, test_indicators):
+    @staticmethod
+    def test_report_content_completeness(scorer, test_indicators):
         """Test that generated report contains all expected sections and data."""
         with tempfile.TemporaryDirectory() as temp_dir:
             report_path = Path(temp_dir) / "test_report.md"
@@ -1040,7 +1071,8 @@ class TestAtomicReportGeneration:
             # Check footer
             assert "*Report generated by Feasibility Scorer v1.0*" in content
 
-    def test_report_content_sorting(self, scorer):
+    @staticmethod
+    def test_report_content_sorting(scorer):
         """Test that indicators are sorted by score in the report."""
         indicators = [
             "aumentar servicios región",  # Low score
@@ -1063,7 +1095,8 @@ class TestAtomicReportGeneration:
             # Verify high score appears before medium, which appears before low
             assert high_score_pos < medium_score_pos < low_score_pos
 
-    def test_zero_evidence_support_override(self, scorer):
+    @staticmethod
+    def test_zero_evidence_support_override(scorer):
         """Test that zero evidencia_soporte overrides normal scoring logic."""
         text = "línea base 50% meta 80% año 2025 responsable Secretaría"
 
@@ -1090,7 +1123,8 @@ class TestAtomicReportGeneration:
         assert normal_result_with_evidence.feasibility_score > 0.0
         assert normal_result_with_evidence.quality_tier != "REQUIERE MAYOR EVIDENCIA"
 
-    def test_batch_scoring_with_evidence_support(self, scorer):
+    @staticmethod
+    def test_batch_scoring_with_evidence_support(scorer):
         """Test batch scoring with evidencia_soporte values."""
         indicators = [
             "línea base 50% meta 80% año 2025",

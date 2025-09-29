@@ -2,11 +2,12 @@
 """
 Responsibility Detection Module using spaCy NER and Lexical Rules
 """
+
 import re
 import unicodedata
-from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass
 from enum import Enum
+from typing import Dict, List, Optional, Tuple
 
 import spacy
 
@@ -43,67 +44,73 @@ class ResponsibilityDetector:
 
         # Government institution patterns (high priority)
         self.government_patterns = [
-            r'alcald[ií]a(?:\s+(?:de|del|municipal))?',
-            r'secretar[ií]a(?:\s+(?:de|del))?',
-            r'programa(?:\s+(?:de|del))?',
-            r'ministerio(?:\s+(?:de|del))?',
-            r'gobernaci[oó]n(?:\s+(?:de|del))?',
-            r'municipalidad',
-            r'ayuntamiento',
-            r'concejal[ií]a',
-            r'departamento\s+administrativo',
-            r'instituto\s+(?:nacional|municipal|departamental)',
-            r'direcci[oó]n\s+(?:nacional|municipal|departamental)',
-            r'superintendencia',
-            r'procuradur[ií]a',
-            r'defensor[ií]a\s+del\s+pueblo',
-            r'contralor[ií]a',
+            r"alcald[ií]a(?:\s+(?:de|del|municipal))?",
+            r"secretar[ií]a(?:\s+(?:de|del))?",
+            r"programa(?:\s+(?:de|del))?",
+            r"ministerio(?:\s+(?:de|del))?",
+            r"gobernaci[oó]n(?:\s+(?:de|del))?",
+            r"municipalidad",
+            r"ayuntamiento",
+            r"concejal[ií]a",
+            r"departamento\s+administrativo",
+            r"instituto\s+(?:nacional|municipal|departamental)",
+            r"direcci[oó]n\s+(?:nacional|municipal|departamental)",
+            r"superintendencia",
+            r"procuradur[ií]a",
+            r"defensor[ií]a\s+del\s+pueblo",
+            r"contralor[ií]a",
         ]
 
         # Official position patterns
         self.position_patterns = [
-            r'alcalde(?:sa)?',
-            r'secretari[oa](?:\s+(?:de|del))?',
-            r'ministr[oa](?:\s+(?:de|del))?',
-            r'director(?:a)?(?:\s+(?:general|ejecutiv[oa]|t[eé]cnic[oa]))?',
-            r'coordinador(?:a)?(?:\s+(?:de|del))?',
-            r'jefe(?:\s+(?:de|del))?',
-            r'responsable(?:\s+(?:de|del))?',
-            r'encargad[oa](?:\s+(?:de|del))?',
-            r'gerente(?:\s+(?:de|del))?',
-            r'presidente(?:a)?(?:\s+(?:de|del))?',
-            r'gobernador(?:a)?',
-            r'concejal(?:a)?',
-            r'comisionad[oa]',
-            r'subdirector(?:a)?',
-            r'viceministr[oa]',
+            r"alcalde(?:sa)?",
+            r"secretari[oa](?:\s+(?:de|del))?",
+            r"ministr[oa](?:\s+(?:de|del))?",
+            r"director(?:a)?(?:\s+(?:general|ejecutiv[oa]|t[eé]cnic[oa]))?",
+            r"coordinador(?:a)?(?:\s+(?:de|del))?",
+            r"jefe(?:\s+(?:de|del))?",
+            r"responsable(?:\s+(?:de|del))?",
+            r"encargad[oa](?:\s+(?:de|del))?",
+            r"gerente(?:\s+(?:de|del))?",
+            r"presidente(?:a)?(?:\s+(?:de|del))?",
+            r"gobernador(?:a)?",
+            r"concejal(?:a)?",
+            r"comisionad[oa]",
+            r"subdirector(?:a)?",
+            r"viceministr[oa]",
         ]
 
         # Generic institutional terms
         self.institutional_patterns = [
-            r'entidad(?:\s+(?:p[úu]blica|gubernamental))?',
-            r'organizaci[oó]n(?:\s+(?:p[úu]blica|gubernamental))?',
-            r'instituci[oó]n(?:\s+(?:p[úu]blica|gubernamental))?',
-            r'dependencia(?:\s+(?:p[úu]blica|gubernamental))?',
-            r'oficina(?:\s+(?:p[úu]blica|gubernamental))?',
-            r'unidad(?:\s+(?:administrativa|t[eé]cnica))?',
+            r"entidad(?:\s+(?:p[úu]blica|gubernamental))?",
+            r"organizaci[oó]n(?:\s+(?:p[úu]blica|gubernamental))?",
+            r"instituci[oó]n(?:\s+(?:p[úu]blica|gubernamental))?",
+            r"dependencia(?:\s+(?:p[úu]blica|gubernamental))?",
+            r"oficina(?:\s+(?:p[úu]blica|gubernamental))?",
+            r"unidad(?:\s+(?:administrativa|t[eé]cnica))?",
         ]
 
         # Contextual responsibility cues (increase confidence if in proximity)
         self.context_cues = re.compile(
-            r'\b(responsable(?:s)?\s+de|a\s+cargo\s+de|competencia\s+de|deber(?:es)?\s+de|obligaci[oó]n\s+de|encargad[oa]\s+de|lidera(?:r|do)|coordina(?:r|ci[oó]n)|supervisa(?:r|ci[oó]n))\b',
-            re.IGNORECASE
+            r"\b(responsable(?:s)?\s+de|a\s+cargo\s+de|competencia\s+de|deber(?:es)?\s+de|obligaci[oó]n\s+de|encargad[oa]\s+de|lidera(?:r|do)|coordina(?:r|ci[oó]n)|supervisa(?:r|ci[oó]n))\b",
+            re.IGNORECASE,
         )
 
         # Compile patterns
-        self.compiled_gov_patterns = [re.compile(p, re.IGNORECASE) for p in self.government_patterns]
-        self.compiled_pos_patterns = [re.compile(p, re.IGNORECASE) for p in self.position_patterns]
-        self.compiled_inst_patterns = [re.compile(p, re.IGNORECASE) for p in self.institutional_patterns]
+        self.compiled_gov_patterns = [
+            re.compile(p, re.IGNORECASE) for p in self.government_patterns
+        ]
+        self.compiled_pos_patterns = [
+            re.compile(p, re.IGNORECASE) for p in self.position_patterns
+        ]
+        self.compiled_inst_patterns = [
+            re.compile(p, re.IGNORECASE) for p in self.institutional_patterns
+        ]
 
         # Pre-compile normalization for government keyword check
         self.gov_keyword_re = re.compile(
-            r'\b(alcald[ií]a|secretar[ií]a|programa|ministerio|gobernaci[oó]n|municipalidad|ayuntamiento|concejal[ií]a|instituto|direcci[oó]n|departamento|nacional|municipal|departamental|superintendencia|procuradur[ií]a|defensor[ií]a\s+del\s+pueblo|contralor[ií]a)\b',
-            re.IGNORECASE
+            r"\b(alcald[ií]a|secretar[ií]a|programa|ministerio|gobernaci[oó]n|municipalidad|ayuntamiento|concejal[ií]a|instituto|direcci[oó]n|departamento|nacional|municipal|departamental|superintendencia|procuradur[ií]a|defensor[ií]a\s+del\s+pueblo|contralor[ií]a)\b",
+            re.IGNORECASE,
         )
 
     # ---------- Public API ----------
@@ -125,7 +132,8 @@ class ResponsibilityDetector:
         entities.extend(self._extract_ner_entities(doc))
         entities.extend(self._extract_pattern_entities(safe_text))
 
-        entities = self._merge_overlapping_entities(self._dedupe_entities(entities))
+        entities = self._merge_overlapping_entities(
+            self._dedupe_entities(entities))
         entities = self._calculate_final_scores(safe_text, entities)
 
         return sorted(entities, key=lambda x: x.confidence, reverse=True)
@@ -143,42 +151,71 @@ class ResponsibilityDetector:
         entities = self.detect_entities(text)
 
         gov_score = sum(e.confidence for e in entities if e.is_government)
-        person_score = sum(e.confidence for e in entities if e.entity_type == EntityType.PERSON)
-        position_score = sum(e.confidence for e in entities if e.entity_type == EntityType.POSITION)
-        org_score = sum(e.confidence for e in entities if e.entity_type == EntityType.ORGANIZATION and not e.is_government)
+        person_score = sum(
+            e.confidence for e in entities if e.entity_type == EntityType.PERSON
+        )
+        position_score = sum(
+            e.confidence for e in entities if e.entity_type == EntityType.POSITION
+        )
+        org_score = sum(
+            e.confidence
+            for e in entities
+            if e.entity_type == EntityType.ORGANIZATION and not e.is_government
+        )
 
         # Weighted linear combination; cap by theoretical max (2.0 per entity as en el diseño original)
-        total_score = gov_score * 2.0 + position_score * 1.5 + person_score * 1.0 + org_score * 0.8
+        total_score = (
+            gov_score * 2.0
+            + position_score * 1.5
+            + person_score * 1.0
+            + org_score * 0.8
+        )
         max_possible = len(entities) * 2.0 if entities else 1.0
         factibility_score = min(1.0, total_score / max_possible)
 
         return {
-            'factibility_score': factibility_score,
-            'entities': entities,
-            'breakdown': {
-                'government_score': gov_score,
-                'position_score': position_score,
-                'person_score': person_score,
-                'organization_score': org_score,
-                'total_entities': len(entities)
+            "factibility_score": factibility_score,
+            "entities": entities,
+            "breakdown": {
+                "government_score": gov_score,
+                "position_score": position_score,
+                "person_score": person_score,
+                "organization_score": org_score,
+                "total_entities": len(entities),
             },
-            'has_government_entities': any(e.is_government for e in entities),
-            'has_official_positions': any(e.entity_type == EntityType.POSITION for e in entities)
+            "has_government_entities": any(e.is_government for e in entities),
+            "has_official_positions": any(
+                e.entity_type == EntityType.POSITION for e in entities
+            ),
         }
 
     # ---------- Internal helpers ----------
 
-    def _load_spacy_pipeline(self, preferred: str):
+    @staticmethod
+    def _load_spacy_pipeline(preferred: str):
         """
         Load spaCy pipeline with robust fallbacks while preserving the same constructor signature.
         """
         tried = []
-        candidates = [preferred, "es_core_news_md", "es_core_news_lg", "xx_ent_wiki_sm", "xx_sent_ud_sm"]
+        candidates = [
+            preferred,
+            "es_core_news_md",
+            "es_core_news_lg",
+            "xx_ent_wiki_sm",
+            "xx_sent_ud_sm",
+        ]
         for name in candidates:
             try:
                 nlp = spacy.load(name)
                 # Disable unnecessary components if present to speed up (keeps NER)
-                for pipe in ["lemmatizer", "morphologizer", "attribute_ruler", "tagger", "parser", "senter"]:
+                for pipe in [
+                    "lemmatizer",
+                    "morphologizer",
+                    "attribute_ruler",
+                    "tagger",
+                    "parser",
+                    "senter",
+                ]:
                     if pipe in nlp.pipe_names and pipe != "ner":
                         try:
                             nlp.disable_pipe(pipe)
@@ -207,7 +244,7 @@ class ResponsibilityDetector:
                         entity_type=EntityType.PERSON,
                         confidence=0.72,  # slightly tuned base
                         start_pos=ent.start_char,
-                        end_pos=ent.end_char
+                        end_pos=ent.end_char,
                     )
                 )
             elif label == "ORG":
@@ -216,11 +253,13 @@ class ResponsibilityDetector:
                 entities.append(
                     ResponsibilityEntity(
                         text=text,
-                        entity_type=EntityType.GOVERNMENT if is_gov else EntityType.ORGANIZATION,
+                        entity_type=(
+                            EntityType.GOVERNMENT if is_gov else EntityType.ORGANIZATION
+                        ),
                         confidence=0.82 if is_gov else 0.62,
                         start_pos=ent.start_char,
                         end_pos=ent.end_char,
-                        is_government=is_gov
+                        is_government=is_gov,
                     )
                 )
         return entities
@@ -239,7 +278,7 @@ class ResponsibilityDetector:
                         confidence=0.90,
                         start_pos=m.start(),
                         end_pos=m.end(),
-                        is_government=True
+                        is_government=True,
                     )
                 )
 
@@ -254,7 +293,7 @@ class ResponsibilityDetector:
                         start_pos=m.start(),
                         end_pos=m.end(),
                         role=m.group(),
-                        is_government=True  # cargos públicos implican poder/deber institucional
+                        is_government=True,  # cargos públicos implican poder/deber institucional
                     )
                 )
 
@@ -268,7 +307,7 @@ class ResponsibilityDetector:
                         confidence=0.50,
                         start_pos=m.start(),
                         end_pos=m.end(),
-                        is_government=False
+                        is_government=False,
                     )
                 )
 
@@ -276,7 +315,11 @@ class ResponsibilityDetector:
 
     @staticmethod
     def _strip_accents(s: str) -> str:
-        return "".join(c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn")
+        return "".join(
+            c
+            for c in unicodedata.normalize("NFD", s)
+            if unicodedata.category(c) != "Mn"
+        )
 
     def _is_government_entity(self, text: str) -> bool:
         """Check if an entity is likely a government organization."""
@@ -297,10 +340,16 @@ class ResponsibilityDetector:
         s = s.strip()
         s = unicodedata.normalize("NFKC", s)
         s = s.lower()
-        s = "".join(c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn")
+        s = "".join(
+            c
+            for c in unicodedata.normalize("NFD", s)
+            if unicodedata.category(c) != "Mn"
+        )
         return re.sub(r"\s+", " ", s)
 
-    def _dedupe_entities(self, entities: List[ResponsibilityEntity]) -> List[ResponsibilityEntity]:
+    def _dedupe_entities(
+        self, entities: List[ResponsibilityEntity]
+    ) -> List[ResponsibilityEntity]:
         """Deduplicate by normalized text and dominant span; keep highest-confidence instance."""
         bucket: Dict[str, ResponsibilityEntity] = {}
         for e in entities:
@@ -309,7 +358,9 @@ class ResponsibilityDetector:
                 bucket[key] = e
         return list(bucket.values())
 
-    def _merge_overlapping_entities(self, entities: List[ResponsibilityEntity]) -> List[ResponsibilityEntity]:
+    def _merge_overlapping_entities(
+        self, entities: List[ResponsibilityEntity]
+    ) -> List[ResponsibilityEntity]:
         """Merge overlapping entities, keeping the most responsible-leaning candidate with IoU-aware logic."""
         if not entities:
             return entities
@@ -329,7 +380,9 @@ class ResponsibilityDetector:
             return (order.get(e.entity_type, 0), e.confidence)
 
         for nxt in entities[1:]:
-            iou = self._span_iou((current.start_pos, current.end_pos), (nxt.start_pos, nxt.end_pos))
+            iou = self._span_iou(
+                (current.start_pos, current.end_pos), (nxt.start_pos, nxt.end_pos)
+            )
             if iou > 0.0:
                 # Choose by priority; if tie, higher confidence
                 cur_p, nxt_p = priority_score(current), priority_score(nxt)
@@ -347,12 +400,15 @@ class ResponsibilityDetector:
         merged.append(current)
         return merged
 
-    def _calculate_final_scores(self, text: str, entities: List[ResponsibilityEntity]) -> List[ResponsibilityEntity]:
+    def _calculate_final_scores(
+        self, text: str, entities: List[ResponsibilityEntity]
+    ) -> List[ResponsibilityEntity]:
         """Calculate final confidence scores considering entity types, patterns, form, and contextual cues."""
         # Precompute context cue windows to cheaply boost nearby entities
         cue_spans = [m.span() for m in self.context_cues.finditer(text)]
+
         def near_cue(e: ResponsibilityEntity, window: int = 40) -> bool:
-            for (c0, c1) in cue_spans:
+            for c0, c1 in cue_spans:
                 if abs(e.start_pos - c1) <= window or abs(e.end_pos - c0) <= window:
                     return True
             return False
@@ -376,11 +432,14 @@ class ResponsibilityDetector:
             token_len = max(1, len(e.text.strip().split()))
             if token_len >= 3:
                 base *= 1.05
-            elif token_len == 1 and e.entity_type in (EntityType.ORGANIZATION, EntityType.GOVERNMENT):
+            elif token_len == 1 and e.entity_type in (
+                EntityType.ORGANIZATION,
+                EntityType.GOVERNMENT,
+            ):
                 base *= 0.92
 
             # Title/Proper-casing heuristic (e.g., "Ministerio de Educación")
-            if re.match(r'^[A-ZÁÉÍÓÚÑ][^\n]+', e.text.strip()):
+            if re.match(r"^[A-ZÁÉÍÓÚÑ][^\n]+", e.text.strip()):
                 base *= 1.03
 
             # Contextual cue proximity
@@ -412,5 +471,7 @@ if __name__ == "__main__":
         result = detector.calculate_responsibility_score(text)
         print(f"Factibilidad: {result['factibility_score']:.3f}")
         print("Entidades encontradas:")
-        for entity in result['entities']:
-            print(f"  - {entity.text} ({entity.entity_type.value}, conf: {entity.confidence:.3f})")
+        for entity in result["entities"]:
+            print(
+                f"  - {entity.text} ({entity.entity_type.value}, conf: {entity.confidence:.3f})"
+            )

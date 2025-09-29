@@ -271,7 +271,8 @@ class ContradictionDetector:
             },
         )
 
-    def _normalize_text(self, text: str) -> str:
+    @staticmethod
+    def _normalize_text(text: str) -> str:
         """Normalize text using NFKC and clean whitespace."""
         if not text:
             return ""
@@ -279,8 +280,9 @@ class ContradictionDetector:
         normalized = re.sub(r"\s+", " ", normalized).strip()
         return normalized
 
+    @staticmethod
     def _segment_document(
-        self, text: str, structure: Optional[Dict[str, Any]]
+        text: str, structure: Optional[Dict[str, Any]]
     ) -> List[Tuple[str, str, Dict]]:
         """
         Segment PDM document into analyzable chunks.
@@ -439,7 +441,8 @@ class ContradictionDetector:
 
         return issues
 
-    def _extract_items(self, text: str, item_type: str) -> List[str]:
+    @staticmethod
+    def _extract_items(text: str, item_type: str) -> List[str]:
         """Extract items of a specific type from text."""
         items = []
 
@@ -470,7 +473,8 @@ class ContradictionDetector:
 
         return max_sim > 0.6  # Threshold for considering alignment
 
-    def _score_to_risk(self, score: float) -> RiskLevel:
+    @staticmethod
+    def _score_to_risk(score: float) -> RiskLevel:
         """Convert confidence score to risk level."""
         if score >= 0.8:
             return RiskLevel.HIGH

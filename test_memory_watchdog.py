@@ -80,7 +80,8 @@ def plan_watchdog():
 class TestMemoryWatchdog:
     """Test cases for MemoryWatchdog class."""
 
-    def test_memory_limit_configuration(self):
+    @staticmethod
+    def test_memory_limit_configuration():
         """Test memory limit configuration with defaults and env vars."""
         # Test explicit limit
         watchdog = MemoryWatchdog(memory_limit_mb=1024)
@@ -101,13 +102,15 @@ class TestMemoryWatchdog:
             watchdog = MemoryWatchdog()
             assert watchdog.memory_limit_mb == 2048  # Default
 
-    def test_psutil_requirement(self):
+    @staticmethod
+    def test_psutil_requirement():
         """Test that watchdog requires psutil."""
         with mock.patch("memory_watchdog.PSUTIL_AVAILABLE", False):
             with pytest.raises(ImportError, match="psutil is required"):
                 MemoryWatchdog()
 
-    def test_process_registration(self, memory_watchdog, mock_psutil):
+    @staticmethod
+    def test_process_registration(memory_watchdog, mock_psutil):
         """Test process registration and unregistration."""
         # Test successful registration
         assert memory_watchdog.register_process(1234)
@@ -121,7 +124,8 @@ class TestMemoryWatchdog:
         memory_watchdog.unregister_process(1234)
         assert 1234 not in memory_watchdog._monitored_processes
 
-    def test_monitoring_lifecycle(self, memory_watchdog):
+    @staticmethod
+    def test_monitoring_lifecycle(memory_watchdog):
         """Test starting and stopping monitoring."""
         # Initial state
         assert not memory_watchdog.is_monitoring()
@@ -137,7 +141,8 @@ class TestMemoryWatchdog:
         assert memory_watchdog.stop_monitoring(timeout=2.0)
         assert not memory_watchdog.is_monitoring()
 
-    def test_memory_check_normal_usage(self, memory_watchdog, mock_psutil):
+    @staticmethod
+    def test_memory_check_normal_usage(memory_watchdog, mock_psutil):
         """Test memory checking with normal usage."""
         # Set up mock for normal memory usage (50MB < 100MB limit)
         mock_process = mock_psutil.Process.return_value
@@ -156,7 +161,8 @@ class TestMemoryWatchdog:
 
         memory_watchdog.stop_monitoring()
 
-    def test_memory_check_excessive_usage(self, memory_watchdog, mock_psutil):
+    @staticmethod
+    def test_memory_check_excessive_usage(memory_watchdog, mock_psutil):
         """Test memory checking with excessive usage."""
         # Set up mock for excessive memory usage (200MB > 100MB limit)
         mock_process = mock_psutil.Process.return_value
@@ -178,7 +184,8 @@ class TestMemoryWatchdog:
 
         memory_watchdog.stop_monitoring()
 
-    def test_dead_process_cleanup(self, memory_watchdog, mock_psutil):
+    @staticmethod
+    def test_dead_process_cleanup(memory_watchdog, mock_psutil):
         """Test cleanup of dead processes."""
         # Set up mock for dead process
         mock_process = mock_psutil.Process.return_value
@@ -196,7 +203,8 @@ class TestMemoryWatchdog:
 
         memory_watchdog.stop_monitoring()
 
-    def test_termination_callback(self, memory_watchdog, mock_psutil):
+    @staticmethod
+    def test_termination_callback(memory_watchdog, mock_psutil):
         """Test termination callback functionality."""
         callback_events = []
 
@@ -222,7 +230,8 @@ class TestMemoryWatchdog:
 
         memory_watchdog.stop_monitoring()
 
-    def test_context_manager(self, mock_psutil):
+    @staticmethod
+    def test_context_manager(mock_psutil):
         """Test context manager functionality."""
         with MemoryWatchdog(memory_limit_mb=100, check_interval=0.1) as watchdog:
             assert watchdog.is_monitoring()
@@ -230,7 +239,8 @@ class TestMemoryWatchdog:
         # Should be stopped after context exit
         assert not watchdog.is_monitoring()
 
-    def test_get_monitored_processes_info(self, memory_watchdog, mock_psutil):
+    @staticmethod
+    def test_get_monitored_processes_info(memory_watchdog, mock_psutil):
         """Test getting information about monitored processes."""
         # Set up mock process
         mock_process = mock_psutil.Process.return_value
@@ -257,13 +267,15 @@ class TestMemoryWatchdog:
 class TestPlanProcessingWatchdog:
     """Test cases for PlanProcessingWatchdog class."""
 
-    def test_psutil_requirement(self):
+    @staticmethod
+    def test_psutil_requirement():
         """Test that plan watchdog requires psutil."""
         with mock.patch("memory_watchdog.PSUTIL_AVAILABLE", False):
             with pytest.raises(ImportError, match="psutil is required"):
                 PlanProcessingWatchdog()
 
-    def test_worker_termination_handling(self, plan_watchdog):
+    @staticmethod
+    def test_worker_termination_handling(plan_watchdog):
         """Test handling of worker process termination."""
         # Create mock termination event
         memory_usage = MemoryUsage(
@@ -287,7 +299,8 @@ class TestPlanProcessingWatchdog:
         assert failed_plans[0]["pid"] == 1234
         assert failed_plans[0]["reason"] == "memory_exceeded"
 
-    def test_plan_processing_lifecycle(self, plan_watchdog):
+    @staticmethod
+    def test_plan_processing_lifecycle(plan_watchdog):
         """Test complete plan processing lifecycle."""
         with mock.patch.object(
             plan_watchdog.watchdog, "register_process", return_value=True
@@ -302,7 +315,8 @@ class TestPlanProcessingWatchdog:
         with mock.patch.object(plan_watchdog.watchdog, "unregister_process"):
             plan_watchdog.complete_plan_processing(1234)
 
-    def test_monitoring_status(self, plan_watchdog):
+    @staticmethod
+    def test_monitoring_status(plan_watchdog):
         """Test monitoring status reporting."""
         status = plan_watchdog.get_monitoring_status()
 
@@ -313,7 +327,8 @@ class TestPlanProcessingWatchdog:
         assert "failed_plans" in status
         assert status["memory_limit_mb"] == 100
 
-    def test_failed_plans_management(self, plan_watchdog):
+    @staticmethod
+    def test_failed_plans_management(plan_watchdog):
         """Test failed plans tracking and clearing."""
         # Initially empty
         assert len(plan_watchdog.get_failed_plans()) == 0
@@ -334,7 +349,8 @@ class TestPlanProcessingWatchdog:
         plan_watchdog.clear_failed_plans()
         assert len(plan_watchdog.get_failed_plans()) == 0
 
-    def test_context_manager(self):
+    @staticmethod
+    def test_context_manager():
         """Test plan watchdog context manager."""
         with mock.patch("memory_watchdog.PSUTIL_AVAILABLE", True):
             with PlanProcessingWatchdog(memory_limit_mb=100) as watchdog:
@@ -345,7 +361,8 @@ class TestPlanProcessingWatchdog:
 class TestMemoryUsageDataStructures:
     """Test cases for data structures."""
 
-    def test_memory_usage_creation(self):
+    @staticmethod
+    def test_memory_usage_creation():
         """Test MemoryUsage dataclass creation."""
         usage = MemoryUsage(
             rss_mb=100.5, vms_mb=200.0, percent=10.5, timestamp=time.time()
@@ -356,7 +373,8 @@ class TestMemoryUsageDataStructures:
         assert usage.percent == 10.5
         assert isinstance(usage.timestamp, float)
 
-    def test_watchdog_event_creation(self):
+    @staticmethod
+    def test_watchdog_event_creation():
         """Test WatchdogEvent dataclass creation."""
         memory_usage = MemoryUsage(100.0, 200.0, 10.0, time.time())
 
@@ -395,7 +413,8 @@ class TestIntegrationScenarios:
             assert current_pid in processes
             assert processes[current_pid]["rss_mb"] > 0
 
-    def test_memory_exhaustion_simulation(self, memory_watchdog, mock_psutil):
+    @staticmethod
+    def test_memory_exhaustion_simulation(memory_watchdog, mock_psutil):
         """Test simulation of memory exhaustion scenario."""
         # Set up callback to track terminations
         termination_events = []

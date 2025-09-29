@@ -251,7 +251,8 @@ class FeasibilityScorer:
             self.logger.addHandler(handler)
             self.logger.setLevel(logging.INFO)
 
-    def _initialize_patterns(self) -> Dict[ComponentType, List[Dict]]:
+    @staticmethod
+    def _initialize_patterns() -> Dict[ComponentType, List[Dict]]:
         """
         Initialize comprehensive regex patterns for multilingual component detection.
 
@@ -361,7 +362,8 @@ class FeasibilityScorer:
             ],
         }
 
-    def _normalize_text(self, text: str) -> str:
+    @staticmethod
+    def _normalize_text(text: str) -> str:
         """
         Normalize text using Unicode NFKC normalization for consistent character representation.
 

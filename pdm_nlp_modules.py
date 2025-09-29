@@ -403,7 +403,8 @@ class PatternMatcher:
             flags,
         )
 
-    def _compile_list(self, patterns: List[str], flags: int) -> List[Pattern]:
+    @staticmethod
+    def _compile_list(patterns: List[str], flags: int) -> List[Pattern]:
         """Compile a list of regex patterns."""
         return [re.compile(p, flags) for p in patterns]
 
@@ -459,7 +460,8 @@ class PatternMatcher:
 
         return matches
 
-    def _find_in_context(self, context: str, patterns: List[Pattern]) -> List[str]:
+    @staticmethod
+    def _find_in_context(context: str, patterns: List[Pattern]) -> List[str]:
         """Find all pattern matches in context."""
         found = []
         for pattern in patterns:
@@ -467,7 +469,8 @@ class PatternMatcher:
                 found.append(match.group().strip())
         return list(set(found))  # Remove duplicates
 
-    def extract_competence_verbs(self, text: str) -> List[Tuple[str, int, int]]:
+    @staticmethod
+    def extract_competence_verbs(text: str) -> List[Tuple[str, int, int]]:
         """
         Extract action verbs that might indicate competence issues.
 

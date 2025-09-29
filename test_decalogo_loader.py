@@ -18,7 +18,8 @@ class TestDecalogoLoader:
             "loaded from in-memory template (no target path specified)" in caplog.text
         )
 
-    def test_load_decalogo_successful_file_write(self, tmp_path, caplog):
+    @staticmethod
+    def test_load_decalogo_successful_file_write(tmp_path, caplog):
         """Test successful file write and atomic rename."""
         target_path = tmp_path / "decalogo.txt"
 
@@ -32,7 +33,8 @@ class TestDecalogoLoader:
         )
         assert f"loaded and written to file: {target_path}" in caplog.text
 
-    def test_load_decalogo_permission_error_fallback(self, caplog):
+    @staticmethod
+    def test_load_decalogo_permission_error_fallback(caplog):
         """Test fallback to in-memory template on permission error."""
         with patch("tempfile.NamedTemporaryFile") as mock_temp:
             mock_temp.side_effect = PermissionError("Access denied")
@@ -44,7 +46,8 @@ class TestDecalogoLoader:
             assert "PermissionError" in caplog.text or "Access denied" in caplog.text
             assert "loaded from in-memory fallback template" in caplog.text
 
-    def test_load_decalogo_io_error_fallback(self, caplog):
+    @staticmethod
+    def test_load_decalogo_io_error_fallback(caplog):
         """Test fallback to in-memory template on I/O error."""
         with patch("tempfile.NamedTemporaryFile") as mock_temp:
             mock_temp.side_effect = IOError("Disk full")
@@ -55,7 +58,8 @@ class TestDecalogoLoader:
             assert "Failed to write DECALOGO_INDUSTRIAL" in caplog.text
             assert "loaded from in-memory fallback template" in caplog.text
 
-    def test_load_decalogo_os_error_fallback(self, caplog):
+    @staticmethod
+    def test_load_decalogo_os_error_fallback(caplog):
         """Test fallback to in-memory template on OS error."""
         with patch("tempfile.NamedTemporaryFile") as mock_temp:
             mock_temp.side_effect = OSError("No space left on device")
@@ -66,7 +70,8 @@ class TestDecalogoLoader:
             assert "Failed to write DECALOGO_INDUSTRIAL" in caplog.text
             assert "loaded from in-memory fallback template" in caplog.text
 
-    def test_load_decalogo_unexpected_error_fallback(self, caplog):
+    @staticmethod
+    def test_load_decalogo_unexpected_error_fallback(caplog):
         """Test fallback to in-memory template on unexpected error."""
         with patch("tempfile.NamedTemporaryFile") as mock_temp:
             mock_temp.side_effect = ValueError("Unexpected error")
@@ -77,7 +82,8 @@ class TestDecalogoLoader:
             assert "Unexpected error writing DECALOGO_INDUSTRIAL" in caplog.text
             assert "loaded from in-memory fallback template" in caplog.text
 
-    def test_load_decalogo_rename_failure(self, tmp_path, caplog):
+    @staticmethod
+    def test_load_decalogo_rename_failure(tmp_path, caplog):
         """Test fallback when atomic rename fails."""
         target_path = tmp_path / "decalogo.txt"
 
@@ -90,7 +96,8 @@ class TestDecalogoLoader:
             assert "Failed to write DECALOGO_INDUSTRIAL" in caplog.text
             assert "loaded from in-memory fallback template" in caplog.text
 
-    def test_get_decalogo_convenience_function(self, tmp_path):
+    @staticmethod
+    def test_get_decalogo_convenience_function(tmp_path):
         """Test convenience function with caching."""
         cache_path = tmp_path / "cached_decalogo.txt"
 
@@ -103,14 +110,16 @@ class TestDecalogoLoader:
             == DECALOGO_INDUSTRIAL_TEMPLATE.strip()
         )
 
-    def test_get_decalogo_no_cache(self, caplog):
+    @staticmethod
+    def test_get_decalogo_no_cache(caplog):
         """Test convenience function without caching."""
         result = get_decalogo_industrial(None)
 
         assert result == DECALOGO_INDUSTRIAL_TEMPLATE.strip()
         assert "no target path specified" in caplog.text
 
-    def test_temp_file_cleanup_on_error(self, tmp_path):
+    @staticmethod
+    def test_temp_file_cleanup_on_error(tmp_path):
         """Test that temporary files are cleaned up when rename fails."""
         target_path = tmp_path / "decalogo.txt"
 
@@ -123,7 +132,8 @@ class TestDecalogoLoader:
             temp_files = list(tmp_path.glob(".*_tmp_*"))
             assert len(temp_files) == 0
 
-    def test_directory_creation(self, tmp_path):
+    @staticmethod
+    def test_directory_creation(tmp_path):
         """Test that parent directories are created when they don't exist."""
         nested_path = tmp_path / "nested" / "dirs" / "decalogo.txt"
 
