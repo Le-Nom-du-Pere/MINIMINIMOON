@@ -10,7 +10,6 @@ This module provides functions to:
 import re
 import os
 from typing import Dict, Any
-import unicodedata
 
 
 class PlanSanitizer:

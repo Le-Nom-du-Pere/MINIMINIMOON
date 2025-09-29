@@ -10,7 +10,6 @@ import time
 from dataclasses import dataclass
 from typing import Dict, List, Tuple, Optional
 from enum import Enum
-import statistics
 
 
 class ValidationTier(Enum):

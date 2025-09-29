@@ -4,9 +4,7 @@ Test suite for DocumentEmbeddingMapper with focus on duplicate text handling
 and verification that top-k similarity search indices correctly map to 
 their corresponding (page, text) tuples.
 """
-
-import numpy as np
-from document_embedding_mapper import DocumentEmbeddingMapper, DocumentSegment
+from document_embedding_mapper import DocumentEmbeddingMapper
 
 
 class TestDocumentEmbeddingMapper:
