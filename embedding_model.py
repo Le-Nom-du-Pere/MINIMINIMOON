@@ -522,7 +522,7 @@ class SotaEmbedding:
 
     @staticmethod
     def _compute_domain_priors(
-        domain_distribution: Dict[str, float]
+        domain_distribution: Dict[str, float],
     ) -> Dict[str, float]:
         """Calcula priors de dominio a partir de distribución."""
         if not domain_distribution:

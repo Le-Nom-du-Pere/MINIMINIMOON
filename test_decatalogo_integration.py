@@ -88,7 +88,8 @@ def test_evaluador_genera_resultado_industrial():
 
     assert evaluacion_punto.puntaje_agregado_punto > 0
     assert analisis.indicador_scores
-    assert isinstance(resultado_industrial, module.ResultadoDimensionIndustrial)
+    assert isinstance(resultado_industrial,
+                      module.ResultadoDimensionIndustrial)
     assert resultado_industrial.recomendaciones
     assert resultado_industrial.evaluacion_causal.factibilidad_operativa > 0
 
@@ -96,7 +97,8 @@ def test_evaluador_genera_resultado_industrial():
 def test_generar_reporte_final_contiene_trazabilidad():
     module = _load_evaluator_with_stubs()
     evaluator = module.IndustrialDecatalogoEvaluatorFull()
-    evidencias_por_punto = {1: _build_sample_evidence(), 2: _build_sample_evidence()}
+    evidencias_por_punto = {
+        1: _build_sample_evidence(), 2: _build_sample_evidence()}
 
     reporte = evaluator.generar_reporte_final(
         evidencias_por_punto, nombre_plan="Plan Piloto"
