@@ -1,5 +1,5 @@
 import unittest
-from monetary_detector import MonetaryDetector, MonetaryMatch, MonetaryType, create_monetary_detector
+from monetary_detector import MonetaryType, create_monetary_detector
 
 
 class TestMonetaryDetector(unittest.TestCase):

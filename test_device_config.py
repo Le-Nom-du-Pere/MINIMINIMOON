@@ -1,10 +1,8 @@
 """
 Test script for device configuration functionality.
 """
-
-import sys
 import torch
-from device_config import DeviceConfig, get_device_config, initialize_device_config
+from device_config import DeviceConfig, get_device_config
 
 
 def test_device_config():

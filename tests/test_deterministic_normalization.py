@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-from pathlib import Path
 
 from pdm_contra.bridges.decalogo_loader_adapter import load_decalogos
 

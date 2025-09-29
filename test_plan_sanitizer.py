@@ -5,7 +5,6 @@ Comprehensive tests for plan name sanitization and JSON key standardization.
 import pytest
 import os
 import tempfile
-import shutil
 from plan_sanitizer import (
     PlanSanitizer, 
     sanitize_plan_name, 
