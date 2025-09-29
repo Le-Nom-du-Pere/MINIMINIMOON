@@ -19,6 +19,7 @@ Technical Architecture:
 - Employs sophisticated NLP techniques for syntactic and semantic coherence
 - Features comprehensive error handling and recovery mechanisms
 """
+
 import hashlib
 import logging
 import re
@@ -27,7 +28,20 @@ import time
 import warnings
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, Generator, Iterable, List, Optional, Set, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generator,
+    Iterable,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+)
+
+from spacy_loader import SpacyModelLoader
 
 # Suppress non-critical warnings for production deployment
 warnings.filterwarnings("ignore", category=UserWarning, module="transformers")
@@ -36,11 +50,11 @@ warnings.filterwarnings("ignore", category=FutureWarning, module="torch")
 # Advanced imports with sophisticated fallback mechanisms
 try:
     import numpy as np
-    from sklearn.cluster import KMeans, DBSCAN
-    from sklearn.metrics.pairwise import cosine_similarity
-    from sklearn.feature_extraction.text import TfidfVectorizer
     from scipy.spatial.distance import pdist, squareform
     from scipy.stats import entropy, kstest
+    from sklearn.cluster import DBSCAN, KMeans
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.metrics.pairwise import cosine_similarity
 
     HAS_ADVANCED_ML = True
     logger = logging.getLogger(__name__)
@@ -51,15 +65,21 @@ except ImportError as e:
     logger.warning(f"Advanced ML libraries unavailable: {e}")
 
 try:
-    from sentence_transformers import SentenceTransformer
-    from transformers import (
-        AutoTokenizer, AutoModel, AutoConfig,
-        pipeline, BertTokenizer, BertModel,
-        logging as transformers_logging
-    )
     import torch
     import torch.nn.functional as F
+    from sentence_transformers import SentenceTransformer
     from torch.nn.utils.rnn import pad_sequence
+    from transformers import (
+        AutoConfig,
+        AutoModel,
+        AutoTokenizer,
+        BertModel,
+        BertTokenizer,
+    )
+    from transformers import logging as transformers_logging
+    from transformers import (
+        pipeline,
+    )
 
     # Suppress transformers logging for production
     transformers_logging.set_verbosity_error()
@@ -71,22 +91,37 @@ except ImportError as e:
 
 try:
     import nltk
-    from nltk.tokenize import sent_tokenize, word_tokenize
+    from nltk.chunk import ne_chunk
     from nltk.corpus import stopwords
     from nltk.stem import WordNetLemmatizer
     from nltk.tag import pos_tag
-    from nltk.chunk import ne_chunk
+    from nltk.tokenize import sent_tokenize, word_tokenize
     from nltk.tree import Tree
 
     HAS_NLTK = True
 
     # Download required NLTK data if not present
-    required_nltk_data = ['punkt', 'stopwords', 'wordnet', 'averaged_perceptron_tagger', 'maxent_ne_chunker', 'words']
+    required_nltk_data = [
+        "punkt",
+        "stopwords",
+        "wordnet",
+        "averaged_perceptron_tagger",
+        "maxent_ne_chunker",
+        "words",
+    ]
     for data in required_nltk_data:
         try:
             nltk.data.find(
-                f'tokenizers/{data}' if data == 'punkt' else f'corpora/{data}' if data in ['stopwords', 'wordnet',
-                                                                                           'words'] else f'taggers/{data}' if 'tagger' in data else f'chunkers/{data}')
+                f"tokenizers/{data}"
+                if data == "punkt"
+                else (
+                    f"corpora/{data}"
+                    if data in ["stopwords", "wordnet", "words"]
+                    else f"taggers/{data}"
+                    if "tagger" in data
+                    else f"chunkers/{data}"
+                )
+            )
         except LookupError:
             try:
                 nltk.download(data, quiet=True)
@@ -98,7 +133,6 @@ except ImportError:
     logger.warning("NLTK unavailable - using fallback tokenization")
 
 # Original spaCy loader import maintained for compatibility
-from spacy_loader import SpacyModelLoader
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -157,32 +191,53 @@ class IndustrialSemanticAnalyzer:
         if HAS_NLTK:
             try:
                 self._lemmatizer = WordNetLemmatizer()
-                self._stop_words = set(stopwords.words('english'))
+                self._stop_words = set(stopwords.words("english"))
             except:
                 self._stop_words = set()
         else:
             self._stop_words = {
-                'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to',
-                'for', 'of', 'with', 'by', 'from', 'up', 'about', 'into'
+                "the",
+                "a",
+                "an",
+                "and",
+                "or",
+                "but",
+                "in",
+                "on",
+                "at",
+                "to",
+                "for",
+                "of",
+                "with",
+                "by",
+                "from",
+                "up",
+                "about",
+                "into",
             }
 
     def _initialize_models(self):
         """Initialize semantic analysis models with graceful degradation"""
         try:
             if HAS_TRANSFORMERS:
-                self._embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
-                logger.info("Loaded SentenceTransformer model for semantic analysis")
+                self._embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+                logger.info(
+                    "Loaded SentenceTransformer model for semantic analysis")
         except Exception as e:
             logger.warning(f"Failed to load SentenceTransformer: {e}")
 
         try:
             if HAS_TRANSFORMERS:
-                self._sentiment_analyzer = pipeline("sentiment-analysis", return_all_scores=True)
+                self._sentiment_analyzer = pipeline(
+                    "sentiment-analysis", return_all_scores=True
+                )
                 logger.info("Loaded transformer model for sentiment analysis")
         except Exception as e:
             logger.warning(f"Failed to load sentiment analyzer: {e}")
 
-    def analyze_comprehensive_coherence(self, text: str) -> Tuple[float, Dict[str, float]]:
+    def analyze_comprehensive_coherence(
+        self, text: str
+    ) -> Tuple[float, Dict[str, float]]:
         """
         Perform comprehensive multi-dimensional coherence analysis
 
@@ -198,20 +253,28 @@ class IndustrialSemanticAnalyzer:
         coherence_components = {}
 
         # 1. Lexical coherence analysis
-        coherence_components['lexical_coherence'] = self._compute_lexical_coherence(text)
+        coherence_components["lexical_coherence"] = self._compute_lexical_coherence(
+            text
+        )
 
         # 2. Semantic coherence via embeddings
         if self._embedding_model:
-            coherence_components['embedding_coherence'] = self._compute_embedding_coherence(text)
+            coherence_components["embedding_coherence"] = (
+                self._compute_embedding_coherence(text)
+            )
 
         # 3. Topic modeling coherence
-        coherence_components['topic_coherence'] = self._compute_topic_coherence(text)
+        coherence_components["topic_coherence"] = self._compute_topic_coherence(
+            text)
 
         # 4. Syntactic coherence
-        coherence_components['syntactic_coherence'] = self._compute_syntactic_coherence(text)
+        coherence_components["syntactic_coherence"] = self._compute_syntactic_coherence(
+            text
+        )
 
         # 5. Entity coherence
-        coherence_components['entity_coherence'] = self._compute_entity_coherence(text)
+        coherence_components["entity_coherence"] = self._compute_entity_coherence(
+            text)
 
         # Sophisticated weighted combination
         weights = self._compute_adaptive_weights(coherence_components, text)
@@ -244,7 +307,8 @@ class IndustrialSemanticAnalyzer:
             if len(sentences) < 2:
                 return 1.0
 
-            embeddings = self._embedding_model.encode(sentences, convert_to_numpy=True)
+            embeddings = self._embedding_model.encode(
+                sentences, convert_to_numpy=True)
 
             # Calculate pairwise cosine similarity
             similarity_matrix = cosine_similarity(embeddings)
@@ -308,34 +372,37 @@ class IndustrialSemanticAnalyzer:
             return 0.5
 
         entity_freq = Counter(entities)
-        repeated_entities = sum(1 for count in entity_freq.values() if count > 1)
+        repeated_entities = sum(
+            1 for count in entity_freq.values() if count > 1)
 
         return min(1.0, repeated_entities / max(len(entities), 1) * 2)
 
-    def _compute_adaptive_weights(self, coherence_components: Dict[str, float], text: str) -> Dict[str, float]:
+    def _compute_adaptive_weights(
+        self, coherence_components: Dict[str, float], text: str
+    ) -> Dict[str, float]:
         """Compute adaptive weights based on text characteristics"""
 
         text_length = len(text)
 
         base_weights = {
-            'lexical_coherence': 0.3,
-            'embedding_coherence': 0.25,
-            'topic_coherence': 0.25,
-            'syntactic_coherence': 0.1,
-            'entity_coherence': 0.1
+            "lexical_coherence": 0.3,
+            "embedding_coherence": 0.25,
+            "topic_coherence": 0.25,
+            "syntactic_coherence": 0.1,
+            "entity_coherence": 0.1,
         }
 
         # Adjust weights based on text characteristics
         weights = base_weights.copy()
 
         if text_length < 500:
-            weights['lexical_coherence'] *= 1.3
-            weights['syntactic_coherence'] *= 1.2
-            if 'embedding_coherence' in weights:
-                weights['embedding_coherence'] *= 0.8
+            weights["lexical_coherence"] *= 1.3
+            weights["syntactic_coherence"] *= 1.2
+            if "embedding_coherence" in weights:
+                weights["embedding_coherence"] *= 0.8
         elif text_length > 2000:
-            weights['topic_coherence'] *= 1.4
-            weights['lexical_coherence'] *= 0.9
+            weights["topic_coherence"] *= 1.4
+            weights["lexical_coherence"] *= 0.9
 
         # Normalize weights to sum to 1
         total_weight = sum(weights.values())
@@ -355,10 +422,10 @@ class IndustrialSemanticAnalyzer:
         if not sentences:
             # Fallback to regex-based segmentation
             patterns = [
-                r'(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<=\.|\!|\?)\s+(?=[A-Z])',
-                r'(?<=\.)\s+(?=[A-Z])',
-                r'(?<=\!)\s+(?=[A-Z])',
-                r'(?<=\?)\s+(?=[A-Z])'
+                r"(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<=\.|\!|\?)\s+(?=[A-Z])",
+                r"(?<=\.)\s+(?=[A-Z])",
+                r"(?<=\!)\s+(?=[A-Z])",
+                r"(?<=\?)\s+(?=[A-Z])",
             ]
 
             working_text = text
@@ -377,10 +444,27 @@ class IndustrialSemanticAnalyzer:
                 tokens = word_tokenize(text.lower())
                 pos_tags = pos_tag(tokens)
 
-                content_pos = {'NN', 'NNS', 'NNP', 'NNPS', 'VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ', 'JJ', 'JJR', 'JJS'}
+                content_pos = {
+                    "NN",
+                    "NNS",
+                    "NNP",
+                    "NNPS",
+                    "VB",
+                    "VBD",
+                    "VBG",
+                    "VBN",
+                    "VBP",
+                    "VBZ",
+                    "JJ",
+                    "JJR",
+                    "JJS",
+                }
                 content_words = [
-                    self._lemmatizer.lemmatize(word) for word, pos in pos_tags
-                    if pos in content_pos and word not in self._stop_words and len(word) > 2
+                    self._lemmatizer.lemmatize(word)
+                    for word, pos in pos_tags
+                    if pos in content_pos
+                    and word not in self._stop_words
+                    and len(word) > 2
                 ]
 
                 return content_words
@@ -389,7 +473,7 @@ class IndustrialSemanticAnalyzer:
                 logger.debug(f"NLTK content word extraction failed: {e}")
 
         # Fallback to regex-based extraction
-        words = re.findall(r'\b[a-zA-Z]{3,}\b', text.lower())
+        words = re.findall(r"\b[a-zA-Z]{3,}\b", text.lower())
         return [word for word in words if word not in self._stop_words]
 
     def _extract_entities_simple(self, text: str) -> List[str]:
@@ -397,11 +481,11 @@ class IndustrialSemanticAnalyzer:
         entities = []
 
         # Capitalized words (potential proper nouns)
-        capitalized = re.findall(r'\b[A-Z][a-z]+\b', text)
+        capitalized = re.findall(r"\b[A-Z][a-z]+\b", text)
         entities.extend(capitalized)
 
         # Numbers and dates
-        numbers = re.findall(r'\b\d+\b', text)
+        numbers = re.findall(r"\b\d+\b", text)
         entities.extend(numbers)
 
         return [entity.lower() for entity in entities]
@@ -418,18 +502,18 @@ class DocumentSegmenter:
     """
 
     def __init__(
-            self,
-            target_char_min: int = 700,
-            target_char_max: int = 900,
-            target_sentences: int = 3,
-            max_sentence_deviation: int = 1,
-            min_segment_chars: int = 200,
-            max_segment_chars: int = 1200,
-            semantic_coherence_threshold: float = 0.6,
-            # Industrial extensions (backward compatible)
-            enable_advanced_semantics: bool = True,
-            enable_caching: bool = True,
-            performance_monitoring: bool = True
+        self,
+        target_char_min: int = 700,
+        target_char_max: int = 900,
+        target_sentences: int = 3,
+        max_sentence_deviation: int = 1,
+        min_segment_chars: int = 200,
+        max_segment_chars: int = 1200,
+        semantic_coherence_threshold: float = 0.6,
+        # Industrial extensions (backward compatible)
+        enable_advanced_semantics: bool = True,
+        enable_caching: bool = True,
+        performance_monitoring: bool = True,
     ):
         """Initialize document segmenter with comprehensive configuration"""
 
@@ -468,11 +552,14 @@ class DocumentSegmenter:
         try:
             self.nlp = self.spacy_loader.load_model("es_core_news_sm")
             if self.nlp is None:
-                logger.warning("spaCy Spanish model not available, using English model")
+                logger.warning(
+                    "spaCy Spanish model not available, using English model")
                 self.nlp = self.spacy_loader.load_model("en_core_web_sm")
 
             if self.nlp is None:
-                logger.warning("No spaCy models available, using rule-based segmentation")
+                logger.warning(
+                    "No spaCy models available, using rule-based segmentation"
+                )
 
         except Exception as e:
             logger.error(f"Failed to initialize spaCy model: {e}")
@@ -509,7 +596,8 @@ class DocumentSegmenter:
 
             # Enhanced with industrial features
             if self.enable_advanced_semantics:
-                segments = self._enhance_segments_with_advanced_metrics(segments)
+                segments = self._enhance_segments_with_advanced_metrics(
+                    segments)
 
             # Calculate final statistics (maintain compatibility)
             self._calculate_segmentation_stats(segments)
@@ -518,7 +606,8 @@ class DocumentSegmenter:
             if self.performance_monitoring:
                 processing_time = (time.perf_counter() - start_time) * 1000
                 self.segmentation_stats.processing_time_ms = processing_time
-                self._performance_metrics['processing_times'].append(processing_time)
+                self._performance_metrics["processing_times"].append(
+                    processing_time)
 
             return segments
 
@@ -561,7 +650,7 @@ class DocumentSegmenter:
                 sent_char_count,
                 i,
                 len(sentences),
-                current_segment_sents  # Pass for semantic analysis
+                current_segment_sents,  # Pass for semantic analysis
             )
 
             if should_finalize_segment:
@@ -592,13 +681,13 @@ class DocumentSegmenter:
         return segments
 
     def _should_finalize_segment(
-            self,
-            current_sent_count: int,
-            projected_char_count: int,
-            next_sent_char_count: int,
-            sent_index: int,
-            total_sentences: int,
-            current_segment_sents: List[str] = None
+        self,
+        current_sent_count: int,
+        projected_char_count: int,
+        next_sent_char_count: int,
+        sent_index: int,
+        total_sentences: int,
+        current_segment_sents: List[str] = None,
     ) -> bool:
         """
         Enhanced decision logic for segment finalization (maintains original + adds semantic analysis)
@@ -613,35 +702,54 @@ class DocumentSegmenter:
             return True
 
         # Enhanced semantic coherence check
-        if (self.enable_advanced_semantics and self.semantic_analyzer and
-                current_segment_sents and len(current_segment_sents) >= 2):
-
+        if (
+            self.enable_advanced_semantics
+            and self.semantic_analyzer
+            and current_segment_sents
+            and len(current_segment_sents) >= 2
+        ):
             current_text = " ".join(current_segment_sents)
-            coherence_score, _ = self.semantic_analyzer.analyze_comprehensive_coherence(current_text)
+            coherence_score, _ = self.semantic_analyzer.analyze_comprehensive_coherence(
+                current_text
+            )
 
-            if (coherence_score < self.semantic_coherence_threshold and
-                    current_sent_count >= self.target_sentences - self.max_sentence_deviation):
+            if (
+                coherence_score < self.semantic_coherence_threshold
+                and current_sent_count
+                >= self.target_sentences - self.max_sentence_deviation
+            ):
                 return True
 
         # Original dual criteria logic (maintain exact compatibility)
-        if (current_sent_count == self.target_sentences and
-                self.target_char_min <= current_char_count <= self.target_char_max):
+        if (
+            current_sent_count == self.target_sentences
+            and self.target_char_min <= current_char_count <= self.target_char_max
+        ):
             return True
 
-        if (current_sent_count >= self.target_sentences - self.max_sentence_deviation and
-                projected_char_count > self.target_char_max):
+        if (
+            current_sent_count >= self.target_sentences - self.max_sentence_deviation
+            and projected_char_count > self.target_char_max
+        ):
             return True
 
-        if (current_sent_count >= self.target_sentences - self.max_sentence_deviation and
-                next_sent_char_count > 400):
+        if (
+            current_sent_count >= self.target_sentences - self.max_sentence_deviation
+            and next_sent_char_count > 400
+        ):
             return True
 
-        if (sent_index >= total_sentences - 2 and current_sent_count >= 2 and
-                current_char_count >= self.min_segment_chars):
+        if (
+            sent_index >= total_sentences - 2
+            and current_sent_count >= 2
+            and current_char_count >= self.min_segment_chars
+        ):
             return True
 
-        if (current_sent_count >= self.target_sentences - self.max_sentence_deviation and
-                self.target_char_min <= current_char_count <= self.target_char_max):
+        if (
+            current_sent_count >= self.target_sentences - self.max_sentence_deviation
+            and self.target_char_min <= current_char_count <= self.target_char_max
+        ):
             return True
 
         return False
@@ -678,7 +786,7 @@ class DocumentSegmenter:
                 sent_char_count,
                 i,
                 len(sentences),
-                current_segment_sents
+                current_segment_sents,
             )
 
             if should_finalize:
@@ -716,15 +824,19 @@ class DocumentSegmenter:
 
         for word in words:
             word_length = len(word)
-            projected_length = current_char_count + word_length + len(current_segment_words)
+            projected_length = (
+                current_char_count + word_length + len(current_segment_words)
+            )
 
-            if (projected_length > target_chars and
-                    current_char_count >= self.min_segment_chars and
-                    current_segment_words):
-
+            if (
+                projected_length > target_chars
+                and current_char_count >= self.min_segment_chars
+                and current_segment_words
+            ):
                 segment_text = " ".join(current_segment_words)
                 segments.append(
-                    self._create_segment_dict(segment_text, [], "character_based")
+                    self._create_segment_dict(
+                        segment_text, [], "character_based")
                 )
 
                 current_segment_words = [word]
@@ -742,28 +854,45 @@ class DocumentSegmenter:
         return segments
 
     def _create_segment_dict(
-            self, text: str, sentences: List[str], segment_type: str
+        self, text: str, sentences: List[str], segment_type: str
     ) -> Dict[str, Any]:
         """Create segment dictionary with metadata (enhanced with industrial features)"""
 
         # Basic metrics (maintain exact original compatibility)
         char_count = len(text)
-        sentence_count = len(sentences) if sentences else self._estimate_sentence_count(text)
+        sentence_count = (
+            len(sentences) if sentences else self._estimate_sentence_count(text)
+        )
         word_count = len(text.split())
         token_count = len(text.split())  # Simple approximation
 
         # Enhanced semantic coherence
         if self.enable_advanced_semantics and self.semantic_analyzer:
-            coherence_score, coherence_components = self.semantic_analyzer.analyze_comprehensive_coherence(text)
-            embedding_coherence = coherence_components.get('embedding_coherence', 0.0)
+            coherence_score, coherence_components = (
+                self.semantic_analyzer.analyze_comprehensive_coherence(text)
+            )
+            embedding_coherence = coherence_components.get(
+                "embedding_coherence", 0.0)
         else:
             coherence_score = self._estimate_semantic_coherence(text)
             embedding_coherence = None
 
         # Advanced metrics (industrial extensions)
-        readability_score = self._calculate_readability_score(text) if self.enable_advanced_semantics else 0.0
-        lexical_diversity = self._calculate_lexical_diversity(text) if self.enable_advanced_semantics else 0.0
-        syntactic_complexity = self._calculate_syntactic_complexity(text) if self.enable_advanced_semantics else 0.0
+        readability_score = (
+            self._calculate_readability_score(text)
+            if self.enable_advanced_semantics
+            else 0.0
+        )
+        lexical_diversity = (
+            self._calculate_lexical_diversity(text)
+            if self.enable_advanced_semantics
+            else 0.0
+        )
+        syntactic_complexity = (
+            self._calculate_syntactic_complexity(text)
+            if self.enable_advanced_semantics
+            else 0.0
+        )
 
         # Create enhanced metrics object (backward compatible)
         metrics = SegmentMetrics(
@@ -776,7 +905,7 @@ class DocumentSegmenter:
             readability_score=readability_score,
             lexical_diversity=lexical_diversity,
             syntactic_complexity=syntactic_complexity,
-            embedding_coherence=embedding_coherence
+            embedding_coherence=embedding_coherence,
         )
 
         # Return dictionary with exact original structure + enhan

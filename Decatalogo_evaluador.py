@@ -9,6 +9,7 @@ Conexión: INTEGRACIÓN TOTAL con todos los módulos del proyecto
 Autor: Sistema Doctoral de Políticas Públicas - Versión Industrial
 Fecha: 2025 - Versión de Producción
 """
+
 import json
 import logging
 import sys
@@ -23,7 +24,7 @@ from contradiction_detector import (
     ContradictionAnalysis,
     ContradictionDetector,
     ContradictionMatch,
-    )
+)
 
 # Importaciones del sistema principal (Decatalogo_principal.py)
 from Decatalogo_principal import (  # Clases adicionales necesarias
