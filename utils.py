@@ -1,6 +1,6 @@
 import re
 import unicodedata
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional
 
 
 def normalize_text(text: str) -> str:
@@ -13,11 +13,11 @@ class TextAnalyzer:
 
     def __init__(self):
         self.patterns = {
-            'email': r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',
-            'url': r'https?://[^\s<>"{}|\\^`\[\]]+',
-            'phone': r'\b\d{3}-\d{3}-\d{4}\b|\(\d{3}\)\s*\d{3}-\d{4}',
-            'hashtag': r'#\w+',
-            'mention': r'@\w+',
+            "email": r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b",
+            "url": r'https?://[^\s<>"{}|\\^`\[\]]+',
+            "phone": r"\b\d{3}-\d{3}-\d{4}\b|\(\d{3}\)\s*\d{3}-\d{4}",
+            "hashtag": r"#\w+",
+            "mention": r"@\w+",
         }
 
     def find_pattern_matches(self, text: str, pattern_name: str) -> List[str]:
@@ -50,17 +50,17 @@ class TextAnalyzer:
         normalized_text = normalize_text(text)
 
         if preserve_spaces:
-            pattern = r'[^\w\s]'
-            return re.sub(pattern, '', normalized_text)
+            pattern = r"[^\w\s]"
+            return re.sub(pattern, "", normalized_text)
         else:
-            pattern = r'[^\w]'
-            return re.sub(pattern, '', normalized_text)
+            pattern = r"[^\w]"
+            return re.sub(pattern, "", normalized_text)
 
     @staticmethod
     def tokenize(text: str) -> List[str]:
         """Tokenize text into words with Unicode normalization."""
         normalized_text = normalize_text(text)
-        pattern = r'\b\w+\b'
+        pattern = r"\b\w+\b"
         return re.findall(pattern, normalized_text.lower())
 
     @staticmethod
@@ -73,11 +73,11 @@ class TextAnalyzer:
         return matches
 
     @staticmethod
-    def replace_unicode_punctuation(text: str, replacement: str = ' ') -> str:
+    def replace_unicode_punctuation(text: str, replacement: str = " ") -> str:
         """Replace Unicode punctuation marks with specified replacement."""
         normalized_text = normalize_text(text)
         # Pattern for various Unicode punctuation
-        pattern = r'[—–−‐‑‒―''""„‚‛‟«»‹›]'
+        pattern = r"[—–−‐‑‒―" '""„‚‛‟«»‹›]'
         return re.sub(pattern, replacement, normalized_text)
 
     @staticmethod
@@ -85,18 +85,21 @@ class TextAnalyzer:
         """Normalize all whitespace characters with Unicode normalization."""
         normalized_text = normalize_text(text)
         # Replace various Unicode whitespace with regular space
-        pattern = r'\s+'
-        return re.sub(pattern, ' ', normalized_text).strip()
+        pattern = r"\s+"
+        return re.sub(pattern, " ", normalized_text).strip()
 
 
-def search_and_replace_normalized(text: str, search_pattern: str, replacement: str,
-                                  flags: int = 0) -> str:
+def search_and_replace_normalized(
+    text: str, search_pattern: str, replacement: str, flags: int = 0
+) -> str:
     """Search and replace with Unicode normalization."""
     normalized_text = normalize_text(text)
     normalized_pattern = normalize_text(search_pattern)
     normalized_replacement = normalize_text(replacement)
 
-    return re.sub(normalized_pattern, normalized_replacement, normalized_text, flags=flags)
+    return re.sub(
+        normalized_pattern, normalized_replacement, normalized_text, flags=flags
+    )
 
 
 def split_normalized(text: str, pattern: str, maxsplit: int = 0) -> List[str]:
@@ -107,7 +110,9 @@ def split_normalized(text: str, pattern: str, maxsplit: int = 0) -> List[str]:
     return re.split(normalized_pattern, normalized_text, maxsplit=maxsplit)
 
 
-def match_normalized(text: str, pattern: str, flags: int = 0) -> Optional[re.Match[str]]:
+def match_normalized(
+    text: str, pattern: str, flags: int = 0
+) -> Optional[re.Match[str]]:
     """Match pattern with Unicode normalization."""
     normalized_text = normalize_text(text)
     normalized_pattern = normalize_text(pattern)

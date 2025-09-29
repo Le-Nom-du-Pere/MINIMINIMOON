@@ -10,8 +10,9 @@ import sys
 def run_tests():
     """Run the test suite."""
     print("Running tests...")
-    result = subprocess.run([sys.executable, 'test_dag_validation.py'],
-                            capture_output=True, text=True)
+    result = subprocess.run(
+        [sys.executable, "test_dag_validation.py"], capture_output=True, text=True
+    )
 
     if result.returncode == 0:
         print("✅ All tests passed")
@@ -28,11 +29,13 @@ def run_lint():
     """Check code syntax and basic linting."""
     print("Checking syntax...")
 
-    files = ['dag_validation.py', 'test_dag_validation.py', 'verify_reproducibility.py']
+    files = ["dag_validation.py", "test_dag_validation.py",
+             "verify_reproducibility.py"]
 
     for file in files:
-        result = subprocess.run([sys.executable, '-m', 'py_compile', file],
-                                capture_output=True, text=True)
+        result = subprocess.run(
+            [sys.executable, "-m", "py_compile", file], capture_output=True, text=True
+        )
         if result.returncode != 0:
             print(f"❌ Syntax error in {file}")
             print(result.stderr)
@@ -46,8 +49,9 @@ def run_reproducibility_test():
     """Test reproducibility manually."""
     print("Testing reproducibility...")
 
-    result = subprocess.run([sys.executable, 'verify_reproducibility.py'],
-                            capture_output=True, text=True)
+    result = subprocess.run(
+        [sys.executable, "verify_reproducibility.py"], capture_output=True, text=True
+    )
 
     if result.returncode == 0 and "PASSED" in result.stdout:
         print("✅ Reproducibility test passed")
@@ -67,7 +71,7 @@ def main():
     checks = [
         ("Syntax/Lint", run_lint),
         ("Unit Tests", run_tests),
-        ("Reproducibility", run_reproducibility_test)
+        ("Reproducibility", run_reproducibility_test),
     ]
 
     results = []
@@ -86,7 +90,9 @@ def main():
         print(f"{name}: {status}")
 
     all_passed = all(results)
-    print(f"\nOverall: {'✅ ALL CHECKS PASSED' if all_passed else '❌ SOME CHECKS FAILED'}")
+    print(
+        f"\nOverall: {'✅ ALL CHECKS PASSED' if all_passed else '❌ SOME CHECKS FAILED'}"
+    )
 
     return all_passed
 
