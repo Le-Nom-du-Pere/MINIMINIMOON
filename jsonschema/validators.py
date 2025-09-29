@@ -20,4 +20,3 @@ class _DummyValidator:
 
 def validator_for(schema):
     return _DummyValidator
-

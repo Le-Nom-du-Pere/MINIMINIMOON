@@ -1326,19 +1326,23 @@ GraphNode = AdvancedGraphNode
 # Add simple deterministic seed function expected by tests
 def _simple_seed_from_plan_name(plan_name: str) -> int:
     import hashlib
+
     h = hashlib.sha256(plan_name.encode("utf-8")).digest()[:8]
     return int.from_bytes(h, "big", signed=False)
+
 
 # Inject methods into AdvancedDAGValidator for test compatibility
 def _create_seed_from_plan_name(self, plan_name: str) -> int:
     seed = _simple_seed_from_plan_name(plan_name)
     return seed
 
+
 def _initialize_rng(self, plan_name: str, salt: str = "") -> None:
     seed = _create_seed_from_plan_name(self, plan_name + salt)
     self._rng = random.Random(seed)
     np.random.seed(seed)
     return None
+
 
 def _is_acyclic(self, nodes: Dict[str, AdvancedGraphNode]) -> bool:
     # Simple DFS-based cycle detection
@@ -1367,7 +1371,10 @@ def _is_acyclic(self, nodes: Dict[str, AdvancedGraphNode]) -> bool:
                 return False
     return True
 
-def _generate_random_subgraph(self, min_size: int, max_size: int) -> Dict[str, AdvancedGraphNode]:
+
+def _generate_random_subgraph(
+    self, min_size: int, max_size: int
+) -> Dict[str, AdvancedGraphNode]:
     names = list(self.graph_nodes.keys())
     if not names:
         return {}
@@ -1376,7 +1383,10 @@ def _generate_random_subgraph(self, min_size: int, max_size: int) -> Dict[str, A
     sub = {n: self.graph_nodes[n] for n in chosen}
     return sub
 
-def calculate_acyclicity_pvalue(self, plan_name: str, iterations: int = 100) -> MonteCarloAdvancedResult:
+
+def calculate_acyclicity_pvalue(
+    self, plan_name: str, iterations: int = 100
+) -> MonteCarloAdvancedResult:
     seed = _create_seed_from_plan_name(self, plan_name)
     self._rng = random.Random(seed)
     total_nodes = len(self.graph_nodes)
@@ -1414,7 +1424,10 @@ def calculate_acyclicity_pvalue(self, plan_name: str, iterations: int = 100) -> 
     for i in range(iterations):
         # choose random subgraph size between min_subgraph_size and min(len,nodes,10)
         min_s = max(1, self.config.get("min_subgraph_size", 1))
-        max_s = min(len(self.graph_nodes), self.config.get("max_subgraph_size") or len(self.graph_nodes))
+        max_s = min(
+            len(self.graph_nodes),
+            self.config.get("max_subgraph_size") or len(self.graph_nodes),
+        )
         if min_s > max_s:
             min_s = 1
             max_s = len(self.graph_nodes)
@@ -1437,7 +1450,8 @@ def calculate_acyclicity_pvalue(self, plan_name: str, iterations: int = 100) -> 
         p_value=p_value,
         subgraph_sizes=subgraph_sizes,
         bayesian_posterior=1.0 - p_value,
-        confidence_interval=(max(0.0, p_value - 0.05), min(1.0, p_value + 0.05)),
+        confidence_interval=(max(0.0, p_value - 0.05),
+                             min(1.0, p_value + 0.05)),
         effect_size=0.0,
         statistical_power=1.0,
         average_path_length=0.0,
@@ -1457,6 +1471,7 @@ def calculate_acyclicity_pvalue(self, plan_name: str, iterations: int = 100) -> 
     self.validation_history.append(result)
     return result
 
+
 def verify_reproducibility(self, plan_name: str, iterations: int = 50) -> bool:
     r1 = calculate_acyclicity_pvalue(self, plan_name, iterations)
     r2 = calculate_acyclicity_pvalue(self, plan_name, iterations)
@@ -1467,6 +1482,7 @@ def verify_reproducibility(self, plan_name: str, iterations: int = 50) -> bool:
         and r1.subgraph_sizes == r2.subgraph_sizes
     )
 
+
 def get_graph_stats(self) -> Dict[str, int]:
     total_nodes = len(self.graph_nodes)
     total_edges = sum(len(n.dependencies) for n in self.graph_nodes.values())
@@ -1476,6 +1492,7 @@ def get_graph_stats(self) -> Dict[str, int]:
         "total_edges": total_edges,
         "max_possible_edges": max_possible_edges,
     }
+
 
 # Attach these methods to the class
 AdvancedDAGValidator._create_seed_from_plan_name = _create_seed_from_plan_name

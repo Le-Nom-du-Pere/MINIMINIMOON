@@ -1,4 +1,3 @@
-from .validators import validator_for, RefResolver
+from .validators import RefResolver, validator_for
 
-__all__ = ['validator_for', 'RefResolver']
-
+__all__ = ["validator_for", "RefResolver"]
