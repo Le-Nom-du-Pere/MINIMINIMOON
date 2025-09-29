@@ -1,0 +1,37 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""Genera locks y hashes reproducibles para los decálogos limpios."""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import sys
+from pathlib import Path
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Congelar bundle de decálogos")
+    parser.add_argument("--bundle", required=True, help="Directorio con los JSON limpios")
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    bundle_dir = Path(args.bundle)
+    lock_entries = {}
+    for path in bundle_dir.glob("*.clean.json"):
+        content = path.read_bytes()
+        lock_entries[path.name] = hashlib.sha256(content).hexdigest()
+    crosswalk_path = bundle_dir / "crosswalk.latest.json"
+    if crosswalk_path.exists():
+        lock_entries[crosswalk_path.name] = hashlib.sha256(crosswalk_path.read_bytes()).hexdigest()
+    lock_path = bundle_dir / "decalogo.lock.json"
+    lock_path.write_text(json.dumps(lock_entries, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    print("Lock file generado en", lock_path)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

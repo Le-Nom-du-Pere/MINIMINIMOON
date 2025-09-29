@@ -38,6 +38,7 @@ from Decatalogo_principal import (
     EslabonCadena,
     MatrizTrazabilidad,
 )
+from pdm_contra.bridges.decatalogo_provider import provide_decalogos
 
 # Importaciones de detectores especializados (VERIFICADOS)
 from feasibility_scorer import (
@@ -94,6 +95,7 @@ LOGGER = logging.getLogger("DecatalogoEvaluatorFull.v3.0")
 
 # ==================== CONTEXTO GLOBAL ====================
 
+BUNDLE = provide_decalogos()
 DECALOGO_CONTEXT: DecalogoContext = obtener_decalogo_contexto()
 
 

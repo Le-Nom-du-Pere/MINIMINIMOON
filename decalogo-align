@@ -1,0 +1,38 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""CLI para normalizar y alinear los decálogos."""
+
+from __future__ import annotations
+
+import argparse
+import sys
+from pathlib import Path
+
+from pdm_contra.decalogo_alignment import align_decalogos
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Normalización determinista de decálogos")
+    parser.add_argument("--full", required=True, help="Ruta a DECALOGO_FULL.json crudo")
+    parser.add_argument("--industrial", required=True, help="Ruta a decalogo_industrial.json crudo")
+    parser.add_argument("--dnp", required=True, help="Ruta a DNP_STANDARDS.json crudo")
+    parser.add_argument("--out", required=True, help="Directorio de salida")
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    bundle = align_decalogos(
+        Path(args.full),
+        Path(args.industrial),
+        Path(args.dnp),
+        Path(args.out),
+    )
+    print("Alineación completada. Clusters generados:", len(bundle.clusters))
+    for issue in bundle.audit:
+        print(f"- {issue.source}: {issue.category} -> {issue.message}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
