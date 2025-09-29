@@ -39,6 +39,8 @@ from sklearn.cluster import SpectralClustering
 import torch
 import torch.nn.functional as F
 
+from pdm_contra.bridges.decatalogo_provider import provide_decalogos
+
 # -------------------- Dependencias avanzadas --------------------
 try:
     import pdfplumber
@@ -73,6 +75,8 @@ except ImportError:
 
 
 # Device configuration avanzada
+BUNDLE = provide_decalogos()
+
 class AdvancedDeviceConfig:
     def __init__(self, device='cpu', precision='float32', batch_size=16):
         self.device = device
