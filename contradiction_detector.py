@@ -181,13 +181,22 @@ class ContradictionDetector:
         return normalized
 
     @staticmethod
-    def _find_pattern_matches(text: str, patterns: List[Pattern]) -> List[Tuple[str, int, int]]:
+    def _find_pattern_matches(text: str, patterns: List[Pattern], _tag: Optional[str] = None) -> List[Tuple[str, int, int]]:
         """Devuelve lista de (matched_text, start, end) para los patrones dados."""
         matches = []
         for pat in patterns:
             for m in pat.finditer(text):
                 matches.append((m.group(0), m.start(), m.end()))
         return matches
+
+    # Compatibilidad con versiones previas de la API de tests
+    def _extract_context_window(self, text: str, center_abs_pos: int) -> str:
+        """Wrapper antiguo que devolvía el texto de la ventana de contexto; preserva compatibilidad.
+
+        Retorna únicamente la cadena de contexto (posibles usos antiguos en tests).
+        """
+        context_text, _ = self._extract_context(text, center_abs_pos)
+        return context_text
 
     def _extract_context(self, text: str, center_abs_pos: int) -> Tuple[str, int]:
         """Extrae ventana de contexto alrededor de una posición absoluta.
