@@ -1,23 +1,28 @@
 <html>
 <head>
-<title>blas.py</title>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<style type="text/css">
-.s0 { color: #969896;}
-.s1 { color: #333333;}
-.s2 { color: #a71d5d;}
-.s3 { color: #63a35c;}
-.s4 { color: #183691;}
-.s5 { color: #0086b3;}
-.ln { color: #333333; font-weight: normal; font-style: normal; }
-</style>
+    <title>blas.py</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <style type="text/css">
+        .s0 { color: #969896;}
+        .s1 { color: #333333;}
+        .s2 { color: #a71d5d;}
+        .s3 { color: #63a35c;}
+        .s4 { color: #183691;}
+        .s5 { color: #0086b3;}
+        .ln { color: #333333; font-weight: normal; font-style: normal; }
+    </style>
 </head>
 <body bgcolor="#ffffff">
-<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#c0c0c0" >
-<tr><td><center>
-<font face="Arial, Helvetica" color="#000000">
-blas.py</font>
-</center></td></tr></table>
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#c0c0c0">
+    <tr>
+        <td>
+            <center>
+                <font face="Arial, Helvetica" color="#000000">
+                    blas.py</font>
+            </center>
+        </td>
+    </tr>
+</table>
 <pre><a name="l1"><span class="ln">1    </span></a><span class="s0">&quot;&quot;&quot; 
 <a name="l2"><span class="ln">2    </span></a>Low-level BLAS functions (:mod:`scipy.linalg.blas`) 
 <a name="l3"><span class="ln">3    </span></a>=================================================== 
@@ -222,61 +227,117 @@ blas.py</font>
 <a name="l202"><span class="ln">202  </span></a>&quot;&quot;&quot;</span>
 <a name="l203"><span class="ln">203  </span></a><span class="s0">#</span>
 <a name="l204"><span class="ln">204  </span></a><span class="s0"># Author: Pearu Peterson, March 2002</span>
-<a name="l205"><span class="ln">205  </span></a><span class="s0">#         refactoring by Fabian Pedregosa, March 2010</span>
+<a name="l205"><span class="ln">205  </span></a><span
+            class="s0">#         refactoring by Fabian Pedregosa, March 2010</span>
 <a name="l206"><span class="ln">206  </span></a><span class="s0">#</span>
 <a name="l207"><span class="ln">207  </span></a>
-<a name="l208"><span class="ln">208  </span></a><span class="s1">__all__ </span><span class="s2">= </span><span class="s3">[</span><span class="s4">'get_blas_funcs'</span><span class="s3">, </span><span class="s4">'find_best_blas_type'</span><span class="s3">]</span>
+<a name="l208"><span class="ln">208  </span></a><span class="s1">__all__ </span><span class="s2">= </span><span
+            class="s3">[</span><span class="s4">'get_blas_funcs'</span><span class="s3">, </span><span class="s4">'find_best_blas_type'</span><span
+            class="s3">]</span>
 <a name="l209"><span class="ln">209  </span></a>
-<a name="l210"><span class="ln">210  </span></a><span class="s2">import </span><span class="s1">numpy </span><span class="s2">as </span><span class="s1">np</span>
+<a name="l210"><span class="ln">210  </span></a><span class="s2">import </span><span class="s1">numpy </span><span
+            class="s2">as </span><span class="s1">np</span>
 <a name="l211"><span class="ln">211  </span></a><span class="s2">import </span><span class="s1">functools</span>
 <a name="l212"><span class="ln">212  </span></a>
-<a name="l213"><span class="ln">213  </span></a><span class="s2">from </span><span class="s1">scipy</span><span class="s3">.</span><span class="s1">linalg </span><span class="s2">import </span><span class="s1">_fblas</span>
+<a name="l213"><span class="ln">213  </span></a><span class="s2">from </span><span class="s1">scipy</span><span
+            class="s3">.</span><span class="s1">linalg </span><span class="s2">import </span><span
+            class="s1">_fblas</span>
 <a name="l214"><span class="ln">214  </span></a><span class="s2">try:</span>
-<a name="l215"><span class="ln">215  </span></a>    <span class="s2">from </span><span class="s1">scipy</span><span class="s3">.</span><span class="s1">linalg </span><span class="s2">import </span><span class="s1">_cblas</span>
-<a name="l216"><span class="ln">216  </span></a><span class="s2">except </span><span class="s1">ImportError</span><span class="s2">:</span>
+<a name="l215"><span class="ln">215  </span></a>    <span class="s2">from </span><span class="s1">scipy</span><span
+            class="s3">.</span><span class="s1">linalg </span><span class="s2">import </span><span
+            class="s1">_cblas</span>
+<a name="l216"><span class="ln">216  </span></a><span class="s2">except </span><span class="s1">ImportError</span><span
+            class="s2">:</span>
 <a name="l217"><span class="ln">217  </span></a>    <span class="s1">_cblas </span><span class="s2">= None</span>
 <a name="l218"><span class="ln">218  </span></a>
 <a name="l219"><span class="ln">219  </span></a><span class="s2">try:</span>
-<a name="l220"><span class="ln">220  </span></a>    <span class="s2">from </span><span class="s1">scipy</span><span class="s3">.</span><span class="s1">linalg </span><span class="s2">import </span><span class="s1">_fblas_64</span>
+<a name="l220"><span class="ln">220  </span></a>    <span class="s2">from </span><span class="s1">scipy</span><span
+            class="s3">.</span><span class="s1">linalg </span><span class="s2">import </span><span
+            class="s1">_fblas_64</span>
 <a name="l221"><span class="ln">221  </span></a>    <span class="s1">HAS_ILP64 </span><span class="s2">= True</span>
-<a name="l222"><span class="ln">222  </span></a><span class="s2">except </span><span class="s1">ImportError</span><span class="s2">:</span>
+<a name="l222"><span class="ln">222  </span></a><span class="s2">except </span><span class="s1">ImportError</span><span
+            class="s2">:</span>
 <a name="l223"><span class="ln">223  </span></a>    <span class="s1">HAS_ILP64 </span><span class="s2">= False</span>
 <a name="l224"><span class="ln">224  </span></a>    <span class="s1">_fblas_64 </span><span class="s2">= None</span>
 <a name="l225"><span class="ln">225  </span></a>
 <a name="l226"><span class="ln">226  </span></a><span class="s0"># Expose all functions (only fblas --- cblas is an implementation detail)</span>
 <a name="l227"><span class="ln">227  </span></a><span class="s1">empty_module </span><span class="s2">= None</span>
-<a name="l228"><span class="ln">228  </span></a><span class="s2">from </span><span class="s1">scipy</span><span class="s3">.</span><span class="s1">linalg</span><span class="s3">.</span><span class="s1">_fblas </span><span class="s2">import *  </span><span class="s0"># noqa: E402, F403</span>
+<a name="l228"><span class="ln">228  </span></a><span class="s2">from </span><span class="s1">scipy</span><span
+            class="s3">.</span><span class="s1">linalg</span><span class="s3">.</span><span
+            class="s1">_fblas </span><span class="s2">import *  </span><span class="s0"># noqa: E402, F403</span>
 <a name="l229"><span class="ln">229  </span></a><span class="s2">del </span><span class="s1">empty_module</span>
 <a name="l230"><span class="ln">230  </span></a>
 <a name="l231"><span class="ln">231  </span></a><span class="s0"># all numeric dtypes '?bBhHiIlLqQefdgFDGO' that are safe to be converted to</span>
 <a name="l232"><span class="ln">232  </span></a>
-<a name="l233"><span class="ln">233  </span></a><span class="s0"># single precision float   : '?bBhH!!!!!!ef!!!!!!'</span>
-<a name="l234"><span class="ln">234  </span></a><span class="s0"># double precision float   : '?bBhHiIlLqQefdg!!!!'</span>
-<a name="l235"><span class="ln">235  </span></a><span class="s0"># single precision complex : '?bBhH!!!!!!ef!!F!!!'</span>
-<a name="l236"><span class="ln">236  </span></a><span class="s0"># double precision complex : '?bBhHiIlLqQefdgFDG!'</span>
+<a name="l233"><span class="ln">233  </span></a><span
+            class="s0"># single precision float   : '?bBhH!!!!!!ef!!!!!!'</span>
+<a name="l234"><span class="ln">234  </span></a><span
+            class="s0"># double precision float   : '?bBhHiIlLqQefdg!!!!'</span>
+<a name="l235"><span class="ln">235  </span></a><span
+            class="s0"># single precision complex : '?bBhH!!!!!!ef!!F!!!'</span>
+<a name="l236"><span class="ln">236  </span></a><span
+            class="s0"># double precision complex : '?bBhHiIlLqQefdgFDG!'</span>
 <a name="l237"><span class="ln">237  </span></a>
-<a name="l238"><span class="ln">238  </span></a><span class="s1">_type_score </span><span class="s2">= </span><span class="s3">{</span><span class="s1">x</span><span class="s2">: </span><span class="s5">1 </span><span class="s2">for </span><span class="s1">x </span><span class="s2">in </span><span class="s4">'?bBhHef'</span><span class="s3">}</span>
-<a name="l239"><span class="ln">239  </span></a><span class="s1">_type_score</span><span class="s3">.</span><span class="s1">update</span><span class="s3">({</span><span class="s1">x</span><span class="s2">: </span><span class="s5">2 </span><span class="s2">for </span><span class="s1">x </span><span class="s2">in </span><span class="s4">'iIlLqQd'</span><span class="s3">})</span>
+<a name="l238"><span class="ln">238  </span></a><span class="s1">_type_score </span><span class="s2">= </span><span
+            class="s3">{</span><span class="s1">x</span><span class="s2">: </span><span class="s5">1 </span><span
+            class="s2">for </span><span class="s1">x </span><span class="s2">in </span><span class="s4">'?bBhHef'</span><span
+            class="s3">}</span>
+<a name="l239"><span class="ln">239  </span></a><span class="s1">_type_score</span><span class="s3">.</span><span
+            class="s1">update</span><span class="s3">({</span><span class="s1">x</span><span class="s2">: </span><span
+            class="s5">2 </span><span class="s2">for </span><span class="s1">x </span><span class="s2">in </span><span
+            class="s4">'iIlLqQd'</span><span class="s3">})</span>
 <a name="l240"><span class="ln">240  </span></a>
 <a name="l241"><span class="ln">241  </span></a><span class="s0"># Handle float128(g) and complex256(G) separately in case non-Windows systems.</span>
 <a name="l242"><span class="ln">242  </span></a><span class="s0"># On Windows, the values will be rewritten to the same key with the same value.</span>
-<a name="l243"><span class="ln">243  </span></a><span class="s1">_type_score</span><span class="s3">.</span><span class="s1">update</span><span class="s3">({</span><span class="s4">'F'</span><span class="s2">: </span><span class="s5">3</span><span class="s3">, </span><span class="s4">'D'</span><span class="s2">: </span><span class="s5">4</span><span class="s3">, </span><span class="s4">'g'</span><span class="s2">: </span><span class="s5">2</span><span class="s3">, </span><span class="s4">'G'</span><span class="s2">: </span><span class="s5">4</span><span class="s3">})</span>
+<a name="l243"><span class="ln">243  </span></a><span class="s1">_type_score</span><span class="s3">.</span><span
+            class="s1">update</span><span class="s3">({</span><span class="s4">'F'</span><span class="s2">: </span><span
+            class="s5">3</span><span class="s3">, </span><span class="s4">'D'</span><span class="s2">: </span><span
+            class="s5">4</span><span class="s3">, </span><span class="s4">'g'</span><span class="s2">: </span><span
+            class="s5">2</span><span class="s3">, </span><span class="s4">'G'</span><span class="s2">: </span><span
+            class="s5">4</span><span class="s3">})</span>
 <a name="l244"><span class="ln">244  </span></a>
-<a name="l245"><span class="ln">245  </span></a><span class="s0"># Final mapping to the actual prefixes and dtypes</span>
-<a name="l246"><span class="ln">246  </span></a><span class="s1">_type_conv </span><span class="s2">= </span><span class="s3">{</span><span class="s5">1</span><span class="s2">: </span><span class="s3">(</span><span class="s4">'s'</span><span class="s3">, </span><span class="s1">np</span><span class="s3">.</span><span class="s1">dtype</span><span class="s3">(</span><span class="s4">'float32'</span><span class="s3">)),</span>
-<a name="l247"><span class="ln">247  </span></a>              <span class="s5">2</span><span class="s2">: </span><span class="s3">(</span><span class="s4">'d'</span><span class="s3">, </span><span class="s1">np</span><span class="s3">.</span><span class="s1">dtype</span><span class="s3">(</span><span class="s4">'float64'</span><span class="s3">)),</span>
-<a name="l248"><span class="ln">248  </span></a>              <span class="s5">3</span><span class="s2">: </span><span class="s3">(</span><span class="s4">'c'</span><span class="s3">, </span><span class="s1">np</span><span class="s3">.</span><span class="s1">dtype</span><span class="s3">(</span><span class="s4">'complex64'</span><span class="s3">)),</span>
-<a name="l249"><span class="ln">249  </span></a>              <span class="s5">4</span><span class="s2">: </span><span class="s3">(</span><span class="s4">'z'</span><span class="s3">, </span><span class="s1">np</span><span class="s3">.</span><span class="s1">dtype</span><span class="s3">(</span><span class="s4">'complex128'</span><span class="s3">))}</span>
+<a name="l245"><span class="ln">245  </span></a><span
+            class="s0"># Final mapping to the actual prefixes and dtypes</span>
+<a name="l246"><span class="ln">246  </span></a><span class="s1">_type_conv </span><span class="s2">= </span><span
+            class="s3">{</span><span class="s5">1</span><span class="s2">: </span><span class="s3">(</span><span
+            class="s4">'s'</span><span class="s3">, </span><span class="s1">np</span><span class="s3">.</span><span
+            class="s1">dtype</span><span class="s3">(</span><span class="s4">'float32'</span><span class="s3">)),</span>
+<a name="l247"><span class="ln">247  </span></a>              <span class="s5">2</span><span class="s2">: </span><span
+            class="s3">(</span><span class="s4">'d'</span><span class="s3">, </span><span class="s1">np</span><span
+            class="s3">.</span><span class="s1">dtype</span><span class="s3">(</span><span
+            class="s4">'float64'</span><span class="s3">)),</span>
+<a name="l248"><span class="ln">248  </span></a>              <span class="s5">3</span><span class="s2">: </span><span
+            class="s3">(</span><span class="s4">'c'</span><span class="s3">, </span><span class="s1">np</span><span
+            class="s3">.</span><span class="s1">dtype</span><span class="s3">(</span><span class="s4">'complex64'</span><span
+            class="s3">)),</span>
+<a name="l249"><span class="ln">249  </span></a>              <span class="s5">4</span><span class="s2">: </span><span
+            class="s3">(</span><span class="s4">'z'</span><span class="s3">, </span><span class="s1">np</span><span
+            class="s3">.</span><span class="s1">dtype</span><span class="s3">(</span><span
+            class="s4">'complex128'</span><span class="s3">))}</span>
 <a name="l250"><span class="ln">250  </span></a>
 <a name="l251"><span class="ln">251  </span></a><span class="s0"># some convenience alias for complex functions</span>
-<a name="l252"><span class="ln">252  </span></a><span class="s1">_blas_alias </span><span class="s2">= </span><span class="s3">{</span><span class="s4">'cnrm2'</span><span class="s2">: </span><span class="s4">'scnrm2'</span><span class="s3">, </span><span class="s4">'znrm2'</span><span class="s2">: </span><span class="s4">'dznrm2'</span><span class="s3">,</span>
-<a name="l253"><span class="ln">253  </span></a>               <span class="s4">'cdot'</span><span class="s2">: </span><span class="s4">'cdotc'</span><span class="s3">, </span><span class="s4">'zdot'</span><span class="s2">: </span><span class="s4">'zdotc'</span><span class="s3">,</span>
-<a name="l254"><span class="ln">254  </span></a>               <span class="s4">'cger'</span><span class="s2">: </span><span class="s4">'cgerc'</span><span class="s3">, </span><span class="s4">'zger'</span><span class="s2">: </span><span class="s4">'zgerc'</span><span class="s3">,</span>
-<a name="l255"><span class="ln">255  </span></a>               <span class="s4">'sdotc'</span><span class="s2">: </span><span class="s4">'sdot'</span><span class="s3">, </span><span class="s4">'sdotu'</span><span class="s2">: </span><span class="s4">'sdot'</span><span class="s3">,</span>
-<a name="l256"><span class="ln">256  </span></a>               <span class="s4">'ddotc'</span><span class="s2">: </span><span class="s4">'ddot'</span><span class="s3">, </span><span class="s4">'ddotu'</span><span class="s2">: </span><span class="s4">'ddot'</span><span class="s3">}</span>
+<a name="l252"><span class="ln">252  </span></a><span class="s1">_blas_alias </span><span class="s2">= </span><span
+            class="s3">{</span><span class="s4">'cnrm2'</span><span class="s2">: </span><span class="s4">'scnrm2'</span><span
+            class="s3">, </span><span class="s4">'znrm2'</span><span class="s2">: </span><span
+            class="s4">'dznrm2'</span><span class="s3">,</span>
+<a name="l253"><span class="ln">253  </span></a>               <span class="s4">'cdot'</span><span
+            class="s2">: </span><span class="s4">'cdotc'</span><span class="s3">, </span><span
+            class="s4">'zdot'</span><span class="s2">: </span><span class="s4">'zdotc'</span><span class="s3">,</span>
+<a name="l254"><span class="ln">254  </span></a>               <span class="s4">'cger'</span><span
+            class="s2">: </span><span class="s4">'cgerc'</span><span class="s3">, </span><span
+            class="s4">'zger'</span><span class="s2">: </span><span class="s4">'zgerc'</span><span class="s3">,</span>
+<a name="l255"><span class="ln">255  </span></a>               <span class="s4">'sdotc'</span><span class="s2">: </span><span
+            class="s4">'sdot'</span><span class="s3">, </span><span class="s4">'sdotu'</span><span
+            class="s2">: </span><span class="s4">'sdot'</span><span class="s3">,</span>
+<a name="l256"><span class="ln">256  </span></a>               <span class="s4">'ddotc'</span><span class="s2">: </span><span
+            class="s4">'ddot'</span><span class="s3">, </span><span class="s4">'ddotu'</span><span
+            class="s2">: </span><span class="s4">'ddot'</span><span class="s3">}</span>
 <a name="l257"><span class="ln">257  </span></a>
 <a name="l258"><span class="ln">258  </span></a>
-<a name="l259"><span class="ln">259  </span></a><span class="s2">def </span><span class="s1">find_best_blas_type</span><span class="s3">(</span><span class="s1">arrays</span><span class="s2">=</span><span class="s3">(), </span><span class="s1">dtype</span><span class="s2">=None</span><span class="s3">)</span><span class="s2">:</span>
+<a name="l259"><span class="ln">259  </span></a><span class="s2">def </span><span
+            class="s1">find_best_blas_type</span><span class="s3">(</span><span class="s1">arrays</span><span
+            class="s2">=</span><span class="s3">(), </span><span class="s1">dtype</span><span
+            class="s2">=None</span><span class="s3">)</span><span class="s2">:</span>
 <a name="l260"><span class="ln">260  </span></a>    <span class="s0">&quot;&quot;&quot;Find best-matching BLAS/LAPACK type. 
 <a name="l261"><span class="ln">261  </span></a> 
 <a name="l262"><span class="ln">262  </span></a>    Arrays are used to determine the optimal prefix of BLAS routines. 
@@ -314,114 +375,237 @@ blas.py</font>
 <a name="l294"><span class="ln">294  </span></a>    ('d', dtype('float64'), True) 
 <a name="l295"><span class="ln">295  </span></a> 
 <a name="l296"><span class="ln">296  </span></a>    &quot;&quot;&quot;</span>
-<a name="l297"><span class="ln">297  </span></a>    <span class="s1">dtype </span><span class="s2">= </span><span class="s1">np</span><span class="s3">.</span><span class="s1">dtype</span><span class="s3">(</span><span class="s1">dtype</span><span class="s3">)</span>
-<a name="l298"><span class="ln">298  </span></a>    <span class="s1">max_score </span><span class="s2">= </span><span class="s1">_type_score</span><span class="s3">.</span><span class="s1">get</span><span class="s3">(</span><span class="s1">dtype</span><span class="s3">.</span><span class="s1">char</span><span class="s3">, </span><span class="s5">5</span><span class="s3">)</span>
-<a name="l299"><span class="ln">299  </span></a>    <span class="s1">prefer_fortran </span><span class="s2">= False</span>
+<a name="l297"><span class="ln">297  </span></a>    <span class="s1">dtype </span><span class="s2">= </span><span
+            class="s1">np</span><span class="s3">.</span><span class="s1">dtype</span><span class="s3">(</span><span
+            class="s1">dtype</span><span class="s3">)</span>
+<a name="l298"><span class="ln">298  </span></a>    <span class="s1">max_score </span><span class="s2">= </span><span
+            class="s1">_type_score</span><span class="s3">.</span><span class="s1">get</span><span
+            class="s3">(</span><span class="s1">dtype</span><span class="s3">.</span><span class="s1">char</span><span
+            class="s3">, </span><span class="s5">5</span><span class="s3">)</span>
+<a name="l299"><span class="ln">299  </span></a>    <span class="s1">prefer_fortran </span><span
+            class="s2">= False</span>
 <a name="l300"><span class="ln">300  </span></a>
-<a name="l301"><span class="ln">301  </span></a>    <span class="s2">if </span><span class="s1">arrays</span><span class="s2">:</span>
+<a name="l301"><span class="ln">301  </span></a>    <span class="s2">if </span><span class="s1">arrays</span><span
+            class="s2">:</span>
 <a name="l302"><span class="ln">302  </span></a>        <span class="s0"># In most cases, single element is passed through, quicker route</span>
-<a name="l303"><span class="ln">303  </span></a>        <span class="s2">if </span><span class="s1">len</span><span class="s3">(</span><span class="s1">arrays</span><span class="s3">) </span><span class="s2">== </span><span class="s5">1</span><span class="s2">:</span>
-<a name="l304"><span class="ln">304  </span></a>            <span class="s1">max_score </span><span class="s2">= </span><span class="s1">_type_score</span><span class="s3">.</span><span class="s1">get</span><span class="s3">(</span><span class="s1">arrays</span><span class="s3">[</span><span class="s5">0</span><span class="s3">].</span><span class="s1">dtype</span><span class="s3">.</span><span class="s1">char</span><span class="s3">, </span><span class="s5">5</span><span class="s3">)</span>
-<a name="l305"><span class="ln">305  </span></a>            <span class="s1">prefer_fortran </span><span class="s2">= </span><span class="s1">arrays</span><span class="s3">[</span><span class="s5">0</span><span class="s3">].</span><span class="s1">flags</span><span class="s3">[</span><span class="s4">'FORTRAN'</span><span class="s3">]</span>
+<a name="l303"><span class="ln">303  </span></a>        <span class="s2">if </span><span class="s1">len</span><span
+            class="s3">(</span><span class="s1">arrays</span><span class="s3">) </span><span class="s2">== </span><span
+            class="s5">1</span><span class="s2">:</span>
+<a name="l304"><span class="ln">304  </span></a>            <span class="s1">max_score </span><span class="s2">= </span><span
+            class="s1">_type_score</span><span class="s3">.</span><span class="s1">get</span><span
+            class="s3">(</span><span class="s1">arrays</span><span class="s3">[</span><span class="s5">0</span><span
+            class="s3">].</span><span class="s1">dtype</span><span class="s3">.</span><span class="s1">char</span><span
+            class="s3">, </span><span class="s5">5</span><span class="s3">)</span>
+<a name="l305"><span class="ln">305  </span></a>            <span class="s1">prefer_fortran </span><span
+            class="s2">= </span><span class="s1">arrays</span><span class="s3">[</span><span class="s5">0</span><span
+            class="s3">].</span><span class="s1">flags</span><span class="s3">[</span><span
+            class="s4">'FORTRAN'</span><span class="s3">]</span>
 <a name="l306"><span class="ln">306  </span></a>        <span class="s2">else:</span>
-<a name="l307"><span class="ln">307  </span></a>            <span class="s0"># use the most generic type in arrays</span>
-<a name="l308"><span class="ln">308  </span></a>            <span class="s1">scores </span><span class="s2">= </span><span class="s3">[</span><span class="s1">_type_score</span><span class="s3">.</span><span class="s1">get</span><span class="s3">(</span><span class="s1">x</span><span class="s3">.</span><span class="s1">dtype</span><span class="s3">.</span><span class="s1">char</span><span class="s3">, </span><span class="s5">5</span><span class="s3">) </span><span class="s2">for </span><span class="s1">x </span><span class="s2">in </span><span class="s1">arrays</span><span class="s3">]</span>
-<a name="l309"><span class="ln">309  </span></a>            <span class="s1">max_score </span><span class="s2">= </span><span class="s1">max</span><span class="s3">(</span><span class="s1">scores</span><span class="s3">)</span>
-<a name="l310"><span class="ln">310  </span></a>            <span class="s1">ind_max_score </span><span class="s2">= </span><span class="s1">scores</span><span class="s3">.</span><span class="s1">index</span><span class="s3">(</span><span class="s1">max_score</span><span class="s3">)</span>
+<a name="l307"><span class="ln">307  </span></a>            <span
+            class="s0"># use the most generic type in arrays</span>
+<a name="l308"><span class="ln">308  </span></a>            <span class="s1">scores </span><span
+            class="s2">= </span><span class="s3">[</span><span class="s1">_type_score</span><span
+            class="s3">.</span><span class="s1">get</span><span class="s3">(</span><span class="s1">x</span><span
+            class="s3">.</span><span class="s1">dtype</span><span class="s3">.</span><span class="s1">char</span><span
+            class="s3">, </span><span class="s5">5</span><span class="s3">) </span><span class="s2">for </span><span
+            class="s1">x </span><span class="s2">in </span><span class="s1">arrays</span><span class="s3">]</span>
+<a name="l309"><span class="ln">309  </span></a>            <span class="s1">max_score </span><span class="s2">= </span><span
+            class="s1">max</span><span class="s3">(</span><span class="s1">scores</span><span class="s3">)</span>
+<a name="l310"><span class="ln">310  </span></a>            <span class="s1">ind_max_score </span><span
+            class="s2">= </span><span class="s1">scores</span><span class="s3">.</span><span
+            class="s1">index</span><span class="s3">(</span><span class="s1">max_score</span><span class="s3">)</span>
 <a name="l311"><span class="ln">311  </span></a>            <span class="s0"># safe upcasting for mix of float64 and complex64 --&gt; prefix 'z'</span>
-<a name="l312"><span class="ln">312  </span></a>            <span class="s2">if </span><span class="s1">max_score </span><span class="s2">== </span><span class="s5">3 </span><span class="s2">and </span><span class="s3">(</span><span class="s5">2 </span><span class="s2">in </span><span class="s1">scores</span><span class="s3">)</span><span class="s2">:</span>
-<a name="l313"><span class="ln">313  </span></a>                <span class="s1">max_score </span><span class="s2">= </span><span class="s5">4</span>
+<a name="l312"><span class="ln">312  </span></a>            <span class="s2">if </span><span
+            class="s1">max_score </span><span class="s2">== </span><span class="s5">3 </span><span
+            class="s2">and </span><span class="s3">(</span><span class="s5">2 </span><span class="s2">in </span><span
+            class="s1">scores</span><span class="s3">)</span><span class="s2">:</span>
+<a name="l313"><span class="ln">313  </span></a>                <span class="s1">max_score </span><span
+            class="s2">= </span><span class="s5">4</span>
 <a name="l314"><span class="ln">314  </span></a>
-<a name="l315"><span class="ln">315  </span></a>            <span class="s2">if </span><span class="s1">arrays</span><span class="s3">[</span><span class="s1">ind_max_score</span><span class="s3">].</span><span class="s1">flags</span><span class="s3">[</span><span class="s4">'FORTRAN'</span><span class="s3">]</span><span class="s2">:</span>
+<a name="l315"><span class="ln">315  </span></a>            <span class="s2">if </span><span
+            class="s1">arrays</span><span class="s3">[</span><span class="s1">ind_max_score</span><span
+            class="s3">].</span><span class="s1">flags</span><span class="s3">[</span><span
+            class="s4">'FORTRAN'</span><span class="s3">]</span><span class="s2">:</span>
 <a name="l316"><span class="ln">316  </span></a>                <span class="s0"># prefer Fortran for leading array with column major order</span>
 <a name="l317"><span class="ln">317  </span></a>                <span class="s1">prefer_fortran </span><span class="s2">= True</span>
 <a name="l318"><span class="ln">318  </span></a>
 <a name="l319"><span class="ln">319  </span></a>    <span class="s0"># Get the LAPACK prefix and the corresponding dtype if not fall back</span>
 <a name="l320"><span class="ln">320  </span></a>    <span class="s0"># to 'd' and double precision float.</span>
-<a name="l321"><span class="ln">321  </span></a>    <span class="s1">prefix</span><span class="s3">, </span><span class="s1">dtype </span><span class="s2">= </span><span class="s1">_type_conv</span><span class="s3">.</span><span class="s1">get</span><span class="s3">(</span><span class="s1">max_score</span><span class="s3">, (</span><span class="s4">'d'</span><span class="s3">, </span><span class="s1">np</span><span class="s3">.</span><span class="s1">dtype</span><span class="s3">(</span><span class="s4">'float64'</span><span class="s3">)))</span>
+<a name="l321"><span class="ln">321  </span></a>    <span class="s1">prefix</span><span class="s3">, </span><span
+            class="s1">dtype </span><span class="s2">= </span><span class="s1">_type_conv</span><span
+            class="s3">.</span><span class="s1">get</span><span class="s3">(</span><span
+            class="s1">max_score</span><span class="s3">, (</span><span class="s4">'d'</span><span
+            class="s3">, </span><span class="s1">np</span><span class="s3">.</span><span class="s1">dtype</span><span
+            class="s3">(</span><span class="s4">'float64'</span><span class="s3">)))</span>
 <a name="l322"><span class="ln">322  </span></a>
-<a name="l323"><span class="ln">323  </span></a>    <span class="s2">return </span><span class="s1">prefix</span><span class="s3">, </span><span class="s1">dtype</span><span class="s3">, </span><span class="s1">prefer_fortran</span>
+<a name="l323"><span class="ln">323  </span></a>    <span class="s2">return </span><span class="s1">prefix</span><span
+            class="s3">, </span><span class="s1">dtype</span><span class="s3">, </span><span
+            class="s1">prefer_fortran</span>
 <a name="l324"><span class="ln">324  </span></a>
 <a name="l325"><span class="ln">325  </span></a>
-<a name="l326"><span class="ln">326  </span></a><span class="s2">def </span><span class="s1">_get_funcs</span><span class="s3">(</span><span class="s1">names</span><span class="s3">, </span><span class="s1">arrays</span><span class="s3">, </span><span class="s1">dtype</span><span class="s3">,</span>
-<a name="l327"><span class="ln">327  </span></a>               <span class="s1">lib_name</span><span class="s3">, </span><span class="s1">fmodule</span><span class="s3">, </span><span class="s1">cmodule</span><span class="s3">,</span>
-<a name="l328"><span class="ln">328  </span></a>               <span class="s1">fmodule_name</span><span class="s3">, </span><span class="s1">cmodule_name</span><span class="s3">, </span><span class="s1">alias</span><span class="s3">,</span>
-<a name="l329"><span class="ln">329  </span></a>               <span class="s1">ilp64</span><span class="s2">=False</span><span class="s3">)</span><span class="s2">:</span>
+<a name="l326"><span class="ln">326  </span></a><span class="s2">def </span><span class="s1">_get_funcs</span><span
+            class="s3">(</span><span class="s1">names</span><span class="s3">, </span><span
+            class="s1">arrays</span><span class="s3">, </span><span class="s1">dtype</span><span class="s3">,</span>
+<a name="l327"><span class="ln">327  </span></a>               <span class="s1">lib_name</span><span
+            class="s3">, </span><span class="s1">fmodule</span><span class="s3">, </span><span class="s1">cmodule</span><span
+            class="s3">,</span>
+<a name="l328"><span class="ln">328  </span></a>               <span class="s1">fmodule_name</span><span
+            class="s3">, </span><span class="s1">cmodule_name</span><span class="s3">, </span><span
+            class="s1">alias</span><span class="s3">,</span>
+<a name="l329"><span class="ln">329  </span></a>               <span class="s1">ilp64</span><span
+            class="s2">=False</span><span class="s3">)</span><span class="s2">:</span>
 <a name="l330"><span class="ln">330  </span></a>    <span class="s0">&quot;&quot;&quot; 
 <a name="l331"><span class="ln">331  </span></a>    Return available BLAS/LAPACK functions. 
 <a name="l332"><span class="ln">332  </span></a> 
 <a name="l333"><span class="ln">333  </span></a>    Used also in lapack.py. See get_blas_funcs for docstring. 
 <a name="l334"><span class="ln">334  </span></a>    &quot;&quot;&quot;</span>
 <a name="l335"><span class="ln">335  </span></a>
-<a name="l336"><span class="ln">336  </span></a>    <span class="s1">funcs </span><span class="s2">= </span><span class="s3">[]</span>
+<a name="l336"><span class="ln">336  </span></a>    <span class="s1">funcs </span><span class="s2">= </span><span
+            class="s3">[]</span>
 <a name="l337"><span class="ln">337  </span></a>    <span class="s1">unpack </span><span class="s2">= False</span>
-<a name="l338"><span class="ln">338  </span></a>    <span class="s1">dtype </span><span class="s2">= </span><span class="s1">np</span><span class="s3">.</span><span class="s1">dtype</span><span class="s3">(</span><span class="s1">dtype</span><span class="s3">)</span>
-<a name="l339"><span class="ln">339  </span></a>    <span class="s1">module1 </span><span class="s2">= </span><span class="s3">(</span><span class="s1">cmodule</span><span class="s3">, </span><span class="s1">cmodule_name</span><span class="s3">)</span>
-<a name="l340"><span class="ln">340  </span></a>    <span class="s1">module2 </span><span class="s2">= </span><span class="s3">(</span><span class="s1">fmodule</span><span class="s3">, </span><span class="s1">fmodule_name</span><span class="s3">)</span>
+<a name="l338"><span class="ln">338  </span></a>    <span class="s1">dtype </span><span class="s2">= </span><span
+            class="s1">np</span><span class="s3">.</span><span class="s1">dtype</span><span class="s3">(</span><span
+            class="s1">dtype</span><span class="s3">)</span>
+<a name="l339"><span class="ln">339  </span></a>    <span class="s1">module1 </span><span class="s2">= </span><span
+            class="s3">(</span><span class="s1">cmodule</span><span class="s3">, </span><span
+            class="s1">cmodule_name</span><span class="s3">)</span>
+<a name="l340"><span class="ln">340  </span></a>    <span class="s1">module2 </span><span class="s2">= </span><span
+            class="s3">(</span><span class="s1">fmodule</span><span class="s3">, </span><span
+            class="s1">fmodule_name</span><span class="s3">)</span>
 <a name="l341"><span class="ln">341  </span></a>
-<a name="l342"><span class="ln">342  </span></a>    <span class="s2">if </span><span class="s1">isinstance</span><span class="s3">(</span><span class="s1">names</span><span class="s3">, </span><span class="s1">str</span><span class="s3">)</span><span class="s2">:</span>
-<a name="l343"><span class="ln">343  </span></a>        <span class="s1">names </span><span class="s2">= </span><span class="s3">(</span><span class="s1">names</span><span class="s3">,)</span>
+<a name="l342"><span class="ln">342  </span></a>    <span class="s2">if </span><span class="s1">isinstance</span><span
+            class="s3">(</span><span class="s1">names</span><span class="s3">, </span><span class="s1">str</span><span
+            class="s3">)</span><span class="s2">:</span>
+<a name="l343"><span class="ln">343  </span></a>        <span class="s1">names </span><span class="s2">= </span><span
+            class="s3">(</span><span class="s1">names</span><span class="s3">,)</span>
 <a name="l344"><span class="ln">344  </span></a>        <span class="s1">unpack </span><span class="s2">= True</span>
 <a name="l345"><span class="ln">345  </span></a>
-<a name="l346"><span class="ln">346  </span></a>    <span class="s1">prefix</span><span class="s3">, </span><span class="s1">dtype</span><span class="s3">, </span><span class="s1">prefer_fortran </span><span class="s2">= </span><span class="s1">find_best_blas_type</span><span class="s3">(</span><span class="s1">arrays</span><span class="s3">, </span><span class="s1">dtype</span><span class="s3">)</span>
+<a name="l346"><span class="ln">346  </span></a>    <span class="s1">prefix</span><span class="s3">, </span><span
+            class="s1">dtype</span><span class="s3">, </span><span class="s1">prefer_fortran </span><span
+            class="s2">= </span><span class="s1">find_best_blas_type</span><span class="s3">(</span><span class="s1">arrays</span><span
+            class="s3">, </span><span class="s1">dtype</span><span class="s3">)</span>
 <a name="l347"><span class="ln">347  </span></a>
-<a name="l348"><span class="ln">348  </span></a>    <span class="s2">if </span><span class="s1">prefer_fortran</span><span class="s2">:</span>
-<a name="l349"><span class="ln">349  </span></a>        <span class="s1">module1</span><span class="s3">, </span><span class="s1">module2 </span><span class="s2">= </span><span class="s1">module2</span><span class="s3">, </span><span class="s1">module1</span>
+<a name="l348"><span class="ln">348  </span></a>    <span class="s2">if </span><span
+            class="s1">prefer_fortran</span><span class="s2">:</span>
+<a name="l349"><span class="ln">349  </span></a>        <span class="s1">module1</span><span class="s3">, </span><span
+            class="s1">module2 </span><span class="s2">= </span><span class="s1">module2</span><span
+            class="s3">, </span><span class="s1">module1</span>
 <a name="l350"><span class="ln">350  </span></a>
-<a name="l351"><span class="ln">351  </span></a>    <span class="s2">for </span><span class="s1">name </span><span class="s2">in </span><span class="s1">names</span><span class="s2">:</span>
-<a name="l352"><span class="ln">352  </span></a>        <span class="s1">func_name </span><span class="s2">= </span><span class="s1">prefix </span><span class="s2">+ </span><span class="s1">name</span>
-<a name="l353"><span class="ln">353  </span></a>        <span class="s1">func_name </span><span class="s2">= </span><span class="s1">alias</span><span class="s3">.</span><span class="s1">get</span><span class="s3">(</span><span class="s1">func_name</span><span class="s3">, </span><span class="s1">func_name</span><span class="s3">)</span>
-<a name="l354"><span class="ln">354  </span></a>        <span class="s1">func </span><span class="s2">= </span><span class="s1">getattr</span><span class="s3">(</span><span class="s1">module1</span><span class="s3">[</span><span class="s5">0</span><span class="s3">], </span><span class="s1">func_name</span><span class="s3">, </span><span class="s2">None</span><span class="s3">)</span>
-<a name="l355"><span class="ln">355  </span></a>        <span class="s1">module_name </span><span class="s2">= </span><span class="s1">module1</span><span class="s3">[</span><span class="s5">1</span><span class="s3">]</span>
-<a name="l356"><span class="ln">356  </span></a>        <span class="s2">if </span><span class="s1">func </span><span class="s2">is None:</span>
-<a name="l357"><span class="ln">357  </span></a>            <span class="s1">func </span><span class="s2">= </span><span class="s1">getattr</span><span class="s3">(</span><span class="s1">module2</span><span class="s3">[</span><span class="s5">0</span><span class="s3">], </span><span class="s1">func_name</span><span class="s3">, </span><span class="s2">None</span><span class="s3">)</span>
-<a name="l358"><span class="ln">358  </span></a>            <span class="s1">module_name </span><span class="s2">= </span><span class="s1">module2</span><span class="s3">[</span><span class="s5">1</span><span class="s3">]</span>
-<a name="l359"><span class="ln">359  </span></a>        <span class="s2">if </span><span class="s1">func </span><span class="s2">is None:</span>
-<a name="l360"><span class="ln">360  </span></a>            <span class="s2">raise </span><span class="s1">ValueError</span><span class="s3">(</span>
-<a name="l361"><span class="ln">361  </span></a>                <span class="s4">f'{</span><span class="s1">lib_name</span><span class="s4">} function {</span><span class="s1">func_name</span><span class="s4">} could not be found'</span><span class="s3">)</span>
-<a name="l362"><span class="ln">362  </span></a>        <span class="s1">func</span><span class="s3">.</span><span class="s1">module_name</span><span class="s3">, </span><span class="s1">func</span><span class="s3">.</span><span class="s1">typecode </span><span class="s2">= </span><span class="s1">module_name</span><span class="s3">, </span><span class="s1">prefix</span>
-<a name="l363"><span class="ln">363  </span></a>        <span class="s1">func</span><span class="s3">.</span><span class="s1">dtype </span><span class="s2">= </span><span class="s1">dtype</span>
-<a name="l364"><span class="ln">364  </span></a>        <span class="s2">if not </span><span class="s1">ilp64</span><span class="s2">:</span>
-<a name="l365"><span class="ln">365  </span></a>            <span class="s1">func</span><span class="s3">.</span><span class="s1">int_dtype </span><span class="s2">= </span><span class="s1">np</span><span class="s3">.</span><span class="s1">dtype</span><span class="s3">(</span><span class="s1">np</span><span class="s3">.</span><span class="s1">intc</span><span class="s3">)</span>
+<a name="l351"><span class="ln">351  </span></a>    <span class="s2">for </span><span class="s1">name </span><span
+            class="s2">in </span><span class="s1">names</span><span class="s2">:</span>
+<a name="l352"><span class="ln">352  </span></a>        <span class="s1">func_name </span><span
+            class="s2">= </span><span class="s1">prefix </span><span class="s2">+ </span><span class="s1">name</span>
+<a name="l353"><span class="ln">353  </span></a>        <span class="s1">func_name </span><span
+            class="s2">= </span><span class="s1">alias</span><span class="s3">.</span><span class="s1">get</span><span
+            class="s3">(</span><span class="s1">func_name</span><span class="s3">, </span><span
+            class="s1">func_name</span><span class="s3">)</span>
+<a name="l354"><span class="ln">354  </span></a>        <span class="s1">func </span><span class="s2">= </span><span
+            class="s1">getattr</span><span class="s3">(</span><span class="s1">module1</span><span
+            class="s3">[</span><span class="s5">0</span><span class="s3">], </span><span
+            class="s1">func_name</span><span class="s3">, </span><span class="s2">None</span><span class="s3">)</span>
+<a name="l355"><span class="ln">355  </span></a>        <span class="s1">module_name </span><span
+            class="s2">= </span><span class="s1">module1</span><span class="s3">[</span><span class="s5">1</span><span
+            class="s3">]</span>
+<a name="l356"><span class="ln">356  </span></a>        <span class="s2">if </span><span class="s1">func </span><span
+            class="s2">is None:</span>
+<a name="l357"><span class="ln">357  </span></a>            <span class="s1">func </span><span class="s2">= </span><span
+            class="s1">getattr</span><span class="s3">(</span><span class="s1">module2</span><span
+            class="s3">[</span><span class="s5">0</span><span class="s3">], </span><span
+            class="s1">func_name</span><span class="s3">, </span><span class="s2">None</span><span class="s3">)</span>
+<a name="l358"><span class="ln">358  </span></a>            <span class="s1">module_name </span><span
+            class="s2">= </span><span class="s1">module2</span><span class="s3">[</span><span class="s5">1</span><span
+            class="s3">]</span>
+<a name="l359"><span class="ln">359  </span></a>        <span class="s2">if </span><span class="s1">func </span><span
+            class="s2">is None:</span>
+<a name="l360"><span class="ln">360  </span></a>            <span class="s2">raise </span><span
+            class="s1">ValueError</span><span class="s3">(</span>
+<a name="l361"><span class="ln">361  </span></a>                <span class="s4">f'{</span><span
+            class="s1">lib_name</span><span class="s4">} function {</span><span class="s1">func_name</span><span
+            class="s4">} could not be found'</span><span class="s3">)</span>
+<a name="l362"><span class="ln">362  </span></a>        <span class="s1">func</span><span class="s3">.</span><span
+            class="s1">module_name</span><span class="s3">, </span><span class="s1">func</span><span class="s3">.</span><span
+            class="s1">typecode </span><span class="s2">= </span><span class="s1">module_name</span><span
+            class="s3">, </span><span class="s1">prefix</span>
+<a name="l363"><span class="ln">363  </span></a>        <span class="s1">func</span><span class="s3">.</span><span
+            class="s1">dtype </span><span class="s2">= </span><span class="s1">dtype</span>
+<a name="l364"><span class="ln">364  </span></a>        <span class="s2">if not </span><span
+            class="s1">ilp64</span><span class="s2">:</span>
+<a name="l365"><span class="ln">365  </span></a>            <span class="s1">func</span><span class="s3">.</span><span
+            class="s1">int_dtype </span><span class="s2">= </span><span class="s1">np</span><span
+            class="s3">.</span><span class="s1">dtype</span><span class="s3">(</span><span class="s1">np</span><span
+            class="s3">.</span><span class="s1">intc</span><span class="s3">)</span>
 <a name="l366"><span class="ln">366  </span></a>        <span class="s2">else:</span>
-<a name="l367"><span class="ln">367  </span></a>            <span class="s1">func</span><span class="s3">.</span><span class="s1">int_dtype </span><span class="s2">= </span><span class="s1">np</span><span class="s3">.</span><span class="s1">dtype</span><span class="s3">(</span><span class="s1">np</span><span class="s3">.</span><span class="s1">int64</span><span class="s3">)</span>
-<a name="l368"><span class="ln">368  </span></a>        <span class="s1">func</span><span class="s3">.</span><span class="s1">prefix </span><span class="s2">= </span><span class="s1">prefix  </span><span class="s0"># Backward compatibility</span>
-<a name="l369"><span class="ln">369  </span></a>        <span class="s1">funcs</span><span class="s3">.</span><span class="s1">append</span><span class="s3">(</span><span class="s1">func</span><span class="s3">)</span>
+<a name="l367"><span class="ln">367  </span></a>            <span class="s1">func</span><span class="s3">.</span><span
+            class="s1">int_dtype </span><span class="s2">= </span><span class="s1">np</span><span
+            class="s3">.</span><span class="s1">dtype</span><span class="s3">(</span><span class="s1">np</span><span
+            class="s3">.</span><span class="s1">int64</span><span class="s3">)</span>
+<a name="l368"><span class="ln">368  </span></a>        <span class="s1">func</span><span class="s3">.</span><span
+            class="s1">prefix </span><span class="s2">= </span><span class="s1">prefix  </span><span class="s0"># Backward compatibility</span>
+<a name="l369"><span class="ln">369  </span></a>        <span class="s1">funcs</span><span class="s3">.</span><span
+            class="s1">append</span><span class="s3">(</span><span class="s1">func</span><span class="s3">)</span>
 <a name="l370"><span class="ln">370  </span></a>
-<a name="l371"><span class="ln">371  </span></a>    <span class="s2">if </span><span class="s1">unpack</span><span class="s2">:</span>
-<a name="l372"><span class="ln">372  </span></a>        <span class="s2">return </span><span class="s1">funcs</span><span class="s3">[</span><span class="s5">0</span><span class="s3">]</span>
+<a name="l371"><span class="ln">371  </span></a>    <span class="s2">if </span><span class="s1">unpack</span><span
+            class="s2">:</span>
+<a name="l372"><span class="ln">372  </span></a>        <span class="s2">return </span><span
+            class="s1">funcs</span><span class="s3">[</span><span class="s5">0</span><span class="s3">]</span>
 <a name="l373"><span class="ln">373  </span></a>    <span class="s2">else:</span>
 <a name="l374"><span class="ln">374  </span></a>        <span class="s2">return </span><span class="s1">funcs</span>
 <a name="l375"><span class="ln">375  </span></a>
 <a name="l376"><span class="ln">376  </span></a>
-<a name="l377"><span class="ln">377  </span></a><span class="s2">def </span><span class="s1">_memoize_get_funcs</span><span class="s3">(</span><span class="s1">func</span><span class="s3">)</span><span class="s2">:</span>
+<a name="l377"><span class="ln">377  </span></a><span class="s2">def </span><span
+            class="s1">_memoize_get_funcs</span><span class="s3">(</span><span class="s1">func</span><span
+            class="s3">)</span><span class="s2">:</span>
 <a name="l378"><span class="ln">378  </span></a>    <span class="s0">&quot;&quot;&quot; 
 <a name="l379"><span class="ln">379  </span></a>    Memoized fast path for _get_funcs instances 
 <a name="l380"><span class="ln">380  </span></a>    &quot;&quot;&quot;</span>
-<a name="l381"><span class="ln">381  </span></a>    <span class="s1">memo </span><span class="s2">= </span><span class="s3">{}</span>
-<a name="l382"><span class="ln">382  </span></a>    <span class="s1">func</span><span class="s3">.</span><span class="s1">memo </span><span class="s2">= </span><span class="s1">memo</span>
+<a name="l381"><span class="ln">381  </span></a>    <span class="s1">memo </span><span class="s2">= </span><span
+            class="s3">{}</span>
+<a name="l382"><span class="ln">382  </span></a>    <span class="s1">func</span><span class="s3">.</span><span
+            class="s1">memo </span><span class="s2">= </span><span class="s1">memo</span>
 <a name="l383"><span class="ln">383  </span></a>
-<a name="l384"><span class="ln">384  </span></a>    <span class="s2">@</span><span class="s1">functools</span><span class="s3">.</span><span class="s1">wraps</span><span class="s3">(</span><span class="s1">func</span><span class="s3">)</span>
-<a name="l385"><span class="ln">385  </span></a>    <span class="s2">def </span><span class="s1">getter</span><span class="s3">(</span><span class="s1">names</span><span class="s3">, </span><span class="s1">arrays</span><span class="s2">=</span><span class="s3">(), </span><span class="s1">dtype</span><span class="s2">=None</span><span class="s3">, </span><span class="s1">ilp64</span><span class="s2">=False</span><span class="s3">)</span><span class="s2">:</span>
-<a name="l386"><span class="ln">386  </span></a>        <span class="s1">key </span><span class="s2">= </span><span class="s3">(</span><span class="s1">names</span><span class="s3">, </span><span class="s1">dtype</span><span class="s3">, </span><span class="s1">ilp64</span><span class="s3">)</span>
-<a name="l387"><span class="ln">387  </span></a>        <span class="s2">for </span><span class="s1">array </span><span class="s2">in </span><span class="s1">arrays</span><span class="s2">:</span>
+<a name="l384"><span class="ln">384  </span></a>    <span class="s2">@</span><span class="s1">functools</span><span
+            class="s3">.</span><span class="s1">wraps</span><span class="s3">(</span><span class="s1">func</span><span
+            class="s3">)</span>
+<a name="l385"><span class="ln">385  </span></a>    <span class="s2">def </span><span class="s1">getter</span><span
+            class="s3">(</span><span class="s1">names</span><span class="s3">, </span><span
+            class="s1">arrays</span><span class="s2">=</span><span class="s3">(), </span><span
+            class="s1">dtype</span><span class="s2">=None</span><span class="s3">, </span><span
+            class="s1">ilp64</span><span class="s2">=False</span><span class="s3">)</span><span class="s2">:</span>
+<a name="l386"><span class="ln">386  </span></a>        <span class="s1">key </span><span class="s2">= </span><span
+            class="s3">(</span><span class="s1">names</span><span class="s3">, </span><span class="s1">dtype</span><span
+            class="s3">, </span><span class="s1">ilp64</span><span class="s3">)</span>
+<a name="l387"><span class="ln">387  </span></a>        <span class="s2">for </span><span class="s1">array </span><span
+            class="s2">in </span><span class="s1">arrays</span><span class="s2">:</span>
 <a name="l388"><span class="ln">388  </span></a>            <span class="s0"># cf. find_blas_funcs</span>
-<a name="l389"><span class="ln">389  </span></a>            <span class="s1">key </span><span class="s2">+= </span><span class="s3">(</span><span class="s1">array</span><span class="s3">.</span><span class="s1">dtype</span><span class="s3">.</span><span class="s1">char</span><span class="s3">, </span><span class="s1">array</span><span class="s3">.</span><span class="s1">flags</span><span class="s3">.</span><span class="s1">fortran</span><span class="s3">)</span>
+<a name="l389"><span class="ln">389  </span></a>            <span class="s1">key </span><span class="s2">+= </span><span
+            class="s3">(</span><span class="s1">array</span><span class="s3">.</span><span class="s1">dtype</span><span
+            class="s3">.</span><span class="s1">char</span><span class="s3">, </span><span class="s1">array</span><span
+            class="s3">.</span><span class="s1">flags</span><span class="s3">.</span><span
+            class="s1">fortran</span><span class="s3">)</span>
 <a name="l390"><span class="ln">390  </span></a>
 <a name="l391"><span class="ln">391  </span></a>        <span class="s2">try:</span>
-<a name="l392"><span class="ln">392  </span></a>            <span class="s1">value </span><span class="s2">= </span><span class="s1">memo</span><span class="s3">.</span><span class="s1">get</span><span class="s3">(</span><span class="s1">key</span><span class="s3">)</span>
-<a name="l393"><span class="ln">393  </span></a>        <span class="s2">except </span><span class="s1">TypeError</span><span class="s2">:</span>
+<a name="l392"><span class="ln">392  </span></a>            <span class="s1">value </span><span
+            class="s2">= </span><span class="s1">memo</span><span class="s3">.</span><span class="s1">get</span><span
+            class="s3">(</span><span class="s1">key</span><span class="s3">)</span>
+<a name="l393"><span class="ln">393  </span></a>        <span class="s2">except </span><span class="s1">TypeError</span><span
+            class="s2">:</span>
 <a name="l394"><span class="ln">394  </span></a>            <span class="s0"># unhashable key etc.</span>
 <a name="l395"><span class="ln">395  </span></a>            <span class="s1">key </span><span class="s2">= None</span>
 <a name="l396"><span class="ln">396  </span></a>            <span class="s1">value </span><span class="s2">= None</span>
 <a name="l397"><span class="ln">397  </span></a>
-<a name="l398"><span class="ln">398  </span></a>        <span class="s2">if </span><span class="s1">value </span><span class="s2">is not None:</span>
+<a name="l398"><span class="ln">398  </span></a>        <span class="s2">if </span><span class="s1">value </span><span
+            class="s2">is not None:</span>
 <a name="l399"><span class="ln">399  </span></a>            <span class="s2">return </span><span class="s1">value</span>
 <a name="l400"><span class="ln">400  </span></a>
-<a name="l401"><span class="ln">401  </span></a>        <span class="s1">value </span><span class="s2">= </span><span class="s1">func</span><span class="s3">(</span><span class="s1">names</span><span class="s3">, </span><span class="s1">arrays</span><span class="s3">, </span><span class="s1">dtype</span><span class="s3">, </span><span class="s1">ilp64</span><span class="s3">)</span>
+<a name="l401"><span class="ln">401  </span></a>        <span class="s1">value </span><span class="s2">= </span><span
+            class="s1">func</span><span class="s3">(</span><span class="s1">names</span><span class="s3">, </span><span
+            class="s1">arrays</span><span class="s3">, </span><span class="s1">dtype</span><span
+            class="s3">, </span><span class="s1">ilp64</span><span class="s3">)</span>
 <a name="l402"><span class="ln">402  </span></a>
-<a name="l403"><span class="ln">403  </span></a>        <span class="s2">if </span><span class="s1">key </span><span class="s2">is not None:</span>
-<a name="l404"><span class="ln">404  </span></a>            <span class="s1">memo</span><span class="s3">[</span><span class="s1">key</span><span class="s3">] </span><span class="s2">= </span><span class="s1">value</span>
+<a name="l403"><span class="ln">403  </span></a>        <span class="s2">if </span><span class="s1">key </span><span
+            class="s2">is not None:</span>
+<a name="l404"><span class="ln">404  </span></a>            <span class="s1">memo</span><span class="s3">[</span><span
+            class="s1">key</span><span class="s3">] </span><span class="s2">= </span><span class="s1">value</span>
 <a name="l405"><span class="ln">405  </span></a>
 <a name="l406"><span class="ln">406  </span></a>        <span class="s2">return </span><span class="s1">value</span>
 <a name="l407"><span class="ln">407  </span></a>
@@ -429,7 +613,11 @@ blas.py</font>
 <a name="l409"><span class="ln">409  </span></a>
 <a name="l410"><span class="ln">410  </span></a>
 <a name="l411"><span class="ln">411  </span></a><span class="s2">@</span><span class="s1">_memoize_get_funcs</span>
-<a name="l412"><span class="ln">412  </span></a><span class="s2">def </span><span class="s1">get_blas_funcs</span><span class="s3">(</span><span class="s1">names</span><span class="s3">, </span><span class="s1">arrays</span><span class="s2">=</span><span class="s3">(), </span><span class="s1">dtype</span><span class="s2">=None</span><span class="s3">, </span><span class="s1">ilp64</span><span class="s2">=False</span><span class="s3">)</span><span class="s2">:</span>
+<a name="l412"><span class="ln">412  </span></a><span class="s2">def </span><span class="s1">get_blas_funcs</span><span
+            class="s3">(</span><span class="s1">names</span><span class="s3">, </span><span
+            class="s1">arrays</span><span class="s2">=</span><span class="s3">(), </span><span
+            class="s1">dtype</span><span class="s2">=None</span><span class="s3">, </span><span
+            class="s1">ilp64</span><span class="s2">=False</span><span class="s3">)</span><span class="s2">:</span>
 <a name="l413"><span class="ln">413  </span></a>    <span class="s0">&quot;&quot;&quot;Return available BLAS function objects from names. 
 <a name="l414"><span class="ln">414  </span></a> 
 <a name="l415"><span class="ln">415  </span></a>    Arrays are used to determine the optimal prefix of BLAS routines. 
@@ -485,23 +673,45 @@ blas.py</font>
 <a name="l465"><span class="ln">465  </span></a>    'z' 
 <a name="l466"><span class="ln">466  </span></a> 
 <a name="l467"><span class="ln">467  </span></a>    &quot;&quot;&quot;</span>
-<a name="l468"><span class="ln">468  </span></a>    <span class="s2">if </span><span class="s1">isinstance</span><span class="s3">(</span><span class="s1">ilp64</span><span class="s3">, </span><span class="s1">str</span><span class="s3">)</span><span class="s2">:</span>
-<a name="l469"><span class="ln">469  </span></a>        <span class="s2">if </span><span class="s1">ilp64 </span><span class="s2">== </span><span class="s4">'preferred'</span><span class="s2">:</span>
-<a name="l470"><span class="ln">470  </span></a>            <span class="s1">ilp64 </span><span class="s2">= </span><span class="s1">HAS_ILP64</span>
+<a name="l468"><span class="ln">468  </span></a>    <span class="s2">if </span><span class="s1">isinstance</span><span
+            class="s3">(</span><span class="s1">ilp64</span><span class="s3">, </span><span class="s1">str</span><span
+            class="s3">)</span><span class="s2">:</span>
+<a name="l469"><span class="ln">469  </span></a>        <span class="s2">if </span><span class="s1">ilp64 </span><span
+            class="s2">== </span><span class="s4">'preferred'</span><span class="s2">:</span>
+<a name="l470"><span class="ln">470  </span></a>            <span class="s1">ilp64 </span><span
+            class="s2">= </span><span class="s1">HAS_ILP64</span>
 <a name="l471"><span class="ln">471  </span></a>        <span class="s2">else:</span>
-<a name="l472"><span class="ln">472  </span></a>            <span class="s2">raise </span><span class="s1">ValueError</span><span class="s3">(</span><span class="s4">&quot;Invalid value for 'ilp64'&quot;</span><span class="s3">)</span>
+<a name="l472"><span class="ln">472  </span></a>            <span class="s2">raise </span><span
+            class="s1">ValueError</span><span class="s3">(</span><span
+            class="s4">&quot;Invalid value for 'ilp64'&quot;</span><span class="s3">)</span>
 <a name="l473"><span class="ln">473  </span></a>
-<a name="l474"><span class="ln">474  </span></a>    <span class="s2">if not </span><span class="s1">ilp64</span><span class="s2">:</span>
-<a name="l475"><span class="ln">475  </span></a>        <span class="s2">return </span><span class="s1">_get_funcs</span><span class="s3">(</span><span class="s1">names</span><span class="s3">, </span><span class="s1">arrays</span><span class="s3">, </span><span class="s1">dtype</span><span class="s3">,</span>
-<a name="l476"><span class="ln">476  </span></a>                          <span class="s4">&quot;BLAS&quot;</span><span class="s3">, </span><span class="s1">_fblas</span><span class="s3">, </span><span class="s1">_cblas</span><span class="s3">, </span><span class="s4">&quot;fblas&quot;</span><span class="s3">, </span><span class="s4">&quot;cblas&quot;</span><span class="s3">,</span>
-<a name="l477"><span class="ln">477  </span></a>                          <span class="s1">_blas_alias</span><span class="s3">, </span><span class="s1">ilp64</span><span class="s2">=False</span><span class="s3">)</span>
+<a name="l474"><span class="ln">474  </span></a>    <span class="s2">if not </span><span class="s1">ilp64</span><span
+            class="s2">:</span>
+<a name="l475"><span class="ln">475  </span></a>        <span class="s2">return </span><span
+            class="s1">_get_funcs</span><span class="s3">(</span><span class="s1">names</span><span class="s3">, </span><span
+            class="s1">arrays</span><span class="s3">, </span><span class="s1">dtype</span><span class="s3">,</span>
+<a name="l476"><span class="ln">476  </span></a>                          <span class="s4">&quot;BLAS&quot;</span><span
+            class="s3">, </span><span class="s1">_fblas</span><span class="s3">, </span><span
+            class="s1">_cblas</span><span class="s3">, </span><span class="s4">&quot;fblas&quot;</span><span class="s3">, </span><span
+            class="s4">&quot;cblas&quot;</span><span class="s3">,</span>
+<a name="l477"><span class="ln">477  </span></a>                          <span class="s1">_blas_alias</span><span
+            class="s3">, </span><span class="s1">ilp64</span><span class="s2">=False</span><span class="s3">)</span>
 <a name="l478"><span class="ln">478  </span></a>    <span class="s2">else:</span>
-<a name="l479"><span class="ln">479  </span></a>        <span class="s2">if not </span><span class="s1">HAS_ILP64</span><span class="s2">:</span>
-<a name="l480"><span class="ln">480  </span></a>            <span class="s2">raise </span><span class="s1">RuntimeError</span><span class="s3">(</span><span class="s4">&quot;BLAS ILP64 routine requested, but Scipy &quot;</span>
-<a name="l481"><span class="ln">481  </span></a>                               <span class="s4">&quot;compiled only with 32-bit BLAS&quot;</span><span class="s3">)</span>
-<a name="l482"><span class="ln">482  </span></a>        <span class="s2">return </span><span class="s1">_get_funcs</span><span class="s3">(</span><span class="s1">names</span><span class="s3">, </span><span class="s1">arrays</span><span class="s3">, </span><span class="s1">dtype</span><span class="s3">,</span>
-<a name="l483"><span class="ln">483  </span></a>                          <span class="s4">&quot;BLAS&quot;</span><span class="s3">, </span><span class="s1">_fblas_64</span><span class="s3">, </span><span class="s2">None</span><span class="s3">, </span><span class="s4">&quot;fblas_64&quot;</span><span class="s3">, </span><span class="s2">None</span><span class="s3">,</span>
-<a name="l484"><span class="ln">484  </span></a>                          <span class="s1">_blas_alias</span><span class="s3">, </span><span class="s1">ilp64</span><span class="s2">=True</span><span class="s3">)</span>
+<a name="l479"><span class="ln">479  </span></a>        <span class="s2">if not </span><span class="s1">HAS_ILP64</span><span
+            class="s2">:</span>
+<a name="l480"><span class="ln">480  </span></a>            <span class="s2">raise </span><span
+            class="s1">RuntimeError</span><span class="s3">(</span><span class="s4">&quot;BLAS ILP64 routine requested, but Scipy &quot;</span>
+<a name="l481"><span class="ln">481  </span></a>                               <span class="s4">&quot;compiled only with 32-bit BLAS&quot;</span><span
+            class="s3">)</span>
+<a name="l482"><span class="ln">482  </span></a>        <span class="s2">return </span><span
+            class="s1">_get_funcs</span><span class="s3">(</span><span class="s1">names</span><span class="s3">, </span><span
+            class="s1">arrays</span><span class="s3">, </span><span class="s1">dtype</span><span class="s3">,</span>
+<a name="l483"><span class="ln">483  </span></a>                          <span class="s4">&quot;BLAS&quot;</span><span
+            class="s3">, </span><span class="s1">_fblas_64</span><span class="s3">, </span><span
+            class="s2">None</span><span class="s3">, </span><span class="s4">&quot;fblas_64&quot;</span><span
+            class="s3">, </span><span class="s2">None</span><span class="s3">,</span>
+<a name="l484"><span class="ln">484  </span></a>                          <span class="s1">_blas_alias</span><span
+            class="s3">, </span><span class="s1">ilp64</span><span class="s2">=True</span><span class="s3">)</span>
 <a name="l485"><span class="ln">485  </span></a></pre>
 </body>
 </html>

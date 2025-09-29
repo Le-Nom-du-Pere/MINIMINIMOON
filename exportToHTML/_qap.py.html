@@ -1,37 +1,54 @@
 <html>
 <head>
-<title>_qap.py</title>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<style type="text/css">
-.s0 { color: #a71d5d;}
-.s1 { color: #333333;}
-.s2 { color: #63a35c;}
-.s3 { color: #183691;}
-.s4 { color: #969896;}
-.s5 { color: #0086b3;}
-.ln { color: #333333; font-weight: normal; font-style: normal; }
-</style>
+    <title>_qap.py</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <style type="text/css">
+        .s0 { color: #a71d5d;}
+        .s1 { color: #333333;}
+        .s2 { color: #63a35c;}
+        .s3 { color: #183691;}
+        .s4 { color: #969896;}
+        .s5 { color: #0086b3;}
+        .ln { color: #333333; font-weight: normal; font-style: normal; }
+    </style>
 </head>
 <body bgcolor="#ffffff">
-<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#c0c0c0" >
-<tr><td><center>
-<font face="Arial, Helvetica" color="#000000">
-_qap.py</font>
-</center></td></tr></table>
-<pre><a name="l1"><span class="ln">1    </span></a><span class="s0">import </span><span class="s1">numpy </span><span class="s0">as </span><span class="s1">np</span>
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#c0c0c0">
+    <tr>
+        <td>
+            <center>
+                <font face="Arial, Helvetica" color="#000000">
+                    _qap.py</font>
+            </center>
+        </td>
+    </tr>
+</table>
+<pre><a name="l1"><span class="ln">1    </span></a><span class="s0">import </span><span class="s1">numpy </span><span
+        class="s0">as </span><span class="s1">np</span>
 <a name="l2"><span class="ln">2    </span></a><span class="s0">import </span><span class="s1">operator</span>
 <a name="l3"><span class="ln">3    </span></a><span class="s0">import </span><span class="s1">warnings</span>
 <a name="l4"><span class="ln">4    </span></a><span class="s0">import </span><span class="s1">numbers</span>
-<a name="l5"><span class="ln">5    </span></a><span class="s0">from </span><span class="s2">. </span><span class="s0">import </span><span class="s2">(</span><span class="s1">linear_sum_assignment</span><span class="s2">, </span><span class="s1">OptimizeResult</span><span class="s2">)</span>
-<a name="l6"><span class="ln">6    </span></a><span class="s0">from </span><span class="s2">.</span><span class="s1">_optimize </span><span class="s0">import </span><span class="s1">_check_unknown_options</span>
+<a name="l5"><span class="ln">5    </span></a><span class="s0">from </span><span class="s2">. </span><span class="s0">import </span><span
+            class="s2">(</span><span class="s1">linear_sum_assignment</span><span class="s2">, </span><span class="s1">OptimizeResult</span><span
+            class="s2">)</span>
+<a name="l6"><span class="ln">6    </span></a><span class="s0">from </span><span class="s2">.</span><span class="s1">_optimize </span><span
+            class="s0">import </span><span class="s1">_check_unknown_options</span>
 <a name="l7"><span class="ln">7    </span></a>
-<a name="l8"><span class="ln">8    </span></a><span class="s0">from </span><span class="s1">scipy</span><span class="s2">.</span><span class="s1">_lib</span><span class="s2">.</span><span class="s1">_util </span><span class="s0">import </span><span class="s1">check_random_state</span>
+<a name="l8"><span class="ln">8    </span></a><span class="s0">from </span><span class="s1">scipy</span><span
+            class="s2">.</span><span class="s1">_lib</span><span class="s2">.</span><span class="s1">_util </span><span
+            class="s0">import </span><span class="s1">check_random_state</span>
 <a name="l9"><span class="ln">9    </span></a><span class="s0">import </span><span class="s1">itertools</span>
 <a name="l10"><span class="ln">10   </span></a>
-<a name="l11"><span class="ln">11   </span></a><span class="s1">QUADRATIC_ASSIGNMENT_METHODS </span><span class="s0">= </span><span class="s2">[</span><span class="s3">'faq'</span><span class="s2">, </span><span class="s3">'2opt'</span><span class="s2">]</span>
+<a name="l11"><span class="ln">11   </span></a><span class="s1">QUADRATIC_ASSIGNMENT_METHODS </span><span
+            class="s0">= </span><span class="s2">[</span><span class="s3">'faq'</span><span class="s2">, </span><span
+            class="s3">'2opt'</span><span class="s2">]</span>
 <a name="l12"><span class="ln">12   </span></a>
 <a name="l13"><span class="ln">13   </span></a>
-<a name="l14"><span class="ln">14   </span></a><span class="s0">def </span><span class="s1">quadratic_assignment</span><span class="s2">(</span><span class="s1">A</span><span class="s2">, </span><span class="s1">B</span><span class="s2">, </span><span class="s1">method</span><span class="s0">=</span><span class="s3">&quot;faq&quot;</span><span class="s2">, </span><span class="s1">options</span><span class="s0">=None</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l14"><span class="ln">14   </span></a><span class="s0">def </span><span
+            class="s1">quadratic_assignment</span><span class="s2">(</span><span class="s1">A</span><span
+            class="s2">, </span><span class="s1">B</span><span class="s2">, </span><span class="s1">method</span><span
+            class="s0">=</span><span class="s3">&quot;faq&quot;</span><span class="s2">, </span><span
+            class="s1">options</span><span class="s0">=None</span><span class="s2">)</span><span class="s0">:</span>
 <a name="l15"><span class="ln">15   </span></a>    <span class="s4">r&quot;&quot;&quot; 
 <a name="l16"><span class="ln">16   </span></a>    Approximates solution to the quadratic assignment problem and 
 <a name="l17"><span class="ln">17   </span></a>    the graph matching problem. 
@@ -213,92 +230,214 @@ _qap.py</font>
 <a name="l193"><span class="ln">193  </span></a> 
 <a name="l194"><span class="ln">194  </span></a>    &quot;&quot;&quot;</span>
 <a name="l195"><span class="ln">195  </span></a>
-<a name="l196"><span class="ln">196  </span></a>    <span class="s0">if </span><span class="s1">options </span><span class="s0">is None:</span>
-<a name="l197"><span class="ln">197  </span></a>        <span class="s1">options </span><span class="s0">= </span><span class="s2">{}</span>
+<a name="l196"><span class="ln">196  </span></a>    <span class="s0">if </span><span class="s1">options </span><span
+            class="s0">is None:</span>
+<a name="l197"><span class="ln">197  </span></a>        <span class="s1">options </span><span class="s0">= </span><span
+            class="s2">{}</span>
 <a name="l198"><span class="ln">198  </span></a>
-<a name="l199"><span class="ln">199  </span></a>    <span class="s1">method </span><span class="s0">= </span><span class="s1">method</span><span class="s2">.</span><span class="s1">lower</span><span class="s2">()</span>
-<a name="l200"><span class="ln">200  </span></a>    <span class="s1">methods </span><span class="s0">= </span><span class="s2">{</span><span class="s3">&quot;faq&quot;</span><span class="s0">: </span><span class="s1">_quadratic_assignment_faq</span><span class="s2">,</span>
-<a name="l201"><span class="ln">201  </span></a>               <span class="s3">&quot;2opt&quot;</span><span class="s0">: </span><span class="s1">_quadratic_assignment_2opt</span><span class="s2">}</span>
-<a name="l202"><span class="ln">202  </span></a>    <span class="s0">if </span><span class="s1">method </span><span class="s0">not in </span><span class="s1">methods</span><span class="s0">:</span>
-<a name="l203"><span class="ln">203  </span></a>        <span class="s0">raise </span><span class="s1">ValueError</span><span class="s2">(</span><span class="s3">f&quot;method {</span><span class="s1">method</span><span class="s3">} must be in {</span><span class="s1">methods</span><span class="s3">}.&quot;</span><span class="s2">)</span>
+<a name="l199"><span class="ln">199  </span></a>    <span class="s1">method </span><span class="s0">= </span><span
+            class="s1">method</span><span class="s2">.</span><span class="s1">lower</span><span class="s2">()</span>
+<a name="l200"><span class="ln">200  </span></a>    <span class="s1">methods </span><span class="s0">= </span><span
+            class="s2">{</span><span class="s3">&quot;faq&quot;</span><span class="s0">: </span><span class="s1">_quadratic_assignment_faq</span><span
+            class="s2">,</span>
+<a name="l201"><span class="ln">201  </span></a>               <span class="s3">&quot;2opt&quot;</span><span class="s0">: </span><span
+            class="s1">_quadratic_assignment_2opt</span><span class="s2">}</span>
+<a name="l202"><span class="ln">202  </span></a>    <span class="s0">if </span><span class="s1">method </span><span
+            class="s0">not in </span><span class="s1">methods</span><span class="s0">:</span>
+<a name="l203"><span class="ln">203  </span></a>        <span class="s0">raise </span><span class="s1">ValueError</span><span
+            class="s2">(</span><span class="s3">f&quot;method {</span><span class="s1">method</span><span class="s3">} must be in {</span><span
+            class="s1">methods</span><span class="s3">}.&quot;</span><span class="s2">)</span>
 <a name="l204"><span class="ln">204  </span></a>
-<a name="l205"><span class="ln">205  </span></a>    <span class="s1">_spec007_transition</span><span class="s2">(</span><span class="s1">options</span><span class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span class="s3">&quot;rng&quot;</span><span class="s2">, </span><span class="s0">None</span><span class="s2">))</span>
-<a name="l206"><span class="ln">206  </span></a>    <span class="s1">res </span><span class="s0">= </span><span class="s1">methods</span><span class="s2">[</span><span class="s1">method</span><span class="s2">](</span><span class="s1">A</span><span class="s2">, </span><span class="s1">B</span><span class="s2">, </span><span class="s0">**</span><span class="s1">options</span><span class="s2">)</span>
+<a name="l205"><span class="ln">205  </span></a>    <span class="s1">_spec007_transition</span><span class="s2">(</span><span
+            class="s1">options</span><span class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span
+            class="s3">&quot;rng&quot;</span><span class="s2">, </span><span class="s0">None</span><span
+            class="s2">))</span>
+<a name="l206"><span class="ln">206  </span></a>    <span class="s1">res </span><span class="s0">= </span><span
+            class="s1">methods</span><span class="s2">[</span><span class="s1">method</span><span
+            class="s2">](</span><span class="s1">A</span><span class="s2">, </span><span class="s1">B</span><span
+            class="s2">, </span><span class="s0">**</span><span class="s1">options</span><span class="s2">)</span>
 <a name="l207"><span class="ln">207  </span></a>    <span class="s0">return </span><span class="s1">res</span>
 <a name="l208"><span class="ln">208  </span></a>
 <a name="l209"><span class="ln">209  </span></a>
-<a name="l210"><span class="ln">210  </span></a><span class="s0">def </span><span class="s1">_spec007_transition</span><span class="s2">(</span><span class="s1">rng</span><span class="s2">)</span><span class="s0">:</span>
-<a name="l211"><span class="ln">211  </span></a>    <span class="s0">if </span><span class="s1">isinstance</span><span class="s2">(</span><span class="s1">rng</span><span class="s2">, </span><span class="s1">np</span><span class="s2">.</span><span class="s1">random</span><span class="s2">.</span><span class="s1">RandomState</span><span class="s2">)</span><span class="s0">:</span>
-<a name="l212"><span class="ln">212  </span></a>        <span class="s1">warnings</span><span class="s2">.</span><span class="s1">warn</span><span class="s2">(</span>
+<a name="l210"><span class="ln">210  </span></a><span class="s0">def </span><span
+            class="s1">_spec007_transition</span><span class="s2">(</span><span class="s1">rng</span><span
+            class="s2">)</span><span class="s0">:</span>
+<a name="l211"><span class="ln">211  </span></a>    <span class="s0">if </span><span class="s1">isinstance</span><span
+            class="s2">(</span><span class="s1">rng</span><span class="s2">, </span><span class="s1">np</span><span
+            class="s2">.</span><span class="s1">random</span><span class="s2">.</span><span
+            class="s1">RandomState</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l212"><span class="ln">212  </span></a>        <span class="s1">warnings</span><span class="s2">.</span><span
+            class="s1">warn</span><span class="s2">(</span>
 <a name="l213"><span class="ln">213  </span></a>            <span class="s3">&quot;Use of `RandomState` with `quadratic_assignment` is deprecated&quot;</span>
-<a name="l214"><span class="ln">214  </span></a>            <span class="s3">&quot; and will result in an exception in SciPy 1.17&quot;</span><span class="s2">,</span>
-<a name="l215"><span class="ln">215  </span></a>            <span class="s1">DeprecationWarning</span><span class="s2">,</span>
-<a name="l216"><span class="ln">216  </span></a>            <span class="s1">stacklevel</span><span class="s0">=</span><span class="s5">2</span>
+<a name="l214"><span class="ln">214  </span></a>            <span class="s3">&quot; and will result in an exception in SciPy 1.17&quot;</span><span
+            class="s2">,</span>
+<a name="l215"><span class="ln">215  </span></a>            <span class="s1">DeprecationWarning</span><span
+            class="s2">,</span>
+<a name="l216"><span class="ln">216  </span></a>            <span class="s1">stacklevel</span><span
+            class="s0">=</span><span class="s5">2</span>
 <a name="l217"><span class="ln">217  </span></a>        <span class="s2">)</span>
-<a name="l218"><span class="ln">218  </span></a>    <span class="s0">if </span><span class="s2">((</span><span class="s1">rng </span><span class="s0">is None or </span><span class="s1">rng </span><span class="s0">is </span><span class="s1">np</span><span class="s2">.</span><span class="s1">random</span><span class="s2">) </span><span class="s0">and</span>
-<a name="l219"><span class="ln">219  </span></a>            <span class="s1">np</span><span class="s2">.</span><span class="s1">random</span><span class="s2">.</span><span class="s1">mtrand</span><span class="s2">.</span><span class="s1">_rand</span><span class="s2">.</span><span class="s1">_bit_generator</span><span class="s2">.</span><span class="s1">_seed_seq </span><span class="s0">is None</span><span class="s2">)</span><span class="s0">:</span>
-<a name="l220"><span class="ln">220  </span></a>        <span class="s1">warnings</span><span class="s2">.</span><span class="s1">warn</span><span class="s2">(</span>
+<a name="l218"><span class="ln">218  </span></a>    <span class="s0">if </span><span class="s2">((</span><span
+            class="s1">rng </span><span class="s0">is None or </span><span class="s1">rng </span><span
+            class="s0">is </span><span class="s1">np</span><span class="s2">.</span><span class="s1">random</span><span
+            class="s2">) </span><span class="s0">and</span>
+<a name="l219"><span class="ln">219  </span></a>            <span class="s1">np</span><span class="s2">.</span><span
+            class="s1">random</span><span class="s2">.</span><span class="s1">mtrand</span><span
+            class="s2">.</span><span class="s1">_rand</span><span class="s2">.</span><span
+            class="s1">_bit_generator</span><span class="s2">.</span><span class="s1">_seed_seq </span><span class="s0">is None</span><span
+            class="s2">)</span><span class="s0">:</span>
+<a name="l220"><span class="ln">220  </span></a>        <span class="s1">warnings</span><span class="s2">.</span><span
+            class="s1">warn</span><span class="s2">(</span>
 <a name="l221"><span class="ln">221  </span></a>            <span class="s3">&quot;The NumPy global RNG was seeded by calling `np.random.seed`.&quot;</span>
-<a name="l222"><span class="ln">222  </span></a>            <span class="s3">&quot; From SciPy 1.17, this function will no longer use the global RNG.&quot;</span><span class="s2">,</span>
-<a name="l223"><span class="ln">223  </span></a>            <span class="s1">FutureWarning</span><span class="s2">,</span>
-<a name="l224"><span class="ln">224  </span></a>            <span class="s1">stacklevel</span><span class="s0">=</span><span class="s5">2</span>
+<a name="l222"><span class="ln">222  </span></a>            <span class="s3">&quot; From SciPy 1.17, this function will no longer use the global RNG.&quot;</span><span
+            class="s2">,</span>
+<a name="l223"><span class="ln">223  </span></a>            <span class="s1">FutureWarning</span><span
+            class="s2">,</span>
+<a name="l224"><span class="ln">224  </span></a>            <span class="s1">stacklevel</span><span
+            class="s0">=</span><span class="s5">2</span>
 <a name="l225"><span class="ln">225  </span></a>        <span class="s2">)</span>
-<a name="l226"><span class="ln">226  </span></a>    <span class="s0">if </span><span class="s1">isinstance</span><span class="s2">(</span><span class="s1">rng</span><span class="s2">, </span><span class="s1">numbers</span><span class="s2">.</span><span class="s1">Integral </span><span class="s0">| </span><span class="s1">np</span><span class="s2">.</span><span class="s1">integer</span><span class="s2">)</span><span class="s0">:</span>
-<a name="l227"><span class="ln">227  </span></a>        <span class="s1">warnings</span><span class="s2">.</span><span class="s1">warn</span><span class="s2">(</span>
+<a name="l226"><span class="ln">226  </span></a>    <span class="s0">if </span><span class="s1">isinstance</span><span
+            class="s2">(</span><span class="s1">rng</span><span class="s2">, </span><span class="s1">numbers</span><span
+            class="s2">.</span><span class="s1">Integral </span><span class="s0">| </span><span
+            class="s1">np</span><span class="s2">.</span><span class="s1">integer</span><span class="s2">)</span><span
+            class="s0">:</span>
+<a name="l227"><span class="ln">227  </span></a>        <span class="s1">warnings</span><span class="s2">.</span><span
+            class="s1">warn</span><span class="s2">(</span>
 <a name="l228"><span class="ln">228  </span></a>            <span class="s3">&quot;The behavior when the rng option is an integer is changing: the value&quot;</span>
 <a name="l229"><span class="ln">229  </span></a>            <span class="s3">&quot; will be normalized using np.random.default_rng beginning in SciPy 1.17,&quot;</span>
-<a name="l230"><span class="ln">230  </span></a>            <span class="s3">&quot; and the resulting Generator will be used to generate random numbers.&quot;</span><span class="s2">,</span>
-<a name="l231"><span class="ln">231  </span></a>            <span class="s1">FutureWarning</span><span class="s2">,</span>
-<a name="l232"><span class="ln">232  </span></a>            <span class="s1">stacklevel</span><span class="s0">=</span><span class="s5">2</span>
+<a name="l230"><span class="ln">230  </span></a>            <span class="s3">&quot; and the resulting Generator will be used to generate random numbers.&quot;</span><span
+            class="s2">,</span>
+<a name="l231"><span class="ln">231  </span></a>            <span class="s1">FutureWarning</span><span
+            class="s2">,</span>
+<a name="l232"><span class="ln">232  </span></a>            <span class="s1">stacklevel</span><span
+            class="s0">=</span><span class="s5">2</span>
 <a name="l233"><span class="ln">233  </span></a>        <span class="s2">)</span>
 <a name="l234"><span class="ln">234  </span></a>
 <a name="l235"><span class="ln">235  </span></a>
-<a name="l236"><span class="ln">236  </span></a><span class="s0">def </span><span class="s1">_calc_score</span><span class="s2">(</span><span class="s1">A</span><span class="s2">, </span><span class="s1">B</span><span class="s2">, </span><span class="s1">perm</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l236"><span class="ln">236  </span></a><span class="s0">def </span><span class="s1">_calc_score</span><span
+            class="s2">(</span><span class="s1">A</span><span class="s2">, </span><span class="s1">B</span><span
+            class="s2">, </span><span class="s1">perm</span><span class="s2">)</span><span class="s0">:</span>
 <a name="l237"><span class="ln">237  </span></a>    <span class="s4"># equivalent to objective function but avoids matmul</span>
-<a name="l238"><span class="ln">238  </span></a>    <span class="s0">return </span><span class="s1">np</span><span class="s2">.</span><span class="s1">sum</span><span class="s2">(</span><span class="s1">A </span><span class="s0">* </span><span class="s1">B</span><span class="s2">[</span><span class="s1">perm</span><span class="s2">][</span><span class="s0">:</span><span class="s2">, </span><span class="s1">perm</span><span class="s2">])</span>
+<a name="l238"><span class="ln">238  </span></a>    <span class="s0">return </span><span class="s1">np</span><span
+            class="s2">.</span><span class="s1">sum</span><span class="s2">(</span><span class="s1">A </span><span
+            class="s0">* </span><span class="s1">B</span><span class="s2">[</span><span class="s1">perm</span><span
+            class="s2">][</span><span class="s0">:</span><span class="s2">, </span><span class="s1">perm</span><span
+            class="s2">])</span>
 <a name="l239"><span class="ln">239  </span></a>
 <a name="l240"><span class="ln">240  </span></a>
-<a name="l241"><span class="ln">241  </span></a><span class="s0">def </span><span class="s1">_common_input_validation</span><span class="s2">(</span><span class="s1">A</span><span class="s2">, </span><span class="s1">B</span><span class="s2">, </span><span class="s1">partial_match</span><span class="s2">)</span><span class="s0">:</span>
-<a name="l242"><span class="ln">242  </span></a>    <span class="s1">A </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">atleast_2d</span><span class="s2">(</span><span class="s1">A</span><span class="s2">)</span>
-<a name="l243"><span class="ln">243  </span></a>    <span class="s1">B </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">atleast_2d</span><span class="s2">(</span><span class="s1">B</span><span class="s2">)</span>
+<a name="l241"><span class="ln">241  </span></a><span class="s0">def </span><span
+            class="s1">_common_input_validation</span><span class="s2">(</span><span class="s1">A</span><span
+            class="s2">, </span><span class="s1">B</span><span class="s2">, </span><span class="s1">partial_match</span><span
+            class="s2">)</span><span class="s0">:</span>
+<a name="l242"><span class="ln">242  </span></a>    <span class="s1">A </span><span class="s0">= </span><span
+            class="s1">np</span><span class="s2">.</span><span class="s1">atleast_2d</span><span
+            class="s2">(</span><span class="s1">A</span><span class="s2">)</span>
+<a name="l243"><span class="ln">243  </span></a>    <span class="s1">B </span><span class="s0">= </span><span
+            class="s1">np</span><span class="s2">.</span><span class="s1">atleast_2d</span><span
+            class="s2">(</span><span class="s1">B</span><span class="s2">)</span>
 <a name="l244"><span class="ln">244  </span></a>
-<a name="l245"><span class="ln">245  </span></a>    <span class="s0">if </span><span class="s1">partial_match </span><span class="s0">is None:</span>
-<a name="l246"><span class="ln">246  </span></a>        <span class="s1">partial_match </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">array</span><span class="s2">([[], []]).</span><span class="s1">T</span>
-<a name="l247"><span class="ln">247  </span></a>    <span class="s1">partial_match </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">atleast_2d</span><span class="s2">(</span><span class="s1">partial_match</span><span class="s2">).</span><span class="s1">astype</span><span class="s2">(</span><span class="s1">int</span><span class="s2">)</span>
+<a name="l245"><span class="ln">245  </span></a>    <span class="s0">if </span><span
+            class="s1">partial_match </span><span class="s0">is None:</span>
+<a name="l246"><span class="ln">246  </span></a>        <span class="s1">partial_match </span><span class="s0">= </span><span
+            class="s1">np</span><span class="s2">.</span><span class="s1">array</span><span
+            class="s2">([[], []]).</span><span class="s1">T</span>
+<a name="l247"><span class="ln">247  </span></a>    <span class="s1">partial_match </span><span
+            class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span
+            class="s1">atleast_2d</span><span class="s2">(</span><span class="s1">partial_match</span><span class="s2">).</span><span
+            class="s1">astype</span><span class="s2">(</span><span class="s1">int</span><span class="s2">)</span>
 <a name="l248"><span class="ln">248  </span></a>
 <a name="l249"><span class="ln">249  </span></a>    <span class="s1">msg </span><span class="s0">= None</span>
-<a name="l250"><span class="ln">250  </span></a>    <span class="s0">if </span><span class="s1">A</span><span class="s2">.</span><span class="s1">shape</span><span class="s2">[</span><span class="s5">0</span><span class="s2">] </span><span class="s0">!= </span><span class="s1">A</span><span class="s2">.</span><span class="s1">shape</span><span class="s2">[</span><span class="s5">1</span><span class="s2">]</span><span class="s0">:</span>
-<a name="l251"><span class="ln">251  </span></a>        <span class="s1">msg </span><span class="s0">= </span><span class="s3">&quot;`A` must be square&quot;</span>
-<a name="l252"><span class="ln">252  </span></a>    <span class="s0">elif </span><span class="s1">B</span><span class="s2">.</span><span class="s1">shape</span><span class="s2">[</span><span class="s5">0</span><span class="s2">] </span><span class="s0">!= </span><span class="s1">B</span><span class="s2">.</span><span class="s1">shape</span><span class="s2">[</span><span class="s5">1</span><span class="s2">]</span><span class="s0">:</span>
-<a name="l253"><span class="ln">253  </span></a>        <span class="s1">msg </span><span class="s0">= </span><span class="s3">&quot;`B` must be square&quot;</span>
-<a name="l254"><span class="ln">254  </span></a>    <span class="s0">elif </span><span class="s1">A</span><span class="s2">.</span><span class="s1">ndim </span><span class="s0">!= </span><span class="s5">2 </span><span class="s0">or </span><span class="s1">B</span><span class="s2">.</span><span class="s1">ndim </span><span class="s0">!= </span><span class="s5">2</span><span class="s0">:</span>
-<a name="l255"><span class="ln">255  </span></a>        <span class="s1">msg </span><span class="s0">= </span><span class="s3">&quot;`A` and `B` must have exactly two dimensions&quot;</span>
-<a name="l256"><span class="ln">256  </span></a>    <span class="s0">elif </span><span class="s1">A</span><span class="s2">.</span><span class="s1">shape </span><span class="s0">!= </span><span class="s1">B</span><span class="s2">.</span><span class="s1">shape</span><span class="s0">:</span>
-<a name="l257"><span class="ln">257  </span></a>        <span class="s1">msg </span><span class="s0">= </span><span class="s3">&quot;`A` and `B` matrices must be of equal size&quot;</span>
-<a name="l258"><span class="ln">258  </span></a>    <span class="s0">elif </span><span class="s1">partial_match</span><span class="s2">.</span><span class="s1">shape</span><span class="s2">[</span><span class="s5">0</span><span class="s2">] </span><span class="s0">&gt; </span><span class="s1">A</span><span class="s2">.</span><span class="s1">shape</span><span class="s2">[</span><span class="s5">0</span><span class="s2">]</span><span class="s0">:</span>
-<a name="l259"><span class="ln">259  </span></a>        <span class="s1">msg </span><span class="s0">= </span><span class="s3">&quot;`partial_match` can have only as many seeds as there are nodes&quot;</span>
-<a name="l260"><span class="ln">260  </span></a>    <span class="s0">elif </span><span class="s1">partial_match</span><span class="s2">.</span><span class="s1">shape</span><span class="s2">[</span><span class="s5">1</span><span class="s2">] </span><span class="s0">!= </span><span class="s5">2</span><span class="s0">:</span>
-<a name="l261"><span class="ln">261  </span></a>        <span class="s1">msg </span><span class="s0">= </span><span class="s3">&quot;`partial_match` must have two columns&quot;</span>
-<a name="l262"><span class="ln">262  </span></a>    <span class="s0">elif </span><span class="s1">partial_match</span><span class="s2">.</span><span class="s1">ndim </span><span class="s0">!= </span><span class="s5">2</span><span class="s0">:</span>
-<a name="l263"><span class="ln">263  </span></a>        <span class="s1">msg </span><span class="s0">= </span><span class="s3">&quot;`partial_match` must have exactly two dimensions&quot;</span>
-<a name="l264"><span class="ln">264  </span></a>    <span class="s0">elif </span><span class="s2">(</span><span class="s1">partial_match </span><span class="s0">&lt; </span><span class="s5">0</span><span class="s2">).</span><span class="s1">any</span><span class="s2">()</span><span class="s0">:</span>
-<a name="l265"><span class="ln">265  </span></a>        <span class="s1">msg </span><span class="s0">= </span><span class="s3">&quot;`partial_match` must contain only positive indices&quot;</span>
-<a name="l266"><span class="ln">266  </span></a>    <span class="s0">elif </span><span class="s2">(</span><span class="s1">partial_match </span><span class="s0">&gt;= </span><span class="s1">len</span><span class="s2">(</span><span class="s1">A</span><span class="s2">)).</span><span class="s1">any</span><span class="s2">()</span><span class="s0">:</span>
-<a name="l267"><span class="ln">267  </span></a>        <span class="s1">msg </span><span class="s0">= </span><span class="s3">&quot;`partial_match` entries must be less than number of nodes&quot;</span>
-<a name="l268"><span class="ln">268  </span></a>    <span class="s0">elif </span><span class="s2">(</span><span class="s0">not </span><span class="s1">len</span><span class="s2">(</span><span class="s1">set</span><span class="s2">(</span><span class="s1">partial_match</span><span class="s2">[</span><span class="s0">:</span><span class="s2">, </span><span class="s5">0</span><span class="s2">])) </span><span class="s0">== </span><span class="s1">len</span><span class="s2">(</span><span class="s1">partial_match</span><span class="s2">[</span><span class="s0">:</span><span class="s2">, </span><span class="s5">0</span><span class="s2">]) </span><span class="s0">or</span>
-<a name="l269"><span class="ln">269  </span></a>          <span class="s0">not </span><span class="s1">len</span><span class="s2">(</span><span class="s1">set</span><span class="s2">(</span><span class="s1">partial_match</span><span class="s2">[</span><span class="s0">:</span><span class="s2">, </span><span class="s5">1</span><span class="s2">])) </span><span class="s0">== </span><span class="s1">len</span><span class="s2">(</span><span class="s1">partial_match</span><span class="s2">[</span><span class="s0">:</span><span class="s2">, </span><span class="s5">1</span><span class="s2">]))</span><span class="s0">:</span>
-<a name="l270"><span class="ln">270  </span></a>        <span class="s1">msg </span><span class="s0">= </span><span class="s3">&quot;`partial_match` column entries must be unique&quot;</span>
+<a name="l250"><span class="ln">250  </span></a>    <span class="s0">if </span><span class="s1">A</span><span
+            class="s2">.</span><span class="s1">shape</span><span class="s2">[</span><span class="s5">0</span><span
+            class="s2">] </span><span class="s0">!= </span><span class="s1">A</span><span class="s2">.</span><span
+            class="s1">shape</span><span class="s2">[</span><span class="s5">1</span><span class="s2">]</span><span
+            class="s0">:</span>
+<a name="l251"><span class="ln">251  </span></a>        <span class="s1">msg </span><span class="s0">= </span><span
+            class="s3">&quot;`A` must be square&quot;</span>
+<a name="l252"><span class="ln">252  </span></a>    <span class="s0">elif </span><span class="s1">B</span><span
+            class="s2">.</span><span class="s1">shape</span><span class="s2">[</span><span class="s5">0</span><span
+            class="s2">] </span><span class="s0">!= </span><span class="s1">B</span><span class="s2">.</span><span
+            class="s1">shape</span><span class="s2">[</span><span class="s5">1</span><span class="s2">]</span><span
+            class="s0">:</span>
+<a name="l253"><span class="ln">253  </span></a>        <span class="s1">msg </span><span class="s0">= </span><span
+            class="s3">&quot;`B` must be square&quot;</span>
+<a name="l254"><span class="ln">254  </span></a>    <span class="s0">elif </span><span class="s1">A</span><span
+            class="s2">.</span><span class="s1">ndim </span><span class="s0">!= </span><span class="s5">2 </span><span
+            class="s0">or </span><span class="s1">B</span><span class="s2">.</span><span class="s1">ndim </span><span
+            class="s0">!= </span><span class="s5">2</span><span class="s0">:</span>
+<a name="l255"><span class="ln">255  </span></a>        <span class="s1">msg </span><span class="s0">= </span><span
+            class="s3">&quot;`A` and `B` must have exactly two dimensions&quot;</span>
+<a name="l256"><span class="ln">256  </span></a>    <span class="s0">elif </span><span class="s1">A</span><span
+            class="s2">.</span><span class="s1">shape </span><span class="s0">!= </span><span class="s1">B</span><span
+            class="s2">.</span><span class="s1">shape</span><span class="s0">:</span>
+<a name="l257"><span class="ln">257  </span></a>        <span class="s1">msg </span><span class="s0">= </span><span
+            class="s3">&quot;`A` and `B` matrices must be of equal size&quot;</span>
+<a name="l258"><span class="ln">258  </span></a>    <span class="s0">elif </span><span
+            class="s1">partial_match</span><span class="s2">.</span><span class="s1">shape</span><span
+            class="s2">[</span><span class="s5">0</span><span class="s2">] </span><span class="s0">&gt; </span><span
+            class="s1">A</span><span class="s2">.</span><span class="s1">shape</span><span class="s2">[</span><span
+            class="s5">0</span><span class="s2">]</span><span class="s0">:</span>
+<a name="l259"><span class="ln">259  </span></a>        <span class="s1">msg </span><span class="s0">= </span><span
+            class="s3">&quot;`partial_match` can have only as many seeds as there are nodes&quot;</span>
+<a name="l260"><span class="ln">260  </span></a>    <span class="s0">elif </span><span
+            class="s1">partial_match</span><span class="s2">.</span><span class="s1">shape</span><span
+            class="s2">[</span><span class="s5">1</span><span class="s2">] </span><span class="s0">!= </span><span
+            class="s5">2</span><span class="s0">:</span>
+<a name="l261"><span class="ln">261  </span></a>        <span class="s1">msg </span><span class="s0">= </span><span
+            class="s3">&quot;`partial_match` must have two columns&quot;</span>
+<a name="l262"><span class="ln">262  </span></a>    <span class="s0">elif </span><span
+            class="s1">partial_match</span><span class="s2">.</span><span class="s1">ndim </span><span
+            class="s0">!= </span><span class="s5">2</span><span class="s0">:</span>
+<a name="l263"><span class="ln">263  </span></a>        <span class="s1">msg </span><span class="s0">= </span><span
+            class="s3">&quot;`partial_match` must have exactly two dimensions&quot;</span>
+<a name="l264"><span class="ln">264  </span></a>    <span class="s0">elif </span><span class="s2">(</span><span
+            class="s1">partial_match </span><span class="s0">&lt; </span><span class="s5">0</span><span
+            class="s2">).</span><span class="s1">any</span><span class="s2">()</span><span class="s0">:</span>
+<a name="l265"><span class="ln">265  </span></a>        <span class="s1">msg </span><span class="s0">= </span><span
+            class="s3">&quot;`partial_match` must contain only positive indices&quot;</span>
+<a name="l266"><span class="ln">266  </span></a>    <span class="s0">elif </span><span class="s2">(</span><span
+            class="s1">partial_match </span><span class="s0">&gt;= </span><span class="s1">len</span><span
+            class="s2">(</span><span class="s1">A</span><span class="s2">)).</span><span class="s1">any</span><span
+            class="s2">()</span><span class="s0">:</span>
+<a name="l267"><span class="ln">267  </span></a>        <span class="s1">msg </span><span class="s0">= </span><span
+            class="s3">&quot;`partial_match` entries must be less than number of nodes&quot;</span>
+<a name="l268"><span class="ln">268  </span></a>    <span class="s0">elif </span><span class="s2">(</span><span
+            class="s0">not </span><span class="s1">len</span><span class="s2">(</span><span class="s1">set</span><span
+            class="s2">(</span><span class="s1">partial_match</span><span class="s2">[</span><span
+            class="s0">:</span><span class="s2">, </span><span class="s5">0</span><span class="s2">])) </span><span
+            class="s0">== </span><span class="s1">len</span><span class="s2">(</span><span
+            class="s1">partial_match</span><span class="s2">[</span><span class="s0">:</span><span
+            class="s2">, </span><span class="s5">0</span><span class="s2">]) </span><span class="s0">or</span>
+<a name="l269"><span class="ln">269  </span></a>          <span class="s0">not </span><span class="s1">len</span><span
+            class="s2">(</span><span class="s1">set</span><span class="s2">(</span><span class="s1">partial_match</span><span
+            class="s2">[</span><span class="s0">:</span><span class="s2">, </span><span class="s5">1</span><span
+            class="s2">])) </span><span class="s0">== </span><span class="s1">len</span><span class="s2">(</span><span
+            class="s1">partial_match</span><span class="s2">[</span><span class="s0">:</span><span
+            class="s2">, </span><span class="s5">1</span><span class="s2">]))</span><span class="s0">:</span>
+<a name="l270"><span class="ln">270  </span></a>        <span class="s1">msg </span><span class="s0">= </span><span
+            class="s3">&quot;`partial_match` column entries must be unique&quot;</span>
 <a name="l271"><span class="ln">271  </span></a>
-<a name="l272"><span class="ln">272  </span></a>    <span class="s0">if </span><span class="s1">msg </span><span class="s0">is not None:</span>
-<a name="l273"><span class="ln">273  </span></a>        <span class="s0">raise </span><span class="s1">ValueError</span><span class="s2">(</span><span class="s1">msg</span><span class="s2">)</span>
+<a name="l272"><span class="ln">272  </span></a>    <span class="s0">if </span><span class="s1">msg </span><span
+            class="s0">is not None:</span>
+<a name="l273"><span class="ln">273  </span></a>        <span class="s0">raise </span><span class="s1">ValueError</span><span
+            class="s2">(</span><span class="s1">msg</span><span class="s2">)</span>
 <a name="l274"><span class="ln">274  </span></a>
-<a name="l275"><span class="ln">275  </span></a>    <span class="s0">return </span><span class="s1">A</span><span class="s2">, </span><span class="s1">B</span><span class="s2">, </span><span class="s1">partial_match</span>
+<a name="l275"><span class="ln">275  </span></a>    <span class="s0">return </span><span class="s1">A</span><span
+            class="s2">, </span><span class="s1">B</span><span class="s2">, </span><span class="s1">partial_match</span>
 <a name="l276"><span class="ln">276  </span></a>
 <a name="l277"><span class="ln">277  </span></a>
-<a name="l278"><span class="ln">278  </span></a><span class="s0">def </span><span class="s1">_quadratic_assignment_faq</span><span class="s2">(</span><span class="s1">A</span><span class="s2">, </span><span class="s1">B</span><span class="s2">,</span>
-<a name="l279"><span class="ln">279  </span></a>                              <span class="s1">maximize</span><span class="s0">=False</span><span class="s2">, </span><span class="s1">partial_match</span><span class="s0">=None</span><span class="s2">, </span><span class="s1">rng</span><span class="s0">=None</span><span class="s2">,</span>
-<a name="l280"><span class="ln">280  </span></a>                              <span class="s1">P0</span><span class="s0">=</span><span class="s3">&quot;barycenter&quot;</span><span class="s2">, </span><span class="s1">shuffle_input</span><span class="s0">=False</span><span class="s2">, </span><span class="s1">maxiter</span><span class="s0">=</span><span class="s5">30</span><span class="s2">,</span>
-<a name="l281"><span class="ln">281  </span></a>                              <span class="s1">tol</span><span class="s0">=</span><span class="s5">0.03</span><span class="s2">, </span><span class="s0">**</span><span class="s1">unknown_options</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l278"><span class="ln">278  </span></a><span class="s0">def </span><span
+            class="s1">_quadratic_assignment_faq</span><span class="s2">(</span><span class="s1">A</span><span
+            class="s2">, </span><span class="s1">B</span><span class="s2">,</span>
+<a name="l279"><span class="ln">279  </span></a>                              <span class="s1">maximize</span><span
+            class="s0">=False</span><span class="s2">, </span><span class="s1">partial_match</span><span class="s0">=None</span><span
+            class="s2">, </span><span class="s1">rng</span><span class="s0">=None</span><span class="s2">,</span>
+<a name="l280"><span class="ln">280  </span></a>                              <span class="s1">P0</span><span
+            class="s0">=</span><span class="s3">&quot;barycenter&quot;</span><span class="s2">, </span><span class="s1">shuffle_input</span><span
+            class="s0">=False</span><span class="s2">, </span><span class="s1">maxiter</span><span
+            class="s0">=</span><span class="s5">30</span><span class="s2">,</span>
+<a name="l281"><span class="ln">281  </span></a>                              <span class="s1">tol</span><span
+            class="s0">=</span><span class="s5">0.03</span><span class="s2">, </span><span class="s0">**</span><span
+            class="s1">unknown_options</span><span class="s2">)</span><span class="s0">:</span>
 <a name="l282"><span class="ln">282  </span></a>    <span class="s4">r&quot;&quot;&quot;Solve the quadratic assignment problem (approximately). 
 <a name="l283"><span class="ln">283  </span></a> 
 <a name="l284"><span class="ln">284  </span></a>    This function solves the Quadratic Assignment Problem (QAP) and the 
@@ -449,156 +588,397 @@ _qap.py</font>
 <a name="l429"><span class="ln">429  </span></a> 
 <a name="l430"><span class="ln">430  </span></a>    &quot;&quot;&quot;</span>
 <a name="l431"><span class="ln">431  </span></a>
-<a name="l432"><span class="ln">432  </span></a>    <span class="s1">_check_unknown_options</span><span class="s2">(</span><span class="s1">unknown_options</span><span class="s2">)</span>
+<a name="l432"><span class="ln">432  </span></a>    <span class="s1">_check_unknown_options</span><span
+            class="s2">(</span><span class="s1">unknown_options</span><span class="s2">)</span>
 <a name="l433"><span class="ln">433  </span></a>
-<a name="l434"><span class="ln">434  </span></a>    <span class="s1">maxiter </span><span class="s0">= </span><span class="s1">operator</span><span class="s2">.</span><span class="s1">index</span><span class="s2">(</span><span class="s1">maxiter</span><span class="s2">)</span>
+<a name="l434"><span class="ln">434  </span></a>    <span class="s1">maxiter </span><span class="s0">= </span><span
+            class="s1">operator</span><span class="s2">.</span><span class="s1">index</span><span
+            class="s2">(</span><span class="s1">maxiter</span><span class="s2">)</span>
 <a name="l435"><span class="ln">435  </span></a>
 <a name="l436"><span class="ln">436  </span></a>    <span class="s4"># ValueError check</span>
-<a name="l437"><span class="ln">437  </span></a>    <span class="s1">A</span><span class="s2">, </span><span class="s1">B</span><span class="s2">, </span><span class="s1">partial_match </span><span class="s0">= </span><span class="s1">_common_input_validation</span><span class="s2">(</span><span class="s1">A</span><span class="s2">, </span><span class="s1">B</span><span class="s2">, </span><span class="s1">partial_match</span><span class="s2">)</span>
+<a name="l437"><span class="ln">437  </span></a>    <span class="s1">A</span><span class="s2">, </span><span class="s1">B</span><span
+            class="s2">, </span><span class="s1">partial_match </span><span class="s0">= </span><span class="s1">_common_input_validation</span><span
+            class="s2">(</span><span class="s1">A</span><span class="s2">, </span><span class="s1">B</span><span
+            class="s2">, </span><span class="s1">partial_match</span><span class="s2">)</span>
 <a name="l438"><span class="ln">438  </span></a>
 <a name="l439"><span class="ln">439  </span></a>    <span class="s1">msg </span><span class="s0">= None</span>
-<a name="l440"><span class="ln">440  </span></a>    <span class="s0">if </span><span class="s1">isinstance</span><span class="s2">(</span><span class="s1">P0</span><span class="s2">, </span><span class="s1">str</span><span class="s2">) </span><span class="s0">and </span><span class="s1">P0 </span><span class="s0">not in </span><span class="s2">{</span><span class="s3">'barycenter'</span><span class="s2">, </span><span class="s3">'randomized'</span><span class="s2">}</span><span class="s0">:</span>
-<a name="l441"><span class="ln">441  </span></a>        <span class="s1">msg </span><span class="s0">= </span><span class="s3">&quot;Invalid 'P0' parameter string&quot;</span>
-<a name="l442"><span class="ln">442  </span></a>    <span class="s0">elif </span><span class="s1">maxiter </span><span class="s0">&lt;= </span><span class="s5">0</span><span class="s0">:</span>
-<a name="l443"><span class="ln">443  </span></a>        <span class="s1">msg </span><span class="s0">= </span><span class="s3">&quot;'maxiter' must be a positive integer&quot;</span>
-<a name="l444"><span class="ln">444  </span></a>    <span class="s0">elif </span><span class="s1">tol </span><span class="s0">&lt;= </span><span class="s5">0</span><span class="s0">:</span>
-<a name="l445"><span class="ln">445  </span></a>        <span class="s1">msg </span><span class="s0">= </span><span class="s3">&quot;'tol' must be a positive float&quot;</span>
-<a name="l446"><span class="ln">446  </span></a>    <span class="s0">if </span><span class="s1">msg </span><span class="s0">is not None:</span>
-<a name="l447"><span class="ln">447  </span></a>        <span class="s0">raise </span><span class="s1">ValueError</span><span class="s2">(</span><span class="s1">msg</span><span class="s2">)</span>
+<a name="l440"><span class="ln">440  </span></a>    <span class="s0">if </span><span class="s1">isinstance</span><span
+            class="s2">(</span><span class="s1">P0</span><span class="s2">, </span><span class="s1">str</span><span
+            class="s2">) </span><span class="s0">and </span><span class="s1">P0 </span><span
+            class="s0">not in </span><span class="s2">{</span><span class="s3">'barycenter'</span><span
+            class="s2">, </span><span class="s3">'randomized'</span><span class="s2">}</span><span class="s0">:</span>
+<a name="l441"><span class="ln">441  </span></a>        <span class="s1">msg </span><span class="s0">= </span><span
+            class="s3">&quot;Invalid 'P0' parameter string&quot;</span>
+<a name="l442"><span class="ln">442  </span></a>    <span class="s0">elif </span><span class="s1">maxiter </span><span
+            class="s0">&lt;= </span><span class="s5">0</span><span class="s0">:</span>
+<a name="l443"><span class="ln">443  </span></a>        <span class="s1">msg </span><span class="s0">= </span><span
+            class="s3">&quot;'maxiter' must be a positive integer&quot;</span>
+<a name="l444"><span class="ln">444  </span></a>    <span class="s0">elif </span><span class="s1">tol </span><span
+            class="s0">&lt;= </span><span class="s5">0</span><span class="s0">:</span>
+<a name="l445"><span class="ln">445  </span></a>        <span class="s1">msg </span><span class="s0">= </span><span
+            class="s3">&quot;'tol' must be a positive float&quot;</span>
+<a name="l446"><span class="ln">446  </span></a>    <span class="s0">if </span><span class="s1">msg </span><span
+            class="s0">is not None:</span>
+<a name="l447"><span class="ln">447  </span></a>        <span class="s0">raise </span><span class="s1">ValueError</span><span
+            class="s2">(</span><span class="s1">msg</span><span class="s2">)</span>
 <a name="l448"><span class="ln">448  </span></a>
-<a name="l449"><span class="ln">449  </span></a>    <span class="s1">rng </span><span class="s0">= </span><span class="s1">check_random_state</span><span class="s2">(</span><span class="s1">rng</span><span class="s2">)</span>
-<a name="l450"><span class="ln">450  </span></a>    <span class="s1">n </span><span class="s0">= </span><span class="s1">len</span><span class="s2">(</span><span class="s1">A</span><span class="s2">)  </span><span class="s4"># number of vertices in graphs</span>
-<a name="l451"><span class="ln">451  </span></a>    <span class="s1">n_seeds </span><span class="s0">= </span><span class="s1">len</span><span class="s2">(</span><span class="s1">partial_match</span><span class="s2">)  </span><span class="s4"># number of seeds</span>
-<a name="l452"><span class="ln">452  </span></a>    <span class="s1">n_unseed </span><span class="s0">= </span><span class="s1">n </span><span class="s0">- </span><span class="s1">n_seeds</span>
+<a name="l449"><span class="ln">449  </span></a>    <span class="s1">rng </span><span class="s0">= </span><span
+            class="s1">check_random_state</span><span class="s2">(</span><span class="s1">rng</span><span
+            class="s2">)</span>
+<a name="l450"><span class="ln">450  </span></a>    <span class="s1">n </span><span class="s0">= </span><span
+            class="s1">len</span><span class="s2">(</span><span class="s1">A</span><span class="s2">)  </span><span
+            class="s4"># number of vertices in graphs</span>
+<a name="l451"><span class="ln">451  </span></a>    <span class="s1">n_seeds </span><span class="s0">= </span><span
+            class="s1">len</span><span class="s2">(</span><span class="s1">partial_match</span><span
+            class="s2">)  </span><span class="s4"># number of seeds</span>
+<a name="l452"><span class="ln">452  </span></a>    <span class="s1">n_unseed </span><span class="s0">= </span><span
+            class="s1">n </span><span class="s0">- </span><span class="s1">n_seeds</span>
 <a name="l453"><span class="ln">453  </span></a>
-<a name="l454"><span class="ln">454  </span></a>    <span class="s4"># [1] Algorithm 1 Line 1 - choose initialization</span>
-<a name="l455"><span class="ln">455  </span></a>    <span class="s0">if not </span><span class="s1">isinstance</span><span class="s2">(</span><span class="s1">P0</span><span class="s2">, </span><span class="s1">str</span><span class="s2">)</span><span class="s0">:</span>
-<a name="l456"><span class="ln">456  </span></a>        <span class="s1">P0 </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">atleast_2d</span><span class="s2">(</span><span class="s1">P0</span><span class="s2">)</span>
-<a name="l457"><span class="ln">457  </span></a>        <span class="s0">if </span><span class="s1">P0</span><span class="s2">.</span><span class="s1">shape </span><span class="s0">!= </span><span class="s2">(</span><span class="s1">n_unseed</span><span class="s2">, </span><span class="s1">n_unseed</span><span class="s2">)</span><span class="s0">:</span>
-<a name="l458"><span class="ln">458  </span></a>            <span class="s1">msg </span><span class="s0">= </span><span class="s3">&quot;`P0` matrix must have shape m' x m', where m'=n-m&quot;</span>
-<a name="l459"><span class="ln">459  </span></a>        <span class="s0">elif </span><span class="s2">((</span><span class="s1">P0 </span><span class="s0">&lt; </span><span class="s5">0</span><span class="s2">).</span><span class="s1">any</span><span class="s2">() </span><span class="s0">or not </span><span class="s1">np</span><span class="s2">.</span><span class="s1">allclose</span><span class="s2">(</span><span class="s1">np</span><span class="s2">.</span><span class="s1">sum</span><span class="s2">(</span><span class="s1">P0</span><span class="s2">, </span><span class="s1">axis</span><span class="s0">=</span><span class="s5">0</span><span class="s2">), </span><span class="s5">1</span><span class="s2">)</span>
-<a name="l460"><span class="ln">460  </span></a>              <span class="s0">or not </span><span class="s1">np</span><span class="s2">.</span><span class="s1">allclose</span><span class="s2">(</span><span class="s1">np</span><span class="s2">.</span><span class="s1">sum</span><span class="s2">(</span><span class="s1">P0</span><span class="s2">, </span><span class="s1">axis</span><span class="s0">=</span><span class="s5">1</span><span class="s2">), </span><span class="s5">1</span><span class="s2">))</span><span class="s0">:</span>
-<a name="l461"><span class="ln">461  </span></a>            <span class="s1">msg </span><span class="s0">= </span><span class="s3">&quot;`P0` matrix must be doubly stochastic&quot;</span>
-<a name="l462"><span class="ln">462  </span></a>        <span class="s0">if </span><span class="s1">msg </span><span class="s0">is not None:</span>
-<a name="l463"><span class="ln">463  </span></a>            <span class="s0">raise </span><span class="s1">ValueError</span><span class="s2">(</span><span class="s1">msg</span><span class="s2">)</span>
-<a name="l464"><span class="ln">464  </span></a>    <span class="s0">elif </span><span class="s1">P0 </span><span class="s0">== </span><span class="s3">'barycenter'</span><span class="s0">:</span>
-<a name="l465"><span class="ln">465  </span></a>        <span class="s1">P0 </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">ones</span><span class="s2">((</span><span class="s1">n_unseed</span><span class="s2">, </span><span class="s1">n_unseed</span><span class="s2">)) </span><span class="s0">/ </span><span class="s1">n_unseed</span>
-<a name="l466"><span class="ln">466  </span></a>    <span class="s0">elif </span><span class="s1">P0 </span><span class="s0">== </span><span class="s3">'randomized'</span><span class="s0">:</span>
-<a name="l467"><span class="ln">467  </span></a>        <span class="s1">J </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">ones</span><span class="s2">((</span><span class="s1">n_unseed</span><span class="s2">, </span><span class="s1">n_unseed</span><span class="s2">)) </span><span class="s0">/ </span><span class="s1">n_unseed</span>
+<a name="l454"><span class="ln">454  </span></a>    <span
+            class="s4"># [1] Algorithm 1 Line 1 - choose initialization</span>
+<a name="l455"><span class="ln">455  </span></a>    <span class="s0">if not </span><span
+            class="s1">isinstance</span><span class="s2">(</span><span class="s1">P0</span><span
+            class="s2">, </span><span class="s1">str</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l456"><span class="ln">456  </span></a>        <span class="s1">P0 </span><span class="s0">= </span><span
+            class="s1">np</span><span class="s2">.</span><span class="s1">atleast_2d</span><span
+            class="s2">(</span><span class="s1">P0</span><span class="s2">)</span>
+<a name="l457"><span class="ln">457  </span></a>        <span class="s0">if </span><span class="s1">P0</span><span
+            class="s2">.</span><span class="s1">shape </span><span class="s0">!= </span><span class="s2">(</span><span
+            class="s1">n_unseed</span><span class="s2">, </span><span class="s1">n_unseed</span><span
+            class="s2">)</span><span class="s0">:</span>
+<a name="l458"><span class="ln">458  </span></a>            <span class="s1">msg </span><span class="s0">= </span><span
+            class="s3">&quot;`P0` matrix must have shape m' x m', where m'=n-m&quot;</span>
+<a name="l459"><span class="ln">459  </span></a>        <span class="s0">elif </span><span class="s2">((</span><span
+            class="s1">P0 </span><span class="s0">&lt; </span><span class="s5">0</span><span class="s2">).</span><span
+            class="s1">any</span><span class="s2">() </span><span class="s0">or not </span><span
+            class="s1">np</span><span class="s2">.</span><span class="s1">allclose</span><span class="s2">(</span><span
+            class="s1">np</span><span class="s2">.</span><span class="s1">sum</span><span class="s2">(</span><span
+            class="s1">P0</span><span class="s2">, </span><span class="s1">axis</span><span class="s0">=</span><span
+            class="s5">0</span><span class="s2">), </span><span class="s5">1</span><span class="s2">)</span>
+<a name="l460"><span class="ln">460  </span></a>              <span class="s0">or not </span><span
+            class="s1">np</span><span class="s2">.</span><span class="s1">allclose</span><span class="s2">(</span><span
+            class="s1">np</span><span class="s2">.</span><span class="s1">sum</span><span class="s2">(</span><span
+            class="s1">P0</span><span class="s2">, </span><span class="s1">axis</span><span class="s0">=</span><span
+            class="s5">1</span><span class="s2">), </span><span class="s5">1</span><span class="s2">))</span><span
+            class="s0">:</span>
+<a name="l461"><span class="ln">461  </span></a>            <span class="s1">msg </span><span class="s0">= </span><span
+            class="s3">&quot;`P0` matrix must be doubly stochastic&quot;</span>
+<a name="l462"><span class="ln">462  </span></a>        <span class="s0">if </span><span class="s1">msg </span><span
+            class="s0">is not None:</span>
+<a name="l463"><span class="ln">463  </span></a>            <span class="s0">raise </span><span
+            class="s1">ValueError</span><span class="s2">(</span><span class="s1">msg</span><span class="s2">)</span>
+<a name="l464"><span class="ln">464  </span></a>    <span class="s0">elif </span><span class="s1">P0 </span><span
+            class="s0">== </span><span class="s3">'barycenter'</span><span class="s0">:</span>
+<a name="l465"><span class="ln">465  </span></a>        <span class="s1">P0 </span><span class="s0">= </span><span
+            class="s1">np</span><span class="s2">.</span><span class="s1">ones</span><span class="s2">((</span><span
+            class="s1">n_unseed</span><span class="s2">, </span><span class="s1">n_unseed</span><span
+            class="s2">)) </span><span class="s0">/ </span><span class="s1">n_unseed</span>
+<a name="l466"><span class="ln">466  </span></a>    <span class="s0">elif </span><span class="s1">P0 </span><span
+            class="s0">== </span><span class="s3">'randomized'</span><span class="s0">:</span>
+<a name="l467"><span class="ln">467  </span></a>        <span class="s1">J </span><span class="s0">= </span><span
+            class="s1">np</span><span class="s2">.</span><span class="s1">ones</span><span class="s2">((</span><span
+            class="s1">n_unseed</span><span class="s2">, </span><span class="s1">n_unseed</span><span
+            class="s2">)) </span><span class="s0">/ </span><span class="s1">n_unseed</span>
 <a name="l468"><span class="ln">468  </span></a>        <span class="s4"># generate a nxn matrix where each entry is a random number [0, 1]</span>
-<a name="l469"><span class="ln">469  </span></a>        <span class="s4"># would use rand, but Generators don't have it</span>
+<a name="l469"><span class="ln">469  </span></a>        <span
+            class="s4"># would use rand, but Generators don't have it</span>
 <a name="l470"><span class="ln">470  </span></a>        <span class="s4"># would use random, but old mtrand.RandomStates don't have it</span>
-<a name="l471"><span class="ln">471  </span></a>        <span class="s1">K </span><span class="s0">= </span><span class="s1">_doubly_stochastic</span><span class="s2">(</span><span class="s1">rng</span><span class="s2">.</span><span class="s1">uniform</span><span class="s2">(</span><span class="s1">size</span><span class="s0">=</span><span class="s2">(</span><span class="s1">n_unseed</span><span class="s2">, </span><span class="s1">n_unseed</span><span class="s2">)))</span>
-<a name="l472"><span class="ln">472  </span></a>        <span class="s1">P0 </span><span class="s0">= </span><span class="s2">(</span><span class="s1">J </span><span class="s0">+ </span><span class="s1">K</span><span class="s2">) </span><span class="s0">/ </span><span class="s5">2</span>
+<a name="l471"><span class="ln">471  </span></a>        <span class="s1">K </span><span class="s0">= </span><span
+            class="s1">_doubly_stochastic</span><span class="s2">(</span><span class="s1">rng</span><span
+            class="s2">.</span><span class="s1">uniform</span><span class="s2">(</span><span class="s1">size</span><span
+            class="s0">=</span><span class="s2">(</span><span class="s1">n_unseed</span><span class="s2">, </span><span
+            class="s1">n_unseed</span><span class="s2">)))</span>
+<a name="l472"><span class="ln">472  </span></a>        <span class="s1">P0 </span><span class="s0">= </span><span
+            class="s2">(</span><span class="s1">J </span><span class="s0">+ </span><span class="s1">K</span><span
+            class="s2">) </span><span class="s0">/ </span><span class="s5">2</span>
 <a name="l473"><span class="ln">473  </span></a>
 <a name="l474"><span class="ln">474  </span></a>    <span class="s4"># check trivial cases</span>
-<a name="l475"><span class="ln">475  </span></a>    <span class="s0">if </span><span class="s1">n </span><span class="s0">== </span><span class="s5">0 </span><span class="s0">or </span><span class="s1">n_seeds </span><span class="s0">== </span><span class="s1">n</span><span class="s0">:</span>
-<a name="l476"><span class="ln">476  </span></a>        <span class="s1">score </span><span class="s0">= </span><span class="s1">_calc_score</span><span class="s2">(</span><span class="s1">A</span><span class="s2">, </span><span class="s1">B</span><span class="s2">, </span><span class="s1">partial_match</span><span class="s2">[</span><span class="s0">:</span><span class="s2">, </span><span class="s5">1</span><span class="s2">])</span>
-<a name="l477"><span class="ln">477  </span></a>        <span class="s1">res </span><span class="s0">= </span><span class="s2">{</span><span class="s3">&quot;col_ind&quot;</span><span class="s0">: </span><span class="s1">partial_match</span><span class="s2">[</span><span class="s0">:</span><span class="s2">, </span><span class="s5">1</span><span class="s2">], </span><span class="s3">&quot;fun&quot;</span><span class="s0">: </span><span class="s1">score</span><span class="s2">, </span><span class="s3">&quot;nit&quot;</span><span class="s0">: </span><span class="s5">0</span><span class="s2">}</span>
-<a name="l478"><span class="ln">478  </span></a>        <span class="s0">return </span><span class="s1">OptimizeResult</span><span class="s2">(</span><span class="s1">res</span><span class="s2">)</span>
+<a name="l475"><span class="ln">475  </span></a>    <span class="s0">if </span><span class="s1">n </span><span
+            class="s0">== </span><span class="s5">0 </span><span class="s0">or </span><span
+            class="s1">n_seeds </span><span class="s0">== </span><span class="s1">n</span><span class="s0">:</span>
+<a name="l476"><span class="ln">476  </span></a>        <span class="s1">score </span><span class="s0">= </span><span
+            class="s1">_calc_score</span><span class="s2">(</span><span class="s1">A</span><span
+            class="s2">, </span><span class="s1">B</span><span class="s2">, </span><span class="s1">partial_match</span><span
+            class="s2">[</span><span class="s0">:</span><span class="s2">, </span><span class="s5">1</span><span
+            class="s2">])</span>
+<a name="l477"><span class="ln">477  </span></a>        <span class="s1">res </span><span class="s0">= </span><span
+            class="s2">{</span><span class="s3">&quot;col_ind&quot;</span><span class="s0">: </span><span class="s1">partial_match</span><span
+            class="s2">[</span><span class="s0">:</span><span class="s2">, </span><span class="s5">1</span><span
+            class="s2">], </span><span class="s3">&quot;fun&quot;</span><span class="s0">: </span><span
+            class="s1">score</span><span class="s2">, </span><span class="s3">&quot;nit&quot;</span><span
+            class="s0">: </span><span class="s5">0</span><span class="s2">}</span>
+<a name="l478"><span class="ln">478  </span></a>        <span class="s0">return </span><span
+            class="s1">OptimizeResult</span><span class="s2">(</span><span class="s1">res</span><span
+            class="s2">)</span>
 <a name="l479"><span class="ln">479  </span></a>
-<a name="l480"><span class="ln">480  </span></a>    <span class="s1">obj_func_scalar </span><span class="s0">= </span><span class="s5">1</span>
-<a name="l481"><span class="ln">481  </span></a>    <span class="s0">if </span><span class="s1">maximize</span><span class="s0">:</span>
-<a name="l482"><span class="ln">482  </span></a>        <span class="s1">obj_func_scalar </span><span class="s0">= -</span><span class="s5">1</span>
+<a name="l480"><span class="ln">480  </span></a>    <span class="s1">obj_func_scalar </span><span
+            class="s0">= </span><span class="s5">1</span>
+<a name="l481"><span class="ln">481  </span></a>    <span class="s0">if </span><span class="s1">maximize</span><span
+            class="s0">:</span>
+<a name="l482"><span class="ln">482  </span></a>        <span class="s1">obj_func_scalar </span><span
+            class="s0">= -</span><span class="s5">1</span>
 <a name="l483"><span class="ln">483  </span></a>
-<a name="l484"><span class="ln">484  </span></a>    <span class="s1">nonseed_B </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">setdiff1d</span><span class="s2">(</span><span class="s1">range</span><span class="s2">(</span><span class="s1">n</span><span class="s2">), </span><span class="s1">partial_match</span><span class="s2">[</span><span class="s0">:</span><span class="s2">, </span><span class="s5">1</span><span class="s2">])</span>
-<a name="l485"><span class="ln">485  </span></a>    <span class="s0">if </span><span class="s1">shuffle_input</span><span class="s0">:</span>
-<a name="l486"><span class="ln">486  </span></a>        <span class="s1">nonseed_B </span><span class="s0">= </span><span class="s1">rng</span><span class="s2">.</span><span class="s1">permutation</span><span class="s2">(</span><span class="s1">nonseed_B</span><span class="s2">)</span>
+<a name="l484"><span class="ln">484  </span></a>    <span class="s1">nonseed_B </span><span class="s0">= </span><span
+            class="s1">np</span><span class="s2">.</span><span class="s1">setdiff1d</span><span class="s2">(</span><span
+            class="s1">range</span><span class="s2">(</span><span class="s1">n</span><span class="s2">), </span><span
+            class="s1">partial_match</span><span class="s2">[</span><span class="s0">:</span><span
+            class="s2">, </span><span class="s5">1</span><span class="s2">])</span>
+<a name="l485"><span class="ln">485  </span></a>    <span class="s0">if </span><span
+            class="s1">shuffle_input</span><span class="s0">:</span>
+<a name="l486"><span class="ln">486  </span></a>        <span class="s1">nonseed_B </span><span
+            class="s0">= </span><span class="s1">rng</span><span class="s2">.</span><span
+            class="s1">permutation</span><span class="s2">(</span><span class="s1">nonseed_B</span><span
+            class="s2">)</span>
 <a name="l487"><span class="ln">487  </span></a>
-<a name="l488"><span class="ln">488  </span></a>    <span class="s1">nonseed_A </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">setdiff1d</span><span class="s2">(</span><span class="s1">range</span><span class="s2">(</span><span class="s1">n</span><span class="s2">), </span><span class="s1">partial_match</span><span class="s2">[</span><span class="s0">:</span><span class="s2">, </span><span class="s5">0</span><span class="s2">])</span>
-<a name="l489"><span class="ln">489  </span></a>    <span class="s1">perm_A </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">concatenate</span><span class="s2">([</span><span class="s1">partial_match</span><span class="s2">[</span><span class="s0">:</span><span class="s2">, </span><span class="s5">0</span><span class="s2">], </span><span class="s1">nonseed_A</span><span class="s2">])</span>
-<a name="l490"><span class="ln">490  </span></a>    <span class="s1">perm_B </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">concatenate</span><span class="s2">([</span><span class="s1">partial_match</span><span class="s2">[</span><span class="s0">:</span><span class="s2">, </span><span class="s5">1</span><span class="s2">], </span><span class="s1">nonseed_B</span><span class="s2">])</span>
+<a name="l488"><span class="ln">488  </span></a>    <span class="s1">nonseed_A </span><span class="s0">= </span><span
+            class="s1">np</span><span class="s2">.</span><span class="s1">setdiff1d</span><span class="s2">(</span><span
+            class="s1">range</span><span class="s2">(</span><span class="s1">n</span><span class="s2">), </span><span
+            class="s1">partial_match</span><span class="s2">[</span><span class="s0">:</span><span
+            class="s2">, </span><span class="s5">0</span><span class="s2">])</span>
+<a name="l489"><span class="ln">489  </span></a>    <span class="s1">perm_A </span><span class="s0">= </span><span
+            class="s1">np</span><span class="s2">.</span><span class="s1">concatenate</span><span
+            class="s2">([</span><span class="s1">partial_match</span><span class="s2">[</span><span
+            class="s0">:</span><span class="s2">, </span><span class="s5">0</span><span class="s2">], </span><span
+            class="s1">nonseed_A</span><span class="s2">])</span>
+<a name="l490"><span class="ln">490  </span></a>    <span class="s1">perm_B </span><span class="s0">= </span><span
+            class="s1">np</span><span class="s2">.</span><span class="s1">concatenate</span><span
+            class="s2">([</span><span class="s1">partial_match</span><span class="s2">[</span><span
+            class="s0">:</span><span class="s2">, </span><span class="s5">1</span><span class="s2">], </span><span
+            class="s1">nonseed_B</span><span class="s2">])</span>
 <a name="l491"><span class="ln">491  </span></a>
 <a name="l492"><span class="ln">492  </span></a>    <span class="s4"># definitions according to Seeded Graph Matching [2].</span>
-<a name="l493"><span class="ln">493  </span></a>    <span class="s1">A11</span><span class="s2">, </span><span class="s1">A12</span><span class="s2">, </span><span class="s1">A21</span><span class="s2">, </span><span class="s1">A22 </span><span class="s0">= </span><span class="s1">_split_matrix</span><span class="s2">(</span><span class="s1">A</span><span class="s2">[</span><span class="s1">perm_A</span><span class="s2">][</span><span class="s0">:</span><span class="s2">, </span><span class="s1">perm_A</span><span class="s2">], </span><span class="s1">n_seeds</span><span class="s2">)</span>
-<a name="l494"><span class="ln">494  </span></a>    <span class="s1">B11</span><span class="s2">, </span><span class="s1">B12</span><span class="s2">, </span><span class="s1">B21</span><span class="s2">, </span><span class="s1">B22 </span><span class="s0">= </span><span class="s1">_split_matrix</span><span class="s2">(</span><span class="s1">B</span><span class="s2">[</span><span class="s1">perm_B</span><span class="s2">][</span><span class="s0">:</span><span class="s2">, </span><span class="s1">perm_B</span><span class="s2">], </span><span class="s1">n_seeds</span><span class="s2">)</span>
-<a name="l495"><span class="ln">495  </span></a>    <span class="s1">const_sum </span><span class="s0">= </span><span class="s1">A21 </span><span class="s0">@ </span><span class="s1">B21</span><span class="s2">.</span><span class="s1">T </span><span class="s0">+ </span><span class="s1">A12</span><span class="s2">.</span><span class="s1">T </span><span class="s0">@ </span><span class="s1">B12</span>
+<a name="l493"><span class="ln">493  </span></a>    <span class="s1">A11</span><span class="s2">, </span><span
+            class="s1">A12</span><span class="s2">, </span><span class="s1">A21</span><span class="s2">, </span><span
+            class="s1">A22 </span><span class="s0">= </span><span class="s1">_split_matrix</span><span
+            class="s2">(</span><span class="s1">A</span><span class="s2">[</span><span class="s1">perm_A</span><span
+            class="s2">][</span><span class="s0">:</span><span class="s2">, </span><span class="s1">perm_A</span><span
+            class="s2">], </span><span class="s1">n_seeds</span><span class="s2">)</span>
+<a name="l494"><span class="ln">494  </span></a>    <span class="s1">B11</span><span class="s2">, </span><span
+            class="s1">B12</span><span class="s2">, </span><span class="s1">B21</span><span class="s2">, </span><span
+            class="s1">B22 </span><span class="s0">= </span><span class="s1">_split_matrix</span><span
+            class="s2">(</span><span class="s1">B</span><span class="s2">[</span><span class="s1">perm_B</span><span
+            class="s2">][</span><span class="s0">:</span><span class="s2">, </span><span class="s1">perm_B</span><span
+            class="s2">], </span><span class="s1">n_seeds</span><span class="s2">)</span>
+<a name="l495"><span class="ln">495  </span></a>    <span class="s1">const_sum </span><span class="s0">= </span><span
+            class="s1">A21 </span><span class="s0">@ </span><span class="s1">B21</span><span class="s2">.</span><span
+            class="s1">T </span><span class="s0">+ </span><span class="s1">A12</span><span class="s2">.</span><span
+            class="s1">T </span><span class="s0">@ </span><span class="s1">B12</span>
 <a name="l496"><span class="ln">496  </span></a>
-<a name="l497"><span class="ln">497  </span></a>    <span class="s1">P </span><span class="s0">= </span><span class="s1">P0</span>
+<a name="l497"><span class="ln">497  </span></a>    <span class="s1">P </span><span class="s0">= </span><span
+            class="s1">P0</span>
 <a name="l498"><span class="ln">498  </span></a>    <span class="s4"># [1] Algorithm 1 Line 2 - loop while stopping criteria not met</span>
-<a name="l499"><span class="ln">499  </span></a>    <span class="s0">for </span><span class="s1">n_iter </span><span class="s0">in </span><span class="s1">range</span><span class="s2">(</span><span class="s5">1</span><span class="s2">, </span><span class="s1">maxiter</span><span class="s0">+</span><span class="s5">1</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l499"><span class="ln">499  </span></a>    <span class="s0">for </span><span class="s1">n_iter </span><span
+            class="s0">in </span><span class="s1">range</span><span class="s2">(</span><span class="s5">1</span><span
+            class="s2">, </span><span class="s1">maxiter</span><span class="s0">+</span><span class="s5">1</span><span
+            class="s2">)</span><span class="s0">:</span>
 <a name="l500"><span class="ln">500  </span></a>        <span class="s4"># [1] Algorithm 1 Line 3 - compute the gradient of f(P) = -tr(APB^tP^t)</span>
-<a name="l501"><span class="ln">501  </span></a>        <span class="s1">grad_fp </span><span class="s0">= </span><span class="s2">(</span><span class="s1">const_sum </span><span class="s0">+ </span><span class="s1">A22 </span><span class="s0">@ </span><span class="s1">P </span><span class="s0">@ </span><span class="s1">B22</span><span class="s2">.</span><span class="s1">T </span><span class="s0">+ </span><span class="s1">A22</span><span class="s2">.</span><span class="s1">T </span><span class="s0">@ </span><span class="s1">P </span><span class="s0">@ </span><span class="s1">B22</span><span class="s2">)</span>
+<a name="l501"><span class="ln">501  </span></a>        <span class="s1">grad_fp </span><span class="s0">= </span><span
+            class="s2">(</span><span class="s1">const_sum </span><span class="s0">+ </span><span
+            class="s1">A22 </span><span class="s0">@ </span><span class="s1">P </span><span class="s0">@ </span><span
+            class="s1">B22</span><span class="s2">.</span><span class="s1">T </span><span class="s0">+ </span><span
+            class="s1">A22</span><span class="s2">.</span><span class="s1">T </span><span class="s0">@ </span><span
+            class="s1">P </span><span class="s0">@ </span><span class="s1">B22</span><span class="s2">)</span>
 <a name="l502"><span class="ln">502  </span></a>        <span class="s4"># [1] Algorithm 1 Line 4 - get direction Q by solving Eq. 8</span>
-<a name="l503"><span class="ln">503  </span></a>        <span class="s1">_</span><span class="s2">, </span><span class="s1">cols </span><span class="s0">= </span><span class="s1">linear_sum_assignment</span><span class="s2">(</span><span class="s1">grad_fp</span><span class="s2">, </span><span class="s1">maximize</span><span class="s0">=</span><span class="s1">maximize</span><span class="s2">)</span>
-<a name="l504"><span class="ln">504  </span></a>        <span class="s1">Q </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">eye</span><span class="s2">(</span><span class="s1">n_unseed</span><span class="s2">)[</span><span class="s1">cols</span><span class="s2">]</span>
+<a name="l503"><span class="ln">503  </span></a>        <span class="s1">_</span><span class="s2">, </span><span
+            class="s1">cols </span><span class="s0">= </span><span class="s1">linear_sum_assignment</span><span
+            class="s2">(</span><span class="s1">grad_fp</span><span class="s2">, </span><span class="s1">maximize</span><span
+            class="s0">=</span><span class="s1">maximize</span><span class="s2">)</span>
+<a name="l504"><span class="ln">504  </span></a>        <span class="s1">Q </span><span class="s0">= </span><span
+            class="s1">np</span><span class="s2">.</span><span class="s1">eye</span><span class="s2">(</span><span
+            class="s1">n_unseed</span><span class="s2">)[</span><span class="s1">cols</span><span class="s2">]</span>
 <a name="l505"><span class="ln">505  </span></a>
 <a name="l506"><span class="ln">506  </span></a>        <span class="s4"># [1] Algorithm 1 Line 5 - compute the step size</span>
 <a name="l507"><span class="ln">507  </span></a>        <span class="s4"># Noting that e.g. trace(Ax) = trace(A)*x, expand and re-collect</span>
 <a name="l508"><span class="ln">508  </span></a>        <span class="s4"># terms as ax**2 + bx + c. c does not affect location of minimum</span>
 <a name="l509"><span class="ln">509  </span></a>        <span class="s4"># and can be ignored. Also, note that trace(A@B) = (A.T*B).sum();</span>
 <a name="l510"><span class="ln">510  </span></a>        <span class="s4"># apply where possible for efficiency.</span>
-<a name="l511"><span class="ln">511  </span></a>        <span class="s1">R </span><span class="s0">= </span><span class="s1">P </span><span class="s0">- </span><span class="s1">Q</span>
-<a name="l512"><span class="ln">512  </span></a>        <span class="s1">b21 </span><span class="s0">= </span><span class="s2">((</span><span class="s1">R</span><span class="s2">.</span><span class="s1">T </span><span class="s0">@ </span><span class="s1">A21</span><span class="s2">) </span><span class="s0">* </span><span class="s1">B21</span><span class="s2">).</span><span class="s1">sum</span><span class="s2">()</span>
-<a name="l513"><span class="ln">513  </span></a>        <span class="s1">b12 </span><span class="s0">= </span><span class="s2">((</span><span class="s1">R</span><span class="s2">.</span><span class="s1">T </span><span class="s0">@ </span><span class="s1">A12</span><span class="s2">.</span><span class="s1">T</span><span class="s2">) </span><span class="s0">* </span><span class="s1">B12</span><span class="s2">.</span><span class="s1">T</span><span class="s2">).</span><span class="s1">sum</span><span class="s2">()</span>
-<a name="l514"><span class="ln">514  </span></a>        <span class="s1">AR22 </span><span class="s0">= </span><span class="s1">A22</span><span class="s2">.</span><span class="s1">T </span><span class="s0">@ </span><span class="s1">R</span>
-<a name="l515"><span class="ln">515  </span></a>        <span class="s1">BR22 </span><span class="s0">= </span><span class="s1">B22 </span><span class="s0">@ </span><span class="s1">R</span><span class="s2">.</span><span class="s1">T</span>
-<a name="l516"><span class="ln">516  </span></a>        <span class="s1">b22a </span><span class="s0">= </span><span class="s2">(</span><span class="s1">AR22 </span><span class="s0">* </span><span class="s1">B22</span><span class="s2">.</span><span class="s1">T</span><span class="s2">[</span><span class="s1">cols</span><span class="s2">]).</span><span class="s1">sum</span><span class="s2">()</span>
-<a name="l517"><span class="ln">517  </span></a>        <span class="s1">b22b </span><span class="s0">= </span><span class="s2">(</span><span class="s1">A22 </span><span class="s0">* </span><span class="s1">BR22</span><span class="s2">[</span><span class="s1">cols</span><span class="s2">]).</span><span class="s1">sum</span><span class="s2">()</span>
-<a name="l518"><span class="ln">518  </span></a>        <span class="s1">a </span><span class="s0">= </span><span class="s2">(</span><span class="s1">AR22</span><span class="s2">.</span><span class="s1">T </span><span class="s0">* </span><span class="s1">BR22</span><span class="s2">).</span><span class="s1">sum</span><span class="s2">()</span>
-<a name="l519"><span class="ln">519  </span></a>        <span class="s1">b </span><span class="s0">= </span><span class="s1">b21 </span><span class="s0">+ </span><span class="s1">b12 </span><span class="s0">+ </span><span class="s1">b22a </span><span class="s0">+ </span><span class="s1">b22b</span>
+<a name="l511"><span class="ln">511  </span></a>        <span class="s1">R </span><span class="s0">= </span><span
+            class="s1">P </span><span class="s0">- </span><span class="s1">Q</span>
+<a name="l512"><span class="ln">512  </span></a>        <span class="s1">b21 </span><span class="s0">= </span><span
+            class="s2">((</span><span class="s1">R</span><span class="s2">.</span><span class="s1">T </span><span
+            class="s0">@ </span><span class="s1">A21</span><span class="s2">) </span><span class="s0">* </span><span
+            class="s1">B21</span><span class="s2">).</span><span class="s1">sum</span><span class="s2">()</span>
+<a name="l513"><span class="ln">513  </span></a>        <span class="s1">b12 </span><span class="s0">= </span><span
+            class="s2">((</span><span class="s1">R</span><span class="s2">.</span><span class="s1">T </span><span
+            class="s0">@ </span><span class="s1">A12</span><span class="s2">.</span><span class="s1">T</span><span
+            class="s2">) </span><span class="s0">* </span><span class="s1">B12</span><span class="s2">.</span><span
+            class="s1">T</span><span class="s2">).</span><span class="s1">sum</span><span class="s2">()</span>
+<a name="l514"><span class="ln">514  </span></a>        <span class="s1">AR22 </span><span class="s0">= </span><span
+            class="s1">A22</span><span class="s2">.</span><span class="s1">T </span><span class="s0">@ </span><span
+            class="s1">R</span>
+<a name="l515"><span class="ln">515  </span></a>        <span class="s1">BR22 </span><span class="s0">= </span><span
+            class="s1">B22 </span><span class="s0">@ </span><span class="s1">R</span><span class="s2">.</span><span
+            class="s1">T</span>
+<a name="l516"><span class="ln">516  </span></a>        <span class="s1">b22a </span><span class="s0">= </span><span
+            class="s2">(</span><span class="s1">AR22 </span><span class="s0">* </span><span class="s1">B22</span><span
+            class="s2">.</span><span class="s1">T</span><span class="s2">[</span><span class="s1">cols</span><span
+            class="s2">]).</span><span class="s1">sum</span><span class="s2">()</span>
+<a name="l517"><span class="ln">517  </span></a>        <span class="s1">b22b </span><span class="s0">= </span><span
+            class="s2">(</span><span class="s1">A22 </span><span class="s0">* </span><span class="s1">BR22</span><span
+            class="s2">[</span><span class="s1">cols</span><span class="s2">]).</span><span class="s1">sum</span><span
+            class="s2">()</span>
+<a name="l518"><span class="ln">518  </span></a>        <span class="s1">a </span><span class="s0">= </span><span
+            class="s2">(</span><span class="s1">AR22</span><span class="s2">.</span><span class="s1">T </span><span
+            class="s0">* </span><span class="s1">BR22</span><span class="s2">).</span><span class="s1">sum</span><span
+            class="s2">()</span>
+<a name="l519"><span class="ln">519  </span></a>        <span class="s1">b </span><span class="s0">= </span><span
+            class="s1">b21 </span><span class="s0">+ </span><span class="s1">b12 </span><span class="s0">+ </span><span
+            class="s1">b22a </span><span class="s0">+ </span><span class="s1">b22b</span>
 <a name="l520"><span class="ln">520  </span></a>        <span class="s4"># critical point of ax^2 + bx + c is at x = -d/(2*e)</span>
 <a name="l521"><span class="ln">521  </span></a>        <span class="s4"># if a * obj_func_scalar &gt; 0, it is a minimum</span>
 <a name="l522"><span class="ln">522  </span></a>        <span class="s4"># if minimum is not in [0, 1], only endpoints need to be considered</span>
-<a name="l523"><span class="ln">523  </span></a>        <span class="s0">if </span><span class="s1">a</span><span class="s0">*</span><span class="s1">obj_func_scalar </span><span class="s0">&gt; </span><span class="s5">0 </span><span class="s0">and </span><span class="s5">0 </span><span class="s0">&lt;= -</span><span class="s1">b</span><span class="s0">/</span><span class="s2">(</span><span class="s5">2</span><span class="s0">*</span><span class="s1">a</span><span class="s2">) </span><span class="s0">&lt;= </span><span class="s5">1</span><span class="s0">:</span>
-<a name="l524"><span class="ln">524  </span></a>            <span class="s1">alpha </span><span class="s0">= -</span><span class="s1">b</span><span class="s0">/</span><span class="s2">(</span><span class="s5">2</span><span class="s0">*</span><span class="s1">a</span><span class="s2">)</span>
+<a name="l523"><span class="ln">523  </span></a>        <span class="s0">if </span><span class="s1">a</span><span
+            class="s0">*</span><span class="s1">obj_func_scalar </span><span class="s0">&gt; </span><span
+            class="s5">0 </span><span class="s0">and </span><span class="s5">0 </span><span
+            class="s0">&lt;= -</span><span class="s1">b</span><span class="s0">/</span><span class="s2">(</span><span
+            class="s5">2</span><span class="s0">*</span><span class="s1">a</span><span class="s2">) </span><span
+            class="s0">&lt;= </span><span class="s5">1</span><span class="s0">:</span>
+<a name="l524"><span class="ln">524  </span></a>            <span class="s1">alpha </span><span
+            class="s0">= -</span><span class="s1">b</span><span class="s0">/</span><span class="s2">(</span><span
+            class="s5">2</span><span class="s0">*</span><span class="s1">a</span><span class="s2">)</span>
 <a name="l525"><span class="ln">525  </span></a>        <span class="s0">else:</span>
-<a name="l526"><span class="ln">526  </span></a>            <span class="s1">alpha </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">argmin</span><span class="s2">([</span><span class="s5">0</span><span class="s2">, (</span><span class="s1">b </span><span class="s0">+ </span><span class="s1">a</span><span class="s2">)</span><span class="s0">*</span><span class="s1">obj_func_scalar</span><span class="s2">])</span>
+<a name="l526"><span class="ln">526  </span></a>            <span class="s1">alpha </span><span
+            class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">argmin</span><span
+            class="s2">([</span><span class="s5">0</span><span class="s2">, (</span><span class="s1">b </span><span
+            class="s0">+ </span><span class="s1">a</span><span class="s2">)</span><span class="s0">*</span><span
+            class="s1">obj_func_scalar</span><span class="s2">])</span>
 <a name="l527"><span class="ln">527  </span></a>
 <a name="l528"><span class="ln">528  </span></a>        <span class="s4"># [1] Algorithm 1 Line 6 - Update P</span>
-<a name="l529"><span class="ln">529  </span></a>        <span class="s1">P_i1 </span><span class="s0">= </span><span class="s1">alpha </span><span class="s0">* </span><span class="s1">P </span><span class="s0">+ </span><span class="s2">(</span><span class="s5">1 </span><span class="s0">- </span><span class="s1">alpha</span><span class="s2">) </span><span class="s0">* </span><span class="s1">Q</span>
-<a name="l530"><span class="ln">530  </span></a>        <span class="s0">if </span><span class="s1">np</span><span class="s2">.</span><span class="s1">linalg</span><span class="s2">.</span><span class="s1">norm</span><span class="s2">(</span><span class="s1">P </span><span class="s0">- </span><span class="s1">P_i1</span><span class="s2">) </span><span class="s0">/ </span><span class="s1">np</span><span class="s2">.</span><span class="s1">sqrt</span><span class="s2">(</span><span class="s1">n_unseed</span><span class="s2">) </span><span class="s0">&lt; </span><span class="s1">tol</span><span class="s0">:</span>
-<a name="l531"><span class="ln">531  </span></a>            <span class="s1">P </span><span class="s0">= </span><span class="s1">P_i1</span>
+<a name="l529"><span class="ln">529  </span></a>        <span class="s1">P_i1 </span><span class="s0">= </span><span
+            class="s1">alpha </span><span class="s0">* </span><span class="s1">P </span><span class="s0">+ </span><span
+            class="s2">(</span><span class="s5">1 </span><span class="s0">- </span><span class="s1">alpha</span><span
+            class="s2">) </span><span class="s0">* </span><span class="s1">Q</span>
+<a name="l530"><span class="ln">530  </span></a>        <span class="s0">if </span><span class="s1">np</span><span
+            class="s2">.</span><span class="s1">linalg</span><span class="s2">.</span><span class="s1">norm</span><span
+            class="s2">(</span><span class="s1">P </span><span class="s0">- </span><span class="s1">P_i1</span><span
+            class="s2">) </span><span class="s0">/ </span><span class="s1">np</span><span class="s2">.</span><span
+            class="s1">sqrt</span><span class="s2">(</span><span class="s1">n_unseed</span><span
+            class="s2">) </span><span class="s0">&lt; </span><span class="s1">tol</span><span class="s0">:</span>
+<a name="l531"><span class="ln">531  </span></a>            <span class="s1">P </span><span class="s0">= </span><span
+            class="s1">P_i1</span>
 <a name="l532"><span class="ln">532  </span></a>            <span class="s0">break</span>
-<a name="l533"><span class="ln">533  </span></a>        <span class="s1">P </span><span class="s0">= </span><span class="s1">P_i1</span>
+<a name="l533"><span class="ln">533  </span></a>        <span class="s1">P </span><span class="s0">= </span><span
+            class="s1">P_i1</span>
 <a name="l534"><span class="ln">534  </span></a>    <span class="s4"># [1] Algorithm 1 Line 7 - end main loop</span>
 <a name="l535"><span class="ln">535  </span></a>
 <a name="l536"><span class="ln">536  </span></a>    <span class="s4"># [1] Algorithm 1 Line 8 - project onto the set of permutation matrices</span>
-<a name="l537"><span class="ln">537  </span></a>    <span class="s1">_</span><span class="s2">, </span><span class="s1">col </span><span class="s0">= </span><span class="s1">linear_sum_assignment</span><span class="s2">(</span><span class="s1">P</span><span class="s2">, </span><span class="s1">maximize</span><span class="s0">=True</span><span class="s2">)</span>
-<a name="l538"><span class="ln">538  </span></a>    <span class="s1">perm </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">concatenate</span><span class="s2">((</span><span class="s1">np</span><span class="s2">.</span><span class="s1">arange</span><span class="s2">(</span><span class="s1">n_seeds</span><span class="s2">), </span><span class="s1">col </span><span class="s0">+ </span><span class="s1">n_seeds</span><span class="s2">))</span>
+<a name="l537"><span class="ln">537  </span></a>    <span class="s1">_</span><span class="s2">, </span><span class="s1">col </span><span
+            class="s0">= </span><span class="s1">linear_sum_assignment</span><span class="s2">(</span><span
+            class="s1">P</span><span class="s2">, </span><span class="s1">maximize</span><span
+            class="s0">=True</span><span class="s2">)</span>
+<a name="l538"><span class="ln">538  </span></a>    <span class="s1">perm </span><span class="s0">= </span><span
+            class="s1">np</span><span class="s2">.</span><span class="s1">concatenate</span><span
+            class="s2">((</span><span class="s1">np</span><span class="s2">.</span><span class="s1">arange</span><span
+            class="s2">(</span><span class="s1">n_seeds</span><span class="s2">), </span><span
+            class="s1">col </span><span class="s0">+ </span><span class="s1">n_seeds</span><span class="s2">))</span>
 <a name="l539"><span class="ln">539  </span></a>
-<a name="l540"><span class="ln">540  </span></a>    <span class="s1">unshuffled_perm </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">zeros</span><span class="s2">(</span><span class="s1">n</span><span class="s2">, </span><span class="s1">dtype</span><span class="s0">=</span><span class="s1">int</span><span class="s2">)</span>
-<a name="l541"><span class="ln">541  </span></a>    <span class="s1">unshuffled_perm</span><span class="s2">[</span><span class="s1">perm_A</span><span class="s2">] </span><span class="s0">= </span><span class="s1">perm_B</span><span class="s2">[</span><span class="s1">perm</span><span class="s2">]</span>
+<a name="l540"><span class="ln">540  </span></a>    <span class="s1">unshuffled_perm </span><span
+            class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">zeros</span><span
+            class="s2">(</span><span class="s1">n</span><span class="s2">, </span><span class="s1">dtype</span><span
+            class="s0">=</span><span class="s1">int</span><span class="s2">)</span>
+<a name="l541"><span class="ln">541  </span></a>    <span class="s1">unshuffled_perm</span><span
+            class="s2">[</span><span class="s1">perm_A</span><span class="s2">] </span><span class="s0">= </span><span
+            class="s1">perm_B</span><span class="s2">[</span><span class="s1">perm</span><span class="s2">]</span>
 <a name="l542"><span class="ln">542  </span></a>
-<a name="l543"><span class="ln">543  </span></a>    <span class="s1">score </span><span class="s0">= </span><span class="s1">_calc_score</span><span class="s2">(</span><span class="s1">A</span><span class="s2">, </span><span class="s1">B</span><span class="s2">, </span><span class="s1">unshuffled_perm</span><span class="s2">)</span>
-<a name="l544"><span class="ln">544  </span></a>    <span class="s1">res </span><span class="s0">= </span><span class="s2">{</span><span class="s3">&quot;col_ind&quot;</span><span class="s0">: </span><span class="s1">unshuffled_perm</span><span class="s2">, </span><span class="s3">&quot;fun&quot;</span><span class="s0">: </span><span class="s1">score</span><span class="s2">, </span><span class="s3">&quot;nit&quot;</span><span class="s0">: </span><span class="s1">n_iter</span><span class="s2">}</span>
-<a name="l545"><span class="ln">545  </span></a>    <span class="s0">return </span><span class="s1">OptimizeResult</span><span class="s2">(</span><span class="s1">res</span><span class="s2">)</span>
+<a name="l543"><span class="ln">543  </span></a>    <span class="s1">score </span><span class="s0">= </span><span
+            class="s1">_calc_score</span><span class="s2">(</span><span class="s1">A</span><span
+            class="s2">, </span><span class="s1">B</span><span class="s2">, </span><span
+            class="s1">unshuffled_perm</span><span class="s2">)</span>
+<a name="l544"><span class="ln">544  </span></a>    <span class="s1">res </span><span class="s0">= </span><span
+            class="s2">{</span><span class="s3">&quot;col_ind&quot;</span><span class="s0">: </span><span class="s1">unshuffled_perm</span><span
+            class="s2">, </span><span class="s3">&quot;fun&quot;</span><span class="s0">: </span><span
+            class="s1">score</span><span class="s2">, </span><span class="s3">&quot;nit&quot;</span><span
+            class="s0">: </span><span class="s1">n_iter</span><span class="s2">}</span>
+<a name="l545"><span class="ln">545  </span></a>    <span class="s0">return </span><span
+            class="s1">OptimizeResult</span><span class="s2">(</span><span class="s1">res</span><span
+            class="s2">)</span>
 <a name="l546"><span class="ln">546  </span></a>
 <a name="l547"><span class="ln">547  </span></a>
-<a name="l548"><span class="ln">548  </span></a><span class="s0">def </span><span class="s1">_split_matrix</span><span class="s2">(</span><span class="s1">X</span><span class="s2">, </span><span class="s1">n</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l548"><span class="ln">548  </span></a><span class="s0">def </span><span class="s1">_split_matrix</span><span
+            class="s2">(</span><span class="s1">X</span><span class="s2">, </span><span class="s1">n</span><span
+            class="s2">)</span><span class="s0">:</span>
 <a name="l549"><span class="ln">549  </span></a>    <span class="s4"># definitions according to Seeded Graph Matching [2].</span>
-<a name="l550"><span class="ln">550  </span></a>    <span class="s1">upper</span><span class="s2">, </span><span class="s1">lower </span><span class="s0">= </span><span class="s1">X</span><span class="s2">[</span><span class="s0">:</span><span class="s1">n</span><span class="s2">], </span><span class="s1">X</span><span class="s2">[</span><span class="s1">n</span><span class="s0">:</span><span class="s2">]</span>
-<a name="l551"><span class="ln">551  </span></a>    <span class="s0">return </span><span class="s1">upper</span><span class="s2">[</span><span class="s0">:</span><span class="s2">, </span><span class="s0">:</span><span class="s1">n</span><span class="s2">], </span><span class="s1">upper</span><span class="s2">[</span><span class="s0">:</span><span class="s2">, </span><span class="s1">n</span><span class="s0">:</span><span class="s2">], </span><span class="s1">lower</span><span class="s2">[</span><span class="s0">:</span><span class="s2">, </span><span class="s0">:</span><span class="s1">n</span><span class="s2">], </span><span class="s1">lower</span><span class="s2">[</span><span class="s0">:</span><span class="s2">, </span><span class="s1">n</span><span class="s0">:</span><span class="s2">]</span>
+<a name="l550"><span class="ln">550  </span></a>    <span class="s1">upper</span><span class="s2">, </span><span
+            class="s1">lower </span><span class="s0">= </span><span class="s1">X</span><span class="s2">[</span><span
+            class="s0">:</span><span class="s1">n</span><span class="s2">], </span><span class="s1">X</span><span
+            class="s2">[</span><span class="s1">n</span><span class="s0">:</span><span class="s2">]</span>
+<a name="l551"><span class="ln">551  </span></a>    <span class="s0">return </span><span class="s1">upper</span><span
+            class="s2">[</span><span class="s0">:</span><span class="s2">, </span><span class="s0">:</span><span
+            class="s1">n</span><span class="s2">], </span><span class="s1">upper</span><span class="s2">[</span><span
+            class="s0">:</span><span class="s2">, </span><span class="s1">n</span><span class="s0">:</span><span
+            class="s2">], </span><span class="s1">lower</span><span class="s2">[</span><span class="s0">:</span><span
+            class="s2">, </span><span class="s0">:</span><span class="s1">n</span><span class="s2">], </span><span
+            class="s1">lower</span><span class="s2">[</span><span class="s0">:</span><span class="s2">, </span><span
+            class="s1">n</span><span class="s0">:</span><span class="s2">]</span>
 <a name="l552"><span class="ln">552  </span></a>
 <a name="l553"><span class="ln">553  </span></a>
-<a name="l554"><span class="ln">554  </span></a><span class="s0">def </span><span class="s1">_doubly_stochastic</span><span class="s2">(</span><span class="s1">P</span><span class="s2">, </span><span class="s1">tol</span><span class="s0">=</span><span class="s5">1e-3</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l554"><span class="ln">554  </span></a><span class="s0">def </span><span
+            class="s1">_doubly_stochastic</span><span class="s2">(</span><span class="s1">P</span><span
+            class="s2">, </span><span class="s1">tol</span><span class="s0">=</span><span class="s5">1e-3</span><span
+            class="s2">)</span><span class="s0">:</span>
 <a name="l555"><span class="ln">555  </span></a>    <span class="s4"># Adapted from @btaba implementation</span>
 <a name="l556"><span class="ln">556  </span></a>    <span class="s4"># https://github.com/btaba/sinkhorn_knopp</span>
 <a name="l557"><span class="ln">557  </span></a>    <span class="s4"># of Sinkhorn-Knopp algorithm</span>
-<a name="l558"><span class="ln">558  </span></a>    <span class="s4"># https://projecteuclid.org/euclid.pjm/1102992505</span>
+<a name="l558"><span class="ln">558  </span></a>    <span
+            class="s4"># https://projecteuclid.org/euclid.pjm/1102992505</span>
 <a name="l559"><span class="ln">559  </span></a>
-<a name="l560"><span class="ln">560  </span></a>    <span class="s1">max_iter </span><span class="s0">= </span><span class="s5">1000</span>
-<a name="l561"><span class="ln">561  </span></a>    <span class="s1">c </span><span class="s0">= </span><span class="s5">1 </span><span class="s0">/ </span><span class="s1">P</span><span class="s2">.</span><span class="s1">sum</span><span class="s2">(</span><span class="s1">axis</span><span class="s0">=</span><span class="s5">0</span><span class="s2">)</span>
-<a name="l562"><span class="ln">562  </span></a>    <span class="s1">r </span><span class="s0">= </span><span class="s5">1 </span><span class="s0">/ </span><span class="s2">(</span><span class="s1">P </span><span class="s0">@ </span><span class="s1">c</span><span class="s2">)</span>
-<a name="l563"><span class="ln">563  </span></a>    <span class="s1">P_eps </span><span class="s0">= </span><span class="s1">P</span>
+<a name="l560"><span class="ln">560  </span></a>    <span class="s1">max_iter </span><span class="s0">= </span><span
+            class="s5">1000</span>
+<a name="l561"><span class="ln">561  </span></a>    <span class="s1">c </span><span class="s0">= </span><span
+            class="s5">1 </span><span class="s0">/ </span><span class="s1">P</span><span class="s2">.</span><span
+            class="s1">sum</span><span class="s2">(</span><span class="s1">axis</span><span class="s0">=</span><span
+            class="s5">0</span><span class="s2">)</span>
+<a name="l562"><span class="ln">562  </span></a>    <span class="s1">r </span><span class="s0">= </span><span
+            class="s5">1 </span><span class="s0">/ </span><span class="s2">(</span><span class="s1">P </span><span
+            class="s0">@ </span><span class="s1">c</span><span class="s2">)</span>
+<a name="l563"><span class="ln">563  </span></a>    <span class="s1">P_eps </span><span class="s0">= </span><span
+            class="s1">P</span>
 <a name="l564"><span class="ln">564  </span></a>
-<a name="l565"><span class="ln">565  </span></a>    <span class="s0">for </span><span class="s1">it </span><span class="s0">in </span><span class="s1">range</span><span class="s2">(</span><span class="s1">max_iter</span><span class="s2">)</span><span class="s0">:</span>
-<a name="l566"><span class="ln">566  </span></a>        <span class="s0">if </span><span class="s2">((</span><span class="s1">np</span><span class="s2">.</span><span class="s1">abs</span><span class="s2">(</span><span class="s1">P_eps</span><span class="s2">.</span><span class="s1">sum</span><span class="s2">(</span><span class="s1">axis</span><span class="s0">=</span><span class="s5">1</span><span class="s2">) </span><span class="s0">- </span><span class="s5">1</span><span class="s2">) </span><span class="s0">&lt; </span><span class="s1">tol</span><span class="s2">).</span><span class="s1">all</span><span class="s2">() </span><span class="s0">and</span>
-<a name="l567"><span class="ln">567  </span></a>                <span class="s2">(</span><span class="s1">np</span><span class="s2">.</span><span class="s1">abs</span><span class="s2">(</span><span class="s1">P_eps</span><span class="s2">.</span><span class="s1">sum</span><span class="s2">(</span><span class="s1">axis</span><span class="s0">=</span><span class="s5">0</span><span class="s2">) </span><span class="s0">- </span><span class="s5">1</span><span class="s2">) </span><span class="s0">&lt; </span><span class="s1">tol</span><span class="s2">).</span><span class="s1">all</span><span class="s2">())</span><span class="s0">:</span>
-<a name="l568"><span class="ln">568  </span></a>            <span class="s4"># All column/row sums ~= 1 within threshold</span>
+<a name="l565"><span class="ln">565  </span></a>    <span class="s0">for </span><span class="s1">it </span><span
+            class="s0">in </span><span class="s1">range</span><span class="s2">(</span><span
+            class="s1">max_iter</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l566"><span class="ln">566  </span></a>        <span class="s0">if </span><span class="s2">((</span><span
+            class="s1">np</span><span class="s2">.</span><span class="s1">abs</span><span class="s2">(</span><span
+            class="s1">P_eps</span><span class="s2">.</span><span class="s1">sum</span><span class="s2">(</span><span
+            class="s1">axis</span><span class="s0">=</span><span class="s5">1</span><span class="s2">) </span><span
+            class="s0">- </span><span class="s5">1</span><span class="s2">) </span><span class="s0">&lt; </span><span
+            class="s1">tol</span><span class="s2">).</span><span class="s1">all</span><span class="s2">() </span><span
+            class="s0">and</span>
+<a name="l567"><span class="ln">567  </span></a>                <span class="s2">(</span><span class="s1">np</span><span
+            class="s2">.</span><span class="s1">abs</span><span class="s2">(</span><span class="s1">P_eps</span><span
+            class="s2">.</span><span class="s1">sum</span><span class="s2">(</span><span class="s1">axis</span><span
+            class="s0">=</span><span class="s5">0</span><span class="s2">) </span><span class="s0">- </span><span
+            class="s5">1</span><span class="s2">) </span><span class="s0">&lt; </span><span class="s1">tol</span><span
+            class="s2">).</span><span class="s1">all</span><span class="s2">())</span><span class="s0">:</span>
+<a name="l568"><span class="ln">568  </span></a>            <span
+            class="s4"># All column/row sums ~= 1 within threshold</span>
 <a name="l569"><span class="ln">569  </span></a>            <span class="s0">break</span>
 <a name="l570"><span class="ln">570  </span></a>
-<a name="l571"><span class="ln">571  </span></a>        <span class="s1">c </span><span class="s0">= </span><span class="s5">1 </span><span class="s0">/ </span><span class="s2">(</span><span class="s1">r </span><span class="s0">@ </span><span class="s1">P</span><span class="s2">)</span>
-<a name="l572"><span class="ln">572  </span></a>        <span class="s1">r </span><span class="s0">= </span><span class="s5">1 </span><span class="s0">/ </span><span class="s2">(</span><span class="s1">P </span><span class="s0">@ </span><span class="s1">c</span><span class="s2">)</span>
-<a name="l573"><span class="ln">573  </span></a>        <span class="s1">P_eps </span><span class="s0">= </span><span class="s1">r</span><span class="s2">[</span><span class="s0">:</span><span class="s2">, </span><span class="s0">None</span><span class="s2">] </span><span class="s0">* </span><span class="s1">P </span><span class="s0">* </span><span class="s1">c</span>
+<a name="l571"><span class="ln">571  </span></a>        <span class="s1">c </span><span class="s0">= </span><span
+            class="s5">1 </span><span class="s0">/ </span><span class="s2">(</span><span class="s1">r </span><span
+            class="s0">@ </span><span class="s1">P</span><span class="s2">)</span>
+<a name="l572"><span class="ln">572  </span></a>        <span class="s1">r </span><span class="s0">= </span><span
+            class="s5">1 </span><span class="s0">/ </span><span class="s2">(</span><span class="s1">P </span><span
+            class="s0">@ </span><span class="s1">c</span><span class="s2">)</span>
+<a name="l573"><span class="ln">573  </span></a>        <span class="s1">P_eps </span><span class="s0">= </span><span
+            class="s1">r</span><span class="s2">[</span><span class="s0">:</span><span class="s2">, </span><span
+            class="s0">None</span><span class="s2">] </span><span class="s0">* </span><span class="s1">P </span><span
+            class="s0">* </span><span class="s1">c</span>
 <a name="l574"><span class="ln">574  </span></a>
 <a name="l575"><span class="ln">575  </span></a>    <span class="s0">return </span><span class="s1">P_eps</span>
 <a name="l576"><span class="ln">576  </span></a>
 <a name="l577"><span class="ln">577  </span></a>
-<a name="l578"><span class="ln">578  </span></a><span class="s0">def </span><span class="s1">_quadratic_assignment_2opt</span><span class="s2">(</span><span class="s1">A</span><span class="s2">, </span><span class="s1">B</span><span class="s2">, </span><span class="s1">maximize</span><span class="s0">=False</span><span class="s2">, </span><span class="s1">rng</span><span class="s0">=None</span><span class="s2">,</span>
-<a name="l579"><span class="ln">579  </span></a>                               <span class="s1">partial_match</span><span class="s0">=None</span><span class="s2">,</span>
-<a name="l580"><span class="ln">580  </span></a>                               <span class="s1">partial_guess</span><span class="s0">=None</span><span class="s2">,</span>
-<a name="l581"><span class="ln">581  </span></a>                               <span class="s0">**</span><span class="s1">unknown_options</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l578"><span class="ln">578  </span></a><span class="s0">def </span><span
+            class="s1">_quadratic_assignment_2opt</span><span class="s2">(</span><span class="s1">A</span><span
+            class="s2">, </span><span class="s1">B</span><span class="s2">, </span><span class="s1">maximize</span><span
+            class="s0">=False</span><span class="s2">, </span><span class="s1">rng</span><span
+            class="s0">=None</span><span class="s2">,</span>
+<a name="l579"><span class="ln">579  </span></a>                               <span
+            class="s1">partial_match</span><span class="s0">=None</span><span class="s2">,</span>
+<a name="l580"><span class="ln">580  </span></a>                               <span
+            class="s1">partial_guess</span><span class="s0">=None</span><span class="s2">,</span>
+<a name="l581"><span class="ln">581  </span></a>                               <span class="s0">**</span><span
+            class="s1">unknown_options</span><span class="s2">)</span><span class="s0">:</span>
 <a name="l582"><span class="ln">582  </span></a>    <span class="s4">r&quot;&quot;&quot;Solve the quadratic assignment problem (approximately). 
 <a name="l583"><span class="ln">583  </span></a> 
 <a name="l584"><span class="ln">584  </span></a>    This function solves the Quadratic Assignment Problem (QAP) and the 
@@ -693,91 +1073,229 @@ _qap.py</font>
 <a name="l673"><span class="ln">673  </span></a>           203-215, https://doi.org/10.1016/j.patcog.2018.09.014 
 <a name="l674"><span class="ln">674  </span></a> 
 <a name="l675"><span class="ln">675  </span></a>    &quot;&quot;&quot;</span>
-<a name="l676"><span class="ln">676  </span></a>    <span class="s1">_check_unknown_options</span><span class="s2">(</span><span class="s1">unknown_options</span><span class="s2">)</span>
-<a name="l677"><span class="ln">677  </span></a>    <span class="s1">rng </span><span class="s0">= </span><span class="s1">check_random_state</span><span class="s2">(</span><span class="s1">rng</span><span class="s2">)</span>
-<a name="l678"><span class="ln">678  </span></a>    <span class="s1">A</span><span class="s2">, </span><span class="s1">B</span><span class="s2">, </span><span class="s1">partial_match </span><span class="s0">= </span><span class="s1">_common_input_validation</span><span class="s2">(</span><span class="s1">A</span><span class="s2">, </span><span class="s1">B</span><span class="s2">, </span><span class="s1">partial_match</span><span class="s2">)</span>
+<a name="l676"><span class="ln">676  </span></a>    <span class="s1">_check_unknown_options</span><span
+            class="s2">(</span><span class="s1">unknown_options</span><span class="s2">)</span>
+<a name="l677"><span class="ln">677  </span></a>    <span class="s1">rng </span><span class="s0">= </span><span
+            class="s1">check_random_state</span><span class="s2">(</span><span class="s1">rng</span><span
+            class="s2">)</span>
+<a name="l678"><span class="ln">678  </span></a>    <span class="s1">A</span><span class="s2">, </span><span class="s1">B</span><span
+            class="s2">, </span><span class="s1">partial_match </span><span class="s0">= </span><span class="s1">_common_input_validation</span><span
+            class="s2">(</span><span class="s1">A</span><span class="s2">, </span><span class="s1">B</span><span
+            class="s2">, </span><span class="s1">partial_match</span><span class="s2">)</span>
 <a name="l679"><span class="ln">679  </span></a>
-<a name="l680"><span class="ln">680  </span></a>    <span class="s1">N </span><span class="s0">= </span><span class="s1">len</span><span class="s2">(</span><span class="s1">A</span><span class="s2">)</span>
+<a name="l680"><span class="ln">680  </span></a>    <span class="s1">N </span><span class="s0">= </span><span
+            class="s1">len</span><span class="s2">(</span><span class="s1">A</span><span class="s2">)</span>
 <a name="l681"><span class="ln">681  </span></a>    <span class="s4"># check trivial cases</span>
-<a name="l682"><span class="ln">682  </span></a>    <span class="s0">if </span><span class="s1">N </span><span class="s0">== </span><span class="s5">0 </span><span class="s0">or </span><span class="s1">partial_match</span><span class="s2">.</span><span class="s1">shape</span><span class="s2">[</span><span class="s5">0</span><span class="s2">] </span><span class="s0">== </span><span class="s1">N</span><span class="s0">:</span>
-<a name="l683"><span class="ln">683  </span></a>        <span class="s1">score </span><span class="s0">= </span><span class="s1">_calc_score</span><span class="s2">(</span><span class="s1">A</span><span class="s2">, </span><span class="s1">B</span><span class="s2">, </span><span class="s1">partial_match</span><span class="s2">[</span><span class="s0">:</span><span class="s2">, </span><span class="s5">1</span><span class="s2">])</span>
-<a name="l684"><span class="ln">684  </span></a>        <span class="s1">res </span><span class="s0">= </span><span class="s2">{</span><span class="s3">&quot;col_ind&quot;</span><span class="s0">: </span><span class="s1">partial_match</span><span class="s2">[</span><span class="s0">:</span><span class="s2">, </span><span class="s5">1</span><span class="s2">], </span><span class="s3">&quot;fun&quot;</span><span class="s0">: </span><span class="s1">score</span><span class="s2">, </span><span class="s3">&quot;nit&quot;</span><span class="s0">: </span><span class="s5">0</span><span class="s2">}</span>
-<a name="l685"><span class="ln">685  </span></a>        <span class="s0">return </span><span class="s1">OptimizeResult</span><span class="s2">(</span><span class="s1">res</span><span class="s2">)</span>
+<a name="l682"><span class="ln">682  </span></a>    <span class="s0">if </span><span class="s1">N </span><span
+            class="s0">== </span><span class="s5">0 </span><span class="s0">or </span><span
+            class="s1">partial_match</span><span class="s2">.</span><span class="s1">shape</span><span
+            class="s2">[</span><span class="s5">0</span><span class="s2">] </span><span class="s0">== </span><span
+            class="s1">N</span><span class="s0">:</span>
+<a name="l683"><span class="ln">683  </span></a>        <span class="s1">score </span><span class="s0">= </span><span
+            class="s1">_calc_score</span><span class="s2">(</span><span class="s1">A</span><span
+            class="s2">, </span><span class="s1">B</span><span class="s2">, </span><span class="s1">partial_match</span><span
+            class="s2">[</span><span class="s0">:</span><span class="s2">, </span><span class="s5">1</span><span
+            class="s2">])</span>
+<a name="l684"><span class="ln">684  </span></a>        <span class="s1">res </span><span class="s0">= </span><span
+            class="s2">{</span><span class="s3">&quot;col_ind&quot;</span><span class="s0">: </span><span class="s1">partial_match</span><span
+            class="s2">[</span><span class="s0">:</span><span class="s2">, </span><span class="s5">1</span><span
+            class="s2">], </span><span class="s3">&quot;fun&quot;</span><span class="s0">: </span><span
+            class="s1">score</span><span class="s2">, </span><span class="s3">&quot;nit&quot;</span><span
+            class="s0">: </span><span class="s5">0</span><span class="s2">}</span>
+<a name="l685"><span class="ln">685  </span></a>        <span class="s0">return </span><span
+            class="s1">OptimizeResult</span><span class="s2">(</span><span class="s1">res</span><span
+            class="s2">)</span>
 <a name="l686"><span class="ln">686  </span></a>
-<a name="l687"><span class="ln">687  </span></a>    <span class="s0">if </span><span class="s1">partial_guess </span><span class="s0">is None:</span>
-<a name="l688"><span class="ln">688  </span></a>        <span class="s1">partial_guess </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">array</span><span class="s2">([[], []]).</span><span class="s1">T</span>
-<a name="l689"><span class="ln">689  </span></a>    <span class="s1">partial_guess </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">atleast_2d</span><span class="s2">(</span><span class="s1">partial_guess</span><span class="s2">).</span><span class="s1">astype</span><span class="s2">(</span><span class="s1">int</span><span class="s2">)</span>
+<a name="l687"><span class="ln">687  </span></a>    <span class="s0">if </span><span
+            class="s1">partial_guess </span><span class="s0">is None:</span>
+<a name="l688"><span class="ln">688  </span></a>        <span class="s1">partial_guess </span><span class="s0">= </span><span
+            class="s1">np</span><span class="s2">.</span><span class="s1">array</span><span
+            class="s2">([[], []]).</span><span class="s1">T</span>
+<a name="l689"><span class="ln">689  </span></a>    <span class="s1">partial_guess </span><span
+            class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span
+            class="s1">atleast_2d</span><span class="s2">(</span><span class="s1">partial_guess</span><span class="s2">).</span><span
+            class="s1">astype</span><span class="s2">(</span><span class="s1">int</span><span class="s2">)</span>
 <a name="l690"><span class="ln">690  </span></a>
 <a name="l691"><span class="ln">691  </span></a>    <span class="s1">msg </span><span class="s0">= None</span>
-<a name="l692"><span class="ln">692  </span></a>    <span class="s0">if </span><span class="s1">partial_guess</span><span class="s2">.</span><span class="s1">shape</span><span class="s2">[</span><span class="s5">0</span><span class="s2">] </span><span class="s0">&gt; </span><span class="s1">A</span><span class="s2">.</span><span class="s1">shape</span><span class="s2">[</span><span class="s5">0</span><span class="s2">]</span><span class="s0">:</span>
-<a name="l693"><span class="ln">693  </span></a>        <span class="s1">msg </span><span class="s0">= </span><span class="s2">(</span><span class="s3">&quot;`partial_guess` can have only as &quot;</span>
-<a name="l694"><span class="ln">694  </span></a>               <span class="s3">&quot;many entries as there are nodes&quot;</span><span class="s2">)</span>
-<a name="l695"><span class="ln">695  </span></a>    <span class="s0">elif </span><span class="s1">partial_guess</span><span class="s2">.</span><span class="s1">shape</span><span class="s2">[</span><span class="s5">1</span><span class="s2">] </span><span class="s0">!= </span><span class="s5">2</span><span class="s0">:</span>
-<a name="l696"><span class="ln">696  </span></a>        <span class="s1">msg </span><span class="s0">= </span><span class="s3">&quot;`partial_guess` must have two columns&quot;</span>
-<a name="l697"><span class="ln">697  </span></a>    <span class="s0">elif </span><span class="s1">partial_guess</span><span class="s2">.</span><span class="s1">ndim </span><span class="s0">!= </span><span class="s5">2</span><span class="s0">:</span>
-<a name="l698"><span class="ln">698  </span></a>        <span class="s1">msg </span><span class="s0">= </span><span class="s3">&quot;`partial_guess` must have exactly two dimensions&quot;</span>
-<a name="l699"><span class="ln">699  </span></a>    <span class="s0">elif </span><span class="s2">(</span><span class="s1">partial_guess </span><span class="s0">&lt; </span><span class="s5">0</span><span class="s2">).</span><span class="s1">any</span><span class="s2">()</span><span class="s0">:</span>
-<a name="l700"><span class="ln">700  </span></a>        <span class="s1">msg </span><span class="s0">= </span><span class="s3">&quot;`partial_guess` must contain only positive indices&quot;</span>
-<a name="l701"><span class="ln">701  </span></a>    <span class="s0">elif </span><span class="s2">(</span><span class="s1">partial_guess </span><span class="s0">&gt;= </span><span class="s1">len</span><span class="s2">(</span><span class="s1">A</span><span class="s2">)).</span><span class="s1">any</span><span class="s2">()</span><span class="s0">:</span>
-<a name="l702"><span class="ln">702  </span></a>        <span class="s1">msg </span><span class="s0">= </span><span class="s3">&quot;`partial_guess` entries must be less than number of nodes&quot;</span>
-<a name="l703"><span class="ln">703  </span></a>    <span class="s0">elif </span><span class="s2">(</span><span class="s0">not </span><span class="s1">len</span><span class="s2">(</span><span class="s1">set</span><span class="s2">(</span><span class="s1">partial_guess</span><span class="s2">[</span><span class="s0">:</span><span class="s2">, </span><span class="s5">0</span><span class="s2">])) </span><span class="s0">== </span><span class="s1">len</span><span class="s2">(</span><span class="s1">partial_guess</span><span class="s2">[</span><span class="s0">:</span><span class="s2">, </span><span class="s5">0</span><span class="s2">]) </span><span class="s0">or</span>
-<a name="l704"><span class="ln">704  </span></a>          <span class="s0">not </span><span class="s1">len</span><span class="s2">(</span><span class="s1">set</span><span class="s2">(</span><span class="s1">partial_guess</span><span class="s2">[</span><span class="s0">:</span><span class="s2">, </span><span class="s5">1</span><span class="s2">])) </span><span class="s0">== </span><span class="s1">len</span><span class="s2">(</span><span class="s1">partial_guess</span><span class="s2">[</span><span class="s0">:</span><span class="s2">, </span><span class="s5">1</span><span class="s2">]))</span><span class="s0">:</span>
-<a name="l705"><span class="ln">705  </span></a>        <span class="s1">msg </span><span class="s0">= </span><span class="s3">&quot;`partial_guess` column entries must be unique&quot;</span>
-<a name="l706"><span class="ln">706  </span></a>    <span class="s0">if </span><span class="s1">msg </span><span class="s0">is not None:</span>
-<a name="l707"><span class="ln">707  </span></a>        <span class="s0">raise </span><span class="s1">ValueError</span><span class="s2">(</span><span class="s1">msg</span><span class="s2">)</span>
+<a name="l692"><span class="ln">692  </span></a>    <span class="s0">if </span><span
+            class="s1">partial_guess</span><span class="s2">.</span><span class="s1">shape</span><span
+            class="s2">[</span><span class="s5">0</span><span class="s2">] </span><span class="s0">&gt; </span><span
+            class="s1">A</span><span class="s2">.</span><span class="s1">shape</span><span class="s2">[</span><span
+            class="s5">0</span><span class="s2">]</span><span class="s0">:</span>
+<a name="l693"><span class="ln">693  </span></a>        <span class="s1">msg </span><span class="s0">= </span><span
+            class="s2">(</span><span class="s3">&quot;`partial_guess` can have only as &quot;</span>
+<a name="l694"><span class="ln">694  </span></a>               <span class="s3">&quot;many entries as there are nodes&quot;</span><span
+            class="s2">)</span>
+<a name="l695"><span class="ln">695  </span></a>    <span class="s0">elif </span><span
+            class="s1">partial_guess</span><span class="s2">.</span><span class="s1">shape</span><span
+            class="s2">[</span><span class="s5">1</span><span class="s2">] </span><span class="s0">!= </span><span
+            class="s5">2</span><span class="s0">:</span>
+<a name="l696"><span class="ln">696  </span></a>        <span class="s1">msg </span><span class="s0">= </span><span
+            class="s3">&quot;`partial_guess` must have two columns&quot;</span>
+<a name="l697"><span class="ln">697  </span></a>    <span class="s0">elif </span><span
+            class="s1">partial_guess</span><span class="s2">.</span><span class="s1">ndim </span><span
+            class="s0">!= </span><span class="s5">2</span><span class="s0">:</span>
+<a name="l698"><span class="ln">698  </span></a>        <span class="s1">msg </span><span class="s0">= </span><span
+            class="s3">&quot;`partial_guess` must have exactly two dimensions&quot;</span>
+<a name="l699"><span class="ln">699  </span></a>    <span class="s0">elif </span><span class="s2">(</span><span
+            class="s1">partial_guess </span><span class="s0">&lt; </span><span class="s5">0</span><span
+            class="s2">).</span><span class="s1">any</span><span class="s2">()</span><span class="s0">:</span>
+<a name="l700"><span class="ln">700  </span></a>        <span class="s1">msg </span><span class="s0">= </span><span
+            class="s3">&quot;`partial_guess` must contain only positive indices&quot;</span>
+<a name="l701"><span class="ln">701  </span></a>    <span class="s0">elif </span><span class="s2">(</span><span
+            class="s1">partial_guess </span><span class="s0">&gt;= </span><span class="s1">len</span><span
+            class="s2">(</span><span class="s1">A</span><span class="s2">)).</span><span class="s1">any</span><span
+            class="s2">()</span><span class="s0">:</span>
+<a name="l702"><span class="ln">702  </span></a>        <span class="s1">msg </span><span class="s0">= </span><span
+            class="s3">&quot;`partial_guess` entries must be less than number of nodes&quot;</span>
+<a name="l703"><span class="ln">703  </span></a>    <span class="s0">elif </span><span class="s2">(</span><span
+            class="s0">not </span><span class="s1">len</span><span class="s2">(</span><span class="s1">set</span><span
+            class="s2">(</span><span class="s1">partial_guess</span><span class="s2">[</span><span
+            class="s0">:</span><span class="s2">, </span><span class="s5">0</span><span class="s2">])) </span><span
+            class="s0">== </span><span class="s1">len</span><span class="s2">(</span><span
+            class="s1">partial_guess</span><span class="s2">[</span><span class="s0">:</span><span
+            class="s2">, </span><span class="s5">0</span><span class="s2">]) </span><span class="s0">or</span>
+<a name="l704"><span class="ln">704  </span></a>          <span class="s0">not </span><span class="s1">len</span><span
+            class="s2">(</span><span class="s1">set</span><span class="s2">(</span><span class="s1">partial_guess</span><span
+            class="s2">[</span><span class="s0">:</span><span class="s2">, </span><span class="s5">1</span><span
+            class="s2">])) </span><span class="s0">== </span><span class="s1">len</span><span class="s2">(</span><span
+            class="s1">partial_guess</span><span class="s2">[</span><span class="s0">:</span><span
+            class="s2">, </span><span class="s5">1</span><span class="s2">]))</span><span class="s0">:</span>
+<a name="l705"><span class="ln">705  </span></a>        <span class="s1">msg </span><span class="s0">= </span><span
+            class="s3">&quot;`partial_guess` column entries must be unique&quot;</span>
+<a name="l706"><span class="ln">706  </span></a>    <span class="s0">if </span><span class="s1">msg </span><span
+            class="s0">is not None:</span>
+<a name="l707"><span class="ln">707  </span></a>        <span class="s0">raise </span><span class="s1">ValueError</span><span
+            class="s2">(</span><span class="s1">msg</span><span class="s2">)</span>
 <a name="l708"><span class="ln">708  </span></a>
 <a name="l709"><span class="ln">709  </span></a>    <span class="s1">fixed_rows </span><span class="s0">= None</span>
-<a name="l710"><span class="ln">710  </span></a>    <span class="s0">if </span><span class="s1">partial_match</span><span class="s2">.</span><span class="s1">size </span><span class="s0">or </span><span class="s1">partial_guess</span><span class="s2">.</span><span class="s1">size</span><span class="s0">:</span>
+<a name="l710"><span class="ln">710  </span></a>    <span class="s0">if </span><span
+            class="s1">partial_match</span><span class="s2">.</span><span class="s1">size </span><span
+            class="s0">or </span><span class="s1">partial_guess</span><span class="s2">.</span><span
+            class="s1">size</span><span class="s0">:</span>
 <a name="l711"><span class="ln">711  </span></a>        <span class="s4"># use partial_match and partial_guess for initial permutation,</span>
 <a name="l712"><span class="ln">712  </span></a>        <span class="s4"># but randomly permute the rest.</span>
-<a name="l713"><span class="ln">713  </span></a>        <span class="s1">guess_rows </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">zeros</span><span class="s2">(</span><span class="s1">N</span><span class="s2">, </span><span class="s1">dtype</span><span class="s0">=</span><span class="s1">bool</span><span class="s2">)</span>
-<a name="l714"><span class="ln">714  </span></a>        <span class="s1">guess_cols </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">zeros</span><span class="s2">(</span><span class="s1">N</span><span class="s2">, </span><span class="s1">dtype</span><span class="s0">=</span><span class="s1">bool</span><span class="s2">)</span>
-<a name="l715"><span class="ln">715  </span></a>        <span class="s1">fixed_rows </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">zeros</span><span class="s2">(</span><span class="s1">N</span><span class="s2">, </span><span class="s1">dtype</span><span class="s0">=</span><span class="s1">bool</span><span class="s2">)</span>
-<a name="l716"><span class="ln">716  </span></a>        <span class="s1">fixed_cols </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">zeros</span><span class="s2">(</span><span class="s1">N</span><span class="s2">, </span><span class="s1">dtype</span><span class="s0">=</span><span class="s1">bool</span><span class="s2">)</span>
-<a name="l717"><span class="ln">717  </span></a>        <span class="s1">perm </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">zeros</span><span class="s2">(</span><span class="s1">N</span><span class="s2">, </span><span class="s1">dtype</span><span class="s0">=</span><span class="s1">int</span><span class="s2">)</span>
+<a name="l713"><span class="ln">713  </span></a>        <span class="s1">guess_rows </span><span
+            class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">zeros</span><span
+            class="s2">(</span><span class="s1">N</span><span class="s2">, </span><span class="s1">dtype</span><span
+            class="s0">=</span><span class="s1">bool</span><span class="s2">)</span>
+<a name="l714"><span class="ln">714  </span></a>        <span class="s1">guess_cols </span><span
+            class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">zeros</span><span
+            class="s2">(</span><span class="s1">N</span><span class="s2">, </span><span class="s1">dtype</span><span
+            class="s0">=</span><span class="s1">bool</span><span class="s2">)</span>
+<a name="l715"><span class="ln">715  </span></a>        <span class="s1">fixed_rows </span><span
+            class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">zeros</span><span
+            class="s2">(</span><span class="s1">N</span><span class="s2">, </span><span class="s1">dtype</span><span
+            class="s0">=</span><span class="s1">bool</span><span class="s2">)</span>
+<a name="l716"><span class="ln">716  </span></a>        <span class="s1">fixed_cols </span><span
+            class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">zeros</span><span
+            class="s2">(</span><span class="s1">N</span><span class="s2">, </span><span class="s1">dtype</span><span
+            class="s0">=</span><span class="s1">bool</span><span class="s2">)</span>
+<a name="l717"><span class="ln">717  </span></a>        <span class="s1">perm </span><span class="s0">= </span><span
+            class="s1">np</span><span class="s2">.</span><span class="s1">zeros</span><span class="s2">(</span><span
+            class="s1">N</span><span class="s2">, </span><span class="s1">dtype</span><span class="s0">=</span><span
+            class="s1">int</span><span class="s2">)</span>
 <a name="l718"><span class="ln">718  </span></a>
-<a name="l719"><span class="ln">719  </span></a>        <span class="s1">rg</span><span class="s2">, </span><span class="s1">cg </span><span class="s0">= </span><span class="s1">partial_guess</span><span class="s2">.</span><span class="s1">T</span>
-<a name="l720"><span class="ln">720  </span></a>        <span class="s1">guess_rows</span><span class="s2">[</span><span class="s1">rg</span><span class="s2">] </span><span class="s0">= True</span>
-<a name="l721"><span class="ln">721  </span></a>        <span class="s1">guess_cols</span><span class="s2">[</span><span class="s1">cg</span><span class="s2">] </span><span class="s0">= True</span>
-<a name="l722"><span class="ln">722  </span></a>        <span class="s1">perm</span><span class="s2">[</span><span class="s1">guess_rows</span><span class="s2">] </span><span class="s0">= </span><span class="s1">cg</span>
+<a name="l719"><span class="ln">719  </span></a>        <span class="s1">rg</span><span class="s2">, </span><span
+            class="s1">cg </span><span class="s0">= </span><span class="s1">partial_guess</span><span
+            class="s2">.</span><span class="s1">T</span>
+<a name="l720"><span class="ln">720  </span></a>        <span class="s1">guess_rows</span><span class="s2">[</span><span
+            class="s1">rg</span><span class="s2">] </span><span class="s0">= True</span>
+<a name="l721"><span class="ln">721  </span></a>        <span class="s1">guess_cols</span><span class="s2">[</span><span
+            class="s1">cg</span><span class="s2">] </span><span class="s0">= True</span>
+<a name="l722"><span class="ln">722  </span></a>        <span class="s1">perm</span><span class="s2">[</span><span
+            class="s1">guess_rows</span><span class="s2">] </span><span class="s0">= </span><span class="s1">cg</span>
 <a name="l723"><span class="ln">723  </span></a>
 <a name="l724"><span class="ln">724  </span></a>        <span class="s4"># match overrides guess</span>
-<a name="l725"><span class="ln">725  </span></a>        <span class="s1">rf</span><span class="s2">, </span><span class="s1">cf </span><span class="s0">= </span><span class="s1">partial_match</span><span class="s2">.</span><span class="s1">T</span>
-<a name="l726"><span class="ln">726  </span></a>        <span class="s1">fixed_rows</span><span class="s2">[</span><span class="s1">rf</span><span class="s2">] </span><span class="s0">= True</span>
-<a name="l727"><span class="ln">727  </span></a>        <span class="s1">fixed_cols</span><span class="s2">[</span><span class="s1">cf</span><span class="s2">] </span><span class="s0">= True</span>
-<a name="l728"><span class="ln">728  </span></a>        <span class="s1">perm</span><span class="s2">[</span><span class="s1">fixed_rows</span><span class="s2">] </span><span class="s0">= </span><span class="s1">cf</span>
+<a name="l725"><span class="ln">725  </span></a>        <span class="s1">rf</span><span class="s2">, </span><span
+            class="s1">cf </span><span class="s0">= </span><span class="s1">partial_match</span><span
+            class="s2">.</span><span class="s1">T</span>
+<a name="l726"><span class="ln">726  </span></a>        <span class="s1">fixed_rows</span><span class="s2">[</span><span
+            class="s1">rf</span><span class="s2">] </span><span class="s0">= True</span>
+<a name="l727"><span class="ln">727  </span></a>        <span class="s1">fixed_cols</span><span class="s2">[</span><span
+            class="s1">cf</span><span class="s2">] </span><span class="s0">= True</span>
+<a name="l728"><span class="ln">728  </span></a>        <span class="s1">perm</span><span class="s2">[</span><span
+            class="s1">fixed_rows</span><span class="s2">] </span><span class="s0">= </span><span class="s1">cf</span>
 <a name="l729"><span class="ln">729  </span></a>
-<a name="l730"><span class="ln">730  </span></a>        <span class="s1">random_rows </span><span class="s0">= ~</span><span class="s1">fixed_rows </span><span class="s0">&amp; ~</span><span class="s1">guess_rows</span>
-<a name="l731"><span class="ln">731  </span></a>        <span class="s1">random_cols </span><span class="s0">= ~</span><span class="s1">fixed_cols </span><span class="s0">&amp; ~</span><span class="s1">guess_cols</span>
-<a name="l732"><span class="ln">732  </span></a>        <span class="s1">perm</span><span class="s2">[</span><span class="s1">random_rows</span><span class="s2">] </span><span class="s0">= </span><span class="s1">rng</span><span class="s2">.</span><span class="s1">permutation</span><span class="s2">(</span><span class="s1">np</span><span class="s2">.</span><span class="s1">arange</span><span class="s2">(</span><span class="s1">N</span><span class="s2">)[</span><span class="s1">random_cols</span><span class="s2">])</span>
+<a name="l730"><span class="ln">730  </span></a>        <span class="s1">random_rows </span><span
+            class="s0">= ~</span><span class="s1">fixed_rows </span><span class="s0">&amp; ~</span><span class="s1">guess_rows</span>
+<a name="l731"><span class="ln">731  </span></a>        <span class="s1">random_cols </span><span
+            class="s0">= ~</span><span class="s1">fixed_cols </span><span class="s0">&amp; ~</span><span class="s1">guess_cols</span>
+<a name="l732"><span class="ln">732  </span></a>        <span class="s1">perm</span><span class="s2">[</span><span
+            class="s1">random_rows</span><span class="s2">] </span><span class="s0">= </span><span class="s1">rng</span><span
+            class="s2">.</span><span class="s1">permutation</span><span class="s2">(</span><span
+            class="s1">np</span><span class="s2">.</span><span class="s1">arange</span><span class="s2">(</span><span
+            class="s1">N</span><span class="s2">)[</span><span class="s1">random_cols</span><span class="s2">])</span>
 <a name="l733"><span class="ln">733  </span></a>    <span class="s0">else:</span>
-<a name="l734"><span class="ln">734  </span></a>        <span class="s1">perm </span><span class="s0">= </span><span class="s1">rng</span><span class="s2">.</span><span class="s1">permutation</span><span class="s2">(</span><span class="s1">np</span><span class="s2">.</span><span class="s1">arange</span><span class="s2">(</span><span class="s1">N</span><span class="s2">))</span>
+<a name="l734"><span class="ln">734  </span></a>        <span class="s1">perm </span><span class="s0">= </span><span
+            class="s1">rng</span><span class="s2">.</span><span class="s1">permutation</span><span
+            class="s2">(</span><span class="s1">np</span><span class="s2">.</span><span class="s1">arange</span><span
+            class="s2">(</span><span class="s1">N</span><span class="s2">))</span>
 <a name="l735"><span class="ln">735  </span></a>
-<a name="l736"><span class="ln">736  </span></a>    <span class="s1">best_score </span><span class="s0">= </span><span class="s1">_calc_score</span><span class="s2">(</span><span class="s1">A</span><span class="s2">, </span><span class="s1">B</span><span class="s2">, </span><span class="s1">perm</span><span class="s2">)</span>
+<a name="l736"><span class="ln">736  </span></a>    <span class="s1">best_score </span><span class="s0">= </span><span
+            class="s1">_calc_score</span><span class="s2">(</span><span class="s1">A</span><span
+            class="s2">, </span><span class="s1">B</span><span class="s2">, </span><span class="s1">perm</span><span
+            class="s2">)</span>
 <a name="l737"><span class="ln">737  </span></a>
-<a name="l738"><span class="ln">738  </span></a>    <span class="s1">i_free </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">arange</span><span class="s2">(</span><span class="s1">N</span><span class="s2">)</span>
-<a name="l739"><span class="ln">739  </span></a>    <span class="s0">if </span><span class="s1">fixed_rows </span><span class="s0">is not None:</span>
-<a name="l740"><span class="ln">740  </span></a>        <span class="s1">i_free </span><span class="s0">= </span><span class="s1">i_free</span><span class="s2">[</span><span class="s0">~</span><span class="s1">fixed_rows</span><span class="s2">]</span>
+<a name="l738"><span class="ln">738  </span></a>    <span class="s1">i_free </span><span class="s0">= </span><span
+            class="s1">np</span><span class="s2">.</span><span class="s1">arange</span><span class="s2">(</span><span
+            class="s1">N</span><span class="s2">)</span>
+<a name="l739"><span class="ln">739  </span></a>    <span class="s0">if </span><span class="s1">fixed_rows </span><span
+            class="s0">is not None:</span>
+<a name="l740"><span class="ln">740  </span></a>        <span class="s1">i_free </span><span class="s0">= </span><span
+            class="s1">i_free</span><span class="s2">[</span><span class="s0">~</span><span class="s1">fixed_rows</span><span
+            class="s2">]</span>
 <a name="l741"><span class="ln">741  </span></a>
-<a name="l742"><span class="ln">742  </span></a>    <span class="s1">better </span><span class="s0">= </span><span class="s1">operator</span><span class="s2">.</span><span class="s1">gt </span><span class="s0">if </span><span class="s1">maximize </span><span class="s0">else </span><span class="s1">operator</span><span class="s2">.</span><span class="s1">lt</span>
-<a name="l743"><span class="ln">743  </span></a>    <span class="s1">n_iter </span><span class="s0">= </span><span class="s5">0</span>
+<a name="l742"><span class="ln">742  </span></a>    <span class="s1">better </span><span class="s0">= </span><span
+            class="s1">operator</span><span class="s2">.</span><span class="s1">gt </span><span
+            class="s0">if </span><span class="s1">maximize </span><span class="s0">else </span><span
+            class="s1">operator</span><span class="s2">.</span><span class="s1">lt</span>
+<a name="l743"><span class="ln">743  </span></a>    <span class="s1">n_iter </span><span class="s0">= </span><span
+            class="s5">0</span>
 <a name="l744"><span class="ln">744  </span></a>    <span class="s1">done </span><span class="s0">= False</span>
-<a name="l745"><span class="ln">745  </span></a>    <span class="s0">while not </span><span class="s1">done</span><span class="s0">:</span>
+<a name="l745"><span class="ln">745  </span></a>    <span class="s0">while not </span><span class="s1">done</span><span
+            class="s0">:</span>
 <a name="l746"><span class="ln">746  </span></a>        <span class="s4"># equivalent to nested for loops i in range(N), j in range(i, N)</span>
-<a name="l747"><span class="ln">747  </span></a>        <span class="s0">for </span><span class="s1">i</span><span class="s2">, </span><span class="s1">j </span><span class="s0">in </span><span class="s1">itertools</span><span class="s2">.</span><span class="s1">combinations_with_replacement</span><span class="s2">(</span><span class="s1">i_free</span><span class="s2">, </span><span class="s5">2</span><span class="s2">)</span><span class="s0">:</span>
-<a name="l748"><span class="ln">748  </span></a>            <span class="s1">n_iter </span><span class="s0">+= </span><span class="s5">1</span>
-<a name="l749"><span class="ln">749  </span></a>            <span class="s1">perm</span><span class="s2">[</span><span class="s1">i</span><span class="s2">], </span><span class="s1">perm</span><span class="s2">[</span><span class="s1">j</span><span class="s2">] </span><span class="s0">= </span><span class="s1">perm</span><span class="s2">[</span><span class="s1">j</span><span class="s2">], </span><span class="s1">perm</span><span class="s2">[</span><span class="s1">i</span><span class="s2">]</span>
-<a name="l750"><span class="ln">750  </span></a>            <span class="s1">score </span><span class="s0">= </span><span class="s1">_calc_score</span><span class="s2">(</span><span class="s1">A</span><span class="s2">, </span><span class="s1">B</span><span class="s2">, </span><span class="s1">perm</span><span class="s2">)</span>
-<a name="l751"><span class="ln">751  </span></a>            <span class="s0">if </span><span class="s1">better</span><span class="s2">(</span><span class="s1">score</span><span class="s2">, </span><span class="s1">best_score</span><span class="s2">)</span><span class="s0">:</span>
-<a name="l752"><span class="ln">752  </span></a>                <span class="s1">best_score </span><span class="s0">= </span><span class="s1">score</span>
+<a name="l747"><span class="ln">747  </span></a>        <span class="s0">for </span><span class="s1">i</span><span
+            class="s2">, </span><span class="s1">j </span><span class="s0">in </span><span
+            class="s1">itertools</span><span class="s2">.</span><span
+            class="s1">combinations_with_replacement</span><span class="s2">(</span><span class="s1">i_free</span><span
+            class="s2">, </span><span class="s5">2</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l748"><span class="ln">748  </span></a>            <span class="s1">n_iter </span><span
+            class="s0">+= </span><span class="s5">1</span>
+<a name="l749"><span class="ln">749  </span></a>            <span class="s1">perm</span><span class="s2">[</span><span
+            class="s1">i</span><span class="s2">], </span><span class="s1">perm</span><span class="s2">[</span><span
+            class="s1">j</span><span class="s2">] </span><span class="s0">= </span><span class="s1">perm</span><span
+            class="s2">[</span><span class="s1">j</span><span class="s2">], </span><span class="s1">perm</span><span
+            class="s2">[</span><span class="s1">i</span><span class="s2">]</span>
+<a name="l750"><span class="ln">750  </span></a>            <span class="s1">score </span><span
+            class="s0">= </span><span class="s1">_calc_score</span><span class="s2">(</span><span
+            class="s1">A</span><span class="s2">, </span><span class="s1">B</span><span class="s2">, </span><span
+            class="s1">perm</span><span class="s2">)</span>
+<a name="l751"><span class="ln">751  </span></a>            <span class="s0">if </span><span
+            class="s1">better</span><span class="s2">(</span><span class="s1">score</span><span
+            class="s2">, </span><span class="s1">best_score</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l752"><span class="ln">752  </span></a>                <span class="s1">best_score </span><span
+            class="s0">= </span><span class="s1">score</span>
 <a name="l753"><span class="ln">753  </span></a>                <span class="s0">break</span>
 <a name="l754"><span class="ln">754  </span></a>            <span class="s4"># faster to swap back than to create a new list every time</span>
-<a name="l755"><span class="ln">755  </span></a>            <span class="s1">perm</span><span class="s2">[</span><span class="s1">i</span><span class="s2">], </span><span class="s1">perm</span><span class="s2">[</span><span class="s1">j</span><span class="s2">] </span><span class="s0">= </span><span class="s1">perm</span><span class="s2">[</span><span class="s1">j</span><span class="s2">], </span><span class="s1">perm</span><span class="s2">[</span><span class="s1">i</span><span class="s2">]</span>
-<a name="l756"><span class="ln">756  </span></a>        <span class="s0">else:  </span><span class="s4"># no swaps made</span>
+<a name="l755"><span class="ln">755  </span></a>            <span class="s1">perm</span><span class="s2">[</span><span
+            class="s1">i</span><span class="s2">], </span><span class="s1">perm</span><span class="s2">[</span><span
+            class="s1">j</span><span class="s2">] </span><span class="s0">= </span><span class="s1">perm</span><span
+            class="s2">[</span><span class="s1">j</span><span class="s2">], </span><span class="s1">perm</span><span
+            class="s2">[</span><span class="s1">i</span><span class="s2">]</span>
+<a name="l756"><span class="ln">756  </span></a>        <span class="s0">else:  </span><span
+            class="s4"># no swaps made</span>
 <a name="l757"><span class="ln">757  </span></a>            <span class="s1">done </span><span class="s0">= True</span>
 <a name="l758"><span class="ln">758  </span></a>
-<a name="l759"><span class="ln">759  </span></a>    <span class="s1">res </span><span class="s0">= </span><span class="s2">{</span><span class="s3">&quot;col_ind&quot;</span><span class="s0">: </span><span class="s1">perm</span><span class="s2">, </span><span class="s3">&quot;fun&quot;</span><span class="s0">: </span><span class="s1">best_score</span><span class="s2">, </span><span class="s3">&quot;nit&quot;</span><span class="s0">: </span><span class="s1">n_iter</span><span class="s2">}</span>
-<a name="l760"><span class="ln">760  </span></a>    <span class="s0">return </span><span class="s1">OptimizeResult</span><span class="s2">(</span><span class="s1">res</span><span class="s2">)</span>
+<a name="l759"><span class="ln">759  </span></a>    <span class="s1">res </span><span class="s0">= </span><span
+            class="s2">{</span><span class="s3">&quot;col_ind&quot;</span><span class="s0">: </span><span class="s1">perm</span><span
+            class="s2">, </span><span class="s3">&quot;fun&quot;</span><span class="s0">: </span><span class="s1">best_score</span><span
+            class="s2">, </span><span class="s3">&quot;nit&quot;</span><span class="s0">: </span><span
+            class="s1">n_iter</span><span class="s2">}</span>
+<a name="l760"><span class="ln">760  </span></a>    <span class="s0">return </span><span
+            class="s1">OptimizeResult</span><span class="s2">(</span><span class="s1">res</span><span
+            class="s2">)</span>
 <a name="l761"><span class="ln">761  </span></a></pre>
 </body>
 </html>

@@ -1,23 +1,28 @@
 <html>
 <head>
-<title>_czt.py</title>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<style type="text/css">
-.s0 { color: #969896;}
-.s1 { color: #333333;}
-.s2 { color: #a71d5d;}
-.s3 { color: #63a35c;}
-.s4 { color: #183691;}
-.s5 { color: #0086b3;}
-.ln { color: #333333; font-weight: normal; font-style: normal; }
-</style>
+    <title>_czt.py</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <style type="text/css">
+        .s0 { color: #969896;}
+        .s1 { color: #333333;}
+        .s2 { color: #a71d5d;}
+        .s3 { color: #63a35c;}
+        .s4 { color: #183691;}
+        .s5 { color: #0086b3;}
+        .ln { color: #333333; font-weight: normal; font-style: normal; }
+    </style>
 </head>
 <body bgcolor="#ffffff">
-<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#c0c0c0" >
-<tr><td><center>
-<font face="Arial, Helvetica" color="#000000">
-_czt.py</font>
-</center></td></tr></table>
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#c0c0c0">
+    <tr>
+        <td>
+            <center>
+                <font face="Arial, Helvetica" color="#000000">
+                    _czt.py</font>
+            </center>
+        </td>
+    </tr>
+</table>
 <pre><a name="l1"><span class="ln">1    </span></a><span class="s0"># This program is public domain</span>
 <a name="l2"><span class="ln">2    </span></a><span class="s0"># Authors: Paul Kienzle, Nadav Horesh</span>
 <a name="l3"><span class="ln">3    </span></a><span class="s0">&quot;&quot;&quot; 
@@ -47,30 +52,60 @@ _czt.py</font>
 <a name="l27"><span class="ln">27   </span></a>
 <a name="l28"><span class="ln">28   </span></a><span class="s2">import </span><span class="s1">cmath</span>
 <a name="l29"><span class="ln">29   </span></a><span class="s2">import </span><span class="s1">numbers</span>
-<a name="l30"><span class="ln">30   </span></a><span class="s2">import </span><span class="s1">numpy </span><span class="s2">as </span><span class="s1">np</span>
-<a name="l31"><span class="ln">31   </span></a><span class="s2">from </span><span class="s1">numpy </span><span class="s2">import </span><span class="s1">pi</span><span class="s3">, </span><span class="s1">arange</span>
-<a name="l32"><span class="ln">32   </span></a><span class="s2">from </span><span class="s1">scipy</span><span class="s3">.</span><span class="s1">fft </span><span class="s2">import </span><span class="s1">fft</span><span class="s3">, </span><span class="s1">ifft</span><span class="s3">, </span><span class="s1">next_fast_len</span>
+<a name="l30"><span class="ln">30   </span></a><span class="s2">import </span><span class="s1">numpy </span><span
+            class="s2">as </span><span class="s1">np</span>
+<a name="l31"><span class="ln">31   </span></a><span class="s2">from </span><span class="s1">numpy </span><span
+            class="s2">import </span><span class="s1">pi</span><span class="s3">, </span><span class="s1">arange</span>
+<a name="l32"><span class="ln">32   </span></a><span class="s2">from </span><span class="s1">scipy</span><span
+            class="s3">.</span><span class="s1">fft </span><span class="s2">import </span><span
+            class="s1">fft</span><span class="s3">, </span><span class="s1">ifft</span><span class="s3">, </span><span
+            class="s1">next_fast_len</span>
 <a name="l33"><span class="ln">33   </span></a>
-<a name="l34"><span class="ln">34   </span></a><span class="s1">__all__ </span><span class="s2">= </span><span class="s3">[</span><span class="s4">'czt'</span><span class="s3">, </span><span class="s4">'zoom_fft'</span><span class="s3">, </span><span class="s4">'CZT'</span><span class="s3">, </span><span class="s4">'ZoomFFT'</span><span class="s3">, </span><span class="s4">'czt_points'</span><span class="s3">]</span>
+<a name="l34"><span class="ln">34   </span></a><span class="s1">__all__ </span><span class="s2">= </span><span
+            class="s3">[</span><span class="s4">'czt'</span><span class="s3">, </span><span class="s4">'zoom_fft'</span><span
+            class="s3">, </span><span class="s4">'CZT'</span><span class="s3">, </span><span class="s4">'ZoomFFT'</span><span
+            class="s3">, </span><span class="s4">'czt_points'</span><span class="s3">]</span>
 <a name="l35"><span class="ln">35   </span></a>
 <a name="l36"><span class="ln">36   </span></a>
-<a name="l37"><span class="ln">37   </span></a><span class="s2">def </span><span class="s1">_validate_sizes</span><span class="s3">(</span><span class="s1">n</span><span class="s3">, </span><span class="s1">m</span><span class="s3">)</span><span class="s2">:</span>
-<a name="l38"><span class="ln">38   </span></a>    <span class="s2">if </span><span class="s1">n </span><span class="s2">&lt; </span><span class="s5">1 </span><span class="s2">or not </span><span class="s1">isinstance</span><span class="s3">(</span><span class="s1">n</span><span class="s3">, </span><span class="s1">numbers</span><span class="s3">.</span><span class="s1">Integral</span><span class="s3">)</span><span class="s2">:</span>
-<a name="l39"><span class="ln">39   </span></a>        <span class="s2">raise </span><span class="s1">ValueError</span><span class="s3">(</span><span class="s4">'Invalid number of CZT data '</span>
-<a name="l40"><span class="ln">40   </span></a>                         <span class="s4">f'points ({</span><span class="s1">n</span><span class="s4">}) specified. '</span>
-<a name="l41"><span class="ln">41   </span></a>                         <span class="s4">'n must be positive and integer type.'</span><span class="s3">)</span>
+<a name="l37"><span class="ln">37   </span></a><span class="s2">def </span><span class="s1">_validate_sizes</span><span
+            class="s3">(</span><span class="s1">n</span><span class="s3">, </span><span class="s1">m</span><span
+            class="s3">)</span><span class="s2">:</span>
+<a name="l38"><span class="ln">38   </span></a>    <span class="s2">if </span><span class="s1">n </span><span
+            class="s2">&lt; </span><span class="s5">1 </span><span class="s2">or not </span><span
+            class="s1">isinstance</span><span class="s3">(</span><span class="s1">n</span><span
+            class="s3">, </span><span class="s1">numbers</span><span class="s3">.</span><span class="s1">Integral</span><span
+            class="s3">)</span><span class="s2">:</span>
+<a name="l39"><span class="ln">39   </span></a>        <span class="s2">raise </span><span
+            class="s1">ValueError</span><span class="s3">(</span><span class="s4">'Invalid number of CZT data '</span>
+<a name="l40"><span class="ln">40   </span></a>                         <span class="s4">f'points ({</span><span
+            class="s1">n</span><span class="s4">}) specified. '</span>
+<a name="l41"><span class="ln">41   </span></a>                         <span class="s4">'n must be positive and integer type.'</span><span
+            class="s3">)</span>
 <a name="l42"><span class="ln">42   </span></a>
-<a name="l43"><span class="ln">43   </span></a>    <span class="s2">if </span><span class="s1">m </span><span class="s2">is None:</span>
-<a name="l44"><span class="ln">44   </span></a>        <span class="s1">m </span><span class="s2">= </span><span class="s1">n</span>
-<a name="l45"><span class="ln">45   </span></a>    <span class="s2">elif </span><span class="s1">m </span><span class="s2">&lt; </span><span class="s5">1 </span><span class="s2">or not </span><span class="s1">isinstance</span><span class="s3">(</span><span class="s1">m</span><span class="s3">, </span><span class="s1">numbers</span><span class="s3">.</span><span class="s1">Integral</span><span class="s3">)</span><span class="s2">:</span>
-<a name="l46"><span class="ln">46   </span></a>        <span class="s2">raise </span><span class="s1">ValueError</span><span class="s3">(</span><span class="s4">'Invalid number of CZT output '</span>
-<a name="l47"><span class="ln">47   </span></a>                         <span class="s4">f'points ({</span><span class="s1">m</span><span class="s4">}) specified. '</span>
-<a name="l48"><span class="ln">48   </span></a>                         <span class="s4">'m must be positive and integer type.'</span><span class="s3">)</span>
+<a name="l43"><span class="ln">43   </span></a>    <span class="s2">if </span><span class="s1">m </span><span
+            class="s2">is None:</span>
+<a name="l44"><span class="ln">44   </span></a>        <span class="s1">m </span><span class="s2">= </span><span
+            class="s1">n</span>
+<a name="l45"><span class="ln">45   </span></a>    <span class="s2">elif </span><span class="s1">m </span><span
+            class="s2">&lt; </span><span class="s5">1 </span><span class="s2">or not </span><span
+            class="s1">isinstance</span><span class="s3">(</span><span class="s1">m</span><span
+            class="s3">, </span><span class="s1">numbers</span><span class="s3">.</span><span class="s1">Integral</span><span
+            class="s3">)</span><span class="s2">:</span>
+<a name="l46"><span class="ln">46   </span></a>        <span class="s2">raise </span><span
+            class="s1">ValueError</span><span class="s3">(</span><span class="s4">'Invalid number of CZT output '</span>
+<a name="l47"><span class="ln">47   </span></a>                         <span class="s4">f'points ({</span><span
+            class="s1">m</span><span class="s4">}) specified. '</span>
+<a name="l48"><span class="ln">48   </span></a>                         <span class="s4">'m must be positive and integer type.'</span><span
+            class="s3">)</span>
 <a name="l49"><span class="ln">49   </span></a>
 <a name="l50"><span class="ln">50   </span></a>    <span class="s2">return </span><span class="s1">m</span>
 <a name="l51"><span class="ln">51   </span></a>
 <a name="l52"><span class="ln">52   </span></a>
-<a name="l53"><span class="ln">53   </span></a><span class="s2">def </span><span class="s1">czt_points</span><span class="s3">(</span><span class="s1">m</span><span class="s3">, </span><span class="s1">w</span><span class="s2">=None</span><span class="s3">, </span><span class="s1">a</span><span class="s2">=</span><span class="s5">1</span><span class="s2">+</span><span class="s5">0j</span><span class="s3">)</span><span class="s2">:</span>
+<a name="l53"><span class="ln">53   </span></a><span class="s2">def </span><span class="s1">czt_points</span><span
+            class="s3">(</span><span class="s1">m</span><span class="s3">, </span><span class="s1">w</span><span
+            class="s2">=None</span><span class="s3">, </span><span class="s1">a</span><span class="s2">=</span><span
+            class="s5">1</span><span class="s2">+</span><span class="s5">0j</span><span class="s3">)</span><span
+            class="s2">:</span>
 <a name="l54"><span class="ln">54   </span></a>    <span class="s0">&quot;&quot;&quot; 
 <a name="l55"><span class="ln">55   </span></a>    Return the points at which the chirp z-transform is computed. 
 <a name="l56"><span class="ln">56   </span></a> 
@@ -117,22 +152,36 @@ _czt.py</font>
 <a name="l97"><span class="ln">97   </span></a>    &gt;&gt;&gt; plt.axis('equal') 
 <a name="l98"><span class="ln">98   </span></a>    &gt;&gt;&gt; plt.show() 
 <a name="l99"><span class="ln">99   </span></a>    &quot;&quot;&quot;</span>
-<a name="l100"><span class="ln">100  </span></a>    <span class="s1">m </span><span class="s2">= </span><span class="s1">_validate_sizes</span><span class="s3">(</span><span class="s5">1</span><span class="s3">, </span><span class="s1">m</span><span class="s3">)</span>
+<a name="l100"><span class="ln">100  </span></a>    <span class="s1">m </span><span class="s2">= </span><span
+            class="s1">_validate_sizes</span><span class="s3">(</span><span class="s5">1</span><span
+            class="s3">, </span><span class="s1">m</span><span class="s3">)</span>
 <a name="l101"><span class="ln">101  </span></a>
-<a name="l102"><span class="ln">102  </span></a>    <span class="s1">k </span><span class="s2">= </span><span class="s1">arange</span><span class="s3">(</span><span class="s1">m</span><span class="s3">)</span>
+<a name="l102"><span class="ln">102  </span></a>    <span class="s1">k </span><span class="s2">= </span><span
+            class="s1">arange</span><span class="s3">(</span><span class="s1">m</span><span class="s3">)</span>
 <a name="l103"><span class="ln">103  </span></a>
-<a name="l104"><span class="ln">104  </span></a>    <span class="s1">a </span><span class="s2">= </span><span class="s5">1.0 </span><span class="s2">* </span><span class="s1">a  </span><span class="s0"># at least float</span>
+<a name="l104"><span class="ln">104  </span></a>    <span class="s1">a </span><span class="s2">= </span><span
+            class="s5">1.0 </span><span class="s2">* </span><span class="s1">a  </span><span
+            class="s0"># at least float</span>
 <a name="l105"><span class="ln">105  </span></a>
-<a name="l106"><span class="ln">106  </span></a>    <span class="s2">if </span><span class="s1">w </span><span class="s2">is None:</span>
+<a name="l106"><span class="ln">106  </span></a>    <span class="s2">if </span><span class="s1">w </span><span
+            class="s2">is None:</span>
 <a name="l107"><span class="ln">107  </span></a>        <span class="s0"># Nothing specified, default to FFT</span>
-<a name="l108"><span class="ln">108  </span></a>        <span class="s2">return </span><span class="s1">a </span><span class="s2">* </span><span class="s1">np</span><span class="s3">.</span><span class="s1">exp</span><span class="s3">(</span><span class="s5">2j </span><span class="s2">* </span><span class="s1">pi </span><span class="s2">* </span><span class="s1">k </span><span class="s2">/ </span><span class="s1">m</span><span class="s3">)</span>
+<a name="l108"><span class="ln">108  </span></a>        <span class="s2">return </span><span class="s1">a </span><span
+            class="s2">* </span><span class="s1">np</span><span class="s3">.</span><span class="s1">exp</span><span
+            class="s3">(</span><span class="s5">2j </span><span class="s2">* </span><span class="s1">pi </span><span
+            class="s2">* </span><span class="s1">k </span><span class="s2">/ </span><span class="s1">m</span><span
+            class="s3">)</span>
 <a name="l109"><span class="ln">109  </span></a>    <span class="s2">else:</span>
 <a name="l110"><span class="ln">110  </span></a>        <span class="s0"># w specified</span>
-<a name="l111"><span class="ln">111  </span></a>        <span class="s1">w </span><span class="s2">= </span><span class="s5">1.0 </span><span class="s2">* </span><span class="s1">w  </span><span class="s0"># at least float</span>
-<a name="l112"><span class="ln">112  </span></a>        <span class="s2">return </span><span class="s1">a </span><span class="s2">* </span><span class="s1">w</span><span class="s2">**-</span><span class="s1">k</span>
+<a name="l111"><span class="ln">111  </span></a>        <span class="s1">w </span><span class="s2">= </span><span
+            class="s5">1.0 </span><span class="s2">* </span><span class="s1">w  </span><span
+            class="s0"># at least float</span>
+<a name="l112"><span class="ln">112  </span></a>        <span class="s2">return </span><span class="s1">a </span><span
+            class="s2">* </span><span class="s1">w</span><span class="s2">**-</span><span class="s1">k</span>
 <a name="l113"><span class="ln">113  </span></a>
 <a name="l114"><span class="ln">114  </span></a>
-<a name="l115"><span class="ln">115  </span></a><span class="s2">class </span><span class="s1">CZT</span><span class="s2">:</span>
+<a name="l115"><span class="ln">115  </span></a><span class="s2">class </span><span class="s1">CZT</span><span
+            class="s2">:</span>
 <a name="l116"><span class="ln">116  </span></a>    <span class="s0">&quot;&quot;&quot; 
 <a name="l117"><span class="ln">117  </span></a>    Create a callable chirp z-transform function. 
 <a name="l118"><span class="ln">118  </span></a> 
@@ -230,32 +279,91 @@ _czt.py</font>
 <a name="l210"><span class="ln">210  </span></a>    &gt;&gt;&gt; plt.show() 
 <a name="l211"><span class="ln">211  </span></a>    &quot;&quot;&quot;</span>
 <a name="l212"><span class="ln">212  </span></a>
-<a name="l213"><span class="ln">213  </span></a>    <span class="s2">def </span><span class="s1">__init__</span><span class="s3">(</span><span class="s1">self</span><span class="s3">, </span><span class="s1">n</span><span class="s3">, </span><span class="s1">m</span><span class="s2">=None</span><span class="s3">, </span><span class="s1">w</span><span class="s2">=None</span><span class="s3">, </span><span class="s1">a</span><span class="s2">=</span><span class="s5">1</span><span class="s2">+</span><span class="s5">0j</span><span class="s3">)</span><span class="s2">:</span>
-<a name="l214"><span class="ln">214  </span></a>        <span class="s1">m </span><span class="s2">= </span><span class="s1">_validate_sizes</span><span class="s3">(</span><span class="s1">n</span><span class="s3">, </span><span class="s1">m</span><span class="s3">)</span>
+<a name="l213"><span class="ln">213  </span></a>    <span class="s2">def </span><span class="s1">__init__</span><span
+            class="s3">(</span><span class="s1">self</span><span class="s3">, </span><span class="s1">n</span><span
+            class="s3">, </span><span class="s1">m</span><span class="s2">=None</span><span class="s3">, </span><span
+            class="s1">w</span><span class="s2">=None</span><span class="s3">, </span><span class="s1">a</span><span
+            class="s2">=</span><span class="s5">1</span><span class="s2">+</span><span class="s5">0j</span><span
+            class="s3">)</span><span class="s2">:</span>
+<a name="l214"><span class="ln">214  </span></a>        <span class="s1">m </span><span class="s2">= </span><span
+            class="s1">_validate_sizes</span><span class="s3">(</span><span class="s1">n</span><span
+            class="s3">, </span><span class="s1">m</span><span class="s3">)</span>
 <a name="l215"><span class="ln">215  </span></a>
-<a name="l216"><span class="ln">216  </span></a>        <span class="s1">k </span><span class="s2">= </span><span class="s1">arange</span><span class="s3">(</span><span class="s1">max</span><span class="s3">(</span><span class="s1">m</span><span class="s3">, </span><span class="s1">n</span><span class="s3">), </span><span class="s1">dtype</span><span class="s2">=</span><span class="s1">np</span><span class="s3">.</span><span class="s1">min_scalar_type</span><span class="s3">(</span><span class="s2">-</span><span class="s1">max</span><span class="s3">(</span><span class="s1">m</span><span class="s3">, </span><span class="s1">n</span><span class="s3">)</span><span class="s2">**</span><span class="s5">2</span><span class="s3">))</span>
+<a name="l216"><span class="ln">216  </span></a>        <span class="s1">k </span><span class="s2">= </span><span
+            class="s1">arange</span><span class="s3">(</span><span class="s1">max</span><span class="s3">(</span><span
+            class="s1">m</span><span class="s3">, </span><span class="s1">n</span><span class="s3">), </span><span
+            class="s1">dtype</span><span class="s2">=</span><span class="s1">np</span><span class="s3">.</span><span
+            class="s1">min_scalar_type</span><span class="s3">(</span><span class="s2">-</span><span
+            class="s1">max</span><span class="s3">(</span><span class="s1">m</span><span class="s3">, </span><span
+            class="s1">n</span><span class="s3">)</span><span class="s2">**</span><span class="s5">2</span><span
+            class="s3">))</span>
 <a name="l217"><span class="ln">217  </span></a>
-<a name="l218"><span class="ln">218  </span></a>        <span class="s2">if </span><span class="s1">w </span><span class="s2">is None:</span>
-<a name="l219"><span class="ln">219  </span></a>            <span class="s0"># Nothing specified, default to FFT-like</span>
-<a name="l220"><span class="ln">220  </span></a>            <span class="s1">w </span><span class="s2">= </span><span class="s1">cmath</span><span class="s3">.</span><span class="s1">exp</span><span class="s3">(</span><span class="s2">-</span><span class="s5">2j</span><span class="s2">*</span><span class="s1">pi</span><span class="s2">/</span><span class="s1">m</span><span class="s3">)</span>
-<a name="l221"><span class="ln">221  </span></a>            <span class="s1">wk2 </span><span class="s2">= </span><span class="s1">np</span><span class="s3">.</span><span class="s1">exp</span><span class="s3">(</span><span class="s2">-</span><span class="s3">(</span><span class="s5">1j </span><span class="s2">* </span><span class="s1">pi </span><span class="s2">* </span><span class="s3">((</span><span class="s1">k</span><span class="s2">**</span><span class="s5">2</span><span class="s3">) </span><span class="s2">% </span><span class="s3">(</span><span class="s5">2</span><span class="s2">*</span><span class="s1">m</span><span class="s3">))) </span><span class="s2">/ </span><span class="s1">m</span><span class="s3">)</span>
+<a name="l218"><span class="ln">218  </span></a>        <span class="s2">if </span><span class="s1">w </span><span
+            class="s2">is None:</span>
+<a name="l219"><span class="ln">219  </span></a>            <span
+            class="s0"># Nothing specified, default to FFT-like</span>
+<a name="l220"><span class="ln">220  </span></a>            <span class="s1">w </span><span class="s2">= </span><span
+            class="s1">cmath</span><span class="s3">.</span><span class="s1">exp</span><span class="s3">(</span><span
+            class="s2">-</span><span class="s5">2j</span><span class="s2">*</span><span class="s1">pi</span><span
+            class="s2">/</span><span class="s1">m</span><span class="s3">)</span>
+<a name="l221"><span class="ln">221  </span></a>            <span class="s1">wk2 </span><span class="s2">= </span><span
+            class="s1">np</span><span class="s3">.</span><span class="s1">exp</span><span class="s3">(</span><span
+            class="s2">-</span><span class="s3">(</span><span class="s5">1j </span><span class="s2">* </span><span
+            class="s1">pi </span><span class="s2">* </span><span class="s3">((</span><span class="s1">k</span><span
+            class="s2">**</span><span class="s5">2</span><span class="s3">) </span><span class="s2">% </span><span
+            class="s3">(</span><span class="s5">2</span><span class="s2">*</span><span class="s1">m</span><span
+            class="s3">))) </span><span class="s2">/ </span><span class="s1">m</span><span class="s3">)</span>
 <a name="l222"><span class="ln">222  </span></a>        <span class="s2">else:</span>
 <a name="l223"><span class="ln">223  </span></a>            <span class="s0"># w specified</span>
-<a name="l224"><span class="ln">224  </span></a>            <span class="s1">wk2 </span><span class="s2">= </span><span class="s1">w</span><span class="s2">**</span><span class="s3">(</span><span class="s1">k</span><span class="s2">**</span><span class="s5">2</span><span class="s2">/</span><span class="s5">2.</span><span class="s3">)</span>
+<a name="l224"><span class="ln">224  </span></a>            <span class="s1">wk2 </span><span class="s2">= </span><span
+            class="s1">w</span><span class="s2">**</span><span class="s3">(</span><span class="s1">k</span><span
+            class="s2">**</span><span class="s5">2</span><span class="s2">/</span><span class="s5">2.</span><span
+            class="s3">)</span>
 <a name="l225"><span class="ln">225  </span></a>
-<a name="l226"><span class="ln">226  </span></a>        <span class="s1">a </span><span class="s2">= </span><span class="s5">1.0 </span><span class="s2">* </span><span class="s1">a  </span><span class="s0"># at least float</span>
+<a name="l226"><span class="ln">226  </span></a>        <span class="s1">a </span><span class="s2">= </span><span
+            class="s5">1.0 </span><span class="s2">* </span><span class="s1">a  </span><span
+            class="s0"># at least float</span>
 <a name="l227"><span class="ln">227  </span></a>
-<a name="l228"><span class="ln">228  </span></a>        <span class="s1">self</span><span class="s3">.</span><span class="s1">w</span><span class="s3">, </span><span class="s1">self</span><span class="s3">.</span><span class="s1">a </span><span class="s2">= </span><span class="s1">w</span><span class="s3">, </span><span class="s1">a</span>
-<a name="l229"><span class="ln">229  </span></a>        <span class="s1">self</span><span class="s3">.</span><span class="s1">m</span><span class="s3">, </span><span class="s1">self</span><span class="s3">.</span><span class="s1">n </span><span class="s2">= </span><span class="s1">m</span><span class="s3">, </span><span class="s1">n</span>
+<a name="l228"><span class="ln">228  </span></a>        <span class="s1">self</span><span class="s3">.</span><span
+            class="s1">w</span><span class="s3">, </span><span class="s1">self</span><span class="s3">.</span><span
+            class="s1">a </span><span class="s2">= </span><span class="s1">w</span><span class="s3">, </span><span
+            class="s1">a</span>
+<a name="l229"><span class="ln">229  </span></a>        <span class="s1">self</span><span class="s3">.</span><span
+            class="s1">m</span><span class="s3">, </span><span class="s1">self</span><span class="s3">.</span><span
+            class="s1">n </span><span class="s2">= </span><span class="s1">m</span><span class="s3">, </span><span
+            class="s1">n</span>
 <a name="l230"><span class="ln">230  </span></a>
-<a name="l231"><span class="ln">231  </span></a>        <span class="s1">nfft </span><span class="s2">= </span><span class="s1">next_fast_len</span><span class="s3">(</span><span class="s1">n </span><span class="s2">+ </span><span class="s1">m </span><span class="s2">- </span><span class="s5">1</span><span class="s3">)</span>
-<a name="l232"><span class="ln">232  </span></a>        <span class="s1">self</span><span class="s3">.</span><span class="s1">_Awk2 </span><span class="s2">= </span><span class="s1">a</span><span class="s2">**-</span><span class="s1">k</span><span class="s3">[</span><span class="s2">:</span><span class="s1">n</span><span class="s3">] </span><span class="s2">* </span><span class="s1">wk2</span><span class="s3">[</span><span class="s2">:</span><span class="s1">n</span><span class="s3">]</span>
-<a name="l233"><span class="ln">233  </span></a>        <span class="s1">self</span><span class="s3">.</span><span class="s1">_nfft </span><span class="s2">= </span><span class="s1">nfft</span>
-<a name="l234"><span class="ln">234  </span></a>        <span class="s1">self</span><span class="s3">.</span><span class="s1">_Fwk2 </span><span class="s2">= </span><span class="s1">fft</span><span class="s3">(</span><span class="s5">1</span><span class="s2">/</span><span class="s1">np</span><span class="s3">.</span><span class="s1">hstack</span><span class="s3">((</span><span class="s1">wk2</span><span class="s3">[</span><span class="s1">n</span><span class="s2">-</span><span class="s5">1</span><span class="s2">:</span><span class="s5">0</span><span class="s2">:-</span><span class="s5">1</span><span class="s3">], </span><span class="s1">wk2</span><span class="s3">[</span><span class="s2">:</span><span class="s1">m</span><span class="s3">])), </span><span class="s1">nfft</span><span class="s3">)</span>
-<a name="l235"><span class="ln">235  </span></a>        <span class="s1">self</span><span class="s3">.</span><span class="s1">_wk2 </span><span class="s2">= </span><span class="s1">wk2</span><span class="s3">[</span><span class="s2">:</span><span class="s1">m</span><span class="s3">]</span>
-<a name="l236"><span class="ln">236  </span></a>        <span class="s1">self</span><span class="s3">.</span><span class="s1">_yidx </span><span class="s2">= </span><span class="s1">slice</span><span class="s3">(</span><span class="s1">n</span><span class="s2">-</span><span class="s5">1</span><span class="s3">, </span><span class="s1">n</span><span class="s2">+</span><span class="s1">m</span><span class="s2">-</span><span class="s5">1</span><span class="s3">)</span>
+<a name="l231"><span class="ln">231  </span></a>        <span class="s1">nfft </span><span class="s2">= </span><span
+            class="s1">next_fast_len</span><span class="s3">(</span><span class="s1">n </span><span class="s2">+ </span><span
+            class="s1">m </span><span class="s2">- </span><span class="s5">1</span><span class="s3">)</span>
+<a name="l232"><span class="ln">232  </span></a>        <span class="s1">self</span><span class="s3">.</span><span
+            class="s1">_Awk2 </span><span class="s2">= </span><span class="s1">a</span><span class="s2">**-</span><span
+            class="s1">k</span><span class="s3">[</span><span class="s2">:</span><span class="s1">n</span><span
+            class="s3">] </span><span class="s2">* </span><span class="s1">wk2</span><span class="s3">[</span><span
+            class="s2">:</span><span class="s1">n</span><span class="s3">]</span>
+<a name="l233"><span class="ln">233  </span></a>        <span class="s1">self</span><span class="s3">.</span><span
+            class="s1">_nfft </span><span class="s2">= </span><span class="s1">nfft</span>
+<a name="l234"><span class="ln">234  </span></a>        <span class="s1">self</span><span class="s3">.</span><span
+            class="s1">_Fwk2 </span><span class="s2">= </span><span class="s1">fft</span><span class="s3">(</span><span
+            class="s5">1</span><span class="s2">/</span><span class="s1">np</span><span class="s3">.</span><span
+            class="s1">hstack</span><span class="s3">((</span><span class="s1">wk2</span><span class="s3">[</span><span
+            class="s1">n</span><span class="s2">-</span><span class="s5">1</span><span class="s2">:</span><span
+            class="s5">0</span><span class="s2">:-</span><span class="s5">1</span><span class="s3">], </span><span
+            class="s1">wk2</span><span class="s3">[</span><span class="s2">:</span><span class="s1">m</span><span
+            class="s3">])), </span><span class="s1">nfft</span><span class="s3">)</span>
+<a name="l235"><span class="ln">235  </span></a>        <span class="s1">self</span><span class="s3">.</span><span
+            class="s1">_wk2 </span><span class="s2">= </span><span class="s1">wk2</span><span class="s3">[</span><span
+            class="s2">:</span><span class="s1">m</span><span class="s3">]</span>
+<a name="l236"><span class="ln">236  </span></a>        <span class="s1">self</span><span class="s3">.</span><span
+            class="s1">_yidx </span><span class="s2">= </span><span class="s1">slice</span><span
+            class="s3">(</span><span class="s1">n</span><span class="s2">-</span><span class="s5">1</span><span
+            class="s3">, </span><span class="s1">n</span><span class="s2">+</span><span class="s1">m</span><span
+            class="s2">-</span><span class="s5">1</span><span class="s3">)</span>
 <a name="l237"><span class="ln">237  </span></a>
-<a name="l238"><span class="ln">238  </span></a>    <span class="s2">def </span><span class="s1">__call__</span><span class="s3">(</span><span class="s1">self</span><span class="s3">, </span><span class="s1">x</span><span class="s3">, </span><span class="s2">*</span><span class="s3">, </span><span class="s1">axis</span><span class="s2">=-</span><span class="s5">1</span><span class="s3">)</span><span class="s2">:</span>
+<a name="l238"><span class="ln">238  </span></a>    <span class="s2">def </span><span class="s1">__call__</span><span
+            class="s3">(</span><span class="s1">self</span><span class="s3">, </span><span class="s1">x</span><span
+            class="s3">, </span><span class="s2">*</span><span class="s3">, </span><span class="s1">axis</span><span
+            class="s2">=-</span><span class="s5">1</span><span class="s3">)</span><span class="s2">:</span>
 <a name="l239"><span class="ln">239  </span></a>        <span class="s0">&quot;&quot;&quot; 
 <a name="l240"><span class="ln">240  </span></a>        Calculate the chirp z-transform of a signal. 
 <a name="l241"><span class="ln">241  </span></a> 
@@ -273,26 +381,59 @@ _czt.py</font>
 <a name="l253"><span class="ln">253  </span></a>            An array of the same dimensions as `x`, but with the length of the 
 <a name="l254"><span class="ln">254  </span></a>            transformed axis set to `m`. 
 <a name="l255"><span class="ln">255  </span></a>        &quot;&quot;&quot;</span>
-<a name="l256"><span class="ln">256  </span></a>        <span class="s1">x </span><span class="s2">= </span><span class="s1">np</span><span class="s3">.</span><span class="s1">asarray</span><span class="s3">(</span><span class="s1">x</span><span class="s3">)</span>
-<a name="l257"><span class="ln">257  </span></a>        <span class="s2">if </span><span class="s1">x</span><span class="s3">.</span><span class="s1">shape</span><span class="s3">[</span><span class="s1">axis</span><span class="s3">] </span><span class="s2">!= </span><span class="s1">self</span><span class="s3">.</span><span class="s1">n</span><span class="s2">:</span>
-<a name="l258"><span class="ln">258  </span></a>            <span class="s2">raise </span><span class="s1">ValueError</span><span class="s3">(</span><span class="s4">f&quot;CZT defined for length {</span><span class="s1">self</span><span class="s3">.</span><span class="s1">n</span><span class="s4">}, not &quot;</span>
-<a name="l259"><span class="ln">259  </span></a>                             <span class="s4">f&quot;{</span><span class="s1">x</span><span class="s3">.</span><span class="s1">shape</span><span class="s3">[</span><span class="s1">axis</span><span class="s3">]</span><span class="s4">}&quot;</span><span class="s3">)</span>
+<a name="l256"><span class="ln">256  </span></a>        <span class="s1">x </span><span class="s2">= </span><span
+            class="s1">np</span><span class="s3">.</span><span class="s1">asarray</span><span class="s3">(</span><span
+            class="s1">x</span><span class="s3">)</span>
+<a name="l257"><span class="ln">257  </span></a>        <span class="s2">if </span><span class="s1">x</span><span
+            class="s3">.</span><span class="s1">shape</span><span class="s3">[</span><span class="s1">axis</span><span
+            class="s3">] </span><span class="s2">!= </span><span class="s1">self</span><span class="s3">.</span><span
+            class="s1">n</span><span class="s2">:</span>
+<a name="l258"><span class="ln">258  </span></a>            <span class="s2">raise </span><span
+            class="s1">ValueError</span><span class="s3">(</span><span class="s4">f&quot;CZT defined for length {</span><span
+            class="s1">self</span><span class="s3">.</span><span class="s1">n</span><span
+            class="s4">}, not &quot;</span>
+<a name="l259"><span class="ln">259  </span></a>                             <span class="s4">f&quot;{</span><span
+            class="s1">x</span><span class="s3">.</span><span class="s1">shape</span><span class="s3">[</span><span
+            class="s1">axis</span><span class="s3">]</span><span class="s4">}&quot;</span><span class="s3">)</span>
 <a name="l260"><span class="ln">260  </span></a>        <span class="s0"># Calculate transpose coordinates, to allow operation on any given axis</span>
-<a name="l261"><span class="ln">261  </span></a>        <span class="s1">trnsp </span><span class="s2">= </span><span class="s1">np</span><span class="s3">.</span><span class="s1">arange</span><span class="s3">(</span><span class="s1">x</span><span class="s3">.</span><span class="s1">ndim</span><span class="s3">)</span>
-<a name="l262"><span class="ln">262  </span></a>        <span class="s1">trnsp</span><span class="s3">[[</span><span class="s1">axis</span><span class="s3">, </span><span class="s2">-</span><span class="s5">1</span><span class="s3">]] </span><span class="s2">= </span><span class="s3">[</span><span class="s2">-</span><span class="s5">1</span><span class="s3">, </span><span class="s1">axis</span><span class="s3">]</span>
-<a name="l263"><span class="ln">263  </span></a>        <span class="s1">x </span><span class="s2">= </span><span class="s1">x</span><span class="s3">.</span><span class="s1">transpose</span><span class="s3">(</span><span class="s2">*</span><span class="s1">trnsp</span><span class="s3">)</span>
-<a name="l264"><span class="ln">264  </span></a>        <span class="s1">y </span><span class="s2">= </span><span class="s1">ifft</span><span class="s3">(</span><span class="s1">self</span><span class="s3">.</span><span class="s1">_Fwk2 </span><span class="s2">* </span><span class="s1">fft</span><span class="s3">(</span><span class="s1">x</span><span class="s2">*</span><span class="s1">self</span><span class="s3">.</span><span class="s1">_Awk2</span><span class="s3">, </span><span class="s1">self</span><span class="s3">.</span><span class="s1">_nfft</span><span class="s3">))</span>
-<a name="l265"><span class="ln">265  </span></a>        <span class="s1">y </span><span class="s2">= </span><span class="s1">y</span><span class="s3">[..., </span><span class="s1">self</span><span class="s3">.</span><span class="s1">_yidx</span><span class="s3">] </span><span class="s2">* </span><span class="s1">self</span><span class="s3">.</span><span class="s1">_wk2</span>
-<a name="l266"><span class="ln">266  </span></a>        <span class="s2">return </span><span class="s1">y</span><span class="s3">.</span><span class="s1">transpose</span><span class="s3">(</span><span class="s2">*</span><span class="s1">trnsp</span><span class="s3">)</span>
+<a name="l261"><span class="ln">261  </span></a>        <span class="s1">trnsp </span><span class="s2">= </span><span
+            class="s1">np</span><span class="s3">.</span><span class="s1">arange</span><span class="s3">(</span><span
+            class="s1">x</span><span class="s3">.</span><span class="s1">ndim</span><span class="s3">)</span>
+<a name="l262"><span class="ln">262  </span></a>        <span class="s1">trnsp</span><span class="s3">[[</span><span
+            class="s1">axis</span><span class="s3">, </span><span class="s2">-</span><span class="s5">1</span><span
+            class="s3">]] </span><span class="s2">= </span><span class="s3">[</span><span class="s2">-</span><span
+            class="s5">1</span><span class="s3">, </span><span class="s1">axis</span><span class="s3">]</span>
+<a name="l263"><span class="ln">263  </span></a>        <span class="s1">x </span><span class="s2">= </span><span
+            class="s1">x</span><span class="s3">.</span><span class="s1">transpose</span><span class="s3">(</span><span
+            class="s2">*</span><span class="s1">trnsp</span><span class="s3">)</span>
+<a name="l264"><span class="ln">264  </span></a>        <span class="s1">y </span><span class="s2">= </span><span
+            class="s1">ifft</span><span class="s3">(</span><span class="s1">self</span><span class="s3">.</span><span
+            class="s1">_Fwk2 </span><span class="s2">* </span><span class="s1">fft</span><span class="s3">(</span><span
+            class="s1">x</span><span class="s2">*</span><span class="s1">self</span><span class="s3">.</span><span
+            class="s1">_Awk2</span><span class="s3">, </span><span class="s1">self</span><span class="s3">.</span><span
+            class="s1">_nfft</span><span class="s3">))</span>
+<a name="l265"><span class="ln">265  </span></a>        <span class="s1">y </span><span class="s2">= </span><span
+            class="s1">y</span><span class="s3">[..., </span><span class="s1">self</span><span class="s3">.</span><span
+            class="s1">_yidx</span><span class="s3">] </span><span class="s2">* </span><span class="s1">self</span><span
+            class="s3">.</span><span class="s1">_wk2</span>
+<a name="l266"><span class="ln">266  </span></a>        <span class="s2">return </span><span class="s1">y</span><span
+            class="s3">.</span><span class="s1">transpose</span><span class="s3">(</span><span class="s2">*</span><span
+            class="s1">trnsp</span><span class="s3">)</span>
 <a name="l267"><span class="ln">267  </span></a>
-<a name="l268"><span class="ln">268  </span></a>    <span class="s2">def </span><span class="s1">points</span><span class="s3">(</span><span class="s1">self</span><span class="s3">)</span><span class="s2">:</span>
+<a name="l268"><span class="ln">268  </span></a>    <span class="s2">def </span><span class="s1">points</span><span
+            class="s3">(</span><span class="s1">self</span><span class="s3">)</span><span class="s2">:</span>
 <a name="l269"><span class="ln">269  </span></a>        <span class="s0">&quot;&quot;&quot; 
 <a name="l270"><span class="ln">270  </span></a>        Return the points at which the chirp z-transform is computed. 
 <a name="l271"><span class="ln">271  </span></a>        &quot;&quot;&quot;</span>
-<a name="l272"><span class="ln">272  </span></a>        <span class="s2">return </span><span class="s1">czt_points</span><span class="s3">(</span><span class="s1">self</span><span class="s3">.</span><span class="s1">m</span><span class="s3">, </span><span class="s1">self</span><span class="s3">.</span><span class="s1">w</span><span class="s3">, </span><span class="s1">self</span><span class="s3">.</span><span class="s1">a</span><span class="s3">)</span>
+<a name="l272"><span class="ln">272  </span></a>        <span class="s2">return </span><span
+            class="s1">czt_points</span><span class="s3">(</span><span class="s1">self</span><span
+            class="s3">.</span><span class="s1">m</span><span class="s3">, </span><span class="s1">self</span><span
+            class="s3">.</span><span class="s1">w</span><span class="s3">, </span><span class="s1">self</span><span
+            class="s3">.</span><span class="s1">a</span><span class="s3">)</span>
 <a name="l273"><span class="ln">273  </span></a>
 <a name="l274"><span class="ln">274  </span></a>
-<a name="l275"><span class="ln">275  </span></a><span class="s2">class </span><span class="s1">ZoomFFT</span><span class="s3">(</span><span class="s1">CZT</span><span class="s3">)</span><span class="s2">:</span>
+<a name="l275"><span class="ln">275  </span></a><span class="s2">class </span><span class="s1">ZoomFFT</span><span
+            class="s3">(</span><span class="s1">CZT</span><span class="s3">)</span><span class="s2">:</span>
 <a name="l276"><span class="ln">276  </span></a>    <span class="s0">&quot;&quot;&quot; 
 <a name="l277"><span class="ln">277  </span></a>    Create a callable zoom FFT transform function. 
 <a name="l278"><span class="ln">278  </span></a> 
@@ -376,42 +517,123 @@ _czt.py</font>
 <a name="l356"><span class="ln">356  </span></a>    &gt;&gt;&gt; plt.show() 
 <a name="l357"><span class="ln">357  </span></a>    &quot;&quot;&quot;</span>
 <a name="l358"><span class="ln">358  </span></a>
-<a name="l359"><span class="ln">359  </span></a>    <span class="s2">def </span><span class="s1">__init__</span><span class="s3">(</span><span class="s1">self</span><span class="s3">, </span><span class="s1">n</span><span class="s3">, </span><span class="s1">fn</span><span class="s3">, </span><span class="s1">m</span><span class="s2">=None</span><span class="s3">, </span><span class="s2">*</span><span class="s3">, </span><span class="s1">fs</span><span class="s2">=</span><span class="s5">2</span><span class="s3">, </span><span class="s1">endpoint</span><span class="s2">=False</span><span class="s3">)</span><span class="s2">:</span>
-<a name="l360"><span class="ln">360  </span></a>        <span class="s1">m </span><span class="s2">= </span><span class="s1">_validate_sizes</span><span class="s3">(</span><span class="s1">n</span><span class="s3">, </span><span class="s1">m</span><span class="s3">)</span>
+<a name="l359"><span class="ln">359  </span></a>    <span class="s2">def </span><span class="s1">__init__</span><span
+            class="s3">(</span><span class="s1">self</span><span class="s3">, </span><span class="s1">n</span><span
+            class="s3">, </span><span class="s1">fn</span><span class="s3">, </span><span class="s1">m</span><span
+            class="s2">=None</span><span class="s3">, </span><span class="s2">*</span><span class="s3">, </span><span
+            class="s1">fs</span><span class="s2">=</span><span class="s5">2</span><span class="s3">, </span><span
+            class="s1">endpoint</span><span class="s2">=False</span><span class="s3">)</span><span class="s2">:</span>
+<a name="l360"><span class="ln">360  </span></a>        <span class="s1">m </span><span class="s2">= </span><span
+            class="s1">_validate_sizes</span><span class="s3">(</span><span class="s1">n</span><span
+            class="s3">, </span><span class="s1">m</span><span class="s3">)</span>
 <a name="l361"><span class="ln">361  </span></a>
-<a name="l362"><span class="ln">362  </span></a>        <span class="s1">k </span><span class="s2">= </span><span class="s1">arange</span><span class="s3">(</span><span class="s1">max</span><span class="s3">(</span><span class="s1">m</span><span class="s3">, </span><span class="s1">n</span><span class="s3">), </span><span class="s1">dtype</span><span class="s2">=</span><span class="s1">np</span><span class="s3">.</span><span class="s1">min_scalar_type</span><span class="s3">(</span><span class="s2">-</span><span class="s1">max</span><span class="s3">(</span><span class="s1">m</span><span class="s3">, </span><span class="s1">n</span><span class="s3">)</span><span class="s2">**</span><span class="s5">2</span><span class="s3">))</span>
+<a name="l362"><span class="ln">362  </span></a>        <span class="s1">k </span><span class="s2">= </span><span
+            class="s1">arange</span><span class="s3">(</span><span class="s1">max</span><span class="s3">(</span><span
+            class="s1">m</span><span class="s3">, </span><span class="s1">n</span><span class="s3">), </span><span
+            class="s1">dtype</span><span class="s2">=</span><span class="s1">np</span><span class="s3">.</span><span
+            class="s1">min_scalar_type</span><span class="s3">(</span><span class="s2">-</span><span
+            class="s1">max</span><span class="s3">(</span><span class="s1">m</span><span class="s3">, </span><span
+            class="s1">n</span><span class="s3">)</span><span class="s2">**</span><span class="s5">2</span><span
+            class="s3">))</span>
 <a name="l363"><span class="ln">363  </span></a>
-<a name="l364"><span class="ln">364  </span></a>        <span class="s2">if </span><span class="s1">np</span><span class="s3">.</span><span class="s1">size</span><span class="s3">(</span><span class="s1">fn</span><span class="s3">) </span><span class="s2">== </span><span class="s5">2</span><span class="s2">:</span>
-<a name="l365"><span class="ln">365  </span></a>            <span class="s1">f1</span><span class="s3">, </span><span class="s1">f2 </span><span class="s2">= </span><span class="s1">fn</span>
-<a name="l366"><span class="ln">366  </span></a>        <span class="s2">elif </span><span class="s1">np</span><span class="s3">.</span><span class="s1">size</span><span class="s3">(</span><span class="s1">fn</span><span class="s3">) </span><span class="s2">== </span><span class="s5">1</span><span class="s2">:</span>
-<a name="l367"><span class="ln">367  </span></a>            <span class="s1">f1</span><span class="s3">, </span><span class="s1">f2 </span><span class="s2">= </span><span class="s5">0.0</span><span class="s3">, </span><span class="s1">fn</span>
+<a name="l364"><span class="ln">364  </span></a>        <span class="s2">if </span><span class="s1">np</span><span
+            class="s3">.</span><span class="s1">size</span><span class="s3">(</span><span class="s1">fn</span><span
+            class="s3">) </span><span class="s2">== </span><span class="s5">2</span><span class="s2">:</span>
+<a name="l365"><span class="ln">365  </span></a>            <span class="s1">f1</span><span class="s3">, </span><span
+            class="s1">f2 </span><span class="s2">= </span><span class="s1">fn</span>
+<a name="l366"><span class="ln">366  </span></a>        <span class="s2">elif </span><span class="s1">np</span><span
+            class="s3">.</span><span class="s1">size</span><span class="s3">(</span><span class="s1">fn</span><span
+            class="s3">) </span><span class="s2">== </span><span class="s5">1</span><span class="s2">:</span>
+<a name="l367"><span class="ln">367  </span></a>            <span class="s1">f1</span><span class="s3">, </span><span
+            class="s1">f2 </span><span class="s2">= </span><span class="s5">0.0</span><span class="s3">, </span><span
+            class="s1">fn</span>
 <a name="l368"><span class="ln">368  </span></a>        <span class="s2">else:</span>
-<a name="l369"><span class="ln">369  </span></a>            <span class="s2">raise </span><span class="s1">ValueError</span><span class="s3">(</span><span class="s4">'fn must be a scalar or 2-length sequence'</span><span class="s3">)</span>
+<a name="l369"><span class="ln">369  </span></a>            <span class="s2">raise </span><span
+            class="s1">ValueError</span><span class="s3">(</span><span class="s4">'fn must be a scalar or 2-length sequence'</span><span
+            class="s3">)</span>
 <a name="l370"><span class="ln">370  </span></a>
-<a name="l371"><span class="ln">371  </span></a>        <span class="s1">self</span><span class="s3">.</span><span class="s1">f1</span><span class="s3">, </span><span class="s1">self</span><span class="s3">.</span><span class="s1">f2</span><span class="s3">, </span><span class="s1">self</span><span class="s3">.</span><span class="s1">fs </span><span class="s2">= </span><span class="s1">f1</span><span class="s3">, </span><span class="s1">f2</span><span class="s3">, </span><span class="s1">fs</span>
+<a name="l371"><span class="ln">371  </span></a>        <span class="s1">self</span><span class="s3">.</span><span
+            class="s1">f1</span><span class="s3">, </span><span class="s1">self</span><span class="s3">.</span><span
+            class="s1">f2</span><span class="s3">, </span><span class="s1">self</span><span class="s3">.</span><span
+            class="s1">fs </span><span class="s2">= </span><span class="s1">f1</span><span class="s3">, </span><span
+            class="s1">f2</span><span class="s3">, </span><span class="s1">fs</span>
 <a name="l372"><span class="ln">372  </span></a>
-<a name="l373"><span class="ln">373  </span></a>        <span class="s2">if </span><span class="s1">endpoint</span><span class="s2">:</span>
-<a name="l374"><span class="ln">374  </span></a>            <span class="s1">scale </span><span class="s2">= </span><span class="s3">((</span><span class="s1">f2 </span><span class="s2">- </span><span class="s1">f1</span><span class="s3">) </span><span class="s2">* </span><span class="s1">m</span><span class="s3">) </span><span class="s2">/ </span><span class="s3">(</span><span class="s1">fs </span><span class="s2">* </span><span class="s3">(</span><span class="s1">m </span><span class="s2">- </span><span class="s5">1</span><span class="s3">))</span>
+<a name="l373"><span class="ln">373  </span></a>        <span class="s2">if </span><span class="s1">endpoint</span><span
+            class="s2">:</span>
+<a name="l374"><span class="ln">374  </span></a>            <span class="s1">scale </span><span
+            class="s2">= </span><span class="s3">((</span><span class="s1">f2 </span><span class="s2">- </span><span
+            class="s1">f1</span><span class="s3">) </span><span class="s2">* </span><span class="s1">m</span><span
+            class="s3">) </span><span class="s2">/ </span><span class="s3">(</span><span class="s1">fs </span><span
+            class="s2">* </span><span class="s3">(</span><span class="s1">m </span><span class="s2">- </span><span
+            class="s5">1</span><span class="s3">))</span>
 <a name="l375"><span class="ln">375  </span></a>        <span class="s2">else:</span>
-<a name="l376"><span class="ln">376  </span></a>            <span class="s1">scale </span><span class="s2">= </span><span class="s3">(</span><span class="s1">f2 </span><span class="s2">- </span><span class="s1">f1</span><span class="s3">) </span><span class="s2">/ </span><span class="s1">fs</span>
-<a name="l377"><span class="ln">377  </span></a>        <span class="s1">a </span><span class="s2">= </span><span class="s1">cmath</span><span class="s3">.</span><span class="s1">exp</span><span class="s3">(</span><span class="s5">2j </span><span class="s2">* </span><span class="s1">pi </span><span class="s2">* </span><span class="s1">f1</span><span class="s2">/</span><span class="s1">fs</span><span class="s3">)</span>
-<a name="l378"><span class="ln">378  </span></a>        <span class="s1">wk2 </span><span class="s2">= </span><span class="s1">np</span><span class="s3">.</span><span class="s1">exp</span><span class="s3">(</span><span class="s2">-</span><span class="s3">(</span><span class="s5">1j </span><span class="s2">* </span><span class="s1">pi </span><span class="s2">* </span><span class="s1">scale </span><span class="s2">* </span><span class="s1">k</span><span class="s2">**</span><span class="s5">2</span><span class="s3">) </span><span class="s2">/ </span><span class="s1">m</span><span class="s3">)</span>
+<a name="l376"><span class="ln">376  </span></a>            <span class="s1">scale </span><span
+            class="s2">= </span><span class="s3">(</span><span class="s1">f2 </span><span class="s2">- </span><span
+            class="s1">f1</span><span class="s3">) </span><span class="s2">/ </span><span class="s1">fs</span>
+<a name="l377"><span class="ln">377  </span></a>        <span class="s1">a </span><span class="s2">= </span><span
+            class="s1">cmath</span><span class="s3">.</span><span class="s1">exp</span><span class="s3">(</span><span
+            class="s5">2j </span><span class="s2">* </span><span class="s1">pi </span><span class="s2">* </span><span
+            class="s1">f1</span><span class="s2">/</span><span class="s1">fs</span><span class="s3">)</span>
+<a name="l378"><span class="ln">378  </span></a>        <span class="s1">wk2 </span><span class="s2">= </span><span
+            class="s1">np</span><span class="s3">.</span><span class="s1">exp</span><span class="s3">(</span><span
+            class="s2">-</span><span class="s3">(</span><span class="s5">1j </span><span class="s2">* </span><span
+            class="s1">pi </span><span class="s2">* </span><span class="s1">scale </span><span class="s2">* </span><span
+            class="s1">k</span><span class="s2">**</span><span class="s5">2</span><span class="s3">) </span><span
+            class="s2">/ </span><span class="s1">m</span><span class="s3">)</span>
 <a name="l379"><span class="ln">379  </span></a>
-<a name="l380"><span class="ln">380  </span></a>        <span class="s1">self</span><span class="s3">.</span><span class="s1">w </span><span class="s2">= </span><span class="s1">cmath</span><span class="s3">.</span><span class="s1">exp</span><span class="s3">(</span><span class="s2">-</span><span class="s5">2j</span><span class="s2">*</span><span class="s1">pi</span><span class="s2">/</span><span class="s1">m </span><span class="s2">* </span><span class="s1">scale</span><span class="s3">)</span>
-<a name="l381"><span class="ln">381  </span></a>        <span class="s1">self</span><span class="s3">.</span><span class="s1">a </span><span class="s2">= </span><span class="s1">a</span>
-<a name="l382"><span class="ln">382  </span></a>        <span class="s1">self</span><span class="s3">.</span><span class="s1">m</span><span class="s3">, </span><span class="s1">self</span><span class="s3">.</span><span class="s1">n </span><span class="s2">= </span><span class="s1">m</span><span class="s3">, </span><span class="s1">n</span>
+<a name="l380"><span class="ln">380  </span></a>        <span class="s1">self</span><span class="s3">.</span><span
+            class="s1">w </span><span class="s2">= </span><span class="s1">cmath</span><span class="s3">.</span><span
+            class="s1">exp</span><span class="s3">(</span><span class="s2">-</span><span class="s5">2j</span><span
+            class="s2">*</span><span class="s1">pi</span><span class="s2">/</span><span class="s1">m </span><span
+            class="s2">* </span><span class="s1">scale</span><span class="s3">)</span>
+<a name="l381"><span class="ln">381  </span></a>        <span class="s1">self</span><span class="s3">.</span><span
+            class="s1">a </span><span class="s2">= </span><span class="s1">a</span>
+<a name="l382"><span class="ln">382  </span></a>        <span class="s1">self</span><span class="s3">.</span><span
+            class="s1">m</span><span class="s3">, </span><span class="s1">self</span><span class="s3">.</span><span
+            class="s1">n </span><span class="s2">= </span><span class="s1">m</span><span class="s3">, </span><span
+            class="s1">n</span>
 <a name="l383"><span class="ln">383  </span></a>
-<a name="l384"><span class="ln">384  </span></a>        <span class="s1">ak </span><span class="s2">= </span><span class="s1">np</span><span class="s3">.</span><span class="s1">exp</span><span class="s3">(</span><span class="s2">-</span><span class="s5">2j </span><span class="s2">* </span><span class="s1">pi </span><span class="s2">* </span><span class="s1">f1</span><span class="s2">/</span><span class="s1">fs </span><span class="s2">* </span><span class="s1">k</span><span class="s3">[</span><span class="s2">:</span><span class="s1">n</span><span class="s3">])</span>
-<a name="l385"><span class="ln">385  </span></a>        <span class="s1">self</span><span class="s3">.</span><span class="s1">_Awk2 </span><span class="s2">= </span><span class="s1">ak </span><span class="s2">* </span><span class="s1">wk2</span><span class="s3">[</span><span class="s2">:</span><span class="s1">n</span><span class="s3">]</span>
+<a name="l384"><span class="ln">384  </span></a>        <span class="s1">ak </span><span class="s2">= </span><span
+            class="s1">np</span><span class="s3">.</span><span class="s1">exp</span><span class="s3">(</span><span
+            class="s2">-</span><span class="s5">2j </span><span class="s2">* </span><span class="s1">pi </span><span
+            class="s2">* </span><span class="s1">f1</span><span class="s2">/</span><span class="s1">fs </span><span
+            class="s2">* </span><span class="s1">k</span><span class="s3">[</span><span class="s2">:</span><span
+            class="s1">n</span><span class="s3">])</span>
+<a name="l385"><span class="ln">385  </span></a>        <span class="s1">self</span><span class="s3">.</span><span
+            class="s1">_Awk2 </span><span class="s2">= </span><span class="s1">ak </span><span class="s2">* </span><span
+            class="s1">wk2</span><span class="s3">[</span><span class="s2">:</span><span class="s1">n</span><span
+            class="s3">]</span>
 <a name="l386"><span class="ln">386  </span></a>
-<a name="l387"><span class="ln">387  </span></a>        <span class="s1">nfft </span><span class="s2">= </span><span class="s1">next_fast_len</span><span class="s3">(</span><span class="s1">n </span><span class="s2">+ </span><span class="s1">m </span><span class="s2">- </span><span class="s5">1</span><span class="s3">)</span>
-<a name="l388"><span class="ln">388  </span></a>        <span class="s1">self</span><span class="s3">.</span><span class="s1">_nfft </span><span class="s2">= </span><span class="s1">nfft</span>
-<a name="l389"><span class="ln">389  </span></a>        <span class="s1">self</span><span class="s3">.</span><span class="s1">_Fwk2 </span><span class="s2">= </span><span class="s1">fft</span><span class="s3">(</span><span class="s5">1</span><span class="s2">/</span><span class="s1">np</span><span class="s3">.</span><span class="s1">hstack</span><span class="s3">((</span><span class="s1">wk2</span><span class="s3">[</span><span class="s1">n</span><span class="s2">-</span><span class="s5">1</span><span class="s2">:</span><span class="s5">0</span><span class="s2">:-</span><span class="s5">1</span><span class="s3">], </span><span class="s1">wk2</span><span class="s3">[</span><span class="s2">:</span><span class="s1">m</span><span class="s3">])), </span><span class="s1">nfft</span><span class="s3">)</span>
-<a name="l390"><span class="ln">390  </span></a>        <span class="s1">self</span><span class="s3">.</span><span class="s1">_wk2 </span><span class="s2">= </span><span class="s1">wk2</span><span class="s3">[</span><span class="s2">:</span><span class="s1">m</span><span class="s3">]</span>
-<a name="l391"><span class="ln">391  </span></a>        <span class="s1">self</span><span class="s3">.</span><span class="s1">_yidx </span><span class="s2">= </span><span class="s1">slice</span><span class="s3">(</span><span class="s1">n</span><span class="s2">-</span><span class="s5">1</span><span class="s3">, </span><span class="s1">n</span><span class="s2">+</span><span class="s1">m</span><span class="s2">-</span><span class="s5">1</span><span class="s3">)</span>
+<a name="l387"><span class="ln">387  </span></a>        <span class="s1">nfft </span><span class="s2">= </span><span
+            class="s1">next_fast_len</span><span class="s3">(</span><span class="s1">n </span><span class="s2">+ </span><span
+            class="s1">m </span><span class="s2">- </span><span class="s5">1</span><span class="s3">)</span>
+<a name="l388"><span class="ln">388  </span></a>        <span class="s1">self</span><span class="s3">.</span><span
+            class="s1">_nfft </span><span class="s2">= </span><span class="s1">nfft</span>
+<a name="l389"><span class="ln">389  </span></a>        <span class="s1">self</span><span class="s3">.</span><span
+            class="s1">_Fwk2 </span><span class="s2">= </span><span class="s1">fft</span><span class="s3">(</span><span
+            class="s5">1</span><span class="s2">/</span><span class="s1">np</span><span class="s3">.</span><span
+            class="s1">hstack</span><span class="s3">((</span><span class="s1">wk2</span><span class="s3">[</span><span
+            class="s1">n</span><span class="s2">-</span><span class="s5">1</span><span class="s2">:</span><span
+            class="s5">0</span><span class="s2">:-</span><span class="s5">1</span><span class="s3">], </span><span
+            class="s1">wk2</span><span class="s3">[</span><span class="s2">:</span><span class="s1">m</span><span
+            class="s3">])), </span><span class="s1">nfft</span><span class="s3">)</span>
+<a name="l390"><span class="ln">390  </span></a>        <span class="s1">self</span><span class="s3">.</span><span
+            class="s1">_wk2 </span><span class="s2">= </span><span class="s1">wk2</span><span class="s3">[</span><span
+            class="s2">:</span><span class="s1">m</span><span class="s3">]</span>
+<a name="l391"><span class="ln">391  </span></a>        <span class="s1">self</span><span class="s3">.</span><span
+            class="s1">_yidx </span><span class="s2">= </span><span class="s1">slice</span><span
+            class="s3">(</span><span class="s1">n</span><span class="s2">-</span><span class="s5">1</span><span
+            class="s3">, </span><span class="s1">n</span><span class="s2">+</span><span class="s1">m</span><span
+            class="s2">-</span><span class="s5">1</span><span class="s3">)</span>
 <a name="l392"><span class="ln">392  </span></a>
 <a name="l393"><span class="ln">393  </span></a>
-<a name="l394"><span class="ln">394  </span></a><span class="s2">def </span><span class="s1">czt</span><span class="s3">(</span><span class="s1">x</span><span class="s3">, </span><span class="s1">m</span><span class="s2">=None</span><span class="s3">, </span><span class="s1">w</span><span class="s2">=None</span><span class="s3">, </span><span class="s1">a</span><span class="s2">=</span><span class="s5">1</span><span class="s2">+</span><span class="s5">0j</span><span class="s3">, </span><span class="s2">*</span><span class="s3">, </span><span class="s1">axis</span><span class="s2">=-</span><span class="s5">1</span><span class="s3">)</span><span class="s2">:</span>
+<a name="l394"><span class="ln">394  </span></a><span class="s2">def </span><span class="s1">czt</span><span class="s3">(</span><span
+            class="s1">x</span><span class="s3">, </span><span class="s1">m</span><span class="s2">=None</span><span
+            class="s3">, </span><span class="s1">w</span><span class="s2">=None</span><span class="s3">, </span><span
+            class="s1">a</span><span class="s2">=</span><span class="s5">1</span><span class="s2">+</span><span
+            class="s5">0j</span><span class="s3">, </span><span class="s2">*</span><span class="s3">, </span><span
+            class="s1">axis</span><span class="s2">=-</span><span class="s5">1</span><span class="s3">)</span><span
+            class="s2">:</span>
 <a name="l395"><span class="ln">395  </span></a>    <span class="s0">&quot;&quot;&quot; 
 <a name="l396"><span class="ln">396  </span></a>    Compute the frequency response around a spiral in the Z plane. 
 <a name="l397"><span class="ln">397  </span></a> 
@@ -520,12 +742,27 @@ _czt.py</font>
 <a name="l500"><span class="ln">500  </span></a>    &gt;&gt;&gt; plt.margins(0, 0.1) 
 <a name="l501"><span class="ln">501  </span></a>    &gt;&gt;&gt; plt.show() 
 <a name="l502"><span class="ln">502  </span></a>    &quot;&quot;&quot;</span>
-<a name="l503"><span class="ln">503  </span></a>    <span class="s1">x </span><span class="s2">= </span><span class="s1">np</span><span class="s3">.</span><span class="s1">asarray</span><span class="s3">(</span><span class="s1">x</span><span class="s3">)</span>
-<a name="l504"><span class="ln">504  </span></a>    <span class="s1">transform </span><span class="s2">= </span><span class="s1">CZT</span><span class="s3">(</span><span class="s1">x</span><span class="s3">.</span><span class="s1">shape</span><span class="s3">[</span><span class="s1">axis</span><span class="s3">], </span><span class="s1">m</span><span class="s2">=</span><span class="s1">m</span><span class="s3">, </span><span class="s1">w</span><span class="s2">=</span><span class="s1">w</span><span class="s3">, </span><span class="s1">a</span><span class="s2">=</span><span class="s1">a</span><span class="s3">)</span>
-<a name="l505"><span class="ln">505  </span></a>    <span class="s2">return </span><span class="s1">transform</span><span class="s3">(</span><span class="s1">x</span><span class="s3">, </span><span class="s1">axis</span><span class="s2">=</span><span class="s1">axis</span><span class="s3">)</span>
+<a name="l503"><span class="ln">503  </span></a>    <span class="s1">x </span><span class="s2">= </span><span
+            class="s1">np</span><span class="s3">.</span><span class="s1">asarray</span><span class="s3">(</span><span
+            class="s1">x</span><span class="s3">)</span>
+<a name="l504"><span class="ln">504  </span></a>    <span class="s1">transform </span><span class="s2">= </span><span
+            class="s1">CZT</span><span class="s3">(</span><span class="s1">x</span><span class="s3">.</span><span
+            class="s1">shape</span><span class="s3">[</span><span class="s1">axis</span><span class="s3">], </span><span
+            class="s1">m</span><span class="s2">=</span><span class="s1">m</span><span class="s3">, </span><span
+            class="s1">w</span><span class="s2">=</span><span class="s1">w</span><span class="s3">, </span><span
+            class="s1">a</span><span class="s2">=</span><span class="s1">a</span><span class="s3">)</span>
+<a name="l505"><span class="ln">505  </span></a>    <span class="s2">return </span><span
+            class="s1">transform</span><span class="s3">(</span><span class="s1">x</span><span class="s3">, </span><span
+            class="s1">axis</span><span class="s2">=</span><span class="s1">axis</span><span class="s3">)</span>
 <a name="l506"><span class="ln">506  </span></a>
 <a name="l507"><span class="ln">507  </span></a>
-<a name="l508"><span class="ln">508  </span></a><span class="s2">def </span><span class="s1">zoom_fft</span><span class="s3">(</span><span class="s1">x</span><span class="s3">, </span><span class="s1">fn</span><span class="s3">, </span><span class="s1">m</span><span class="s2">=None</span><span class="s3">, </span><span class="s2">*</span><span class="s3">, </span><span class="s1">fs</span><span class="s2">=</span><span class="s5">2</span><span class="s3">, </span><span class="s1">endpoint</span><span class="s2">=False</span><span class="s3">, </span><span class="s1">axis</span><span class="s2">=-</span><span class="s5">1</span><span class="s3">)</span><span class="s2">:</span>
+<a name="l508"><span class="ln">508  </span></a><span class="s2">def </span><span class="s1">zoom_fft</span><span
+            class="s3">(</span><span class="s1">x</span><span class="s3">, </span><span class="s1">fn</span><span
+            class="s3">, </span><span class="s1">m</span><span class="s2">=None</span><span class="s3">, </span><span
+            class="s2">*</span><span class="s3">, </span><span class="s1">fs</span><span class="s2">=</span><span
+            class="s5">2</span><span class="s3">, </span><span class="s1">endpoint</span><span
+            class="s2">=False</span><span class="s3">, </span><span class="s1">axis</span><span
+            class="s2">=-</span><span class="s5">1</span><span class="s3">)</span><span class="s2">:</span>
 <a name="l509"><span class="ln">509  </span></a>    <span class="s0">&quot;&quot;&quot; 
 <a name="l510"><span class="ln">510  </span></a>    Compute the DFT of `x` only for frequencies in range `fn`. 
 <a name="l511"><span class="ln">511  </span></a> 
@@ -590,9 +827,19 @@ _czt.py</font>
 <a name="l570"><span class="ln">570  </span></a>    &gt;&gt;&gt; plt.plot(f, 20*np.log10(np.abs(X))) 
 <a name="l571"><span class="ln">571  </span></a>    &gt;&gt;&gt; plt.show() 
 <a name="l572"><span class="ln">572  </span></a>    &quot;&quot;&quot;</span>
-<a name="l573"><span class="ln">573  </span></a>    <span class="s1">x </span><span class="s2">= </span><span class="s1">np</span><span class="s3">.</span><span class="s1">asarray</span><span class="s3">(</span><span class="s1">x</span><span class="s3">)</span>
-<a name="l574"><span class="ln">574  </span></a>    <span class="s1">transform </span><span class="s2">= </span><span class="s1">ZoomFFT</span><span class="s3">(</span><span class="s1">x</span><span class="s3">.</span><span class="s1">shape</span><span class="s3">[</span><span class="s1">axis</span><span class="s3">], </span><span class="s1">fn</span><span class="s3">, </span><span class="s1">m</span><span class="s2">=</span><span class="s1">m</span><span class="s3">, </span><span class="s1">fs</span><span class="s2">=</span><span class="s1">fs</span><span class="s3">, </span><span class="s1">endpoint</span><span class="s2">=</span><span class="s1">endpoint</span><span class="s3">)</span>
-<a name="l575"><span class="ln">575  </span></a>    <span class="s2">return </span><span class="s1">transform</span><span class="s3">(</span><span class="s1">x</span><span class="s3">, </span><span class="s1">axis</span><span class="s2">=</span><span class="s1">axis</span><span class="s3">)</span>
+<a name="l573"><span class="ln">573  </span></a>    <span class="s1">x </span><span class="s2">= </span><span
+            class="s1">np</span><span class="s3">.</span><span class="s1">asarray</span><span class="s3">(</span><span
+            class="s1">x</span><span class="s3">)</span>
+<a name="l574"><span class="ln">574  </span></a>    <span class="s1">transform </span><span class="s2">= </span><span
+            class="s1">ZoomFFT</span><span class="s3">(</span><span class="s1">x</span><span class="s3">.</span><span
+            class="s1">shape</span><span class="s3">[</span><span class="s1">axis</span><span class="s3">], </span><span
+            class="s1">fn</span><span class="s3">, </span><span class="s1">m</span><span class="s2">=</span><span
+            class="s1">m</span><span class="s3">, </span><span class="s1">fs</span><span class="s2">=</span><span
+            class="s1">fs</span><span class="s3">, </span><span class="s1">endpoint</span><span class="s2">=</span><span
+            class="s1">endpoint</span><span class="s3">)</span>
+<a name="l575"><span class="ln">575  </span></a>    <span class="s2">return </span><span
+            class="s1">transform</span><span class="s3">(</span><span class="s1">x</span><span class="s3">, </span><span
+            class="s1">axis</span><span class="s2">=</span><span class="s1">axis</span><span class="s3">)</span>
 <a name="l576"><span class="ln">576  </span></a></pre>
 </body>
 </html>

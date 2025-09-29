@@ -1,41 +1,62 @@
 <html>
 <head>
-<title>_mvt.py</title>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<style type="text/css">
-.s0 { color: #a71d5d;}
-.s1 { color: #333333;}
-.s2 { color: #63a35c;}
-.s3 { color: #969896;}
-.s4 { color: #0086b3;}
-.ln { color: #333333; font-weight: normal; font-style: normal; }
-</style>
+    <title>_mvt.py</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <style type="text/css">
+        .s0 { color: #a71d5d;}
+        .s1 { color: #333333;}
+        .s2 { color: #63a35c;}
+        .s3 { color: #969896;}
+        .s4 { color: #0086b3;}
+        .ln { color: #333333; font-weight: normal; font-style: normal; }
+    </style>
 </head>
 <body bgcolor="#ffffff">
-<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#c0c0c0" >
-<tr><td><center>
-<font face="Arial, Helvetica" color="#000000">
-_mvt.py</font>
-</center></td></tr></table>
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#c0c0c0">
+    <tr>
+        <td>
+            <center>
+                <font face="Arial, Helvetica" color="#000000">
+                    _mvt.py</font>
+            </center>
+        </td>
+    </tr>
+</table>
 <pre><a name="l1"><span class="ln">1    </span></a><span class="s0">import </span><span class="s1">math</span>
-<a name="l2"><span class="ln">2    </span></a><span class="s0">import </span><span class="s1">numpy </span><span class="s0">as </span><span class="s1">np</span>
-<a name="l3"><span class="ln">3    </span></a><span class="s0">from </span><span class="s1">scipy </span><span class="s0">import </span><span class="s1">special</span>
-<a name="l4"><span class="ln">4    </span></a><span class="s0">from </span><span class="s1">scipy</span><span class="s2">.</span><span class="s1">stats</span><span class="s2">.</span><span class="s1">_qmc </span><span class="s0">import </span><span class="s1">primes_from_2_to</span>
+<a name="l2"><span class="ln">2    </span></a><span class="s0">import </span><span class="s1">numpy </span><span
+            class="s0">as </span><span class="s1">np</span>
+<a name="l3"><span class="ln">3    </span></a><span class="s0">from </span><span class="s1">scipy </span><span
+            class="s0">import </span><span class="s1">special</span>
+<a name="l4"><span class="ln">4    </span></a><span class="s0">from </span><span class="s1">scipy</span><span
+            class="s2">.</span><span class="s1">stats</span><span class="s2">.</span><span class="s1">_qmc </span><span
+            class="s0">import </span><span class="s1">primes_from_2_to</span>
 <a name="l5"><span class="ln">5    </span></a>
 <a name="l6"><span class="ln">6    </span></a>
-<a name="l7"><span class="ln">7    </span></a><span class="s0">def </span><span class="s1">_primes</span><span class="s2">(</span><span class="s1">n</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l7"><span class="ln">7    </span></a><span class="s0">def </span><span class="s1">_primes</span><span
+            class="s2">(</span><span class="s1">n</span><span class="s2">)</span><span class="s0">:</span>
 <a name="l8"><span class="ln">8    </span></a>    <span class="s3"># Defined to facilitate comparison between translation and source</span>
 <a name="l9"><span class="ln">9    </span></a>    <span class="s3"># In Matlab, primes(10.5) -&gt; first four primes, primes(11.5) -&gt; first five</span>
-<a name="l10"><span class="ln">10   </span></a>    <span class="s0">return </span><span class="s1">primes_from_2_to</span><span class="s2">(</span><span class="s1">math</span><span class="s2">.</span><span class="s1">ceil</span><span class="s2">(</span><span class="s1">n</span><span class="s2">))</span>
+<a name="l10"><span class="ln">10   </span></a>    <span class="s0">return </span><span
+            class="s1">primes_from_2_to</span><span class="s2">(</span><span class="s1">math</span><span
+            class="s2">.</span><span class="s1">ceil</span><span class="s2">(</span><span class="s1">n</span><span
+            class="s2">))</span>
 <a name="l11"><span class="ln">11   </span></a>
 <a name="l12"><span class="ln">12   </span></a>
-<a name="l13"><span class="ln">13   </span></a><span class="s0">def </span><span class="s1">_gaminv</span><span class="s2">(</span><span class="s1">a</span><span class="s2">, </span><span class="s1">b</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l13"><span class="ln">13   </span></a><span class="s0">def </span><span class="s1">_gaminv</span><span
+            class="s2">(</span><span class="s1">a</span><span class="s2">, </span><span class="s1">b</span><span
+            class="s2">)</span><span class="s0">:</span>
 <a name="l14"><span class="ln">14   </span></a>    <span class="s3"># Defined to facilitate comparison between translation and source</span>
 <a name="l15"><span class="ln">15   </span></a>    <span class="s3"># Matlab's `gaminv` is like `special.gammaincinv` but args are reversed</span>
-<a name="l16"><span class="ln">16   </span></a>    <span class="s0">return </span><span class="s1">special</span><span class="s2">.</span><span class="s1">gammaincinv</span><span class="s2">(</span><span class="s1">b</span><span class="s2">, </span><span class="s1">a</span><span class="s2">)</span>
+<a name="l16"><span class="ln">16   </span></a>    <span class="s0">return </span><span class="s1">special</span><span
+            class="s2">.</span><span class="s1">gammaincinv</span><span class="s2">(</span><span
+            class="s1">b</span><span class="s2">, </span><span class="s1">a</span><span class="s2">)</span>
 <a name="l17"><span class="ln">17   </span></a>
 <a name="l18"><span class="ln">18   </span></a>
-<a name="l19"><span class="ln">19   </span></a><span class="s0">def </span><span class="s1">_qsimvtv</span><span class="s2">(</span><span class="s1">m</span><span class="s2">, </span><span class="s1">nu</span><span class="s2">, </span><span class="s1">sigma</span><span class="s2">, </span><span class="s1">a</span><span class="s2">, </span><span class="s1">b</span><span class="s2">, </span><span class="s1">rng</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l19"><span class="ln">19   </span></a><span class="s0">def </span><span class="s1">_qsimvtv</span><span
+            class="s2">(</span><span class="s1">m</span><span class="s2">, </span><span class="s1">nu</span><span
+            class="s2">, </span><span class="s1">sigma</span><span class="s2">, </span><span class="s1">a</span><span
+            class="s2">, </span><span class="s1">b</span><span class="s2">, </span><span class="s1">rng</span><span
+            class="s2">)</span><span class="s0">:</span>
 <a name="l20"><span class="ln">20   </span></a>    <span class="s3">&quot;&quot;&quot;Estimates the multivariate t CDF using randomized QMC 
 <a name="l21"><span class="ln">21   </span></a> 
 <a name="l22"><span class="ln">22   </span></a>    Parameters 
@@ -66,7 +87,8 @@ _mvt.py</font>
 <a name="l47"><span class="ln">47   </span></a>    <span class="s3">#</span>
 <a name="l48"><span class="ln">48   </span></a>    <span class="s3">#   This function uses an algorithm given in the paper</span>
 <a name="l49"><span class="ln">49   </span></a>    <span class="s3">#      &quot;Comparison of Methods for the Numerical Computation of</span>
-<a name="l50"><span class="ln">50   </span></a>    <span class="s3">#       Multivariate t Probabilities&quot;, in</span>
+<a name="l50"><span class="ln">50   </span></a>    <span
+            class="s3">#       Multivariate t Probabilities&quot;, in</span>
 <a name="l51"><span class="ln">51   </span></a>    <span class="s3">#      J. of Computational and Graphical Stat., 11(2002), pp. 950-971, by</span>
 <a name="l52"><span class="ln">52   </span></a>    <span class="s3">#          Alan Genz and Frank Bretz</span>
 <a name="l53"><span class="ln">53   </span></a>    <span class="s3">#</span>
@@ -107,87 +129,356 @@ _mvt.py</font>
 <a name="l88"><span class="ln">88   </span></a>    <span class="s3"># OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
 <a name="l89"><span class="ln">89   </span></a>
 <a name="l90"><span class="ln">90   </span></a>    <span class="s3"># Initialization</span>
-<a name="l91"><span class="ln">91   </span></a>    <span class="s1">sn </span><span class="s0">= </span><span class="s1">max</span><span class="s2">(</span><span class="s4">1</span><span class="s2">, </span><span class="s1">math</span><span class="s2">.</span><span class="s1">sqrt</span><span class="s2">(</span><span class="s1">nu</span><span class="s2">))</span><span class="s1">; ch</span><span class="s2">, </span><span class="s1">az</span><span class="s2">, </span><span class="s1">bz </span><span class="s0">= </span><span class="s1">_chlrps</span><span class="s2">(</span><span class="s1">sigma</span><span class="s2">, </span><span class="s1">a</span><span class="s0">/</span><span class="s1">sn</span><span class="s2">, </span><span class="s1">b</span><span class="s0">/</span><span class="s1">sn</span><span class="s2">)</span>
-<a name="l92"><span class="ln">92   </span></a>    <span class="s1">n </span><span class="s0">= </span><span class="s1">len</span><span class="s2">(</span><span class="s1">sigma</span><span class="s2">)</span><span class="s1">; N </span><span class="s0">= </span><span class="s4">10</span><span class="s1">; P </span><span class="s0">= </span><span class="s1">math</span><span class="s2">.</span><span class="s1">ceil</span><span class="s2">(</span><span class="s1">m</span><span class="s0">/</span><span class="s1">N</span><span class="s2">)</span><span class="s1">; on </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">ones</span><span class="s2">(</span><span class="s1">P</span><span class="s2">)</span><span class="s1">; p </span><span class="s0">= </span><span class="s4">0</span><span class="s1">; e </span><span class="s0">= </span><span class="s4">0</span>
-<a name="l93"><span class="ln">93   </span></a>    <span class="s1">ps </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">sqrt</span><span class="s2">(</span><span class="s1">_primes</span><span class="s2">(</span><span class="s4">5</span><span class="s0">*</span><span class="s1">n</span><span class="s0">*</span><span class="s1">math</span><span class="s2">.</span><span class="s1">log</span><span class="s2">(</span><span class="s1">n</span><span class="s0">+</span><span class="s4">4</span><span class="s2">)</span><span class="s0">/</span><span class="s4">4</span><span class="s2">))</span><span class="s1">; q </span><span class="s0">= </span><span class="s1">ps</span><span class="s2">[</span><span class="s0">:</span><span class="s2">, </span><span class="s1">np</span><span class="s2">.</span><span class="s1">newaxis</span><span class="s2">]  </span><span class="s3"># Richtmyer gens.</span>
+<a name="l91"><span class="ln">91   </span></a>    <span class="s1">sn </span><span class="s0">= </span><span
+            class="s1">max</span><span class="s2">(</span><span class="s4">1</span><span class="s2">, </span><span
+            class="s1">math</span><span class="s2">.</span><span class="s1">sqrt</span><span class="s2">(</span><span
+            class="s1">nu</span><span class="s2">))</span><span class="s1">; ch</span><span class="s2">, </span><span
+            class="s1">az</span><span class="s2">, </span><span class="s1">bz </span><span class="s0">= </span><span
+            class="s1">_chlrps</span><span class="s2">(</span><span class="s1">sigma</span><span
+            class="s2">, </span><span class="s1">a</span><span class="s0">/</span><span class="s1">sn</span><span
+            class="s2">, </span><span class="s1">b</span><span class="s0">/</span><span class="s1">sn</span><span
+            class="s2">)</span>
+<a name="l92"><span class="ln">92   </span></a>    <span class="s1">n </span><span class="s0">= </span><span class="s1">len</span><span
+            class="s2">(</span><span class="s1">sigma</span><span class="s2">)</span><span class="s1">; N </span><span
+            class="s0">= </span><span class="s4">10</span><span class="s1">; P </span><span class="s0">= </span><span
+            class="s1">math</span><span class="s2">.</span><span class="s1">ceil</span><span class="s2">(</span><span
+            class="s1">m</span><span class="s0">/</span><span class="s1">N</span><span class="s2">)</span><span
+            class="s1">; on </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span
+            class="s1">ones</span><span class="s2">(</span><span class="s1">P</span><span class="s2">)</span><span
+            class="s1">; p </span><span class="s0">= </span><span class="s4">0</span><span class="s1">; e </span><span
+            class="s0">= </span><span class="s4">0</span>
+<a name="l93"><span class="ln">93   </span></a>    <span class="s1">ps </span><span class="s0">= </span><span
+            class="s1">np</span><span class="s2">.</span><span class="s1">sqrt</span><span class="s2">(</span><span
+            class="s1">_primes</span><span class="s2">(</span><span class="s4">5</span><span class="s0">*</span><span
+            class="s1">n</span><span class="s0">*</span><span class="s1">math</span><span class="s2">.</span><span
+            class="s1">log</span><span class="s2">(</span><span class="s1">n</span><span class="s0">+</span><span
+            class="s4">4</span><span class="s2">)</span><span class="s0">/</span><span class="s4">4</span><span
+            class="s2">))</span><span class="s1">; q </span><span class="s0">= </span><span class="s1">ps</span><span
+            class="s2">[</span><span class="s0">:</span><span class="s2">, </span><span class="s1">np</span><span
+            class="s2">.</span><span class="s1">newaxis</span><span class="s2">]  </span><span class="s3"># Richtmyer gens.</span>
 <a name="l94"><span class="ln">94   </span></a>
 <a name="l95"><span class="ln">95   </span></a>    <span class="s3"># Randomization loop for ns samples</span>
-<a name="l96"><span class="ln">96   </span></a>    <span class="s1">c </span><span class="s0">= None</span><span class="s1">; dc </span><span class="s0">= None</span>
-<a name="l97"><span class="ln">97   </span></a>    <span class="s0">for </span><span class="s1">S </span><span class="s0">in </span><span class="s1">range</span><span class="s2">(</span><span class="s1">N</span><span class="s2">)</span><span class="s0">:</span>
-<a name="l98"><span class="ln">98   </span></a>        <span class="s1">vp </span><span class="s0">= </span><span class="s1">on</span><span class="s2">.</span><span class="s1">copy</span><span class="s2">()</span><span class="s1">; s </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">zeros</span><span class="s2">((</span><span class="s1">n</span><span class="s2">, </span><span class="s1">P</span><span class="s2">))</span>
-<a name="l99"><span class="ln">99   </span></a>        <span class="s0">for </span><span class="s1">i </span><span class="s0">in </span><span class="s1">range</span><span class="s2">(</span><span class="s1">n</span><span class="s2">)</span><span class="s0">:</span>
-<a name="l100"><span class="ln">100  </span></a>            <span class="s1">x </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">abs</span><span class="s2">(</span><span class="s4">2</span><span class="s0">*</span><span class="s1">np</span><span class="s2">.</span><span class="s1">mod</span><span class="s2">(</span><span class="s1">q</span><span class="s2">[</span><span class="s1">i</span><span class="s2">]</span><span class="s0">*</span><span class="s1">np</span><span class="s2">.</span><span class="s1">arange</span><span class="s2">(</span><span class="s4">1</span><span class="s2">, </span><span class="s1">P</span><span class="s0">+</span><span class="s4">1</span><span class="s2">) </span><span class="s0">+ </span><span class="s1">rng</span><span class="s2">.</span><span class="s1">random</span><span class="s2">(), </span><span class="s4">1</span><span class="s2">)</span><span class="s0">-</span><span class="s4">1</span><span class="s2">)  </span><span class="s3"># periodizing transform</span>
-<a name="l101"><span class="ln">101  </span></a>            <span class="s0">if </span><span class="s1">i </span><span class="s0">== </span><span class="s4">0</span><span class="s0">:</span>
-<a name="l102"><span class="ln">102  </span></a>                <span class="s1">r </span><span class="s0">= </span><span class="s1">on</span>
-<a name="l103"><span class="ln">103  </span></a>                <span class="s0">if </span><span class="s1">nu </span><span class="s0">&gt; </span><span class="s4">0</span><span class="s0">:</span>
-<a name="l104"><span class="ln">104  </span></a>                    <span class="s1">r </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">sqrt</span><span class="s2">(</span><span class="s4">2</span><span class="s0">*</span><span class="s1">_gaminv</span><span class="s2">(</span><span class="s1">x</span><span class="s2">, </span><span class="s1">nu</span><span class="s0">/</span><span class="s4">2</span><span class="s2">))</span>
+<a name="l96"><span class="ln">96   </span></a>    <span class="s1">c </span><span class="s0">= None</span><span
+            class="s1">; dc </span><span class="s0">= None</span>
+<a name="l97"><span class="ln">97   </span></a>    <span class="s0">for </span><span class="s1">S </span><span
+            class="s0">in </span><span class="s1">range</span><span class="s2">(</span><span class="s1">N</span><span
+            class="s2">)</span><span class="s0">:</span>
+<a name="l98"><span class="ln">98   </span></a>        <span class="s1">vp </span><span class="s0">= </span><span
+            class="s1">on</span><span class="s2">.</span><span class="s1">copy</span><span class="s2">()</span><span
+            class="s1">; s </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span
+            class="s1">zeros</span><span class="s2">((</span><span class="s1">n</span><span class="s2">, </span><span
+            class="s1">P</span><span class="s2">))</span>
+<a name="l99"><span class="ln">99   </span></a>        <span class="s0">for </span><span class="s1">i </span><span
+            class="s0">in </span><span class="s1">range</span><span class="s2">(</span><span class="s1">n</span><span
+            class="s2">)</span><span class="s0">:</span>
+<a name="l100"><span class="ln">100  </span></a>            <span class="s1">x </span><span class="s0">= </span><span
+            class="s1">np</span><span class="s2">.</span><span class="s1">abs</span><span class="s2">(</span><span
+            class="s4">2</span><span class="s0">*</span><span class="s1">np</span><span class="s2">.</span><span
+            class="s1">mod</span><span class="s2">(</span><span class="s1">q</span><span class="s2">[</span><span
+            class="s1">i</span><span class="s2">]</span><span class="s0">*</span><span class="s1">np</span><span
+            class="s2">.</span><span class="s1">arange</span><span class="s2">(</span><span class="s4">1</span><span
+            class="s2">, </span><span class="s1">P</span><span class="s0">+</span><span class="s4">1</span><span
+            class="s2">) </span><span class="s0">+ </span><span class="s1">rng</span><span class="s2">.</span><span
+            class="s1">random</span><span class="s2">(), </span><span class="s4">1</span><span class="s2">)</span><span
+            class="s0">-</span><span class="s4">1</span><span class="s2">)  </span><span class="s3"># periodizing transform</span>
+<a name="l101"><span class="ln">101  </span></a>            <span class="s0">if </span><span class="s1">i </span><span
+            class="s0">== </span><span class="s4">0</span><span class="s0">:</span>
+<a name="l102"><span class="ln">102  </span></a>                <span class="s1">r </span><span
+            class="s0">= </span><span class="s1">on</span>
+<a name="l103"><span class="ln">103  </span></a>                <span class="s0">if </span><span
+            class="s1">nu </span><span class="s0">&gt; </span><span class="s4">0</span><span class="s0">:</span>
+<a name="l104"><span class="ln">104  </span></a>                    <span class="s1">r </span><span class="s0">= </span><span
+            class="s1">np</span><span class="s2">.</span><span class="s1">sqrt</span><span class="s2">(</span><span
+            class="s4">2</span><span class="s0">*</span><span class="s1">_gaminv</span><span class="s2">(</span><span
+            class="s1">x</span><span class="s2">, </span><span class="s1">nu</span><span class="s0">/</span><span
+            class="s4">2</span><span class="s2">))</span>
 <a name="l105"><span class="ln">105  </span></a>            <span class="s0">else:</span>
-<a name="l106"><span class="ln">106  </span></a>                <span class="s1">y </span><span class="s0">= </span><span class="s1">_Phinv</span><span class="s2">(</span><span class="s1">c </span><span class="s0">+ </span><span class="s1">x</span><span class="s0">*</span><span class="s1">dc</span><span class="s2">)</span>
-<a name="l107"><span class="ln">107  </span></a>                <span class="s1">s</span><span class="s2">[</span><span class="s1">i</span><span class="s0">:</span><span class="s2">] </span><span class="s0">+= </span><span class="s1">ch</span><span class="s2">[</span><span class="s1">i</span><span class="s0">:</span><span class="s2">, </span><span class="s1">i</span><span class="s0">-</span><span class="s4">1</span><span class="s0">:</span><span class="s1">i</span><span class="s2">] </span><span class="s0">* </span><span class="s1">y</span>
-<a name="l108"><span class="ln">108  </span></a>            <span class="s1">si </span><span class="s0">= </span><span class="s1">s</span><span class="s2">[</span><span class="s1">i</span><span class="s2">, </span><span class="s0">:</span><span class="s2">]</span><span class="s1">; c </span><span class="s0">= </span><span class="s1">on</span><span class="s2">.</span><span class="s1">copy</span><span class="s2">()</span><span class="s1">; ai </span><span class="s0">= </span><span class="s1">az</span><span class="s2">[</span><span class="s1">i</span><span class="s2">]</span><span class="s0">*</span><span class="s1">r </span><span class="s0">- </span><span class="s1">si; d </span><span class="s0">= </span><span class="s1">on</span><span class="s2">.</span><span class="s1">copy</span><span class="s2">()</span><span class="s1">; bi </span><span class="s0">= </span><span class="s1">bz</span><span class="s2">[</span><span class="s1">i</span><span class="s2">]</span><span class="s0">*</span><span class="s1">r </span><span class="s0">- </span><span class="s1">si</span>
-<a name="l109"><span class="ln">109  </span></a>            <span class="s1">c</span><span class="s2">[</span><span class="s1">ai </span><span class="s0">&lt;= -</span><span class="s4">9</span><span class="s2">] </span><span class="s0">= </span><span class="s4">0</span><span class="s1">; tl </span><span class="s0">= </span><span class="s1">abs</span><span class="s2">(</span><span class="s1">ai</span><span class="s2">) </span><span class="s0">&lt; </span><span class="s4">9</span><span class="s1">; c</span><span class="s2">[</span><span class="s1">tl</span><span class="s2">] </span><span class="s0">= </span><span class="s1">_Phi</span><span class="s2">(</span><span class="s1">ai</span><span class="s2">[</span><span class="s1">tl</span><span class="s2">])</span>
-<a name="l110"><span class="ln">110  </span></a>            <span class="s1">d</span><span class="s2">[</span><span class="s1">bi </span><span class="s0">&lt;= -</span><span class="s4">9</span><span class="s2">] </span><span class="s0">= </span><span class="s4">0</span><span class="s1">; tl </span><span class="s0">= </span><span class="s1">abs</span><span class="s2">(</span><span class="s1">bi</span><span class="s2">) </span><span class="s0">&lt; </span><span class="s4">9</span><span class="s1">; d</span><span class="s2">[</span><span class="s1">tl</span><span class="s2">] </span><span class="s0">= </span><span class="s1">_Phi</span><span class="s2">(</span><span class="s1">bi</span><span class="s2">[</span><span class="s1">tl</span><span class="s2">])</span>
-<a name="l111"><span class="ln">111  </span></a>            <span class="s1">dc </span><span class="s0">= </span><span class="s1">d </span><span class="s0">- </span><span class="s1">c; vp </span><span class="s0">= </span><span class="s1">vp </span><span class="s0">* </span><span class="s1">dc</span>
-<a name="l112"><span class="ln">112  </span></a>        <span class="s1">d </span><span class="s0">= </span><span class="s2">(</span><span class="s1">np</span><span class="s2">.</span><span class="s1">mean</span><span class="s2">(</span><span class="s1">vp</span><span class="s2">) </span><span class="s0">- </span><span class="s1">p</span><span class="s2">)</span><span class="s0">/</span><span class="s2">(</span><span class="s1">S </span><span class="s0">+ </span><span class="s4">1</span><span class="s2">)</span><span class="s1">; p </span><span class="s0">= </span><span class="s1">p </span><span class="s0">+ </span><span class="s1">d; e </span><span class="s0">= </span><span class="s2">(</span><span class="s1">S </span><span class="s0">- </span><span class="s4">1</span><span class="s2">)</span><span class="s0">*</span><span class="s1">e</span><span class="s0">/</span><span class="s2">(</span><span class="s1">S </span><span class="s0">+ </span><span class="s4">1</span><span class="s2">) </span><span class="s0">+ </span><span class="s1">d</span><span class="s0">**</span><span class="s4">2</span>
-<a name="l113"><span class="ln">113  </span></a>    <span class="s1">e </span><span class="s0">= </span><span class="s1">math</span><span class="s2">.</span><span class="s1">sqrt</span><span class="s2">(</span><span class="s1">e</span><span class="s2">)  </span><span class="s3"># error estimate is 3 times std error with N samples.</span>
-<a name="l114"><span class="ln">114  </span></a>    <span class="s0">return </span><span class="s1">p</span><span class="s2">, </span><span class="s1">e</span>
+<a name="l106"><span class="ln">106  </span></a>                <span class="s1">y </span><span
+            class="s0">= </span><span class="s1">_Phinv</span><span class="s2">(</span><span class="s1">c </span><span
+            class="s0">+ </span><span class="s1">x</span><span class="s0">*</span><span class="s1">dc</span><span
+            class="s2">)</span>
+<a name="l107"><span class="ln">107  </span></a>                <span class="s1">s</span><span class="s2">[</span><span
+            class="s1">i</span><span class="s0">:</span><span class="s2">] </span><span class="s0">+= </span><span
+            class="s1">ch</span><span class="s2">[</span><span class="s1">i</span><span class="s0">:</span><span
+            class="s2">, </span><span class="s1">i</span><span class="s0">-</span><span class="s4">1</span><span
+            class="s0">:</span><span class="s1">i</span><span class="s2">] </span><span class="s0">* </span><span
+            class="s1">y</span>
+<a name="l108"><span class="ln">108  </span></a>            <span class="s1">si </span><span class="s0">= </span><span
+            class="s1">s</span><span class="s2">[</span><span class="s1">i</span><span class="s2">, </span><span
+            class="s0">:</span><span class="s2">]</span><span class="s1">; c </span><span class="s0">= </span><span
+            class="s1">on</span><span class="s2">.</span><span class="s1">copy</span><span class="s2">()</span><span
+            class="s1">; ai </span><span class="s0">= </span><span class="s1">az</span><span class="s2">[</span><span
+            class="s1">i</span><span class="s2">]</span><span class="s0">*</span><span class="s1">r </span><span
+            class="s0">- </span><span class="s1">si; d </span><span class="s0">= </span><span class="s1">on</span><span
+            class="s2">.</span><span class="s1">copy</span><span class="s2">()</span><span class="s1">; bi </span><span
+            class="s0">= </span><span class="s1">bz</span><span class="s2">[</span><span class="s1">i</span><span
+            class="s2">]</span><span class="s0">*</span><span class="s1">r </span><span class="s0">- </span><span
+            class="s1">si</span>
+<a name="l109"><span class="ln">109  </span></a>            <span class="s1">c</span><span class="s2">[</span><span
+            class="s1">ai </span><span class="s0">&lt;= -</span><span class="s4">9</span><span class="s2">] </span><span
+            class="s0">= </span><span class="s4">0</span><span class="s1">; tl </span><span class="s0">= </span><span
+            class="s1">abs</span><span class="s2">(</span><span class="s1">ai</span><span class="s2">) </span><span
+            class="s0">&lt; </span><span class="s4">9</span><span class="s1">; c</span><span class="s2">[</span><span
+            class="s1">tl</span><span class="s2">] </span><span class="s0">= </span><span class="s1">_Phi</span><span
+            class="s2">(</span><span class="s1">ai</span><span class="s2">[</span><span class="s1">tl</span><span
+            class="s2">])</span>
+<a name="l110"><span class="ln">110  </span></a>            <span class="s1">d</span><span class="s2">[</span><span
+            class="s1">bi </span><span class="s0">&lt;= -</span><span class="s4">9</span><span class="s2">] </span><span
+            class="s0">= </span><span class="s4">0</span><span class="s1">; tl </span><span class="s0">= </span><span
+            class="s1">abs</span><span class="s2">(</span><span class="s1">bi</span><span class="s2">) </span><span
+            class="s0">&lt; </span><span class="s4">9</span><span class="s1">; d</span><span class="s2">[</span><span
+            class="s1">tl</span><span class="s2">] </span><span class="s0">= </span><span class="s1">_Phi</span><span
+            class="s2">(</span><span class="s1">bi</span><span class="s2">[</span><span class="s1">tl</span><span
+            class="s2">])</span>
+<a name="l111"><span class="ln">111  </span></a>            <span class="s1">dc </span><span class="s0">= </span><span
+            class="s1">d </span><span class="s0">- </span><span class="s1">c; vp </span><span class="s0">= </span><span
+            class="s1">vp </span><span class="s0">* </span><span class="s1">dc</span>
+<a name="l112"><span class="ln">112  </span></a>        <span class="s1">d </span><span class="s0">= </span><span
+            class="s2">(</span><span class="s1">np</span><span class="s2">.</span><span class="s1">mean</span><span
+            class="s2">(</span><span class="s1">vp</span><span class="s2">) </span><span class="s0">- </span><span
+            class="s1">p</span><span class="s2">)</span><span class="s0">/</span><span class="s2">(</span><span
+            class="s1">S </span><span class="s0">+ </span><span class="s4">1</span><span class="s2">)</span><span
+            class="s1">; p </span><span class="s0">= </span><span class="s1">p </span><span class="s0">+ </span><span
+            class="s1">d; e </span><span class="s0">= </span><span class="s2">(</span><span class="s1">S </span><span
+            class="s0">- </span><span class="s4">1</span><span class="s2">)</span><span class="s0">*</span><span
+            class="s1">e</span><span class="s0">/</span><span class="s2">(</span><span class="s1">S </span><span
+            class="s0">+ </span><span class="s4">1</span><span class="s2">) </span><span class="s0">+ </span><span
+            class="s1">d</span><span class="s0">**</span><span class="s4">2</span>
+<a name="l113"><span class="ln">113  </span></a>    <span class="s1">e </span><span class="s0">= </span><span
+            class="s1">math</span><span class="s2">.</span><span class="s1">sqrt</span><span class="s2">(</span><span
+            class="s1">e</span><span class="s2">)  </span><span class="s3"># error estimate is 3 times std error with N samples.</span>
+<a name="l114"><span class="ln">114  </span></a>    <span class="s0">return </span><span class="s1">p</span><span
+            class="s2">, </span><span class="s1">e</span>
 <a name="l115"><span class="ln">115  </span></a>
 <a name="l116"><span class="ln">116  </span></a>
-<a name="l117"><span class="ln">117  </span></a><span class="s3">#  Standard statistical normal distribution functions</span>
-<a name="l118"><span class="ln">118  </span></a><span class="s0">def </span><span class="s1">_Phi</span><span class="s2">(</span><span class="s1">z</span><span class="s2">)</span><span class="s0">:</span>
-<a name="l119"><span class="ln">119  </span></a>    <span class="s0">return </span><span class="s1">special</span><span class="s2">.</span><span class="s1">ndtr</span><span class="s2">(</span><span class="s1">z</span><span class="s2">)</span>
+<a name="l117"><span class="ln">117  </span></a><span
+            class="s3">#  Standard statistical normal distribution functions</span>
+<a name="l118"><span class="ln">118  </span></a><span class="s0">def </span><span class="s1">_Phi</span><span
+            class="s2">(</span><span class="s1">z</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l119"><span class="ln">119  </span></a>    <span class="s0">return </span><span class="s1">special</span><span
+            class="s2">.</span><span class="s1">ndtr</span><span class="s2">(</span><span class="s1">z</span><span
+            class="s2">)</span>
 <a name="l120"><span class="ln">120  </span></a>
 <a name="l121"><span class="ln">121  </span></a>
-<a name="l122"><span class="ln">122  </span></a><span class="s0">def </span><span class="s1">_Phinv</span><span class="s2">(</span><span class="s1">p</span><span class="s2">)</span><span class="s0">:</span>
-<a name="l123"><span class="ln">123  </span></a>    <span class="s0">return </span><span class="s1">special</span><span class="s2">.</span><span class="s1">ndtri</span><span class="s2">(</span><span class="s1">p</span><span class="s2">)</span>
+<a name="l122"><span class="ln">122  </span></a><span class="s0">def </span><span class="s1">_Phinv</span><span
+            class="s2">(</span><span class="s1">p</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l123"><span class="ln">123  </span></a>    <span class="s0">return </span><span class="s1">special</span><span
+            class="s2">.</span><span class="s1">ndtri</span><span class="s2">(</span><span class="s1">p</span><span
+            class="s2">)</span>
 <a name="l124"><span class="ln">124  </span></a>
 <a name="l125"><span class="ln">125  </span></a>
-<a name="l126"><span class="ln">126  </span></a><span class="s0">def </span><span class="s1">_chlrps</span><span class="s2">(</span><span class="s1">R</span><span class="s2">, </span><span class="s1">a</span><span class="s2">, </span><span class="s1">b</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l126"><span class="ln">126  </span></a><span class="s0">def </span><span class="s1">_chlrps</span><span
+            class="s2">(</span><span class="s1">R</span><span class="s2">, </span><span class="s1">a</span><span
+            class="s2">, </span><span class="s1">b</span><span class="s2">)</span><span class="s0">:</span>
 <a name="l127"><span class="ln">127  </span></a>    <span class="s3">&quot;&quot;&quot; 
 <a name="l128"><span class="ln">128  </span></a>    Computes permuted and scaled lower Cholesky factor c for R which may be 
 <a name="l129"><span class="ln">129  </span></a>    singular, also permuting and scaling integration limit vectors a and b. 
 <a name="l130"><span class="ln">130  </span></a>    &quot;&quot;&quot;</span>
-<a name="l131"><span class="ln">131  </span></a>    <span class="s1">ep </span><span class="s0">= </span><span class="s4">1e-10  </span><span class="s3"># singularity tolerance</span>
-<a name="l132"><span class="ln">132  </span></a>    <span class="s1">eps </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">finfo</span><span class="s2">(</span><span class="s1">R</span><span class="s2">.</span><span class="s1">dtype</span><span class="s2">).</span><span class="s1">eps</span>
+<a name="l131"><span class="ln">131  </span></a>    <span class="s1">ep </span><span class="s0">= </span><span
+            class="s4">1e-10  </span><span class="s3"># singularity tolerance</span>
+<a name="l132"><span class="ln">132  </span></a>    <span class="s1">eps </span><span class="s0">= </span><span
+            class="s1">np</span><span class="s2">.</span><span class="s1">finfo</span><span class="s2">(</span><span
+            class="s1">R</span><span class="s2">.</span><span class="s1">dtype</span><span class="s2">).</span><span
+            class="s1">eps</span>
 <a name="l133"><span class="ln">133  </span></a>
-<a name="l134"><span class="ln">134  </span></a>    <span class="s1">n </span><span class="s0">= </span><span class="s1">len</span><span class="s2">(</span><span class="s1">R</span><span class="s2">)</span><span class="s1">; c </span><span class="s0">= </span><span class="s1">R</span><span class="s2">.</span><span class="s1">copy</span><span class="s2">()</span><span class="s1">; ap </span><span class="s0">= </span><span class="s1">a</span><span class="s2">.</span><span class="s1">copy</span><span class="s2">()</span><span class="s1">; bp </span><span class="s0">= </span><span class="s1">b</span><span class="s2">.</span><span class="s1">copy</span><span class="s2">()</span><span class="s1">; d </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">sqrt</span><span class="s2">(</span><span class="s1">np</span><span class="s2">.</span><span class="s1">maximum</span><span class="s2">(</span><span class="s1">np</span><span class="s2">.</span><span class="s1">diag</span><span class="s2">(</span><span class="s1">c</span><span class="s2">), </span><span class="s4">0</span><span class="s2">))</span>
-<a name="l135"><span class="ln">135  </span></a>    <span class="s0">for </span><span class="s1">i </span><span class="s0">in </span><span class="s1">range</span><span class="s2">(</span><span class="s1">n</span><span class="s2">)</span><span class="s0">:</span>
-<a name="l136"><span class="ln">136  </span></a>        <span class="s0">if </span><span class="s1">d</span><span class="s2">[</span><span class="s1">i</span><span class="s2">] </span><span class="s0">&gt; </span><span class="s4">0</span><span class="s0">:</span>
-<a name="l137"><span class="ln">137  </span></a>            <span class="s1">c</span><span class="s2">[</span><span class="s0">:</span><span class="s2">, </span><span class="s1">i</span><span class="s2">] </span><span class="s0">/= </span><span class="s1">d</span><span class="s2">[</span><span class="s1">i</span><span class="s2">]</span><span class="s1">; c</span><span class="s2">[</span><span class="s1">i</span><span class="s2">, </span><span class="s0">:</span><span class="s2">] </span><span class="s0">/= </span><span class="s1">d</span><span class="s2">[</span><span class="s1">i</span><span class="s2">]</span>
-<a name="l138"><span class="ln">138  </span></a>            <span class="s1">ap</span><span class="s2">[</span><span class="s1">i</span><span class="s2">] </span><span class="s0">/= </span><span class="s1">d</span><span class="s2">[</span><span class="s1">i</span><span class="s2">]</span><span class="s1">; bp</span><span class="s2">[</span><span class="s1">i</span><span class="s2">] </span><span class="s0">/= </span><span class="s1">d</span><span class="s2">[</span><span class="s1">i</span><span class="s2">]</span>
-<a name="l139"><span class="ln">139  </span></a>    <span class="s1">y </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">zeros</span><span class="s2">((</span><span class="s1">n</span><span class="s2">, </span><span class="s4">1</span><span class="s2">))</span><span class="s1">; sqtp </span><span class="s0">= </span><span class="s1">math</span><span class="s2">.</span><span class="s1">sqrt</span><span class="s2">(</span><span class="s4">2</span><span class="s0">*</span><span class="s1">math</span><span class="s2">.</span><span class="s1">pi</span><span class="s2">)</span>
+<a name="l134"><span class="ln">134  </span></a>    <span class="s1">n </span><span class="s0">= </span><span
+            class="s1">len</span><span class="s2">(</span><span class="s1">R</span><span class="s2">)</span><span
+            class="s1">; c </span><span class="s0">= </span><span class="s1">R</span><span class="s2">.</span><span
+            class="s1">copy</span><span class="s2">()</span><span class="s1">; ap </span><span class="s0">= </span><span
+            class="s1">a</span><span class="s2">.</span><span class="s1">copy</span><span class="s2">()</span><span
+            class="s1">; bp </span><span class="s0">= </span><span class="s1">b</span><span class="s2">.</span><span
+            class="s1">copy</span><span class="s2">()</span><span class="s1">; d </span><span class="s0">= </span><span
+            class="s1">np</span><span class="s2">.</span><span class="s1">sqrt</span><span class="s2">(</span><span
+            class="s1">np</span><span class="s2">.</span><span class="s1">maximum</span><span class="s2">(</span><span
+            class="s1">np</span><span class="s2">.</span><span class="s1">diag</span><span class="s2">(</span><span
+            class="s1">c</span><span class="s2">), </span><span class="s4">0</span><span class="s2">))</span>
+<a name="l135"><span class="ln">135  </span></a>    <span class="s0">for </span><span class="s1">i </span><span
+            class="s0">in </span><span class="s1">range</span><span class="s2">(</span><span class="s1">n</span><span
+            class="s2">)</span><span class="s0">:</span>
+<a name="l136"><span class="ln">136  </span></a>        <span class="s0">if </span><span class="s1">d</span><span
+            class="s2">[</span><span class="s1">i</span><span class="s2">] </span><span class="s0">&gt; </span><span
+            class="s4">0</span><span class="s0">:</span>
+<a name="l137"><span class="ln">137  </span></a>            <span class="s1">c</span><span class="s2">[</span><span
+            class="s0">:</span><span class="s2">, </span><span class="s1">i</span><span class="s2">] </span><span
+            class="s0">/= </span><span class="s1">d</span><span class="s2">[</span><span class="s1">i</span><span
+            class="s2">]</span><span class="s1">; c</span><span class="s2">[</span><span class="s1">i</span><span
+            class="s2">, </span><span class="s0">:</span><span class="s2">] </span><span class="s0">/= </span><span
+            class="s1">d</span><span class="s2">[</span><span class="s1">i</span><span class="s2">]</span>
+<a name="l138"><span class="ln">138  </span></a>            <span class="s1">ap</span><span class="s2">[</span><span
+            class="s1">i</span><span class="s2">] </span><span class="s0">/= </span><span class="s1">d</span><span
+            class="s2">[</span><span class="s1">i</span><span class="s2">]</span><span class="s1">; bp</span><span
+            class="s2">[</span><span class="s1">i</span><span class="s2">] </span><span class="s0">/= </span><span
+            class="s1">d</span><span class="s2">[</span><span class="s1">i</span><span class="s2">]</span>
+<a name="l139"><span class="ln">139  </span></a>    <span class="s1">y </span><span class="s0">= </span><span
+            class="s1">np</span><span class="s2">.</span><span class="s1">zeros</span><span class="s2">((</span><span
+            class="s1">n</span><span class="s2">, </span><span class="s4">1</span><span class="s2">))</span><span
+            class="s1">; sqtp </span><span class="s0">= </span><span class="s1">math</span><span
+            class="s2">.</span><span class="s1">sqrt</span><span class="s2">(</span><span class="s4">2</span><span
+            class="s0">*</span><span class="s1">math</span><span class="s2">.</span><span class="s1">pi</span><span
+            class="s2">)</span>
 <a name="l140"><span class="ln">140  </span></a>
-<a name="l141"><span class="ln">141  </span></a>    <span class="s0">for </span><span class="s1">k </span><span class="s0">in </span><span class="s1">range</span><span class="s2">(</span><span class="s1">n</span><span class="s2">)</span><span class="s0">:</span>
-<a name="l142"><span class="ln">142  </span></a>        <span class="s1">im </span><span class="s0">= </span><span class="s1">k; ckk </span><span class="s0">= </span><span class="s4">0</span><span class="s1">; dem </span><span class="s0">= </span><span class="s4">1</span><span class="s1">; s </span><span class="s0">= </span><span class="s4">0</span>
-<a name="l143"><span class="ln">143  </span></a>        <span class="s0">for </span><span class="s1">i </span><span class="s0">in </span><span class="s1">range</span><span class="s2">(</span><span class="s1">k</span><span class="s2">, </span><span class="s1">n</span><span class="s2">)</span><span class="s0">:</span>
-<a name="l144"><span class="ln">144  </span></a>            <span class="s0">if </span><span class="s1">c</span><span class="s2">[</span><span class="s1">i</span><span class="s2">, </span><span class="s1">i</span><span class="s2">] </span><span class="s0">&gt; </span><span class="s1">eps</span><span class="s0">:</span>
-<a name="l145"><span class="ln">145  </span></a>                <span class="s1">cii </span><span class="s0">= </span><span class="s1">math</span><span class="s2">.</span><span class="s1">sqrt</span><span class="s2">(</span><span class="s1">max</span><span class="s2">(</span><span class="s1">c</span><span class="s2">[</span><span class="s1">i</span><span class="s2">, </span><span class="s1">i</span><span class="s2">], </span><span class="s4">0</span><span class="s2">))</span>
-<a name="l146"><span class="ln">146  </span></a>                <span class="s0">if </span><span class="s1">i </span><span class="s0">&gt; </span><span class="s4">0</span><span class="s0">: </span><span class="s1">s </span><span class="s0">= </span><span class="s1">c</span><span class="s2">[</span><span class="s1">i</span><span class="s2">, </span><span class="s0">:</span><span class="s1">k</span><span class="s2">] </span><span class="s0">@ </span><span class="s1">y</span><span class="s2">[</span><span class="s0">:</span><span class="s1">k</span><span class="s2">]</span>
-<a name="l147"><span class="ln">147  </span></a>                <span class="s1">ai </span><span class="s0">= </span><span class="s2">(</span><span class="s1">ap</span><span class="s2">[</span><span class="s1">i</span><span class="s2">]</span><span class="s0">-</span><span class="s1">s</span><span class="s2">)</span><span class="s0">/</span><span class="s1">cii; bi </span><span class="s0">= </span><span class="s2">(</span><span class="s1">bp</span><span class="s2">[</span><span class="s1">i</span><span class="s2">]</span><span class="s0">-</span><span class="s1">s</span><span class="s2">)</span><span class="s0">/</span><span class="s1">cii; de </span><span class="s0">= </span><span class="s1">_Phi</span><span class="s2">(</span><span class="s1">bi</span><span class="s2">)</span><span class="s0">-</span><span class="s1">_Phi</span><span class="s2">(</span><span class="s1">ai</span><span class="s2">)</span>
-<a name="l148"><span class="ln">148  </span></a>                <span class="s0">if </span><span class="s1">de </span><span class="s0">&lt;= </span><span class="s1">dem</span><span class="s0">:</span>
-<a name="l149"><span class="ln">149  </span></a>                    <span class="s1">ckk </span><span class="s0">= </span><span class="s1">cii; dem </span><span class="s0">= </span><span class="s1">de; am </span><span class="s0">= </span><span class="s1">ai; bm </span><span class="s0">= </span><span class="s1">bi; im </span><span class="s0">= </span><span class="s1">i</span>
-<a name="l150"><span class="ln">150  </span></a>        <span class="s0">if </span><span class="s1">im </span><span class="s0">&gt; </span><span class="s1">k</span><span class="s0">:</span>
-<a name="l151"><span class="ln">151  </span></a>            <span class="s1">ap</span><span class="s2">[[</span><span class="s1">im</span><span class="s2">, </span><span class="s1">k</span><span class="s2">]] </span><span class="s0">= </span><span class="s1">ap</span><span class="s2">[[</span><span class="s1">k</span><span class="s2">, </span><span class="s1">im</span><span class="s2">]]</span><span class="s1">; bp</span><span class="s2">[[</span><span class="s1">im</span><span class="s2">, </span><span class="s1">k</span><span class="s2">]] </span><span class="s0">= </span><span class="s1">bp</span><span class="s2">[[</span><span class="s1">k</span><span class="s2">, </span><span class="s1">im</span><span class="s2">]]</span><span class="s1">; c</span><span class="s2">[</span><span class="s1">im</span><span class="s2">, </span><span class="s1">im</span><span class="s2">] </span><span class="s0">= </span><span class="s1">c</span><span class="s2">[</span><span class="s1">k</span><span class="s2">, </span><span class="s1">k</span><span class="s2">]</span>
-<a name="l152"><span class="ln">152  </span></a>            <span class="s1">t </span><span class="s0">= </span><span class="s1">c</span><span class="s2">[</span><span class="s1">im</span><span class="s2">, </span><span class="s0">:</span><span class="s1">k</span><span class="s2">].</span><span class="s1">copy</span><span class="s2">()</span><span class="s1">; c</span><span class="s2">[</span><span class="s1">im</span><span class="s2">, </span><span class="s0">:</span><span class="s1">k</span><span class="s2">] </span><span class="s0">= </span><span class="s1">c</span><span class="s2">[</span><span class="s1">k</span><span class="s2">, </span><span class="s0">:</span><span class="s1">k</span><span class="s2">]</span><span class="s1">; c</span><span class="s2">[</span><span class="s1">k</span><span class="s2">, </span><span class="s0">:</span><span class="s1">k</span><span class="s2">] </span><span class="s0">= </span><span class="s1">t</span>
-<a name="l153"><span class="ln">153  </span></a>            <span class="s1">t </span><span class="s0">= </span><span class="s1">c</span><span class="s2">[</span><span class="s1">im</span><span class="s0">+</span><span class="s4">1</span><span class="s0">:</span><span class="s2">, </span><span class="s1">im</span><span class="s2">].</span><span class="s1">copy</span><span class="s2">()</span><span class="s1">; c</span><span class="s2">[</span><span class="s1">im</span><span class="s0">+</span><span class="s4">1</span><span class="s0">:</span><span class="s2">, </span><span class="s1">im</span><span class="s2">] </span><span class="s0">= </span><span class="s1">c</span><span class="s2">[</span><span class="s1">im</span><span class="s0">+</span><span class="s4">1</span><span class="s0">:</span><span class="s2">, </span><span class="s1">k</span><span class="s2">]</span><span class="s1">; c</span><span class="s2">[</span><span class="s1">im</span><span class="s0">+</span><span class="s4">1</span><span class="s0">:</span><span class="s2">, </span><span class="s1">k</span><span class="s2">] </span><span class="s0">= </span><span class="s1">t</span>
-<a name="l154"><span class="ln">154  </span></a>            <span class="s1">t </span><span class="s0">= </span><span class="s1">c</span><span class="s2">[</span><span class="s1">k</span><span class="s0">+</span><span class="s4">1</span><span class="s0">:</span><span class="s1">im</span><span class="s2">, </span><span class="s1">k</span><span class="s2">].</span><span class="s1">copy</span><span class="s2">()</span><span class="s1">; c</span><span class="s2">[</span><span class="s1">k</span><span class="s0">+</span><span class="s4">1</span><span class="s0">:</span><span class="s1">im</span><span class="s2">, </span><span class="s1">k</span><span class="s2">] </span><span class="s0">= </span><span class="s1">c</span><span class="s2">[</span><span class="s1">im</span><span class="s2">, </span><span class="s1">k</span><span class="s0">+</span><span class="s4">1</span><span class="s0">:</span><span class="s1">im</span><span class="s2">].</span><span class="s1">T; c</span><span class="s2">[</span><span class="s1">im</span><span class="s2">, </span><span class="s1">k</span><span class="s0">+</span><span class="s4">1</span><span class="s0">:</span><span class="s1">im</span><span class="s2">] </span><span class="s0">= </span><span class="s1">t</span><span class="s2">.</span><span class="s1">T</span>
-<a name="l155"><span class="ln">155  </span></a>        <span class="s0">if </span><span class="s1">ckk </span><span class="s0">&gt; </span><span class="s1">ep</span><span class="s0">*</span><span class="s2">(</span><span class="s1">k</span><span class="s0">+</span><span class="s4">1</span><span class="s2">)</span><span class="s0">:</span>
-<a name="l156"><span class="ln">156  </span></a>            <span class="s1">c</span><span class="s2">[</span><span class="s1">k</span><span class="s2">, </span><span class="s1">k</span><span class="s2">] </span><span class="s0">= </span><span class="s1">ckk; c</span><span class="s2">[</span><span class="s1">k</span><span class="s2">, </span><span class="s1">k</span><span class="s0">+</span><span class="s4">1</span><span class="s0">:</span><span class="s2">] </span><span class="s0">= </span><span class="s4">0</span>
-<a name="l157"><span class="ln">157  </span></a>            <span class="s0">for </span><span class="s1">i </span><span class="s0">in </span><span class="s1">range</span><span class="s2">(</span><span class="s1">k</span><span class="s0">+</span><span class="s4">1</span><span class="s2">, </span><span class="s1">n</span><span class="s2">)</span><span class="s0">:</span>
-<a name="l158"><span class="ln">158  </span></a>                <span class="s1">c</span><span class="s2">[</span><span class="s1">i</span><span class="s2">, </span><span class="s1">k</span><span class="s2">] </span><span class="s0">= </span><span class="s1">c</span><span class="s2">[</span><span class="s1">i</span><span class="s2">, </span><span class="s1">k</span><span class="s2">]</span><span class="s0">/</span><span class="s1">ckk; c</span><span class="s2">[</span><span class="s1">i</span><span class="s2">, </span><span class="s1">k</span><span class="s0">+</span><span class="s4">1</span><span class="s0">:</span><span class="s1">i</span><span class="s0">+</span><span class="s4">1</span><span class="s2">] </span><span class="s0">= </span><span class="s1">c</span><span class="s2">[</span><span class="s1">i</span><span class="s2">, </span><span class="s1">k</span><span class="s0">+</span><span class="s4">1</span><span class="s0">:</span><span class="s1">i</span><span class="s0">+</span><span class="s4">1</span><span class="s2">] </span><span class="s0">- </span><span class="s1">c</span><span class="s2">[</span><span class="s1">i</span><span class="s2">, </span><span class="s1">k</span><span class="s2">]</span><span class="s0">*</span><span class="s1">c</span><span class="s2">[</span><span class="s1">k</span><span class="s0">+</span><span class="s4">1</span><span class="s0">:</span><span class="s1">i</span><span class="s0">+</span><span class="s4">1</span><span class="s2">, </span><span class="s1">k</span><span class="s2">].</span><span class="s1">T</span>
-<a name="l159"><span class="ln">159  </span></a>            <span class="s0">if </span><span class="s1">abs</span><span class="s2">(</span><span class="s1">dem</span><span class="s2">) </span><span class="s0">&gt; </span><span class="s1">ep</span><span class="s0">:</span>
-<a name="l160"><span class="ln">160  </span></a>                <span class="s1">y</span><span class="s2">[</span><span class="s1">k</span><span class="s2">] </span><span class="s0">= </span><span class="s2">(</span><span class="s1">np</span><span class="s2">.</span><span class="s1">exp</span><span class="s2">(</span><span class="s0">-</span><span class="s1">am</span><span class="s0">**</span><span class="s4">2</span><span class="s0">/</span><span class="s4">2</span><span class="s2">) </span><span class="s0">- </span><span class="s1">np</span><span class="s2">.</span><span class="s1">exp</span><span class="s2">(</span><span class="s0">-</span><span class="s1">bm</span><span class="s0">**</span><span class="s4">2</span><span class="s0">/</span><span class="s4">2</span><span class="s2">)) </span><span class="s0">/ </span><span class="s2">(</span><span class="s1">sqtp</span><span class="s0">*</span><span class="s1">dem</span><span class="s2">)</span>
+<a name="l141"><span class="ln">141  </span></a>    <span class="s0">for </span><span class="s1">k </span><span
+            class="s0">in </span><span class="s1">range</span><span class="s2">(</span><span class="s1">n</span><span
+            class="s2">)</span><span class="s0">:</span>
+<a name="l142"><span class="ln">142  </span></a>        <span class="s1">im </span><span class="s0">= </span><span
+            class="s1">k; ckk </span><span class="s0">= </span><span class="s4">0</span><span
+            class="s1">; dem </span><span class="s0">= </span><span class="s4">1</span><span class="s1">; s </span><span
+            class="s0">= </span><span class="s4">0</span>
+<a name="l143"><span class="ln">143  </span></a>        <span class="s0">for </span><span class="s1">i </span><span
+            class="s0">in </span><span class="s1">range</span><span class="s2">(</span><span class="s1">k</span><span
+            class="s2">, </span><span class="s1">n</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l144"><span class="ln">144  </span></a>            <span class="s0">if </span><span class="s1">c</span><span
+            class="s2">[</span><span class="s1">i</span><span class="s2">, </span><span class="s1">i</span><span
+            class="s2">] </span><span class="s0">&gt; </span><span class="s1">eps</span><span class="s0">:</span>
+<a name="l145"><span class="ln">145  </span></a>                <span class="s1">cii </span><span
+            class="s0">= </span><span class="s1">math</span><span class="s2">.</span><span class="s1">sqrt</span><span
+            class="s2">(</span><span class="s1">max</span><span class="s2">(</span><span class="s1">c</span><span
+            class="s2">[</span><span class="s1">i</span><span class="s2">, </span><span class="s1">i</span><span
+            class="s2">], </span><span class="s4">0</span><span class="s2">))</span>
+<a name="l146"><span class="ln">146  </span></a>                <span class="s0">if </span><span
+            class="s1">i </span><span class="s0">&gt; </span><span class="s4">0</span><span class="s0">: </span><span
+            class="s1">s </span><span class="s0">= </span><span class="s1">c</span><span class="s2">[</span><span
+            class="s1">i</span><span class="s2">, </span><span class="s0">:</span><span class="s1">k</span><span
+            class="s2">] </span><span class="s0">@ </span><span class="s1">y</span><span class="s2">[</span><span
+            class="s0">:</span><span class="s1">k</span><span class="s2">]</span>
+<a name="l147"><span class="ln">147  </span></a>                <span class="s1">ai </span><span
+            class="s0">= </span><span class="s2">(</span><span class="s1">ap</span><span class="s2">[</span><span
+            class="s1">i</span><span class="s2">]</span><span class="s0">-</span><span class="s1">s</span><span
+            class="s2">)</span><span class="s0">/</span><span class="s1">cii; bi </span><span class="s0">= </span><span
+            class="s2">(</span><span class="s1">bp</span><span class="s2">[</span><span class="s1">i</span><span
+            class="s2">]</span><span class="s0">-</span><span class="s1">s</span><span class="s2">)</span><span
+            class="s0">/</span><span class="s1">cii; de </span><span class="s0">= </span><span
+            class="s1">_Phi</span><span class="s2">(</span><span class="s1">bi</span><span class="s2">)</span><span
+            class="s0">-</span><span class="s1">_Phi</span><span class="s2">(</span><span class="s1">ai</span><span
+            class="s2">)</span>
+<a name="l148"><span class="ln">148  </span></a>                <span class="s0">if </span><span
+            class="s1">de </span><span class="s0">&lt;= </span><span class="s1">dem</span><span class="s0">:</span>
+<a name="l149"><span class="ln">149  </span></a>                    <span class="s1">ckk </span><span
+            class="s0">= </span><span class="s1">cii; dem </span><span class="s0">= </span><span
+            class="s1">de; am </span><span class="s0">= </span><span class="s1">ai; bm </span><span class="s0">= </span><span
+            class="s1">bi; im </span><span class="s0">= </span><span class="s1">i</span>
+<a name="l150"><span class="ln">150  </span></a>        <span class="s0">if </span><span class="s1">im </span><span
+            class="s0">&gt; </span><span class="s1">k</span><span class="s0">:</span>
+<a name="l151"><span class="ln">151  </span></a>            <span class="s1">ap</span><span class="s2">[[</span><span
+            class="s1">im</span><span class="s2">, </span><span class="s1">k</span><span class="s2">]] </span><span
+            class="s0">= </span><span class="s1">ap</span><span class="s2">[[</span><span class="s1">k</span><span
+            class="s2">, </span><span class="s1">im</span><span class="s2">]]</span><span class="s1">; bp</span><span
+            class="s2">[[</span><span class="s1">im</span><span class="s2">, </span><span class="s1">k</span><span
+            class="s2">]] </span><span class="s0">= </span><span class="s1">bp</span><span class="s2">[[</span><span
+            class="s1">k</span><span class="s2">, </span><span class="s1">im</span><span class="s2">]]</span><span
+            class="s1">; c</span><span class="s2">[</span><span class="s1">im</span><span class="s2">, </span><span
+            class="s1">im</span><span class="s2">] </span><span class="s0">= </span><span class="s1">c</span><span
+            class="s2">[</span><span class="s1">k</span><span class="s2">, </span><span class="s1">k</span><span
+            class="s2">]</span>
+<a name="l152"><span class="ln">152  </span></a>            <span class="s1">t </span><span class="s0">= </span><span
+            class="s1">c</span><span class="s2">[</span><span class="s1">im</span><span class="s2">, </span><span
+            class="s0">:</span><span class="s1">k</span><span class="s2">].</span><span class="s1">copy</span><span
+            class="s2">()</span><span class="s1">; c</span><span class="s2">[</span><span class="s1">im</span><span
+            class="s2">, </span><span class="s0">:</span><span class="s1">k</span><span class="s2">] </span><span
+            class="s0">= </span><span class="s1">c</span><span class="s2">[</span><span class="s1">k</span><span
+            class="s2">, </span><span class="s0">:</span><span class="s1">k</span><span class="s2">]</span><span
+            class="s1">; c</span><span class="s2">[</span><span class="s1">k</span><span class="s2">, </span><span
+            class="s0">:</span><span class="s1">k</span><span class="s2">] </span><span class="s0">= </span><span
+            class="s1">t</span>
+<a name="l153"><span class="ln">153  </span></a>            <span class="s1">t </span><span class="s0">= </span><span
+            class="s1">c</span><span class="s2">[</span><span class="s1">im</span><span class="s0">+</span><span
+            class="s4">1</span><span class="s0">:</span><span class="s2">, </span><span class="s1">im</span><span
+            class="s2">].</span><span class="s1">copy</span><span class="s2">()</span><span class="s1">; c</span><span
+            class="s2">[</span><span class="s1">im</span><span class="s0">+</span><span class="s4">1</span><span
+            class="s0">:</span><span class="s2">, </span><span class="s1">im</span><span class="s2">] </span><span
+            class="s0">= </span><span class="s1">c</span><span class="s2">[</span><span class="s1">im</span><span
+            class="s0">+</span><span class="s4">1</span><span class="s0">:</span><span class="s2">, </span><span
+            class="s1">k</span><span class="s2">]</span><span class="s1">; c</span><span class="s2">[</span><span
+            class="s1">im</span><span class="s0">+</span><span class="s4">1</span><span class="s0">:</span><span
+            class="s2">, </span><span class="s1">k</span><span class="s2">] </span><span class="s0">= </span><span
+            class="s1">t</span>
+<a name="l154"><span class="ln">154  </span></a>            <span class="s1">t </span><span class="s0">= </span><span
+            class="s1">c</span><span class="s2">[</span><span class="s1">k</span><span class="s0">+</span><span
+            class="s4">1</span><span class="s0">:</span><span class="s1">im</span><span class="s2">, </span><span
+            class="s1">k</span><span class="s2">].</span><span class="s1">copy</span><span class="s2">()</span><span
+            class="s1">; c</span><span class="s2">[</span><span class="s1">k</span><span class="s0">+</span><span
+            class="s4">1</span><span class="s0">:</span><span class="s1">im</span><span class="s2">, </span><span
+            class="s1">k</span><span class="s2">] </span><span class="s0">= </span><span class="s1">c</span><span
+            class="s2">[</span><span class="s1">im</span><span class="s2">, </span><span class="s1">k</span><span
+            class="s0">+</span><span class="s4">1</span><span class="s0">:</span><span class="s1">im</span><span
+            class="s2">].</span><span class="s1">T; c</span><span class="s2">[</span><span class="s1">im</span><span
+            class="s2">, </span><span class="s1">k</span><span class="s0">+</span><span class="s4">1</span><span
+            class="s0">:</span><span class="s1">im</span><span class="s2">] </span><span class="s0">= </span><span
+            class="s1">t</span><span class="s2">.</span><span class="s1">T</span>
+<a name="l155"><span class="ln">155  </span></a>        <span class="s0">if </span><span class="s1">ckk </span><span
+            class="s0">&gt; </span><span class="s1">ep</span><span class="s0">*</span><span class="s2">(</span><span
+            class="s1">k</span><span class="s0">+</span><span class="s4">1</span><span class="s2">)</span><span
+            class="s0">:</span>
+<a name="l156"><span class="ln">156  </span></a>            <span class="s1">c</span><span class="s2">[</span><span
+            class="s1">k</span><span class="s2">, </span><span class="s1">k</span><span class="s2">] </span><span
+            class="s0">= </span><span class="s1">ckk; c</span><span class="s2">[</span><span class="s1">k</span><span
+            class="s2">, </span><span class="s1">k</span><span class="s0">+</span><span class="s4">1</span><span
+            class="s0">:</span><span class="s2">] </span><span class="s0">= </span><span class="s4">0</span>
+<a name="l157"><span class="ln">157  </span></a>            <span class="s0">for </span><span class="s1">i </span><span
+            class="s0">in </span><span class="s1">range</span><span class="s2">(</span><span class="s1">k</span><span
+            class="s0">+</span><span class="s4">1</span><span class="s2">, </span><span class="s1">n</span><span
+            class="s2">)</span><span class="s0">:</span>
+<a name="l158"><span class="ln">158  </span></a>                <span class="s1">c</span><span class="s2">[</span><span
+            class="s1">i</span><span class="s2">, </span><span class="s1">k</span><span class="s2">] </span><span
+            class="s0">= </span><span class="s1">c</span><span class="s2">[</span><span class="s1">i</span><span
+            class="s2">, </span><span class="s1">k</span><span class="s2">]</span><span class="s0">/</span><span
+            class="s1">ckk; c</span><span class="s2">[</span><span class="s1">i</span><span class="s2">, </span><span
+            class="s1">k</span><span class="s0">+</span><span class="s4">1</span><span class="s0">:</span><span
+            class="s1">i</span><span class="s0">+</span><span class="s4">1</span><span class="s2">] </span><span
+            class="s0">= </span><span class="s1">c</span><span class="s2">[</span><span class="s1">i</span><span
+            class="s2">, </span><span class="s1">k</span><span class="s0">+</span><span class="s4">1</span><span
+            class="s0">:</span><span class="s1">i</span><span class="s0">+</span><span class="s4">1</span><span
+            class="s2">] </span><span class="s0">- </span><span class="s1">c</span><span class="s2">[</span><span
+            class="s1">i</span><span class="s2">, </span><span class="s1">k</span><span class="s2">]</span><span
+            class="s0">*</span><span class="s1">c</span><span class="s2">[</span><span class="s1">k</span><span
+            class="s0">+</span><span class="s4">1</span><span class="s0">:</span><span class="s1">i</span><span
+            class="s0">+</span><span class="s4">1</span><span class="s2">, </span><span class="s1">k</span><span
+            class="s2">].</span><span class="s1">T</span>
+<a name="l159"><span class="ln">159  </span></a>            <span class="s0">if </span><span class="s1">abs</span><span
+            class="s2">(</span><span class="s1">dem</span><span class="s2">) </span><span class="s0">&gt; </span><span
+            class="s1">ep</span><span class="s0">:</span>
+<a name="l160"><span class="ln">160  </span></a>                <span class="s1">y</span><span class="s2">[</span><span
+            class="s1">k</span><span class="s2">] </span><span class="s0">= </span><span class="s2">(</span><span
+            class="s1">np</span><span class="s2">.</span><span class="s1">exp</span><span class="s2">(</span><span
+            class="s0">-</span><span class="s1">am</span><span class="s0">**</span><span class="s4">2</span><span
+            class="s0">/</span><span class="s4">2</span><span class="s2">) </span><span class="s0">- </span><span
+            class="s1">np</span><span class="s2">.</span><span class="s1">exp</span><span class="s2">(</span><span
+            class="s0">-</span><span class="s1">bm</span><span class="s0">**</span><span class="s4">2</span><span
+            class="s0">/</span><span class="s4">2</span><span class="s2">)) </span><span class="s0">/ </span><span
+            class="s2">(</span><span class="s1">sqtp</span><span class="s0">*</span><span class="s1">dem</span><span
+            class="s2">)</span>
 <a name="l161"><span class="ln">161  </span></a>            <span class="s0">else:</span>
-<a name="l162"><span class="ln">162  </span></a>                <span class="s1">y</span><span class="s2">[</span><span class="s1">k</span><span class="s2">] </span><span class="s0">= </span><span class="s2">(</span><span class="s1">am </span><span class="s0">+ </span><span class="s1">bm</span><span class="s2">) </span><span class="s0">/ </span><span class="s4">2</span>
-<a name="l163"><span class="ln">163  </span></a>                <span class="s0">if </span><span class="s1">am </span><span class="s0">&lt; -</span><span class="s4">10</span><span class="s0">:</span>
-<a name="l164"><span class="ln">164  </span></a>                    <span class="s1">y</span><span class="s2">[</span><span class="s1">k</span><span class="s2">] </span><span class="s0">= </span><span class="s1">bm</span>
-<a name="l165"><span class="ln">165  </span></a>                <span class="s0">elif </span><span class="s1">bm </span><span class="s0">&gt; </span><span class="s4">10</span><span class="s0">:</span>
-<a name="l166"><span class="ln">166  </span></a>                    <span class="s1">y</span><span class="s2">[</span><span class="s1">k</span><span class="s2">] </span><span class="s0">= </span><span class="s1">am</span>
-<a name="l167"><span class="ln">167  </span></a>            <span class="s1">c</span><span class="s2">[</span><span class="s1">k</span><span class="s2">, </span><span class="s0">:</span><span class="s1">k</span><span class="s0">+</span><span class="s4">1</span><span class="s2">] </span><span class="s0">/= </span><span class="s1">ckk; ap</span><span class="s2">[</span><span class="s1">k</span><span class="s2">] </span><span class="s0">/= </span><span class="s1">ckk; bp</span><span class="s2">[</span><span class="s1">k</span><span class="s2">] </span><span class="s0">/= </span><span class="s1">ckk</span>
+<a name="l162"><span class="ln">162  </span></a>                <span class="s1">y</span><span class="s2">[</span><span
+            class="s1">k</span><span class="s2">] </span><span class="s0">= </span><span class="s2">(</span><span
+            class="s1">am </span><span class="s0">+ </span><span class="s1">bm</span><span class="s2">) </span><span
+            class="s0">/ </span><span class="s4">2</span>
+<a name="l163"><span class="ln">163  </span></a>                <span class="s0">if </span><span
+            class="s1">am </span><span class="s0">&lt; -</span><span class="s4">10</span><span class="s0">:</span>
+<a name="l164"><span class="ln">164  </span></a>                    <span class="s1">y</span><span
+            class="s2">[</span><span class="s1">k</span><span class="s2">] </span><span class="s0">= </span><span
+            class="s1">bm</span>
+<a name="l165"><span class="ln">165  </span></a>                <span class="s0">elif </span><span class="s1">bm </span><span
+            class="s0">&gt; </span><span class="s4">10</span><span class="s0">:</span>
+<a name="l166"><span class="ln">166  </span></a>                    <span class="s1">y</span><span
+            class="s2">[</span><span class="s1">k</span><span class="s2">] </span><span class="s0">= </span><span
+            class="s1">am</span>
+<a name="l167"><span class="ln">167  </span></a>            <span class="s1">c</span><span class="s2">[</span><span
+            class="s1">k</span><span class="s2">, </span><span class="s0">:</span><span class="s1">k</span><span
+            class="s0">+</span><span class="s4">1</span><span class="s2">] </span><span class="s0">/= </span><span
+            class="s1">ckk; ap</span><span class="s2">[</span><span class="s1">k</span><span class="s2">] </span><span
+            class="s0">/= </span><span class="s1">ckk; bp</span><span class="s2">[</span><span class="s1">k</span><span
+            class="s2">] </span><span class="s0">/= </span><span class="s1">ckk</span>
 <a name="l168"><span class="ln">168  </span></a>        <span class="s0">else:</span>
-<a name="l169"><span class="ln">169  </span></a>            <span class="s1">c</span><span class="s2">[</span><span class="s1">k</span><span class="s0">:</span><span class="s2">, </span><span class="s1">k</span><span class="s2">] </span><span class="s0">= </span><span class="s4">0</span><span class="s1">; y</span><span class="s2">[</span><span class="s1">k</span><span class="s2">] </span><span class="s0">= </span><span class="s2">(</span><span class="s1">ap</span><span class="s2">[</span><span class="s1">k</span><span class="s2">] </span><span class="s0">+ </span><span class="s1">bp</span><span class="s2">[</span><span class="s1">k</span><span class="s2">])</span><span class="s0">/</span><span class="s4">2</span>
+<a name="l169"><span class="ln">169  </span></a>            <span class="s1">c</span><span class="s2">[</span><span
+            class="s1">k</span><span class="s0">:</span><span class="s2">, </span><span class="s1">k</span><span
+            class="s2">] </span><span class="s0">= </span><span class="s4">0</span><span class="s1">; y</span><span
+            class="s2">[</span><span class="s1">k</span><span class="s2">] </span><span class="s0">= </span><span
+            class="s2">(</span><span class="s1">ap</span><span class="s2">[</span><span class="s1">k</span><span
+            class="s2">] </span><span class="s0">+ </span><span class="s1">bp</span><span class="s2">[</span><span
+            class="s1">k</span><span class="s2">])</span><span class="s0">/</span><span class="s4">2</span>
 <a name="l170"><span class="ln">170  </span></a>        <span class="s0">pass</span>
-<a name="l171"><span class="ln">171  </span></a>    <span class="s0">return </span><span class="s1">c</span><span class="s2">, </span><span class="s1">ap</span><span class="s2">, </span><span class="s1">bp</span>
+<a name="l171"><span class="ln">171  </span></a>    <span class="s0">return </span><span class="s1">c</span><span
+            class="s2">, </span><span class="s1">ap</span><span class="s2">, </span><span class="s1">bp</span>
 <a name="l172"><span class="ln">172  </span></a></pre>
 </body>
 </html>

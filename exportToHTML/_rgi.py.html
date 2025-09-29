@@ -1,75 +1,149 @@
 <html>
 <head>
-<title>_rgi.py</title>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<style type="text/css">
-.s0 { color: #333333;}
-.s1 { color: #a71d5d;}
-.s2 { color: #63a35c;}
-.s3 { color: #183691;}
-.s4 { color: #969896;}
-.s5 { color: #0086b3;}
-.ln { color: #333333; font-weight: normal; font-style: normal; }
-</style>
+    <title>_rgi.py</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <style type="text/css">
+        .s0 { color: #333333;}
+        .s1 { color: #a71d5d;}
+        .s2 { color: #63a35c;}
+        .s3 { color: #183691;}
+        .s4 { color: #969896;}
+        .s5 { color: #0086b3;}
+        .ln { color: #333333; font-weight: normal; font-style: normal; }
+    </style>
 </head>
 <body bgcolor="#ffffff">
-<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#c0c0c0" >
-<tr><td><center>
-<font face="Arial, Helvetica" color="#000000">
-_rgi.py</font>
-</center></td></tr></table>
-<pre><a name="l1"><span class="ln">1    </span></a><span class="s0">__all__ </span><span class="s1">= </span><span class="s2">[</span><span class="s3">'RegularGridInterpolator'</span><span class="s2">, </span><span class="s3">'interpn'</span><span class="s2">]</span>
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#c0c0c0">
+    <tr>
+        <td>
+            <center>
+                <font face="Arial, Helvetica" color="#000000">
+                    _rgi.py</font>
+            </center>
+        </td>
+    </tr>
+</table>
+<pre><a name="l1"><span class="ln">1    </span></a><span class="s0">__all__ </span><span class="s1">= </span><span
+        class="s2">[</span><span class="s3">'RegularGridInterpolator'</span><span class="s2">, </span><span class="s3">'interpn'</span><span
+        class="s2">]</span>
 <a name="l2"><span class="ln">2    </span></a>
 <a name="l3"><span class="ln">3    </span></a><span class="s1">import </span><span class="s0">itertools</span>
 <a name="l4"><span class="ln">4    </span></a>
-<a name="l5"><span class="ln">5    </span></a><span class="s1">import </span><span class="s0">numpy </span><span class="s1">as </span><span class="s0">np</span>
+<a name="l5"><span class="ln">5    </span></a><span class="s1">import </span><span class="s0">numpy </span><span
+            class="s1">as </span><span class="s0">np</span>
 <a name="l6"><span class="ln">6    </span></a>
-<a name="l7"><span class="ln">7    </span></a><span class="s1">import </span><span class="s0">scipy</span><span class="s2">.</span><span class="s0">sparse</span><span class="s2">.</span><span class="s0">linalg </span><span class="s1">as </span><span class="s0">ssl</span>
+<a name="l7"><span class="ln">7    </span></a><span class="s1">import </span><span class="s0">scipy</span><span
+            class="s2">.</span><span class="s0">sparse</span><span class="s2">.</span><span
+            class="s0">linalg </span><span class="s1">as </span><span class="s0">ssl</span>
 <a name="l8"><span class="ln">8    </span></a>
-<a name="l9"><span class="ln">9    </span></a><span class="s1">from </span><span class="s2">.</span><span class="s0">_interpnd </span><span class="s1">import </span><span class="s0">_ndim_coords_from_arrays</span>
-<a name="l10"><span class="ln">10   </span></a><span class="s1">from </span><span class="s2">.</span><span class="s0">_cubic </span><span class="s1">import </span><span class="s0">PchipInterpolator</span>
-<a name="l11"><span class="ln">11   </span></a><span class="s1">from </span><span class="s2">.</span><span class="s0">_rgi_cython </span><span class="s1">import </span><span class="s0">evaluate_linear_2d</span><span class="s2">, </span><span class="s0">find_indices</span>
-<a name="l12"><span class="ln">12   </span></a><span class="s1">from </span><span class="s2">.</span><span class="s0">_bsplines </span><span class="s1">import </span><span class="s0">make_interp_spline</span>
-<a name="l13"><span class="ln">13   </span></a><span class="s1">from </span><span class="s2">.</span><span class="s0">_fitpack2 </span><span class="s1">import </span><span class="s0">RectBivariateSpline</span>
-<a name="l14"><span class="ln">14   </span></a><span class="s1">from </span><span class="s2">.</span><span class="s0">_ndbspline </span><span class="s1">import </span><span class="s0">make_ndbspl</span>
+<a name="l9"><span class="ln">9    </span></a><span class="s1">from </span><span class="s2">.</span><span class="s0">_interpnd </span><span
+            class="s1">import </span><span class="s0">_ndim_coords_from_arrays</span>
+<a name="l10"><span class="ln">10   </span></a><span class="s1">from </span><span class="s2">.</span><span class="s0">_cubic </span><span
+            class="s1">import </span><span class="s0">PchipInterpolator</span>
+<a name="l11"><span class="ln">11   </span></a><span class="s1">from </span><span class="s2">.</span><span class="s0">_rgi_cython </span><span
+            class="s1">import </span><span class="s0">evaluate_linear_2d</span><span class="s2">, </span><span
+            class="s0">find_indices</span>
+<a name="l12"><span class="ln">12   </span></a><span class="s1">from </span><span class="s2">.</span><span class="s0">_bsplines </span><span
+            class="s1">import </span><span class="s0">make_interp_spline</span>
+<a name="l13"><span class="ln">13   </span></a><span class="s1">from </span><span class="s2">.</span><span class="s0">_fitpack2 </span><span
+            class="s1">import </span><span class="s0">RectBivariateSpline</span>
+<a name="l14"><span class="ln">14   </span></a><span class="s1">from </span><span class="s2">.</span><span class="s0">_ndbspline </span><span
+            class="s1">import </span><span class="s0">make_ndbspl</span>
 <a name="l15"><span class="ln">15   </span></a>
 <a name="l16"><span class="ln">16   </span></a>
-<a name="l17"><span class="ln">17   </span></a><span class="s1">def </span><span class="s0">_check_points</span><span class="s2">(</span><span class="s0">points</span><span class="s2">)</span><span class="s1">:</span>
-<a name="l18"><span class="ln">18   </span></a>    <span class="s0">descending_dimensions </span><span class="s1">= </span><span class="s2">[]</span>
-<a name="l19"><span class="ln">19   </span></a>    <span class="s0">grid </span><span class="s1">= </span><span class="s2">[]</span>
-<a name="l20"><span class="ln">20   </span></a>    <span class="s1">for </span><span class="s0">i</span><span class="s2">, </span><span class="s0">p </span><span class="s1">in </span><span class="s0">enumerate</span><span class="s2">(</span><span class="s0">points</span><span class="s2">)</span><span class="s1">:</span>
+<a name="l17"><span class="ln">17   </span></a><span class="s1">def </span><span class="s0">_check_points</span><span
+            class="s2">(</span><span class="s0">points</span><span class="s2">)</span><span class="s1">:</span>
+<a name="l18"><span class="ln">18   </span></a>    <span class="s0">descending_dimensions </span><span
+            class="s1">= </span><span class="s2">[]</span>
+<a name="l19"><span class="ln">19   </span></a>    <span class="s0">grid </span><span class="s1">= </span><span
+            class="s2">[]</span>
+<a name="l20"><span class="ln">20   </span></a>    <span class="s1">for </span><span class="s0">i</span><span
+            class="s2">, </span><span class="s0">p </span><span class="s1">in </span><span
+            class="s0">enumerate</span><span class="s2">(</span><span class="s0">points</span><span
+            class="s2">)</span><span class="s1">:</span>
 <a name="l21"><span class="ln">21   </span></a>        <span class="s4"># early make points float</span>
-<a name="l22"><span class="ln">22   </span></a>        <span class="s4"># see https://github.com/scipy/scipy/pull/17230</span>
-<a name="l23"><span class="ln">23   </span></a>        <span class="s0">p </span><span class="s1">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">asarray</span><span class="s2">(</span><span class="s0">p</span><span class="s2">, </span><span class="s0">dtype</span><span class="s1">=</span><span class="s0">float</span><span class="s2">)</span>
-<a name="l24"><span class="ln">24   </span></a>        <span class="s1">if not </span><span class="s0">np</span><span class="s2">.</span><span class="s0">all</span><span class="s2">(</span><span class="s0">p</span><span class="s2">[</span><span class="s5">1</span><span class="s1">:</span><span class="s2">] </span><span class="s1">&gt; </span><span class="s0">p</span><span class="s2">[</span><span class="s1">:-</span><span class="s5">1</span><span class="s2">])</span><span class="s1">:</span>
-<a name="l25"><span class="ln">25   </span></a>            <span class="s1">if </span><span class="s0">np</span><span class="s2">.</span><span class="s0">all</span><span class="s2">(</span><span class="s0">p</span><span class="s2">[</span><span class="s5">1</span><span class="s1">:</span><span class="s2">] </span><span class="s1">&lt; </span><span class="s0">p</span><span class="s2">[</span><span class="s1">:-</span><span class="s5">1</span><span class="s2">])</span><span class="s1">:</span>
+<a name="l22"><span class="ln">22   </span></a>        <span
+            class="s4"># see https://github.com/scipy/scipy/pull/17230</span>
+<a name="l23"><span class="ln">23   </span></a>        <span class="s0">p </span><span class="s1">= </span><span
+            class="s0">np</span><span class="s2">.</span><span class="s0">asarray</span><span class="s2">(</span><span
+            class="s0">p</span><span class="s2">, </span><span class="s0">dtype</span><span class="s1">=</span><span
+            class="s0">float</span><span class="s2">)</span>
+<a name="l24"><span class="ln">24   </span></a>        <span class="s1">if not </span><span class="s0">np</span><span
+            class="s2">.</span><span class="s0">all</span><span class="s2">(</span><span class="s0">p</span><span
+            class="s2">[</span><span class="s5">1</span><span class="s1">:</span><span class="s2">] </span><span
+            class="s1">&gt; </span><span class="s0">p</span><span class="s2">[</span><span class="s1">:-</span><span
+            class="s5">1</span><span class="s2">])</span><span class="s1">:</span>
+<a name="l25"><span class="ln">25   </span></a>            <span class="s1">if </span><span class="s0">np</span><span
+            class="s2">.</span><span class="s0">all</span><span class="s2">(</span><span class="s0">p</span><span
+            class="s2">[</span><span class="s5">1</span><span class="s1">:</span><span class="s2">] </span><span
+            class="s1">&lt; </span><span class="s0">p</span><span class="s2">[</span><span class="s1">:-</span><span
+            class="s5">1</span><span class="s2">])</span><span class="s1">:</span>
 <a name="l26"><span class="ln">26   </span></a>                <span class="s4"># input is descending, so make it ascending</span>
-<a name="l27"><span class="ln">27   </span></a>                <span class="s0">descending_dimensions</span><span class="s2">.</span><span class="s0">append</span><span class="s2">(</span><span class="s0">i</span><span class="s2">)</span>
-<a name="l28"><span class="ln">28   </span></a>                <span class="s0">p </span><span class="s1">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">flip</span><span class="s2">(</span><span class="s0">p</span><span class="s2">)</span>
+<a name="l27"><span class="ln">27   </span></a>                <span class="s0">descending_dimensions</span><span
+            class="s2">.</span><span class="s0">append</span><span class="s2">(</span><span class="s0">i</span><span
+            class="s2">)</span>
+<a name="l28"><span class="ln">28   </span></a>                <span class="s0">p </span><span class="s1">= </span><span
+            class="s0">np</span><span class="s2">.</span><span class="s0">flip</span><span class="s2">(</span><span
+            class="s0">p</span><span class="s2">)</span>
 <a name="l29"><span class="ln">29   </span></a>            <span class="s1">else:</span>
-<a name="l30"><span class="ln">30   </span></a>                <span class="s1">raise </span><span class="s0">ValueError</span><span class="s2">(</span>
+<a name="l30"><span class="ln">30   </span></a>                <span class="s1">raise </span><span
+            class="s0">ValueError</span><span class="s2">(</span>
 <a name="l31"><span class="ln">31   </span></a>                    <span class="s3">&quot;The points in dimension %d must be strictly &quot;</span>
-<a name="l32"><span class="ln">32   </span></a>                    <span class="s3">&quot;ascending or descending&quot; </span><span class="s1">% </span><span class="s0">i</span><span class="s2">)</span>
+<a name="l32"><span class="ln">32   </span></a>                    <span
+            class="s3">&quot;ascending or descending&quot; </span><span class="s1">% </span><span
+            class="s0">i</span><span class="s2">)</span>
 <a name="l33"><span class="ln">33   </span></a>        <span class="s4"># see https://github.com/scipy/scipy/issues/17716</span>
-<a name="l34"><span class="ln">34   </span></a>        <span class="s0">p </span><span class="s1">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">ascontiguousarray</span><span class="s2">(</span><span class="s0">p</span><span class="s2">)</span>
-<a name="l35"><span class="ln">35   </span></a>        <span class="s0">grid</span><span class="s2">.</span><span class="s0">append</span><span class="s2">(</span><span class="s0">p</span><span class="s2">)</span>
-<a name="l36"><span class="ln">36   </span></a>    <span class="s1">return </span><span class="s0">tuple</span><span class="s2">(</span><span class="s0">grid</span><span class="s2">), </span><span class="s0">tuple</span><span class="s2">(</span><span class="s0">descending_dimensions</span><span class="s2">)</span>
+<a name="l34"><span class="ln">34   </span></a>        <span class="s0">p </span><span class="s1">= </span><span
+            class="s0">np</span><span class="s2">.</span><span class="s0">ascontiguousarray</span><span
+            class="s2">(</span><span class="s0">p</span><span class="s2">)</span>
+<a name="l35"><span class="ln">35   </span></a>        <span class="s0">grid</span><span class="s2">.</span><span
+            class="s0">append</span><span class="s2">(</span><span class="s0">p</span><span class="s2">)</span>
+<a name="l36"><span class="ln">36   </span></a>    <span class="s1">return </span><span class="s0">tuple</span><span
+            class="s2">(</span><span class="s0">grid</span><span class="s2">), </span><span class="s0">tuple</span><span
+            class="s2">(</span><span class="s0">descending_dimensions</span><span class="s2">)</span>
 <a name="l37"><span class="ln">37   </span></a>
 <a name="l38"><span class="ln">38   </span></a>
-<a name="l39"><span class="ln">39   </span></a><span class="s1">def </span><span class="s0">_check_dimensionality</span><span class="s2">(</span><span class="s0">points</span><span class="s2">, </span><span class="s0">values</span><span class="s2">)</span><span class="s1">:</span>
-<a name="l40"><span class="ln">40   </span></a>    <span class="s1">if </span><span class="s0">len</span><span class="s2">(</span><span class="s0">points</span><span class="s2">) </span><span class="s1">&gt; </span><span class="s0">values</span><span class="s2">.</span><span class="s0">ndim</span><span class="s1">:</span>
-<a name="l41"><span class="ln">41   </span></a>        <span class="s1">raise </span><span class="s0">ValueError</span><span class="s2">(</span><span class="s3">&quot;There are %d point arrays, but values has %d &quot;</span>
-<a name="l42"><span class="ln">42   </span></a>                         <span class="s3">&quot;dimensions&quot; </span><span class="s1">% </span><span class="s2">(</span><span class="s0">len</span><span class="s2">(</span><span class="s0">points</span><span class="s2">), </span><span class="s0">values</span><span class="s2">.</span><span class="s0">ndim</span><span class="s2">))</span>
-<a name="l43"><span class="ln">43   </span></a>    <span class="s1">for </span><span class="s0">i</span><span class="s2">, </span><span class="s0">p </span><span class="s1">in </span><span class="s0">enumerate</span><span class="s2">(</span><span class="s0">points</span><span class="s2">)</span><span class="s1">:</span>
-<a name="l44"><span class="ln">44   </span></a>        <span class="s1">if not </span><span class="s0">np</span><span class="s2">.</span><span class="s0">asarray</span><span class="s2">(</span><span class="s0">p</span><span class="s2">).</span><span class="s0">ndim </span><span class="s1">== </span><span class="s5">1</span><span class="s1">:</span>
-<a name="l45"><span class="ln">45   </span></a>            <span class="s1">raise </span><span class="s0">ValueError</span><span class="s2">(</span><span class="s3">&quot;The points in dimension %d must be &quot;</span>
-<a name="l46"><span class="ln">46   </span></a>                             <span class="s3">&quot;1-dimensional&quot; </span><span class="s1">% </span><span class="s0">i</span><span class="s2">)</span>
-<a name="l47"><span class="ln">47   </span></a>        <span class="s1">if not </span><span class="s0">values</span><span class="s2">.</span><span class="s0">shape</span><span class="s2">[</span><span class="s0">i</span><span class="s2">] </span><span class="s1">== </span><span class="s0">len</span><span class="s2">(</span><span class="s0">p</span><span class="s2">)</span><span class="s1">:</span>
-<a name="l48"><span class="ln">48   </span></a>            <span class="s1">raise </span><span class="s0">ValueError</span><span class="s2">(</span><span class="s3">&quot;There are %d points and %d values in &quot;</span>
-<a name="l49"><span class="ln">49   </span></a>                             <span class="s3">&quot;dimension %d&quot; </span><span class="s1">% </span><span class="s2">(</span><span class="s0">len</span><span class="s2">(</span><span class="s0">p</span><span class="s2">), </span><span class="s0">values</span><span class="s2">.</span><span class="s0">shape</span><span class="s2">[</span><span class="s0">i</span><span class="s2">], </span><span class="s0">i</span><span class="s2">))</span>
+<a name="l39"><span class="ln">39   </span></a><span class="s1">def </span><span class="s0">_check_dimensionality</span><span
+            class="s2">(</span><span class="s0">points</span><span class="s2">, </span><span
+            class="s0">values</span><span class="s2">)</span><span class="s1">:</span>
+<a name="l40"><span class="ln">40   </span></a>    <span class="s1">if </span><span class="s0">len</span><span
+            class="s2">(</span><span class="s0">points</span><span class="s2">) </span><span
+            class="s1">&gt; </span><span class="s0">values</span><span class="s2">.</span><span
+            class="s0">ndim</span><span class="s1">:</span>
+<a name="l41"><span class="ln">41   </span></a>        <span class="s1">raise </span><span
+            class="s0">ValueError</span><span class="s2">(</span><span class="s3">&quot;There are %d point arrays, but values has %d &quot;</span>
+<a name="l42"><span class="ln">42   </span></a>                         <span
+            class="s3">&quot;dimensions&quot; </span><span class="s1">% </span><span class="s2">(</span><span
+            class="s0">len</span><span class="s2">(</span><span class="s0">points</span><span class="s2">), </span><span
+            class="s0">values</span><span class="s2">.</span><span class="s0">ndim</span><span class="s2">))</span>
+<a name="l43"><span class="ln">43   </span></a>    <span class="s1">for </span><span class="s0">i</span><span
+            class="s2">, </span><span class="s0">p </span><span class="s1">in </span><span
+            class="s0">enumerate</span><span class="s2">(</span><span class="s0">points</span><span
+            class="s2">)</span><span class="s1">:</span>
+<a name="l44"><span class="ln">44   </span></a>        <span class="s1">if not </span><span class="s0">np</span><span
+            class="s2">.</span><span class="s0">asarray</span><span class="s2">(</span><span class="s0">p</span><span
+            class="s2">).</span><span class="s0">ndim </span><span class="s1">== </span><span class="s5">1</span><span
+            class="s1">:</span>
+<a name="l45"><span class="ln">45   </span></a>            <span class="s1">raise </span><span
+            class="s0">ValueError</span><span class="s2">(</span><span class="s3">&quot;The points in dimension %d must be &quot;</span>
+<a name="l46"><span class="ln">46   </span></a>                             <span
+            class="s3">&quot;1-dimensional&quot; </span><span class="s1">% </span><span class="s0">i</span><span
+            class="s2">)</span>
+<a name="l47"><span class="ln">47   </span></a>        <span class="s1">if not </span><span
+            class="s0">values</span><span class="s2">.</span><span class="s0">shape</span><span class="s2">[</span><span
+            class="s0">i</span><span class="s2">] </span><span class="s1">== </span><span class="s0">len</span><span
+            class="s2">(</span><span class="s0">p</span><span class="s2">)</span><span class="s1">:</span>
+<a name="l48"><span class="ln">48   </span></a>            <span class="s1">raise </span><span
+            class="s0">ValueError</span><span class="s2">(</span><span class="s3">&quot;There are %d points and %d values in &quot;</span>
+<a name="l49"><span class="ln">49   </span></a>                             <span
+            class="s3">&quot;dimension %d&quot; </span><span class="s1">% </span><span class="s2">(</span><span
+            class="s0">len</span><span class="s2">(</span><span class="s0">p</span><span class="s2">), </span><span
+            class="s0">values</span><span class="s2">.</span><span class="s0">shape</span><span class="s2">[</span><span
+            class="s0">i</span><span class="s2">], </span><span class="s0">i</span><span class="s2">))</span>
 <a name="l50"><span class="ln">50   </span></a>
 <a name="l51"><span class="ln">51   </span></a>
-<a name="l52"><span class="ln">52   </span></a><span class="s1">class </span><span class="s0">RegularGridInterpolator</span><span class="s1">:</span>
+<a name="l52"><span class="ln">52   </span></a><span class="s1">class </span><span
+            class="s0">RegularGridInterpolator</span><span class="s1">:</span>
 <a name="l53"><span class="ln">53   </span></a>    <span class="s4">&quot;&quot;&quot; 
 <a name="l54"><span class="ln">54   </span></a>    Interpolator on a regular or rectilinear grid in arbitrary dimensions. 
 <a name="l55"><span class="ln">55   </span></a> 
@@ -276,82 +350,218 @@ _rgi.py</font>
 <a name="l256"><span class="ln">256  </span></a>    <span class="s4"># this class is based on code originally programmed by Johannes Buchner,</span>
 <a name="l257"><span class="ln">257  </span></a>    <span class="s4"># see https://github.com/JohannesBuchner/regulargrid</span>
 <a name="l258"><span class="ln">258  </span></a>
-<a name="l259"><span class="ln">259  </span></a>    <span class="s0">_SPLINE_DEGREE_MAP </span><span class="s1">= </span><span class="s2">{</span><span class="s3">&quot;slinear&quot;</span><span class="s1">: </span><span class="s5">1</span><span class="s2">, </span><span class="s3">&quot;cubic&quot;</span><span class="s1">: </span><span class="s5">3</span><span class="s2">, </span><span class="s3">&quot;quintic&quot;</span><span class="s1">: </span><span class="s5">5</span><span class="s2">, </span><span class="s3">'pchip'</span><span class="s1">: </span><span class="s5">3</span><span class="s2">,</span>
-<a name="l260"><span class="ln">260  </span></a>                          <span class="s3">&quot;slinear_legacy&quot;</span><span class="s1">: </span><span class="s5">1</span><span class="s2">, </span><span class="s3">&quot;cubic_legacy&quot;</span><span class="s1">: </span><span class="s5">3</span><span class="s2">, </span><span class="s3">&quot;quintic_legacy&quot;</span><span class="s1">: </span><span class="s5">5</span><span class="s2">,}</span>
-<a name="l261"><span class="ln">261  </span></a>    <span class="s0">_SPLINE_METHODS_recursive </span><span class="s1">= </span><span class="s2">{</span><span class="s3">&quot;slinear_legacy&quot;</span><span class="s2">, </span><span class="s3">&quot;cubic_legacy&quot;</span><span class="s2">,</span>
-<a name="l262"><span class="ln">262  </span></a>                                <span class="s3">&quot;quintic_legacy&quot;</span><span class="s2">, </span><span class="s3">&quot;pchip&quot;</span><span class="s2">}</span>
-<a name="l263"><span class="ln">263  </span></a>    <span class="s0">_SPLINE_METHODS_ndbspl </span><span class="s1">= </span><span class="s2">{</span><span class="s3">&quot;slinear&quot;</span><span class="s2">, </span><span class="s3">&quot;cubic&quot;</span><span class="s2">, </span><span class="s3">&quot;quintic&quot;</span><span class="s2">}</span>
-<a name="l264"><span class="ln">264  </span></a>    <span class="s0">_SPLINE_METHODS </span><span class="s1">= </span><span class="s0">list</span><span class="s2">(</span><span class="s0">_SPLINE_DEGREE_MAP</span><span class="s2">.</span><span class="s0">keys</span><span class="s2">())</span>
-<a name="l265"><span class="ln">265  </span></a>    <span class="s0">_ALL_METHODS </span><span class="s1">= </span><span class="s2">[</span><span class="s3">&quot;linear&quot;</span><span class="s2">, </span><span class="s3">&quot;nearest&quot;</span><span class="s2">] </span><span class="s1">+ </span><span class="s0">_SPLINE_METHODS</span>
+<a name="l259"><span class="ln">259  </span></a>    <span class="s0">_SPLINE_DEGREE_MAP </span><span
+            class="s1">= </span><span class="s2">{</span><span class="s3">&quot;slinear&quot;</span><span
+            class="s1">: </span><span class="s5">1</span><span class="s2">, </span><span
+            class="s3">&quot;cubic&quot;</span><span class="s1">: </span><span class="s5">3</span><span
+            class="s2">, </span><span class="s3">&quot;quintic&quot;</span><span class="s1">: </span><span
+            class="s5">5</span><span class="s2">, </span><span class="s3">'pchip'</span><span class="s1">: </span><span
+            class="s5">3</span><span class="s2">,</span>
+<a name="l260"><span class="ln">260  </span></a>                          <span
+            class="s3">&quot;slinear_legacy&quot;</span><span class="s1">: </span><span class="s5">1</span><span
+            class="s2">, </span><span class="s3">&quot;cubic_legacy&quot;</span><span class="s1">: </span><span
+            class="s5">3</span><span class="s2">, </span><span class="s3">&quot;quintic_legacy&quot;</span><span
+            class="s1">: </span><span class="s5">5</span><span class="s2">,}</span>
+<a name="l261"><span class="ln">261  </span></a>    <span class="s0">_SPLINE_METHODS_recursive </span><span
+            class="s1">= </span><span class="s2">{</span><span class="s3">&quot;slinear_legacy&quot;</span><span
+            class="s2">, </span><span class="s3">&quot;cubic_legacy&quot;</span><span class="s2">,</span>
+<a name="l262"><span class="ln">262  </span></a>                                <span class="s3">&quot;quintic_legacy&quot;</span><span
+            class="s2">, </span><span class="s3">&quot;pchip&quot;</span><span class="s2">}</span>
+<a name="l263"><span class="ln">263  </span></a>    <span class="s0">_SPLINE_METHODS_ndbspl </span><span
+            class="s1">= </span><span class="s2">{</span><span class="s3">&quot;slinear&quot;</span><span
+            class="s2">, </span><span class="s3">&quot;cubic&quot;</span><span class="s2">, </span><span class="s3">&quot;quintic&quot;</span><span
+            class="s2">}</span>
+<a name="l264"><span class="ln">264  </span></a>    <span class="s0">_SPLINE_METHODS </span><span
+            class="s1">= </span><span class="s0">list</span><span class="s2">(</span><span
+            class="s0">_SPLINE_DEGREE_MAP</span><span class="s2">.</span><span class="s0">keys</span><span class="s2">())</span>
+<a name="l265"><span class="ln">265  </span></a>    <span class="s0">_ALL_METHODS </span><span class="s1">= </span><span
+            class="s2">[</span><span class="s3">&quot;linear&quot;</span><span class="s2">, </span><span class="s3">&quot;nearest&quot;</span><span
+            class="s2">] </span><span class="s1">+ </span><span class="s0">_SPLINE_METHODS</span>
 <a name="l266"><span class="ln">266  </span></a>
-<a name="l267"><span class="ln">267  </span></a>    <span class="s1">def </span><span class="s0">__init__</span><span class="s2">(</span><span class="s0">self</span><span class="s2">, </span><span class="s0">points</span><span class="s2">, </span><span class="s0">values</span><span class="s2">, </span><span class="s0">method</span><span class="s1">=</span><span class="s3">&quot;linear&quot;</span><span class="s2">, </span><span class="s0">bounds_error</span><span class="s1">=True</span><span class="s2">,</span>
-<a name="l268"><span class="ln">268  </span></a>                 <span class="s0">fill_value</span><span class="s1">=</span><span class="s0">np</span><span class="s2">.</span><span class="s0">nan</span><span class="s2">, </span><span class="s1">*</span><span class="s2">, </span><span class="s0">solver</span><span class="s1">=None</span><span class="s2">, </span><span class="s0">solver_args</span><span class="s1">=None</span><span class="s2">)</span><span class="s1">:</span>
-<a name="l269"><span class="ln">269  </span></a>        <span class="s1">if </span><span class="s0">method </span><span class="s1">not in </span><span class="s0">self</span><span class="s2">.</span><span class="s0">_ALL_METHODS</span><span class="s1">:</span>
-<a name="l270"><span class="ln">270  </span></a>            <span class="s1">raise </span><span class="s0">ValueError</span><span class="s2">(</span><span class="s3">f&quot;Method '{</span><span class="s0">method</span><span class="s3">}' is not defined&quot;</span><span class="s2">)</span>
-<a name="l271"><span class="ln">271  </span></a>        <span class="s1">elif </span><span class="s0">method </span><span class="s1">in </span><span class="s0">self</span><span class="s2">.</span><span class="s0">_SPLINE_METHODS</span><span class="s1">:</span>
-<a name="l272"><span class="ln">272  </span></a>            <span class="s0">self</span><span class="s2">.</span><span class="s0">_validate_grid_dimensions</span><span class="s2">(</span><span class="s0">points</span><span class="s2">, </span><span class="s0">method</span><span class="s2">)</span>
-<a name="l273"><span class="ln">273  </span></a>        <span class="s0">self</span><span class="s2">.</span><span class="s0">method </span><span class="s1">= </span><span class="s0">method</span>
-<a name="l274"><span class="ln">274  </span></a>        <span class="s0">self</span><span class="s2">.</span><span class="s0">_spline </span><span class="s1">= None</span>
-<a name="l275"><span class="ln">275  </span></a>        <span class="s0">self</span><span class="s2">.</span><span class="s0">bounds_error </span><span class="s1">= </span><span class="s0">bounds_error</span>
-<a name="l276"><span class="ln">276  </span></a>        <span class="s0">self</span><span class="s2">.</span><span class="s0">grid</span><span class="s2">, </span><span class="s0">self</span><span class="s2">.</span><span class="s0">_descending_dimensions </span><span class="s1">= </span><span class="s0">_check_points</span><span class="s2">(</span><span class="s0">points</span><span class="s2">)</span>
-<a name="l277"><span class="ln">277  </span></a>        <span class="s0">self</span><span class="s2">.</span><span class="s0">values </span><span class="s1">= </span><span class="s0">self</span><span class="s2">.</span><span class="s0">_check_values</span><span class="s2">(</span><span class="s0">values</span><span class="s2">)</span>
-<a name="l278"><span class="ln">278  </span></a>        <span class="s0">self</span><span class="s2">.</span><span class="s0">_check_dimensionality</span><span class="s2">(</span><span class="s0">self</span><span class="s2">.</span><span class="s0">grid</span><span class="s2">, </span><span class="s0">self</span><span class="s2">.</span><span class="s0">values</span><span class="s2">)</span>
-<a name="l279"><span class="ln">279  </span></a>        <span class="s0">self</span><span class="s2">.</span><span class="s0">fill_value </span><span class="s1">= </span><span class="s0">self</span><span class="s2">.</span><span class="s0">_check_fill_value</span><span class="s2">(</span><span class="s0">self</span><span class="s2">.</span><span class="s0">values</span><span class="s2">, </span><span class="s0">fill_value</span><span class="s2">)</span>
-<a name="l280"><span class="ln">280  </span></a>        <span class="s1">if </span><span class="s0">self</span><span class="s2">.</span><span class="s0">_descending_dimensions</span><span class="s1">:</span>
-<a name="l281"><span class="ln">281  </span></a>            <span class="s0">self</span><span class="s2">.</span><span class="s0">values </span><span class="s1">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">flip</span><span class="s2">(</span><span class="s0">values</span><span class="s2">, </span><span class="s0">axis</span><span class="s1">=</span><span class="s0">self</span><span class="s2">.</span><span class="s0">_descending_dimensions</span><span class="s2">)</span>
-<a name="l282"><span class="ln">282  </span></a>        <span class="s1">if </span><span class="s0">self</span><span class="s2">.</span><span class="s0">method </span><span class="s1">== </span><span class="s3">&quot;pchip&quot; </span><span class="s1">and </span><span class="s0">np</span><span class="s2">.</span><span class="s0">iscomplexobj</span><span class="s2">(</span><span class="s0">self</span><span class="s2">.</span><span class="s0">values</span><span class="s2">)</span><span class="s1">:</span>
-<a name="l283"><span class="ln">283  </span></a>            <span class="s0">msg </span><span class="s1">= </span><span class="s2">(</span><span class="s3">&quot;`PchipInterpolator` only works with real values. If you are trying &quot;</span>
+<a name="l267"><span class="ln">267  </span></a>    <span class="s1">def </span><span class="s0">__init__</span><span
+            class="s2">(</span><span class="s0">self</span><span class="s2">, </span><span class="s0">points</span><span
+            class="s2">, </span><span class="s0">values</span><span class="s2">, </span><span
+            class="s0">method</span><span class="s1">=</span><span class="s3">&quot;linear&quot;</span><span class="s2">, </span><span
+            class="s0">bounds_error</span><span class="s1">=True</span><span class="s2">,</span>
+<a name="l268"><span class="ln">268  </span></a>                 <span class="s0">fill_value</span><span
+            class="s1">=</span><span class="s0">np</span><span class="s2">.</span><span class="s0">nan</span><span
+            class="s2">, </span><span class="s1">*</span><span class="s2">, </span><span class="s0">solver</span><span
+            class="s1">=None</span><span class="s2">, </span><span class="s0">solver_args</span><span
+            class="s1">=None</span><span class="s2">)</span><span class="s1">:</span>
+<a name="l269"><span class="ln">269  </span></a>        <span class="s1">if </span><span class="s0">method </span><span
+            class="s1">not in </span><span class="s0">self</span><span class="s2">.</span><span
+            class="s0">_ALL_METHODS</span><span class="s1">:</span>
+<a name="l270"><span class="ln">270  </span></a>            <span class="s1">raise </span><span
+            class="s0">ValueError</span><span class="s2">(</span><span class="s3">f&quot;Method '{</span><span
+            class="s0">method</span><span class="s3">}' is not defined&quot;</span><span class="s2">)</span>
+<a name="l271"><span class="ln">271  </span></a>        <span class="s1">elif </span><span
+            class="s0">method </span><span class="s1">in </span><span class="s0">self</span><span
+            class="s2">.</span><span class="s0">_SPLINE_METHODS</span><span class="s1">:</span>
+<a name="l272"><span class="ln">272  </span></a>            <span class="s0">self</span><span class="s2">.</span><span
+            class="s0">_validate_grid_dimensions</span><span class="s2">(</span><span class="s0">points</span><span
+            class="s2">, </span><span class="s0">method</span><span class="s2">)</span>
+<a name="l273"><span class="ln">273  </span></a>        <span class="s0">self</span><span class="s2">.</span><span
+            class="s0">method </span><span class="s1">= </span><span class="s0">method</span>
+<a name="l274"><span class="ln">274  </span></a>        <span class="s0">self</span><span class="s2">.</span><span
+            class="s0">_spline </span><span class="s1">= None</span>
+<a name="l275"><span class="ln">275  </span></a>        <span class="s0">self</span><span class="s2">.</span><span
+            class="s0">bounds_error </span><span class="s1">= </span><span class="s0">bounds_error</span>
+<a name="l276"><span class="ln">276  </span></a>        <span class="s0">self</span><span class="s2">.</span><span
+            class="s0">grid</span><span class="s2">, </span><span class="s0">self</span><span class="s2">.</span><span
+            class="s0">_descending_dimensions </span><span class="s1">= </span><span
+            class="s0">_check_points</span><span class="s2">(</span><span class="s0">points</span><span
+            class="s2">)</span>
+<a name="l277"><span class="ln">277  </span></a>        <span class="s0">self</span><span class="s2">.</span><span
+            class="s0">values </span><span class="s1">= </span><span class="s0">self</span><span
+            class="s2">.</span><span class="s0">_check_values</span><span class="s2">(</span><span
+            class="s0">values</span><span class="s2">)</span>
+<a name="l278"><span class="ln">278  </span></a>        <span class="s0">self</span><span class="s2">.</span><span
+            class="s0">_check_dimensionality</span><span class="s2">(</span><span class="s0">self</span><span
+            class="s2">.</span><span class="s0">grid</span><span class="s2">, </span><span class="s0">self</span><span
+            class="s2">.</span><span class="s0">values</span><span class="s2">)</span>
+<a name="l279"><span class="ln">279  </span></a>        <span class="s0">self</span><span class="s2">.</span><span
+            class="s0">fill_value </span><span class="s1">= </span><span class="s0">self</span><span class="s2">.</span><span
+            class="s0">_check_fill_value</span><span class="s2">(</span><span class="s0">self</span><span
+            class="s2">.</span><span class="s0">values</span><span class="s2">, </span><span
+            class="s0">fill_value</span><span class="s2">)</span>
+<a name="l280"><span class="ln">280  </span></a>        <span class="s1">if </span><span class="s0">self</span><span
+            class="s2">.</span><span class="s0">_descending_dimensions</span><span class="s1">:</span>
+<a name="l281"><span class="ln">281  </span></a>            <span class="s0">self</span><span class="s2">.</span><span
+            class="s0">values </span><span class="s1">= </span><span class="s0">np</span><span class="s2">.</span><span
+            class="s0">flip</span><span class="s2">(</span><span class="s0">values</span><span class="s2">, </span><span
+            class="s0">axis</span><span class="s1">=</span><span class="s0">self</span><span class="s2">.</span><span
+            class="s0">_descending_dimensions</span><span class="s2">)</span>
+<a name="l282"><span class="ln">282  </span></a>        <span class="s1">if </span><span class="s0">self</span><span
+            class="s2">.</span><span class="s0">method </span><span class="s1">== </span><span class="s3">&quot;pchip&quot; </span><span
+            class="s1">and </span><span class="s0">np</span><span class="s2">.</span><span
+            class="s0">iscomplexobj</span><span class="s2">(</span><span class="s0">self</span><span class="s2">.</span><span
+            class="s0">values</span><span class="s2">)</span><span class="s1">:</span>
+<a name="l283"><span class="ln">283  </span></a>            <span class="s0">msg </span><span class="s1">= </span><span
+            class="s2">(</span><span class="s3">&quot;`PchipInterpolator` only works with real values. If you are trying &quot;</span>
 <a name="l284"><span class="ln">284  </span></a>                   <span class="s3">&quot;to use the real components of the passed array, use `np.real` on &quot;</span>
-<a name="l285"><span class="ln">285  </span></a>                   <span class="s3">&quot;the array before passing to `RegularGridInterpolator`.&quot;</span><span class="s2">)</span>
-<a name="l286"><span class="ln">286  </span></a>            <span class="s1">raise </span><span class="s0">ValueError</span><span class="s2">(</span><span class="s0">msg</span><span class="s2">)</span>
-<a name="l287"><span class="ln">287  </span></a>        <span class="s1">if </span><span class="s0">method </span><span class="s1">in </span><span class="s0">self</span><span class="s2">.</span><span class="s0">_SPLINE_METHODS_ndbspl</span><span class="s1">:</span>
-<a name="l288"><span class="ln">288  </span></a>            <span class="s1">if </span><span class="s0">solver_args </span><span class="s1">is None:</span>
-<a name="l289"><span class="ln">289  </span></a>                <span class="s0">solver_args </span><span class="s1">= </span><span class="s2">{}</span>
-<a name="l290"><span class="ln">290  </span></a>            <span class="s0">self</span><span class="s2">.</span><span class="s0">_spline </span><span class="s1">= </span><span class="s0">self</span><span class="s2">.</span><span class="s0">_construct_spline</span><span class="s2">(</span><span class="s0">method</span><span class="s2">, </span><span class="s0">solver</span><span class="s2">, </span><span class="s1">**</span><span class="s0">solver_args</span><span class="s2">)</span>
+<a name="l285"><span class="ln">285  </span></a>                   <span class="s3">&quot;the array before passing to `RegularGridInterpolator`.&quot;</span><span
+            class="s2">)</span>
+<a name="l286"><span class="ln">286  </span></a>            <span class="s1">raise </span><span
+            class="s0">ValueError</span><span class="s2">(</span><span class="s0">msg</span><span class="s2">)</span>
+<a name="l287"><span class="ln">287  </span></a>        <span class="s1">if </span><span class="s0">method </span><span
+            class="s1">in </span><span class="s0">self</span><span class="s2">.</span><span class="s0">_SPLINE_METHODS_ndbspl</span><span
+            class="s1">:</span>
+<a name="l288"><span class="ln">288  </span></a>            <span class="s1">if </span><span
+            class="s0">solver_args </span><span class="s1">is None:</span>
+<a name="l289"><span class="ln">289  </span></a>                <span class="s0">solver_args </span><span
+            class="s1">= </span><span class="s2">{}</span>
+<a name="l290"><span class="ln">290  </span></a>            <span class="s0">self</span><span class="s2">.</span><span
+            class="s0">_spline </span><span class="s1">= </span><span class="s0">self</span><span
+            class="s2">.</span><span class="s0">_construct_spline</span><span class="s2">(</span><span
+            class="s0">method</span><span class="s2">, </span><span class="s0">solver</span><span
+            class="s2">, </span><span class="s1">**</span><span class="s0">solver_args</span><span class="s2">)</span>
 <a name="l291"><span class="ln">291  </span></a>        <span class="s1">else:</span>
-<a name="l292"><span class="ln">292  </span></a>            <span class="s1">if </span><span class="s0">solver </span><span class="s1">is not None or </span><span class="s0">solver_args</span><span class="s1">:</span>
-<a name="l293"><span class="ln">293  </span></a>                <span class="s1">raise </span><span class="s0">ValueError</span><span class="s2">(</span>
-<a name="l294"><span class="ln">294  </span></a>                    <span class="s3">f&quot;{</span><span class="s0">method </span><span class="s1">=</span><span class="s3">} does not accept the 'solver' argument. Got &quot;</span>
-<a name="l295"><span class="ln">295  </span></a>                    <span class="s3">f&quot; {</span><span class="s0">solver </span><span class="s1">= </span><span class="s3">} and with arguments {</span><span class="s0">solver_args</span><span class="s3">}.&quot;</span>
+<a name="l292"><span class="ln">292  </span></a>            <span class="s1">if </span><span
+            class="s0">solver </span><span class="s1">is not None or </span><span class="s0">solver_args</span><span
+            class="s1">:</span>
+<a name="l293"><span class="ln">293  </span></a>                <span class="s1">raise </span><span class="s0">ValueError</span><span
+            class="s2">(</span>
+<a name="l294"><span class="ln">294  </span></a>                    <span class="s3">f&quot;{</span><span class="s0">method </span><span
+            class="s1">=</span><span class="s3">} does not accept the 'solver' argument. Got &quot;</span>
+<a name="l295"><span class="ln">295  </span></a>                    <span class="s3">f&quot; {</span><span class="s0">solver </span><span
+            class="s1">= </span><span class="s3">} and with arguments {</span><span class="s0">solver_args</span><span
+            class="s3">}.&quot;</span>
 <a name="l296"><span class="ln">296  </span></a>                <span class="s2">)</span>
 <a name="l297"><span class="ln">297  </span></a>
-<a name="l298"><span class="ln">298  </span></a>    <span class="s1">def </span><span class="s0">_construct_spline</span><span class="s2">(</span><span class="s0">self</span><span class="s2">, </span><span class="s0">method</span><span class="s2">, </span><span class="s0">solver</span><span class="s1">=None</span><span class="s2">, </span><span class="s1">**</span><span class="s0">solver_args</span><span class="s2">)</span><span class="s1">:</span>
-<a name="l299"><span class="ln">299  </span></a>        <span class="s1">if </span><span class="s0">solver </span><span class="s1">is None:</span>
-<a name="l300"><span class="ln">300  </span></a>            <span class="s0">solver </span><span class="s1">= </span><span class="s0">ssl</span><span class="s2">.</span><span class="s0">gcrotmk</span>
-<a name="l301"><span class="ln">301  </span></a>        <span class="s0">spl </span><span class="s1">= </span><span class="s0">make_ndbspl</span><span class="s2">(</span>
-<a name="l302"><span class="ln">302  </span></a>                <span class="s0">self</span><span class="s2">.</span><span class="s0">grid</span><span class="s2">, </span><span class="s0">self</span><span class="s2">.</span><span class="s0">values</span><span class="s2">, </span><span class="s0">self</span><span class="s2">.</span><span class="s0">_SPLINE_DEGREE_MAP</span><span class="s2">[</span><span class="s0">method</span><span class="s2">],</span>
-<a name="l303"><span class="ln">303  </span></a>                <span class="s0">solver</span><span class="s1">=</span><span class="s0">solver</span><span class="s2">, </span><span class="s1">**</span><span class="s0">solver_args</span>
+<a name="l298"><span class="ln">298  </span></a>    <span class="s1">def </span><span
+            class="s0">_construct_spline</span><span class="s2">(</span><span class="s0">self</span><span
+            class="s2">, </span><span class="s0">method</span><span class="s2">, </span><span
+            class="s0">solver</span><span class="s1">=None</span><span class="s2">, </span><span
+            class="s1">**</span><span class="s0">solver_args</span><span class="s2">)</span><span class="s1">:</span>
+<a name="l299"><span class="ln">299  </span></a>        <span class="s1">if </span><span class="s0">solver </span><span
+            class="s1">is None:</span>
+<a name="l300"><span class="ln">300  </span></a>            <span class="s0">solver </span><span
+            class="s1">= </span><span class="s0">ssl</span><span class="s2">.</span><span class="s0">gcrotmk</span>
+<a name="l301"><span class="ln">301  </span></a>        <span class="s0">spl </span><span class="s1">= </span><span
+            class="s0">make_ndbspl</span><span class="s2">(</span>
+<a name="l302"><span class="ln">302  </span></a>                <span class="s0">self</span><span
+            class="s2">.</span><span class="s0">grid</span><span class="s2">, </span><span class="s0">self</span><span
+            class="s2">.</span><span class="s0">values</span><span class="s2">, </span><span class="s0">self</span><span
+            class="s2">.</span><span class="s0">_SPLINE_DEGREE_MAP</span><span class="s2">[</span><span class="s0">method</span><span
+            class="s2">],</span>
+<a name="l303"><span class="ln">303  </span></a>                <span class="s0">solver</span><span
+            class="s1">=</span><span class="s0">solver</span><span class="s2">, </span><span class="s1">**</span><span
+            class="s0">solver_args</span>
 <a name="l304"><span class="ln">304  </span></a>              <span class="s2">)</span>
 <a name="l305"><span class="ln">305  </span></a>        <span class="s1">return </span><span class="s0">spl</span>
 <a name="l306"><span class="ln">306  </span></a>
-<a name="l307"><span class="ln">307  </span></a>    <span class="s1">def </span><span class="s0">_check_dimensionality</span><span class="s2">(</span><span class="s0">self</span><span class="s2">, </span><span class="s0">grid</span><span class="s2">, </span><span class="s0">values</span><span class="s2">)</span><span class="s1">:</span>
-<a name="l308"><span class="ln">308  </span></a>        <span class="s0">_check_dimensionality</span><span class="s2">(</span><span class="s0">grid</span><span class="s2">, </span><span class="s0">values</span><span class="s2">)</span>
+<a name="l307"><span class="ln">307  </span></a>    <span class="s1">def </span><span
+            class="s0">_check_dimensionality</span><span class="s2">(</span><span class="s0">self</span><span
+            class="s2">, </span><span class="s0">grid</span><span class="s2">, </span><span
+            class="s0">values</span><span class="s2">)</span><span class="s1">:</span>
+<a name="l308"><span class="ln">308  </span></a>        <span class="s0">_check_dimensionality</span><span
+            class="s2">(</span><span class="s0">grid</span><span class="s2">, </span><span class="s0">values</span><span
+            class="s2">)</span>
 <a name="l309"><span class="ln">309  </span></a>
-<a name="l310"><span class="ln">310  </span></a>    <span class="s1">def </span><span class="s0">_check_points</span><span class="s2">(</span><span class="s0">self</span><span class="s2">, </span><span class="s0">points</span><span class="s2">)</span><span class="s1">:</span>
-<a name="l311"><span class="ln">311  </span></a>        <span class="s1">return </span><span class="s0">_check_points</span><span class="s2">(</span><span class="s0">points</span><span class="s2">)</span>
+<a name="l310"><span class="ln">310  </span></a>    <span class="s1">def </span><span
+            class="s0">_check_points</span><span class="s2">(</span><span class="s0">self</span><span
+            class="s2">, </span><span class="s0">points</span><span class="s2">)</span><span class="s1">:</span>
+<a name="l311"><span class="ln">311  </span></a>        <span class="s1">return </span><span
+            class="s0">_check_points</span><span class="s2">(</span><span class="s0">points</span><span
+            class="s2">)</span>
 <a name="l312"><span class="ln">312  </span></a>
-<a name="l313"><span class="ln">313  </span></a>    <span class="s1">def </span><span class="s0">_check_values</span><span class="s2">(</span><span class="s0">self</span><span class="s2">, </span><span class="s0">values</span><span class="s2">)</span><span class="s1">:</span>
-<a name="l314"><span class="ln">314  </span></a>        <span class="s1">if not </span><span class="s0">hasattr</span><span class="s2">(</span><span class="s0">values</span><span class="s2">, </span><span class="s3">'ndim'</span><span class="s2">)</span><span class="s1">:</span>
+<a name="l313"><span class="ln">313  </span></a>    <span class="s1">def </span><span
+            class="s0">_check_values</span><span class="s2">(</span><span class="s0">self</span><span
+            class="s2">, </span><span class="s0">values</span><span class="s2">)</span><span class="s1">:</span>
+<a name="l314"><span class="ln">314  </span></a>        <span class="s1">if not </span><span
+            class="s0">hasattr</span><span class="s2">(</span><span class="s0">values</span><span
+            class="s2">, </span><span class="s3">'ndim'</span><span class="s2">)</span><span class="s1">:</span>
 <a name="l315"><span class="ln">315  </span></a>            <span class="s4"># allow reasonable duck-typed values</span>
-<a name="l316"><span class="ln">316  </span></a>            <span class="s0">values </span><span class="s1">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">asarray</span><span class="s2">(</span><span class="s0">values</span><span class="s2">)</span>
+<a name="l316"><span class="ln">316  </span></a>            <span class="s0">values </span><span
+            class="s1">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">asarray</span><span
+            class="s2">(</span><span class="s0">values</span><span class="s2">)</span>
 <a name="l317"><span class="ln">317  </span></a>
-<a name="l318"><span class="ln">318  </span></a>        <span class="s1">if </span><span class="s0">hasattr</span><span class="s2">(</span><span class="s0">values</span><span class="s2">, </span><span class="s3">'dtype'</span><span class="s2">) </span><span class="s1">and </span><span class="s0">hasattr</span><span class="s2">(</span><span class="s0">values</span><span class="s2">, </span><span class="s3">'astype'</span><span class="s2">)</span><span class="s1">:</span>
-<a name="l319"><span class="ln">319  </span></a>            <span class="s1">if not </span><span class="s0">np</span><span class="s2">.</span><span class="s0">issubdtype</span><span class="s2">(</span><span class="s0">values</span><span class="s2">.</span><span class="s0">dtype</span><span class="s2">, </span><span class="s0">np</span><span class="s2">.</span><span class="s0">inexact</span><span class="s2">)</span><span class="s1">:</span>
-<a name="l320"><span class="ln">320  </span></a>                <span class="s0">values </span><span class="s1">= </span><span class="s0">values</span><span class="s2">.</span><span class="s0">astype</span><span class="s2">(</span><span class="s0">float</span><span class="s2">)</span>
+<a name="l318"><span class="ln">318  </span></a>        <span class="s1">if </span><span class="s0">hasattr</span><span
+            class="s2">(</span><span class="s0">values</span><span class="s2">, </span><span
+            class="s3">'dtype'</span><span class="s2">) </span><span class="s1">and </span><span
+            class="s0">hasattr</span><span class="s2">(</span><span class="s0">values</span><span
+            class="s2">, </span><span class="s3">'astype'</span><span class="s2">)</span><span class="s1">:</span>
+<a name="l319"><span class="ln">319  </span></a>            <span class="s1">if not </span><span
+            class="s0">np</span><span class="s2">.</span><span class="s0">issubdtype</span><span
+            class="s2">(</span><span class="s0">values</span><span class="s2">.</span><span class="s0">dtype</span><span
+            class="s2">, </span><span class="s0">np</span><span class="s2">.</span><span class="s0">inexact</span><span
+            class="s2">)</span><span class="s1">:</span>
+<a name="l320"><span class="ln">320  </span></a>                <span class="s0">values </span><span
+            class="s1">= </span><span class="s0">values</span><span class="s2">.</span><span
+            class="s0">astype</span><span class="s2">(</span><span class="s0">float</span><span class="s2">)</span>
 <a name="l321"><span class="ln">321  </span></a>
 <a name="l322"><span class="ln">322  </span></a>        <span class="s1">return </span><span class="s0">values</span>
 <a name="l323"><span class="ln">323  </span></a>
-<a name="l324"><span class="ln">324  </span></a>    <span class="s1">def </span><span class="s0">_check_fill_value</span><span class="s2">(</span><span class="s0">self</span><span class="s2">, </span><span class="s0">values</span><span class="s2">, </span><span class="s0">fill_value</span><span class="s2">)</span><span class="s1">:</span>
-<a name="l325"><span class="ln">325  </span></a>        <span class="s1">if </span><span class="s0">fill_value </span><span class="s1">is not None:</span>
-<a name="l326"><span class="ln">326  </span></a>            <span class="s0">fill_value_dtype </span><span class="s1">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">asarray</span><span class="s2">(</span><span class="s0">fill_value</span><span class="s2">).</span><span class="s0">dtype</span>
-<a name="l327"><span class="ln">327  </span></a>            <span class="s1">if </span><span class="s2">(</span><span class="s0">hasattr</span><span class="s2">(</span><span class="s0">values</span><span class="s2">, </span><span class="s3">'dtype'</span><span class="s2">) </span><span class="s1">and not</span>
-<a name="l328"><span class="ln">328  </span></a>                    <span class="s0">np</span><span class="s2">.</span><span class="s0">can_cast</span><span class="s2">(</span><span class="s0">fill_value_dtype</span><span class="s2">, </span><span class="s0">values</span><span class="s2">.</span><span class="s0">dtype</span><span class="s2">,</span>
-<a name="l329"><span class="ln">329  </span></a>                                <span class="s0">casting</span><span class="s1">=</span><span class="s3">'same_kind'</span><span class="s2">))</span><span class="s1">:</span>
-<a name="l330"><span class="ln">330  </span></a>                <span class="s1">raise </span><span class="s0">ValueError</span><span class="s2">(</span><span class="s3">&quot;fill_value must be either 'None' or &quot;</span>
-<a name="l331"><span class="ln">331  </span></a>                                 <span class="s3">&quot;of a type compatible with values&quot;</span><span class="s2">)</span>
-<a name="l332"><span class="ln">332  </span></a>        <span class="s1">return </span><span class="s0">fill_value</span>
+<a name="l324"><span class="ln">324  </span></a>    <span class="s1">def </span><span
+            class="s0">_check_fill_value</span><span class="s2">(</span><span class="s0">self</span><span
+            class="s2">, </span><span class="s0">values</span><span class="s2">, </span><span
+            class="s0">fill_value</span><span class="s2">)</span><span class="s1">:</span>
+<a name="l325"><span class="ln">325  </span></a>        <span class="s1">if </span><span
+            class="s0">fill_value </span><span class="s1">is not None:</span>
+<a name="l326"><span class="ln">326  </span></a>            <span class="s0">fill_value_dtype </span><span
+            class="s1">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">asarray</span><span
+            class="s2">(</span><span class="s0">fill_value</span><span class="s2">).</span><span class="s0">dtype</span>
+<a name="l327"><span class="ln">327  </span></a>            <span class="s1">if </span><span class="s2">(</span><span
+            class="s0">hasattr</span><span class="s2">(</span><span class="s0">values</span><span
+            class="s2">, </span><span class="s3">'dtype'</span><span class="s2">) </span><span class="s1">and not</span>
+<a name="l328"><span class="ln">328  </span></a>                    <span class="s0">np</span><span
+            class="s2">.</span><span class="s0">can_cast</span><span class="s2">(</span><span class="s0">fill_value_dtype</span><span
+            class="s2">, </span><span class="s0">values</span><span class="s2">.</span><span
+            class="s0">dtype</span><span class="s2">,</span>
+<a name="l329"><span class="ln">329  </span></a>                                <span class="s0">casting</span><span
+            class="s1">=</span><span class="s3">'same_kind'</span><span class="s2">))</span><span class="s1">:</span>
+<a name="l330"><span class="ln">330  </span></a>                <span class="s1">raise </span><span class="s0">ValueError</span><span
+            class="s2">(</span><span class="s3">&quot;fill_value must be either 'None' or &quot;</span>
+<a name="l331"><span class="ln">331  </span></a>                                 <span class="s3">&quot;of a type compatible with values&quot;</span><span
+            class="s2">)</span>
+<a name="l332"><span class="ln">332  </span></a>        <span class="s1">return </span><span
+            class="s0">fill_value</span>
 <a name="l333"><span class="ln">333  </span></a>
-<a name="l334"><span class="ln">334  </span></a>    <span class="s1">def </span><span class="s0">__call__</span><span class="s2">(</span><span class="s0">self</span><span class="s2">, </span><span class="s0">xi</span><span class="s2">, </span><span class="s0">method</span><span class="s1">=None</span><span class="s2">, </span><span class="s1">*</span><span class="s2">, </span><span class="s0">nu</span><span class="s1">=None</span><span class="s2">)</span><span class="s1">:</span>
+<a name="l334"><span class="ln">334  </span></a>    <span class="s1">def </span><span class="s0">__call__</span><span
+            class="s2">(</span><span class="s0">self</span><span class="s2">, </span><span class="s0">xi</span><span
+            class="s2">, </span><span class="s0">method</span><span class="s1">=None</span><span
+            class="s2">, </span><span class="s1">*</span><span class="s2">, </span><span class="s0">nu</span><span
+            class="s1">=None</span><span class="s2">)</span><span class="s1">:</span>
 <a name="l335"><span class="ln">335  </span></a>        <span class="s4">&quot;&quot;&quot; 
 <a name="l336"><span class="ln">336  </span></a>        Interpolation at coordinates. 
 <a name="l337"><span class="ln">337  </span></a> 
@@ -408,92 +618,253 @@ _rgi.py</font>
 <a name="l388"><span class="ln">388  </span></a>        &gt;&gt;&gt; interp([[1.5, 1.3], [0.3, 4.5]], method='linear') 
 <a name="l389"><span class="ln">389  </span></a>        array([ 4.7, 24.3]) 
 <a name="l390"><span class="ln">390  </span></a>        &quot;&quot;&quot;</span>
-<a name="l391"><span class="ln">391  </span></a>        <span class="s0">_spline </span><span class="s1">= </span><span class="s0">self</span><span class="s2">.</span><span class="s0">_spline</span>
-<a name="l392"><span class="ln">392  </span></a>        <span class="s0">method </span><span class="s1">= </span><span class="s0">self</span><span class="s2">.</span><span class="s0">method </span><span class="s1">if </span><span class="s0">method </span><span class="s1">is None else </span><span class="s0">method</span>
-<a name="l393"><span class="ln">393  </span></a>        <span class="s0">is_method_changed </span><span class="s1">= </span><span class="s0">self</span><span class="s2">.</span><span class="s0">method </span><span class="s1">!= </span><span class="s0">method</span>
-<a name="l394"><span class="ln">394  </span></a>        <span class="s1">if </span><span class="s0">method </span><span class="s1">not in </span><span class="s0">self</span><span class="s2">.</span><span class="s0">_ALL_METHODS</span><span class="s1">:</span>
-<a name="l395"><span class="ln">395  </span></a>            <span class="s1">raise </span><span class="s0">ValueError</span><span class="s2">(</span><span class="s3">f&quot;Method '{</span><span class="s0">method</span><span class="s3">}' is not defined&quot;</span><span class="s2">)</span>
-<a name="l396"><span class="ln">396  </span></a>        <span class="s1">if </span><span class="s0">is_method_changed </span><span class="s1">and </span><span class="s0">method </span><span class="s1">in </span><span class="s0">self</span><span class="s2">.</span><span class="s0">_SPLINE_METHODS_ndbspl</span><span class="s1">:</span>
-<a name="l397"><span class="ln">397  </span></a>            <span class="s0">_spline </span><span class="s1">= </span><span class="s0">self</span><span class="s2">.</span><span class="s0">_construct_spline</span><span class="s2">(</span><span class="s0">method</span><span class="s2">)</span>
+<a name="l391"><span class="ln">391  </span></a>        <span class="s0">_spline </span><span class="s1">= </span><span
+            class="s0">self</span><span class="s2">.</span><span class="s0">_spline</span>
+<a name="l392"><span class="ln">392  </span></a>        <span class="s0">method </span><span class="s1">= </span><span
+            class="s0">self</span><span class="s2">.</span><span class="s0">method </span><span
+            class="s1">if </span><span class="s0">method </span><span class="s1">is None else </span><span class="s0">method</span>
+<a name="l393"><span class="ln">393  </span></a>        <span class="s0">is_method_changed </span><span
+            class="s1">= </span><span class="s0">self</span><span class="s2">.</span><span
+            class="s0">method </span><span class="s1">!= </span><span class="s0">method</span>
+<a name="l394"><span class="ln">394  </span></a>        <span class="s1">if </span><span class="s0">method </span><span
+            class="s1">not in </span><span class="s0">self</span><span class="s2">.</span><span
+            class="s0">_ALL_METHODS</span><span class="s1">:</span>
+<a name="l395"><span class="ln">395  </span></a>            <span class="s1">raise </span><span
+            class="s0">ValueError</span><span class="s2">(</span><span class="s3">f&quot;Method '{</span><span
+            class="s0">method</span><span class="s3">}' is not defined&quot;</span><span class="s2">)</span>
+<a name="l396"><span class="ln">396  </span></a>        <span class="s1">if </span><span
+            class="s0">is_method_changed </span><span class="s1">and </span><span class="s0">method </span><span
+            class="s1">in </span><span class="s0">self</span><span class="s2">.</span><span class="s0">_SPLINE_METHODS_ndbspl</span><span
+            class="s1">:</span>
+<a name="l397"><span class="ln">397  </span></a>            <span class="s0">_spline </span><span
+            class="s1">= </span><span class="s0">self</span><span class="s2">.</span><span
+            class="s0">_construct_spline</span><span class="s2">(</span><span class="s0">method</span><span
+            class="s2">)</span>
 <a name="l398"><span class="ln">398  </span></a>
-<a name="l399"><span class="ln">399  </span></a>        <span class="s1">if </span><span class="s0">nu </span><span class="s1">is not None and </span><span class="s0">method </span><span class="s1">not in </span><span class="s0">self</span><span class="s2">.</span><span class="s0">_SPLINE_METHODS_ndbspl</span><span class="s1">:</span>
-<a name="l400"><span class="ln">400  </span></a>            <span class="s1">raise </span><span class="s0">ValueError</span><span class="s2">(</span>
+<a name="l399"><span class="ln">399  </span></a>        <span class="s1">if </span><span class="s0">nu </span><span
+            class="s1">is not None and </span><span class="s0">method </span><span class="s1">not in </span><span
+            class="s0">self</span><span class="s2">.</span><span class="s0">_SPLINE_METHODS_ndbspl</span><span
+            class="s1">:</span>
+<a name="l400"><span class="ln">400  </span></a>            <span class="s1">raise </span><span
+            class="s0">ValueError</span><span class="s2">(</span>
 <a name="l401"><span class="ln">401  </span></a>                <span class="s3">f&quot;Can only compute derivatives for methods &quot;</span>
-<a name="l402"><span class="ln">402  </span></a>                <span class="s3">f&quot;{</span><span class="s0">self</span><span class="s2">.</span><span class="s0">_SPLINE_METHODS_ndbspl</span><span class="s3">}, got {</span><span class="s0">method </span><span class="s1">=</span><span class="s3">}.&quot;</span>
+<a name="l402"><span class="ln">402  </span></a>                <span class="s3">f&quot;{</span><span
+            class="s0">self</span><span class="s2">.</span><span class="s0">_SPLINE_METHODS_ndbspl</span><span
+            class="s3">}, got {</span><span class="s0">method </span><span class="s1">=</span><span
+            class="s3">}.&quot;</span>
 <a name="l403"><span class="ln">403  </span></a>            <span class="s2">)</span>
 <a name="l404"><span class="ln">404  </span></a>
-<a name="l405"><span class="ln">405  </span></a>        <span class="s0">xi</span><span class="s2">, </span><span class="s0">xi_shape</span><span class="s2">, </span><span class="s0">ndim</span><span class="s2">, </span><span class="s0">nans</span><span class="s2">, </span><span class="s0">out_of_bounds </span><span class="s1">= </span><span class="s0">self</span><span class="s2">.</span><span class="s0">_prepare_xi</span><span class="s2">(</span><span class="s0">xi</span><span class="s2">)</span>
+<a name="l405"><span class="ln">405  </span></a>        <span class="s0">xi</span><span class="s2">, </span><span
+            class="s0">xi_shape</span><span class="s2">, </span><span class="s0">ndim</span><span
+            class="s2">, </span><span class="s0">nans</span><span class="s2">, </span><span
+            class="s0">out_of_bounds </span><span class="s1">= </span><span class="s0">self</span><span
+            class="s2">.</span><span class="s0">_prepare_xi</span><span class="s2">(</span><span
+            class="s0">xi</span><span class="s2">)</span>
 <a name="l406"><span class="ln">406  </span></a>
-<a name="l407"><span class="ln">407  </span></a>        <span class="s1">if </span><span class="s0">method </span><span class="s1">== </span><span class="s3">&quot;linear&quot;</span><span class="s1">:</span>
-<a name="l408"><span class="ln">408  </span></a>            <span class="s0">indices</span><span class="s2">, </span><span class="s0">norm_distances </span><span class="s1">= </span><span class="s0">self</span><span class="s2">.</span><span class="s0">_find_indices</span><span class="s2">(</span><span class="s0">xi</span><span class="s2">.</span><span class="s0">T</span><span class="s2">)</span>
-<a name="l409"><span class="ln">409  </span></a>            <span class="s1">if </span><span class="s2">(</span><span class="s0">ndim </span><span class="s1">== </span><span class="s5">2 </span><span class="s1">and </span><span class="s0">hasattr</span><span class="s2">(</span><span class="s0">self</span><span class="s2">.</span><span class="s0">values</span><span class="s2">, </span><span class="s3">'dtype'</span><span class="s2">) </span><span class="s1">and</span>
-<a name="l410"><span class="ln">410  </span></a>                    <span class="s0">self</span><span class="s2">.</span><span class="s0">values</span><span class="s2">.</span><span class="s0">ndim </span><span class="s1">== </span><span class="s5">2 </span><span class="s1">and </span><span class="s0">self</span><span class="s2">.</span><span class="s0">values</span><span class="s2">.</span><span class="s0">flags</span><span class="s2">.</span><span class="s0">writeable </span><span class="s1">and</span>
-<a name="l411"><span class="ln">411  </span></a>                    <span class="s0">self</span><span class="s2">.</span><span class="s0">values</span><span class="s2">.</span><span class="s0">dtype </span><span class="s1">in </span><span class="s2">(</span><span class="s0">np</span><span class="s2">.</span><span class="s0">float64</span><span class="s2">, </span><span class="s0">np</span><span class="s2">.</span><span class="s0">complex128</span><span class="s2">) </span><span class="s1">and</span>
-<a name="l412"><span class="ln">412  </span></a>                    <span class="s0">self</span><span class="s2">.</span><span class="s0">values</span><span class="s2">.</span><span class="s0">dtype</span><span class="s2">.</span><span class="s0">byteorder </span><span class="s1">== </span><span class="s3">'='</span><span class="s2">)</span><span class="s1">:</span>
+<a name="l407"><span class="ln">407  </span></a>        <span class="s1">if </span><span class="s0">method </span><span
+            class="s1">== </span><span class="s3">&quot;linear&quot;</span><span class="s1">:</span>
+<a name="l408"><span class="ln">408  </span></a>            <span class="s0">indices</span><span
+            class="s2">, </span><span class="s0">norm_distances </span><span class="s1">= </span><span
+            class="s0">self</span><span class="s2">.</span><span class="s0">_find_indices</span><span
+            class="s2">(</span><span class="s0">xi</span><span class="s2">.</span><span class="s0">T</span><span
+            class="s2">)</span>
+<a name="l409"><span class="ln">409  </span></a>            <span class="s1">if </span><span class="s2">(</span><span
+            class="s0">ndim </span><span class="s1">== </span><span class="s5">2 </span><span
+            class="s1">and </span><span class="s0">hasattr</span><span class="s2">(</span><span
+            class="s0">self</span><span class="s2">.</span><span class="s0">values</span><span class="s2">, </span><span
+            class="s3">'dtype'</span><span class="s2">) </span><span class="s1">and</span>
+<a name="l410"><span class="ln">410  </span></a>                    <span class="s0">self</span><span
+            class="s2">.</span><span class="s0">values</span><span class="s2">.</span><span class="s0">ndim </span><span
+            class="s1">== </span><span class="s5">2 </span><span class="s1">and </span><span class="s0">self</span><span
+            class="s2">.</span><span class="s0">values</span><span class="s2">.</span><span class="s0">flags</span><span
+            class="s2">.</span><span class="s0">writeable </span><span class="s1">and</span>
+<a name="l411"><span class="ln">411  </span></a>                    <span class="s0">self</span><span
+            class="s2">.</span><span class="s0">values</span><span class="s2">.</span><span
+            class="s0">dtype </span><span class="s1">in </span><span class="s2">(</span><span class="s0">np</span><span
+            class="s2">.</span><span class="s0">float64</span><span class="s2">, </span><span class="s0">np</span><span
+            class="s2">.</span><span class="s0">complex128</span><span class="s2">) </span><span class="s1">and</span>
+<a name="l412"><span class="ln">412  </span></a>                    <span class="s0">self</span><span
+            class="s2">.</span><span class="s0">values</span><span class="s2">.</span><span class="s0">dtype</span><span
+            class="s2">.</span><span class="s0">byteorder </span><span class="s1">== </span><span
+            class="s3">'='</span><span class="s2">)</span><span class="s1">:</span>
 <a name="l413"><span class="ln">413  </span></a>                <span class="s4"># until cython supports const fused types, the fast path</span>
-<a name="l414"><span class="ln">414  </span></a>                <span class="s4"># cannot support non-writeable values</span>
+<a name="l414"><span class="ln">414  </span></a>                <span
+            class="s4"># cannot support non-writeable values</span>
 <a name="l415"><span class="ln">415  </span></a>                <span class="s4"># a fast path</span>
-<a name="l416"><span class="ln">416  </span></a>                <span class="s0">out </span><span class="s1">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">empty</span><span class="s2">(</span><span class="s0">indices</span><span class="s2">.</span><span class="s0">shape</span><span class="s2">[</span><span class="s5">1</span><span class="s2">], </span><span class="s0">dtype</span><span class="s1">=</span><span class="s0">self</span><span class="s2">.</span><span class="s0">values</span><span class="s2">.</span><span class="s0">dtype</span><span class="s2">)</span>
-<a name="l417"><span class="ln">417  </span></a>                <span class="s0">result </span><span class="s1">= </span><span class="s0">evaluate_linear_2d</span><span class="s2">(</span><span class="s0">self</span><span class="s2">.</span><span class="s0">values</span><span class="s2">,</span>
-<a name="l418"><span class="ln">418  </span></a>                                            <span class="s0">indices</span><span class="s2">,</span>
-<a name="l419"><span class="ln">419  </span></a>                                            <span class="s0">norm_distances</span><span class="s2">,</span>
-<a name="l420"><span class="ln">420  </span></a>                                            <span class="s0">self</span><span class="s2">.</span><span class="s0">grid</span><span class="s2">,</span>
-<a name="l421"><span class="ln">421  </span></a>                                            <span class="s0">out</span><span class="s2">)</span>
+<a name="l416"><span class="ln">416  </span></a>                <span class="s0">out </span><span
+            class="s1">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">empty</span><span
+            class="s2">(</span><span class="s0">indices</span><span class="s2">.</span><span
+            class="s0">shape</span><span class="s2">[</span><span class="s5">1</span><span class="s2">], </span><span
+            class="s0">dtype</span><span class="s1">=</span><span class="s0">self</span><span class="s2">.</span><span
+            class="s0">values</span><span class="s2">.</span><span class="s0">dtype</span><span class="s2">)</span>
+<a name="l417"><span class="ln">417  </span></a>                <span class="s0">result </span><span
+            class="s1">= </span><span class="s0">evaluate_linear_2d</span><span class="s2">(</span><span
+            class="s0">self</span><span class="s2">.</span><span class="s0">values</span><span class="s2">,</span>
+<a name="l418"><span class="ln">418  </span></a>                                            <span
+            class="s0">indices</span><span class="s2">,</span>
+<a name="l419"><span class="ln">419  </span></a>                                            <span class="s0">norm_distances</span><span
+            class="s2">,</span>
+<a name="l420"><span class="ln">420  </span></a>                                            <span class="s0">self</span><span
+            class="s2">.</span><span class="s0">grid</span><span class="s2">,</span>
+<a name="l421"><span class="ln">421  </span></a>                                            <span
+            class="s0">out</span><span class="s2">)</span>
 <a name="l422"><span class="ln">422  </span></a>            <span class="s1">else:</span>
-<a name="l423"><span class="ln">423  </span></a>                <span class="s0">result </span><span class="s1">= </span><span class="s0">self</span><span class="s2">.</span><span class="s0">_evaluate_linear</span><span class="s2">(</span><span class="s0">indices</span><span class="s2">, </span><span class="s0">norm_distances</span><span class="s2">)</span>
-<a name="l424"><span class="ln">424  </span></a>        <span class="s1">elif </span><span class="s0">method </span><span class="s1">== </span><span class="s3">&quot;nearest&quot;</span><span class="s1">:</span>
-<a name="l425"><span class="ln">425  </span></a>            <span class="s0">indices</span><span class="s2">, </span><span class="s0">norm_distances </span><span class="s1">= </span><span class="s0">self</span><span class="s2">.</span><span class="s0">_find_indices</span><span class="s2">(</span><span class="s0">xi</span><span class="s2">.</span><span class="s0">T</span><span class="s2">)</span>
-<a name="l426"><span class="ln">426  </span></a>            <span class="s0">result </span><span class="s1">= </span><span class="s0">self</span><span class="s2">.</span><span class="s0">_evaluate_nearest</span><span class="s2">(</span><span class="s0">indices</span><span class="s2">, </span><span class="s0">norm_distances</span><span class="s2">)</span>
-<a name="l427"><span class="ln">427  </span></a>        <span class="s1">elif </span><span class="s0">method </span><span class="s1">in </span><span class="s0">self</span><span class="s2">.</span><span class="s0">_SPLINE_METHODS</span><span class="s1">:</span>
-<a name="l428"><span class="ln">428  </span></a>            <span class="s1">if </span><span class="s0">is_method_changed</span><span class="s1">:</span>
-<a name="l429"><span class="ln">429  </span></a>                <span class="s0">self</span><span class="s2">.</span><span class="s0">_validate_grid_dimensions</span><span class="s2">(</span><span class="s0">self</span><span class="s2">.</span><span class="s0">grid</span><span class="s2">, </span><span class="s0">method</span><span class="s2">)</span>
-<a name="l430"><span class="ln">430  </span></a>            <span class="s1">if </span><span class="s0">method </span><span class="s1">in </span><span class="s0">self</span><span class="s2">.</span><span class="s0">_SPLINE_METHODS_recursive</span><span class="s1">:</span>
-<a name="l431"><span class="ln">431  </span></a>                <span class="s0">result </span><span class="s1">= </span><span class="s0">self</span><span class="s2">.</span><span class="s0">_evaluate_spline</span><span class="s2">(</span><span class="s0">xi</span><span class="s2">, </span><span class="s0">method</span><span class="s2">)</span>
+<a name="l423"><span class="ln">423  </span></a>                <span class="s0">result </span><span
+            class="s1">= </span><span class="s0">self</span><span class="s2">.</span><span
+            class="s0">_evaluate_linear</span><span class="s2">(</span><span class="s0">indices</span><span
+            class="s2">, </span><span class="s0">norm_distances</span><span class="s2">)</span>
+<a name="l424"><span class="ln">424  </span></a>        <span class="s1">elif </span><span
+            class="s0">method </span><span class="s1">== </span><span class="s3">&quot;nearest&quot;</span><span
+            class="s1">:</span>
+<a name="l425"><span class="ln">425  </span></a>            <span class="s0">indices</span><span
+            class="s2">, </span><span class="s0">norm_distances </span><span class="s1">= </span><span
+            class="s0">self</span><span class="s2">.</span><span class="s0">_find_indices</span><span
+            class="s2">(</span><span class="s0">xi</span><span class="s2">.</span><span class="s0">T</span><span
+            class="s2">)</span>
+<a name="l426"><span class="ln">426  </span></a>            <span class="s0">result </span><span
+            class="s1">= </span><span class="s0">self</span><span class="s2">.</span><span
+            class="s0">_evaluate_nearest</span><span class="s2">(</span><span class="s0">indices</span><span class="s2">, </span><span
+            class="s0">norm_distances</span><span class="s2">)</span>
+<a name="l427"><span class="ln">427  </span></a>        <span class="s1">elif </span><span
+            class="s0">method </span><span class="s1">in </span><span class="s0">self</span><span
+            class="s2">.</span><span class="s0">_SPLINE_METHODS</span><span class="s1">:</span>
+<a name="l428"><span class="ln">428  </span></a>            <span class="s1">if </span><span class="s0">is_method_changed</span><span
+            class="s1">:</span>
+<a name="l429"><span class="ln">429  </span></a>                <span class="s0">self</span><span
+            class="s2">.</span><span class="s0">_validate_grid_dimensions</span><span class="s2">(</span><span
+            class="s0">self</span><span class="s2">.</span><span class="s0">grid</span><span class="s2">, </span><span
+            class="s0">method</span><span class="s2">)</span>
+<a name="l430"><span class="ln">430  </span></a>            <span class="s1">if </span><span
+            class="s0">method </span><span class="s1">in </span><span class="s0">self</span><span
+            class="s2">.</span><span class="s0">_SPLINE_METHODS_recursive</span><span class="s1">:</span>
+<a name="l431"><span class="ln">431  </span></a>                <span class="s0">result </span><span
+            class="s1">= </span><span class="s0">self</span><span class="s2">.</span><span
+            class="s0">_evaluate_spline</span><span class="s2">(</span><span class="s0">xi</span><span
+            class="s2">, </span><span class="s0">method</span><span class="s2">)</span>
 <a name="l432"><span class="ln">432  </span></a>            <span class="s1">else:</span>
-<a name="l433"><span class="ln">433  </span></a>                <span class="s0">result </span><span class="s1">= </span><span class="s0">_spline</span><span class="s2">(</span><span class="s0">xi</span><span class="s2">, </span><span class="s0">nu</span><span class="s1">=</span><span class="s0">nu</span><span class="s2">)</span>
+<a name="l433"><span class="ln">433  </span></a>                <span class="s0">result </span><span
+            class="s1">= </span><span class="s0">_spline</span><span class="s2">(</span><span class="s0">xi</span><span
+            class="s2">, </span><span class="s0">nu</span><span class="s1">=</span><span class="s0">nu</span><span
+            class="s2">)</span>
 <a name="l434"><span class="ln">434  </span></a>
-<a name="l435"><span class="ln">435  </span></a>        <span class="s1">if not </span><span class="s0">self</span><span class="s2">.</span><span class="s0">bounds_error </span><span class="s1">and </span><span class="s0">self</span><span class="s2">.</span><span class="s0">fill_value </span><span class="s1">is not None:</span>
-<a name="l436"><span class="ln">436  </span></a>            <span class="s0">result</span><span class="s2">[</span><span class="s0">out_of_bounds</span><span class="s2">] </span><span class="s1">= </span><span class="s0">self</span><span class="s2">.</span><span class="s0">fill_value</span>
+<a name="l435"><span class="ln">435  </span></a>        <span class="s1">if not </span><span class="s0">self</span><span
+            class="s2">.</span><span class="s0">bounds_error </span><span class="s1">and </span><span
+            class="s0">self</span><span class="s2">.</span><span class="s0">fill_value </span><span class="s1">is not None:</span>
+<a name="l436"><span class="ln">436  </span></a>            <span class="s0">result</span><span class="s2">[</span><span
+            class="s0">out_of_bounds</span><span class="s2">] </span><span class="s1">= </span><span
+            class="s0">self</span><span class="s2">.</span><span class="s0">fill_value</span>
 <a name="l437"><span class="ln">437  </span></a>
 <a name="l438"><span class="ln">438  </span></a>        <span class="s4"># f(nan) = nan, if any</span>
-<a name="l439"><span class="ln">439  </span></a>        <span class="s1">if </span><span class="s0">np</span><span class="s2">.</span><span class="s0">any</span><span class="s2">(</span><span class="s0">nans</span><span class="s2">)</span><span class="s1">:</span>
-<a name="l440"><span class="ln">440  </span></a>            <span class="s0">result</span><span class="s2">[</span><span class="s0">nans</span><span class="s2">] </span><span class="s1">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">nan</span>
-<a name="l441"><span class="ln">441  </span></a>        <span class="s1">return </span><span class="s0">result</span><span class="s2">.</span><span class="s0">reshape</span><span class="s2">(</span><span class="s0">xi_shape</span><span class="s2">[</span><span class="s1">:-</span><span class="s5">1</span><span class="s2">] </span><span class="s1">+ </span><span class="s0">self</span><span class="s2">.</span><span class="s0">values</span><span class="s2">.</span><span class="s0">shape</span><span class="s2">[</span><span class="s0">ndim</span><span class="s1">:</span><span class="s2">])</span>
+<a name="l439"><span class="ln">439  </span></a>        <span class="s1">if </span><span class="s0">np</span><span
+            class="s2">.</span><span class="s0">any</span><span class="s2">(</span><span class="s0">nans</span><span
+            class="s2">)</span><span class="s1">:</span>
+<a name="l440"><span class="ln">440  </span></a>            <span class="s0">result</span><span class="s2">[</span><span
+            class="s0">nans</span><span class="s2">] </span><span class="s1">= </span><span class="s0">np</span><span
+            class="s2">.</span><span class="s0">nan</span>
+<a name="l441"><span class="ln">441  </span></a>        <span class="s1">return </span><span
+            class="s0">result</span><span class="s2">.</span><span class="s0">reshape</span><span
+            class="s2">(</span><span class="s0">xi_shape</span><span class="s2">[</span><span class="s1">:-</span><span
+            class="s5">1</span><span class="s2">] </span><span class="s1">+ </span><span class="s0">self</span><span
+            class="s2">.</span><span class="s0">values</span><span class="s2">.</span><span class="s0">shape</span><span
+            class="s2">[</span><span class="s0">ndim</span><span class="s1">:</span><span class="s2">])</span>
 <a name="l442"><span class="ln">442  </span></a>
-<a name="l443"><span class="ln">443  </span></a>    <span class="s1">def </span><span class="s0">_prepare_xi</span><span class="s2">(</span><span class="s0">self</span><span class="s2">, </span><span class="s0">xi</span><span class="s2">)</span><span class="s1">:</span>
-<a name="l444"><span class="ln">444  </span></a>        <span class="s0">ndim </span><span class="s1">= </span><span class="s0">len</span><span class="s2">(</span><span class="s0">self</span><span class="s2">.</span><span class="s0">grid</span><span class="s2">)</span>
-<a name="l445"><span class="ln">445  </span></a>        <span class="s0">xi </span><span class="s1">= </span><span class="s0">_ndim_coords_from_arrays</span><span class="s2">(</span><span class="s0">xi</span><span class="s2">, </span><span class="s0">ndim</span><span class="s1">=</span><span class="s0">ndim</span><span class="s2">)</span>
-<a name="l446"><span class="ln">446  </span></a>        <span class="s1">if </span><span class="s0">xi</span><span class="s2">.</span><span class="s0">shape</span><span class="s2">[</span><span class="s1">-</span><span class="s5">1</span><span class="s2">] </span><span class="s1">!= </span><span class="s0">len</span><span class="s2">(</span><span class="s0">self</span><span class="s2">.</span><span class="s0">grid</span><span class="s2">)</span><span class="s1">:</span>
-<a name="l447"><span class="ln">447  </span></a>            <span class="s1">raise </span><span class="s0">ValueError</span><span class="s2">(</span><span class="s3">&quot;The requested sample points xi have dimension &quot;</span>
-<a name="l448"><span class="ln">448  </span></a>                             <span class="s3">f&quot;{</span><span class="s0">xi</span><span class="s2">.</span><span class="s0">shape</span><span class="s2">[</span><span class="s1">-</span><span class="s5">1</span><span class="s2">]</span><span class="s3">} but this &quot;</span>
-<a name="l449"><span class="ln">449  </span></a>                             <span class="s3">f&quot;RegularGridInterpolator has dimension {</span><span class="s0">ndim</span><span class="s3">}&quot;</span><span class="s2">)</span>
+<a name="l443"><span class="ln">443  </span></a>    <span class="s1">def </span><span class="s0">_prepare_xi</span><span
+            class="s2">(</span><span class="s0">self</span><span class="s2">, </span><span class="s0">xi</span><span
+            class="s2">)</span><span class="s1">:</span>
+<a name="l444"><span class="ln">444  </span></a>        <span class="s0">ndim </span><span class="s1">= </span><span
+            class="s0">len</span><span class="s2">(</span><span class="s0">self</span><span class="s2">.</span><span
+            class="s0">grid</span><span class="s2">)</span>
+<a name="l445"><span class="ln">445  </span></a>        <span class="s0">xi </span><span class="s1">= </span><span
+            class="s0">_ndim_coords_from_arrays</span><span class="s2">(</span><span class="s0">xi</span><span
+            class="s2">, </span><span class="s0">ndim</span><span class="s1">=</span><span class="s0">ndim</span><span
+            class="s2">)</span>
+<a name="l446"><span class="ln">446  </span></a>        <span class="s1">if </span><span class="s0">xi</span><span
+            class="s2">.</span><span class="s0">shape</span><span class="s2">[</span><span class="s1">-</span><span
+            class="s5">1</span><span class="s2">] </span><span class="s1">!= </span><span class="s0">len</span><span
+            class="s2">(</span><span class="s0">self</span><span class="s2">.</span><span class="s0">grid</span><span
+            class="s2">)</span><span class="s1">:</span>
+<a name="l447"><span class="ln">447  </span></a>            <span class="s1">raise </span><span
+            class="s0">ValueError</span><span class="s2">(</span><span class="s3">&quot;The requested sample points xi have dimension &quot;</span>
+<a name="l448"><span class="ln">448  </span></a>                             <span class="s3">f&quot;{</span><span
+            class="s0">xi</span><span class="s2">.</span><span class="s0">shape</span><span class="s2">[</span><span
+            class="s1">-</span><span class="s5">1</span><span class="s2">]</span><span
+            class="s3">} but this &quot;</span>
+<a name="l449"><span class="ln">449  </span></a>                             <span class="s3">f&quot;RegularGridInterpolator has dimension {</span><span
+            class="s0">ndim</span><span class="s3">}&quot;</span><span class="s2">)</span>
 <a name="l450"><span class="ln">450  </span></a>
-<a name="l451"><span class="ln">451  </span></a>        <span class="s0">xi_shape </span><span class="s1">= </span><span class="s0">xi</span><span class="s2">.</span><span class="s0">shape</span>
-<a name="l452"><span class="ln">452  </span></a>        <span class="s0">xi </span><span class="s1">= </span><span class="s0">xi</span><span class="s2">.</span><span class="s0">reshape</span><span class="s2">(</span><span class="s1">-</span><span class="s5">1</span><span class="s2">, </span><span class="s0">xi_shape</span><span class="s2">[</span><span class="s1">-</span><span class="s5">1</span><span class="s2">])</span>
-<a name="l453"><span class="ln">453  </span></a>        <span class="s0">xi </span><span class="s1">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">asarray</span><span class="s2">(</span><span class="s0">xi</span><span class="s2">, </span><span class="s0">dtype</span><span class="s1">=</span><span class="s0">float</span><span class="s2">)</span>
+<a name="l451"><span class="ln">451  </span></a>        <span class="s0">xi_shape </span><span class="s1">= </span><span
+            class="s0">xi</span><span class="s2">.</span><span class="s0">shape</span>
+<a name="l452"><span class="ln">452  </span></a>        <span class="s0">xi </span><span class="s1">= </span><span
+            class="s0">xi</span><span class="s2">.</span><span class="s0">reshape</span><span class="s2">(</span><span
+            class="s1">-</span><span class="s5">1</span><span class="s2">, </span><span class="s0">xi_shape</span><span
+            class="s2">[</span><span class="s1">-</span><span class="s5">1</span><span class="s2">])</span>
+<a name="l453"><span class="ln">453  </span></a>        <span class="s0">xi </span><span class="s1">= </span><span
+            class="s0">np</span><span class="s2">.</span><span class="s0">asarray</span><span class="s2">(</span><span
+            class="s0">xi</span><span class="s2">, </span><span class="s0">dtype</span><span class="s1">=</span><span
+            class="s0">float</span><span class="s2">)</span>
 <a name="l454"><span class="ln">454  </span></a>
 <a name="l455"><span class="ln">455  </span></a>        <span class="s4"># find nans in input</span>
-<a name="l456"><span class="ln">456  </span></a>        <span class="s0">nans </span><span class="s1">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">any</span><span class="s2">(</span><span class="s0">np</span><span class="s2">.</span><span class="s0">isnan</span><span class="s2">(</span><span class="s0">xi</span><span class="s2">), </span><span class="s0">axis</span><span class="s1">=-</span><span class="s5">1</span><span class="s2">)</span>
+<a name="l456"><span class="ln">456  </span></a>        <span class="s0">nans </span><span class="s1">= </span><span
+            class="s0">np</span><span class="s2">.</span><span class="s0">any</span><span class="s2">(</span><span
+            class="s0">np</span><span class="s2">.</span><span class="s0">isnan</span><span class="s2">(</span><span
+            class="s0">xi</span><span class="s2">), </span><span class="s0">axis</span><span class="s1">=-</span><span
+            class="s5">1</span><span class="s2">)</span>
 <a name="l457"><span class="ln">457  </span></a>
-<a name="l458"><span class="ln">458  </span></a>        <span class="s1">if </span><span class="s0">self</span><span class="s2">.</span><span class="s0">bounds_error</span><span class="s1">:</span>
-<a name="l459"><span class="ln">459  </span></a>            <span class="s1">for </span><span class="s0">i</span><span class="s2">, </span><span class="s0">p </span><span class="s1">in </span><span class="s0">enumerate</span><span class="s2">(</span><span class="s0">xi</span><span class="s2">.</span><span class="s0">T</span><span class="s2">)</span><span class="s1">:</span>
-<a name="l460"><span class="ln">460  </span></a>                <span class="s1">if not </span><span class="s0">np</span><span class="s2">.</span><span class="s0">logical_and</span><span class="s2">(</span><span class="s0">np</span><span class="s2">.</span><span class="s0">all</span><span class="s2">(</span><span class="s0">self</span><span class="s2">.</span><span class="s0">grid</span><span class="s2">[</span><span class="s0">i</span><span class="s2">][</span><span class="s5">0</span><span class="s2">] </span><span class="s1">&lt;= </span><span class="s0">p</span><span class="s2">),</span>
-<a name="l461"><span class="ln">461  </span></a>                                      <span class="s0">np</span><span class="s2">.</span><span class="s0">all</span><span class="s2">(</span><span class="s0">p </span><span class="s1">&lt;= </span><span class="s0">self</span><span class="s2">.</span><span class="s0">grid</span><span class="s2">[</span><span class="s0">i</span><span class="s2">][</span><span class="s1">-</span><span class="s5">1</span><span class="s2">]))</span><span class="s1">:</span>
-<a name="l462"><span class="ln">462  </span></a>                    <span class="s1">raise </span><span class="s0">ValueError</span><span class="s2">(</span><span class="s3">&quot;One of the requested xi is out of bounds &quot;</span>
-<a name="l463"><span class="ln">463  </span></a>                                     <span class="s3">&quot;in dimension %d&quot; </span><span class="s1">% </span><span class="s0">i</span><span class="s2">)</span>
+<a name="l458"><span class="ln">458  </span></a>        <span class="s1">if </span><span class="s0">self</span><span
+            class="s2">.</span><span class="s0">bounds_error</span><span class="s1">:</span>
+<a name="l459"><span class="ln">459  </span></a>            <span class="s1">for </span><span class="s0">i</span><span
+            class="s2">, </span><span class="s0">p </span><span class="s1">in </span><span
+            class="s0">enumerate</span><span class="s2">(</span><span class="s0">xi</span><span class="s2">.</span><span
+            class="s0">T</span><span class="s2">)</span><span class="s1">:</span>
+<a name="l460"><span class="ln">460  </span></a>                <span class="s1">if not </span><span
+            class="s0">np</span><span class="s2">.</span><span class="s0">logical_and</span><span
+            class="s2">(</span><span class="s0">np</span><span class="s2">.</span><span class="s0">all</span><span
+            class="s2">(</span><span class="s0">self</span><span class="s2">.</span><span class="s0">grid</span><span
+            class="s2">[</span><span class="s0">i</span><span class="s2">][</span><span class="s5">0</span><span
+            class="s2">] </span><span class="s1">&lt;= </span><span class="s0">p</span><span class="s2">),</span>
+<a name="l461"><span class="ln">461  </span></a>                                      <span class="s0">np</span><span
+            class="s2">.</span><span class="s0">all</span><span class="s2">(</span><span class="s0">p </span><span
+            class="s1">&lt;= </span><span class="s0">self</span><span class="s2">.</span><span
+            class="s0">grid</span><span class="s2">[</span><span class="s0">i</span><span class="s2">][</span><span
+            class="s1">-</span><span class="s5">1</span><span class="s2">]))</span><span class="s1">:</span>
+<a name="l462"><span class="ln">462  </span></a>                    <span class="s1">raise </span><span class="s0">ValueError</span><span
+            class="s2">(</span><span class="s3">&quot;One of the requested xi is out of bounds &quot;</span>
+<a name="l463"><span class="ln">463  </span></a>                                     <span class="s3">&quot;in dimension %d&quot; </span><span
+            class="s1">% </span><span class="s0">i</span><span class="s2">)</span>
 <a name="l464"><span class="ln">464  </span></a>            <span class="s0">out_of_bounds </span><span class="s1">= None</span>
 <a name="l465"><span class="ln">465  </span></a>        <span class="s1">else:</span>
-<a name="l466"><span class="ln">466  </span></a>            <span class="s0">out_of_bounds </span><span class="s1">= </span><span class="s0">self</span><span class="s2">.</span><span class="s0">_find_out_of_bounds</span><span class="s2">(</span><span class="s0">xi</span><span class="s2">.</span><span class="s0">T</span><span class="s2">)</span>
+<a name="l466"><span class="ln">466  </span></a>            <span class="s0">out_of_bounds </span><span
+            class="s1">= </span><span class="s0">self</span><span class="s2">.</span><span class="s0">_find_out_of_bounds</span><span
+            class="s2">(</span><span class="s0">xi</span><span class="s2">.</span><span class="s0">T</span><span
+            class="s2">)</span>
 <a name="l467"><span class="ln">467  </span></a>
-<a name="l468"><span class="ln">468  </span></a>        <span class="s1">return </span><span class="s0">xi</span><span class="s2">, </span><span class="s0">xi_shape</span><span class="s2">, </span><span class="s0">ndim</span><span class="s2">, </span><span class="s0">nans</span><span class="s2">, </span><span class="s0">out_of_bounds</span>
+<a name="l468"><span class="ln">468  </span></a>        <span class="s1">return </span><span class="s0">xi</span><span
+            class="s2">, </span><span class="s0">xi_shape</span><span class="s2">, </span><span
+            class="s0">ndim</span><span class="s2">, </span><span class="s0">nans</span><span class="s2">, </span><span
+            class="s0">out_of_bounds</span>
 <a name="l469"><span class="ln">469  </span></a>
-<a name="l470"><span class="ln">470  </span></a>    <span class="s1">def </span><span class="s0">_evaluate_linear</span><span class="s2">(</span><span class="s0">self</span><span class="s2">, </span><span class="s0">indices</span><span class="s2">, </span><span class="s0">norm_distances</span><span class="s2">)</span><span class="s1">:</span>
+<a name="l470"><span class="ln">470  </span></a>    <span class="s1">def </span><span class="s0">_evaluate_linear</span><span
+            class="s2">(</span><span class="s0">self</span><span class="s2">, </span><span
+            class="s0">indices</span><span class="s2">, </span><span class="s0">norm_distances</span><span
+            class="s2">)</span><span class="s1">:</span>
 <a name="l471"><span class="ln">471  </span></a>        <span class="s4"># slice for broadcasting over trailing dimensions in self.values</span>
-<a name="l472"><span class="ln">472  </span></a>        <span class="s0">vslice </span><span class="s1">= </span><span class="s2">(</span><span class="s0">slice</span><span class="s2">(</span><span class="s1">None</span><span class="s2">),) </span><span class="s1">+ </span><span class="s2">(</span><span class="s1">None</span><span class="s2">,)</span><span class="s1">*</span><span class="s2">(</span><span class="s0">self</span><span class="s2">.</span><span class="s0">values</span><span class="s2">.</span><span class="s0">ndim </span><span class="s1">- </span><span class="s0">len</span><span class="s2">(</span><span class="s0">indices</span><span class="s2">))</span>
+<a name="l472"><span class="ln">472  </span></a>        <span class="s0">vslice </span><span class="s1">= </span><span
+            class="s2">(</span><span class="s0">slice</span><span class="s2">(</span><span class="s1">None</span><span
+            class="s2">),) </span><span class="s1">+ </span><span class="s2">(</span><span class="s1">None</span><span
+            class="s2">,)</span><span class="s1">*</span><span class="s2">(</span><span class="s0">self</span><span
+            class="s2">.</span><span class="s0">values</span><span class="s2">.</span><span class="s0">ndim </span><span
+            class="s1">- </span><span class="s0">len</span><span class="s2">(</span><span class="s0">indices</span><span
+            class="s2">))</span>
 <a name="l473"><span class="ln">473  </span></a>
 <a name="l474"><span class="ln">474  </span></a>        <span class="s4"># Compute shifting up front before zipping everything together</span>
-<a name="l475"><span class="ln">475  </span></a>        <span class="s0">shift_norm_distances </span><span class="s1">= </span><span class="s2">[</span><span class="s5">1 </span><span class="s1">- </span><span class="s0">yi </span><span class="s1">for </span><span class="s0">yi </span><span class="s1">in </span><span class="s0">norm_distances</span><span class="s2">]</span>
-<a name="l476"><span class="ln">476  </span></a>        <span class="s0">shift_indices </span><span class="s1">= </span><span class="s2">[</span><span class="s0">i </span><span class="s1">+ </span><span class="s5">1 </span><span class="s1">for </span><span class="s0">i </span><span class="s1">in </span><span class="s0">indices</span><span class="s2">]</span>
+<a name="l475"><span class="ln">475  </span></a>        <span class="s0">shift_norm_distances </span><span
+            class="s1">= </span><span class="s2">[</span><span class="s5">1 </span><span class="s1">- </span><span
+            class="s0">yi </span><span class="s1">for </span><span class="s0">yi </span><span class="s1">in </span><span
+            class="s0">norm_distances</span><span class="s2">]</span>
+<a name="l476"><span class="ln">476  </span></a>        <span class="s0">shift_indices </span><span class="s1">= </span><span
+            class="s2">[</span><span class="s0">i </span><span class="s1">+ </span><span class="s5">1 </span><span
+            class="s1">for </span><span class="s0">i </span><span class="s1">in </span><span
+            class="s0">indices</span><span class="s2">]</span>
 <a name="l477"><span class="ln">477  </span></a>
 <a name="l478"><span class="ln">478  </span></a>        <span class="s4"># The formula for linear interpolation in 2d takes the form:</span>
 <a name="l479"><span class="ln">479  </span></a>        <span class="s4"># values = self.values[(i0, i1)] * (1 - y0) * (1 - y1) + \</span>
@@ -501,44 +872,104 @@ _rgi.py</font>
 <a name="l481"><span class="ln">481  </span></a>        <span class="s4">#          self.values[(i0 + 1, i1)] * y0 * (1 - y1) + \</span>
 <a name="l482"><span class="ln">482  </span></a>        <span class="s4">#          self.values[(i0 + 1, i1 + 1)] * y0 * y1</span>
 <a name="l483"><span class="ln">483  </span></a>        <span class="s4"># We pair i with 1 - yi (zipped1) and i + 1 with yi (zipped2)</span>
-<a name="l484"><span class="ln">484  </span></a>        <span class="s0">zipped1 </span><span class="s1">= </span><span class="s0">zip</span><span class="s2">(</span><span class="s0">indices</span><span class="s2">, </span><span class="s0">shift_norm_distances</span><span class="s2">)</span>
-<a name="l485"><span class="ln">485  </span></a>        <span class="s0">zipped2 </span><span class="s1">= </span><span class="s0">zip</span><span class="s2">(</span><span class="s0">shift_indices</span><span class="s2">, </span><span class="s0">norm_distances</span><span class="s2">)</span>
+<a name="l484"><span class="ln">484  </span></a>        <span class="s0">zipped1 </span><span class="s1">= </span><span
+            class="s0">zip</span><span class="s2">(</span><span class="s0">indices</span><span class="s2">, </span><span
+            class="s0">shift_norm_distances</span><span class="s2">)</span>
+<a name="l485"><span class="ln">485  </span></a>        <span class="s0">zipped2 </span><span class="s1">= </span><span
+            class="s0">zip</span><span class="s2">(</span><span class="s0">shift_indices</span><span
+            class="s2">, </span><span class="s0">norm_distances</span><span class="s2">)</span>
 <a name="l486"><span class="ln">486  </span></a>
 <a name="l487"><span class="ln">487  </span></a>        <span class="s4"># Take all products of zipped1 and zipped2 and iterate over them</span>
 <a name="l488"><span class="ln">488  </span></a>        <span class="s4"># to get the terms in the above formula. This corresponds to iterating</span>
 <a name="l489"><span class="ln">489  </span></a>        <span class="s4"># over the vertices of a hypercube.</span>
-<a name="l490"><span class="ln">490  </span></a>        <span class="s0">hypercube </span><span class="s1">= </span><span class="s0">itertools</span><span class="s2">.</span><span class="s0">product</span><span class="s2">(</span><span class="s1">*</span><span class="s0">zip</span><span class="s2">(</span><span class="s0">zipped1</span><span class="s2">, </span><span class="s0">zipped2</span><span class="s2">))</span>
-<a name="l491"><span class="ln">491  </span></a>        <span class="s0">value </span><span class="s1">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">array</span><span class="s2">([</span><span class="s5">0.</span><span class="s2">])</span>
-<a name="l492"><span class="ln">492  </span></a>        <span class="s1">for </span><span class="s0">h </span><span class="s1">in </span><span class="s0">hypercube</span><span class="s1">:</span>
-<a name="l493"><span class="ln">493  </span></a>            <span class="s0">edge_indices</span><span class="s2">, </span><span class="s0">weights </span><span class="s1">= </span><span class="s0">zip</span><span class="s2">(</span><span class="s1">*</span><span class="s0">h</span><span class="s2">)</span>
-<a name="l494"><span class="ln">494  </span></a>            <span class="s0">weight </span><span class="s1">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">array</span><span class="s2">([</span><span class="s5">1.</span><span class="s2">])</span>
-<a name="l495"><span class="ln">495  </span></a>            <span class="s1">for </span><span class="s0">w </span><span class="s1">in </span><span class="s0">weights</span><span class="s1">:</span>
-<a name="l496"><span class="ln">496  </span></a>                <span class="s0">weight </span><span class="s1">= </span><span class="s0">weight </span><span class="s1">* </span><span class="s0">w</span>
-<a name="l497"><span class="ln">497  </span></a>            <span class="s0">term </span><span class="s1">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">asarray</span><span class="s2">(</span><span class="s0">self</span><span class="s2">.</span><span class="s0">values</span><span class="s2">[</span><span class="s0">edge_indices</span><span class="s2">]) </span><span class="s1">* </span><span class="s0">weight</span><span class="s2">[</span><span class="s0">vslice</span><span class="s2">]</span>
-<a name="l498"><span class="ln">498  </span></a>            <span class="s0">value </span><span class="s1">= </span><span class="s0">value </span><span class="s1">+ </span><span class="s0">term   </span><span class="s4"># cannot use += because broadcasting</span>
+<a name="l490"><span class="ln">490  </span></a>        <span class="s0">hypercube </span><span
+            class="s1">= </span><span class="s0">itertools</span><span class="s2">.</span><span
+            class="s0">product</span><span class="s2">(</span><span class="s1">*</span><span class="s0">zip</span><span
+            class="s2">(</span><span class="s0">zipped1</span><span class="s2">, </span><span
+            class="s0">zipped2</span><span class="s2">))</span>
+<a name="l491"><span class="ln">491  </span></a>        <span class="s0">value </span><span class="s1">= </span><span
+            class="s0">np</span><span class="s2">.</span><span class="s0">array</span><span class="s2">([</span><span
+            class="s5">0.</span><span class="s2">])</span>
+<a name="l492"><span class="ln">492  </span></a>        <span class="s1">for </span><span class="s0">h </span><span
+            class="s1">in </span><span class="s0">hypercube</span><span class="s1">:</span>
+<a name="l493"><span class="ln">493  </span></a>            <span class="s0">edge_indices</span><span
+            class="s2">, </span><span class="s0">weights </span><span class="s1">= </span><span
+            class="s0">zip</span><span class="s2">(</span><span class="s1">*</span><span class="s0">h</span><span
+            class="s2">)</span>
+<a name="l494"><span class="ln">494  </span></a>            <span class="s0">weight </span><span
+            class="s1">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">array</span><span
+            class="s2">([</span><span class="s5">1.</span><span class="s2">])</span>
+<a name="l495"><span class="ln">495  </span></a>            <span class="s1">for </span><span class="s0">w </span><span
+            class="s1">in </span><span class="s0">weights</span><span class="s1">:</span>
+<a name="l496"><span class="ln">496  </span></a>                <span class="s0">weight </span><span
+            class="s1">= </span><span class="s0">weight </span><span class="s1">* </span><span class="s0">w</span>
+<a name="l497"><span class="ln">497  </span></a>            <span class="s0">term </span><span class="s1">= </span><span
+            class="s0">np</span><span class="s2">.</span><span class="s0">asarray</span><span class="s2">(</span><span
+            class="s0">self</span><span class="s2">.</span><span class="s0">values</span><span class="s2">[</span><span
+            class="s0">edge_indices</span><span class="s2">]) </span><span class="s1">* </span><span
+            class="s0">weight</span><span class="s2">[</span><span class="s0">vslice</span><span class="s2">]</span>
+<a name="l498"><span class="ln">498  </span></a>            <span class="s0">value </span><span
+            class="s1">= </span><span class="s0">value </span><span class="s1">+ </span><span
+            class="s0">term   </span><span class="s4"># cannot use += because broadcasting</span>
 <a name="l499"><span class="ln">499  </span></a>        <span class="s1">return </span><span class="s0">value</span>
 <a name="l500"><span class="ln">500  </span></a>
-<a name="l501"><span class="ln">501  </span></a>    <span class="s1">def </span><span class="s0">_evaluate_nearest</span><span class="s2">(</span><span class="s0">self</span><span class="s2">, </span><span class="s0">indices</span><span class="s2">, </span><span class="s0">norm_distances</span><span class="s2">)</span><span class="s1">:</span>
-<a name="l502"><span class="ln">502  </span></a>        <span class="s0">idx_res </span><span class="s1">= </span><span class="s2">[</span><span class="s0">np</span><span class="s2">.</span><span class="s0">where</span><span class="s2">(</span><span class="s0">yi </span><span class="s1">&lt;= </span><span class="s5">.5</span><span class="s2">, </span><span class="s0">i</span><span class="s2">, </span><span class="s0">i </span><span class="s1">+ </span><span class="s5">1</span><span class="s2">)</span>
-<a name="l503"><span class="ln">503  </span></a>                   <span class="s1">for </span><span class="s0">i</span><span class="s2">, </span><span class="s0">yi </span><span class="s1">in </span><span class="s0">zip</span><span class="s2">(</span><span class="s0">indices</span><span class="s2">, </span><span class="s0">norm_distances</span><span class="s2">)]</span>
-<a name="l504"><span class="ln">504  </span></a>        <span class="s1">return </span><span class="s0">self</span><span class="s2">.</span><span class="s0">values</span><span class="s2">[</span><span class="s0">tuple</span><span class="s2">(</span><span class="s0">idx_res</span><span class="s2">)]</span>
+<a name="l501"><span class="ln">501  </span></a>    <span class="s1">def </span><span
+            class="s0">_evaluate_nearest</span><span class="s2">(</span><span class="s0">self</span><span
+            class="s2">, </span><span class="s0">indices</span><span class="s2">, </span><span
+            class="s0">norm_distances</span><span class="s2">)</span><span class="s1">:</span>
+<a name="l502"><span class="ln">502  </span></a>        <span class="s0">idx_res </span><span class="s1">= </span><span
+            class="s2">[</span><span class="s0">np</span><span class="s2">.</span><span class="s0">where</span><span
+            class="s2">(</span><span class="s0">yi </span><span class="s1">&lt;= </span><span class="s5">.5</span><span
+            class="s2">, </span><span class="s0">i</span><span class="s2">, </span><span class="s0">i </span><span
+            class="s1">+ </span><span class="s5">1</span><span class="s2">)</span>
+<a name="l503"><span class="ln">503  </span></a>                   <span class="s1">for </span><span class="s0">i</span><span
+            class="s2">, </span><span class="s0">yi </span><span class="s1">in </span><span class="s0">zip</span><span
+            class="s2">(</span><span class="s0">indices</span><span class="s2">, </span><span
+            class="s0">norm_distances</span><span class="s2">)]</span>
+<a name="l504"><span class="ln">504  </span></a>        <span class="s1">return </span><span class="s0">self</span><span
+            class="s2">.</span><span class="s0">values</span><span class="s2">[</span><span class="s0">tuple</span><span
+            class="s2">(</span><span class="s0">idx_res</span><span class="s2">)]</span>
 <a name="l505"><span class="ln">505  </span></a>
-<a name="l506"><span class="ln">506  </span></a>    <span class="s1">def </span><span class="s0">_validate_grid_dimensions</span><span class="s2">(</span><span class="s0">self</span><span class="s2">, </span><span class="s0">points</span><span class="s2">, </span><span class="s0">method</span><span class="s2">)</span><span class="s1">:</span>
-<a name="l507"><span class="ln">507  </span></a>        <span class="s0">k </span><span class="s1">= </span><span class="s0">self</span><span class="s2">.</span><span class="s0">_SPLINE_DEGREE_MAP</span><span class="s2">[</span><span class="s0">method</span><span class="s2">]</span>
-<a name="l508"><span class="ln">508  </span></a>        <span class="s1">for </span><span class="s0">i</span><span class="s2">, </span><span class="s0">point </span><span class="s1">in </span><span class="s0">enumerate</span><span class="s2">(</span><span class="s0">points</span><span class="s2">)</span><span class="s1">:</span>
-<a name="l509"><span class="ln">509  </span></a>            <span class="s0">ndim </span><span class="s1">= </span><span class="s0">len</span><span class="s2">(</span><span class="s0">np</span><span class="s2">.</span><span class="s0">atleast_1d</span><span class="s2">(</span><span class="s0">point</span><span class="s2">))</span>
-<a name="l510"><span class="ln">510  </span></a>            <span class="s1">if </span><span class="s0">ndim </span><span class="s1">&lt;= </span><span class="s0">k</span><span class="s1">:</span>
-<a name="l511"><span class="ln">511  </span></a>                <span class="s1">raise </span><span class="s0">ValueError</span><span class="s2">(</span><span class="s3">f&quot;There are {</span><span class="s0">ndim</span><span class="s3">} points in dimension {</span><span class="s0">i</span><span class="s3">},&quot;</span>
-<a name="l512"><span class="ln">512  </span></a>                                 <span class="s3">f&quot; but method {</span><span class="s0">method</span><span class="s3">} requires at least &quot;</span>
-<a name="l513"><span class="ln">513  </span></a>                                 <span class="s3">f&quot; {</span><span class="s0">k</span><span class="s1">+</span><span class="s5">1</span><span class="s3">} points per dimension.&quot;</span><span class="s2">)</span>
+<a name="l506"><span class="ln">506  </span></a>    <span class="s1">def </span><span class="s0">_validate_grid_dimensions</span><span
+            class="s2">(</span><span class="s0">self</span><span class="s2">, </span><span class="s0">points</span><span
+            class="s2">, </span><span class="s0">method</span><span class="s2">)</span><span class="s1">:</span>
+<a name="l507"><span class="ln">507  </span></a>        <span class="s0">k </span><span class="s1">= </span><span
+            class="s0">self</span><span class="s2">.</span><span class="s0">_SPLINE_DEGREE_MAP</span><span
+            class="s2">[</span><span class="s0">method</span><span class="s2">]</span>
+<a name="l508"><span class="ln">508  </span></a>        <span class="s1">for </span><span class="s0">i</span><span
+            class="s2">, </span><span class="s0">point </span><span class="s1">in </span><span
+            class="s0">enumerate</span><span class="s2">(</span><span class="s0">points</span><span
+            class="s2">)</span><span class="s1">:</span>
+<a name="l509"><span class="ln">509  </span></a>            <span class="s0">ndim </span><span class="s1">= </span><span
+            class="s0">len</span><span class="s2">(</span><span class="s0">np</span><span class="s2">.</span><span
+            class="s0">atleast_1d</span><span class="s2">(</span><span class="s0">point</span><span class="s2">))</span>
+<a name="l510"><span class="ln">510  </span></a>            <span class="s1">if </span><span
+            class="s0">ndim </span><span class="s1">&lt;= </span><span class="s0">k</span><span class="s1">:</span>
+<a name="l511"><span class="ln">511  </span></a>                <span class="s1">raise </span><span class="s0">ValueError</span><span
+            class="s2">(</span><span class="s3">f&quot;There are {</span><span class="s0">ndim</span><span class="s3">} points in dimension {</span><span
+            class="s0">i</span><span class="s3">},&quot;</span>
+<a name="l512"><span class="ln">512  </span></a>                                 <span
+            class="s3">f&quot; but method {</span><span class="s0">method</span><span class="s3">} requires at least &quot;</span>
+<a name="l513"><span class="ln">513  </span></a>                                 <span class="s3">f&quot; {</span><span
+            class="s0">k</span><span class="s1">+</span><span class="s5">1</span><span class="s3">} points per dimension.&quot;</span><span
+            class="s2">)</span>
 <a name="l514"><span class="ln">514  </span></a>
-<a name="l515"><span class="ln">515  </span></a>    <span class="s1">def </span><span class="s0">_evaluate_spline</span><span class="s2">(</span><span class="s0">self</span><span class="s2">, </span><span class="s0">xi</span><span class="s2">, </span><span class="s0">method</span><span class="s2">)</span><span class="s1">:</span>
+<a name="l515"><span class="ln">515  </span></a>    <span class="s1">def </span><span class="s0">_evaluate_spline</span><span
+            class="s2">(</span><span class="s0">self</span><span class="s2">, </span><span class="s0">xi</span><span
+            class="s2">, </span><span class="s0">method</span><span class="s2">)</span><span class="s1">:</span>
 <a name="l516"><span class="ln">516  </span></a>        <span class="s4"># ensure xi is 2D list of points to evaluate (`m` is the number of</span>
 <a name="l517"><span class="ln">517  </span></a>        <span class="s4"># points and `n` is the number of interpolation dimensions,</span>
 <a name="l518"><span class="ln">518  </span></a>        <span class="s4"># ``n == len(self.grid)``.)</span>
-<a name="l519"><span class="ln">519  </span></a>        <span class="s1">if </span><span class="s0">xi</span><span class="s2">.</span><span class="s0">ndim </span><span class="s1">== </span><span class="s5">1</span><span class="s1">:</span>
-<a name="l520"><span class="ln">520  </span></a>            <span class="s0">xi </span><span class="s1">= </span><span class="s0">xi</span><span class="s2">.</span><span class="s0">reshape</span><span class="s2">((</span><span class="s5">1</span><span class="s2">, </span><span class="s0">xi</span><span class="s2">.</span><span class="s0">size</span><span class="s2">))</span>
-<a name="l521"><span class="ln">521  </span></a>        <span class="s0">m</span><span class="s2">, </span><span class="s0">n </span><span class="s1">= </span><span class="s0">xi</span><span class="s2">.</span><span class="s0">shape</span>
+<a name="l519"><span class="ln">519  </span></a>        <span class="s1">if </span><span class="s0">xi</span><span
+            class="s2">.</span><span class="s0">ndim </span><span class="s1">== </span><span class="s5">1</span><span
+            class="s1">:</span>
+<a name="l520"><span class="ln">520  </span></a>            <span class="s0">xi </span><span class="s1">= </span><span
+            class="s0">xi</span><span class="s2">.</span><span class="s0">reshape</span><span class="s2">((</span><span
+            class="s5">1</span><span class="s2">, </span><span class="s0">xi</span><span class="s2">.</span><span
+            class="s0">size</span><span class="s2">))</span>
+<a name="l521"><span class="ln">521  </span></a>        <span class="s0">m</span><span class="s2">, </span><span
+            class="s0">n </span><span class="s1">= </span><span class="s0">xi</span><span class="s2">.</span><span
+            class="s0">shape</span>
 <a name="l522"><span class="ln">522  </span></a>
 <a name="l523"><span class="ln">523  </span></a>        <span class="s4"># Reorder the axes: n-dimensional process iterates over the</span>
 <a name="l524"><span class="ln">524  </span></a>        <span class="s4"># interpolation axes from the last axis downwards: E.g. for a 4D grid</span>
@@ -546,15 +977,30 @@ _rgi.py</font>
 <a name="l526"><span class="ln">526  </span></a>        <span class="s4"># the 0th axis of its argument array (for 1D routine it's its ``y``</span>
 <a name="l527"><span class="ln">527  </span></a>        <span class="s4"># array). Thus permute the interpolation axes of `values` *and keep</span>
 <a name="l528"><span class="ln">528  </span></a>        <span class="s4"># trailing dimensions trailing*.</span>
-<a name="l529"><span class="ln">529  </span></a>        <span class="s0">axes </span><span class="s1">= </span><span class="s0">tuple</span><span class="s2">(</span><span class="s0">range</span><span class="s2">(</span><span class="s0">self</span><span class="s2">.</span><span class="s0">values</span><span class="s2">.</span><span class="s0">ndim</span><span class="s2">))</span>
-<a name="l530"><span class="ln">530  </span></a>        <span class="s0">axx </span><span class="s1">= </span><span class="s0">axes</span><span class="s2">[</span><span class="s1">:</span><span class="s0">n</span><span class="s2">][</span><span class="s1">::-</span><span class="s5">1</span><span class="s2">] </span><span class="s1">+ </span><span class="s0">axes</span><span class="s2">[</span><span class="s0">n</span><span class="s1">:</span><span class="s2">]</span>
-<a name="l531"><span class="ln">531  </span></a>        <span class="s0">values </span><span class="s1">= </span><span class="s0">self</span><span class="s2">.</span><span class="s0">values</span><span class="s2">.</span><span class="s0">transpose</span><span class="s2">(</span><span class="s0">axx</span><span class="s2">)</span>
+<a name="l529"><span class="ln">529  </span></a>        <span class="s0">axes </span><span class="s1">= </span><span
+            class="s0">tuple</span><span class="s2">(</span><span class="s0">range</span><span class="s2">(</span><span
+            class="s0">self</span><span class="s2">.</span><span class="s0">values</span><span class="s2">.</span><span
+            class="s0">ndim</span><span class="s2">))</span>
+<a name="l530"><span class="ln">530  </span></a>        <span class="s0">axx </span><span class="s1">= </span><span
+            class="s0">axes</span><span class="s2">[</span><span class="s1">:</span><span class="s0">n</span><span
+            class="s2">][</span><span class="s1">::-</span><span class="s5">1</span><span class="s2">] </span><span
+            class="s1">+ </span><span class="s0">axes</span><span class="s2">[</span><span class="s0">n</span><span
+            class="s1">:</span><span class="s2">]</span>
+<a name="l531"><span class="ln">531  </span></a>        <span class="s0">values </span><span class="s1">= </span><span
+            class="s0">self</span><span class="s2">.</span><span class="s0">values</span><span class="s2">.</span><span
+            class="s0">transpose</span><span class="s2">(</span><span class="s0">axx</span><span class="s2">)</span>
 <a name="l532"><span class="ln">532  </span></a>
-<a name="l533"><span class="ln">533  </span></a>        <span class="s1">if </span><span class="s0">method </span><span class="s1">== </span><span class="s3">'pchip'</span><span class="s1">:</span>
-<a name="l534"><span class="ln">534  </span></a>            <span class="s0">_eval_func </span><span class="s1">= </span><span class="s0">self</span><span class="s2">.</span><span class="s0">_do_pchip</span>
+<a name="l533"><span class="ln">533  </span></a>        <span class="s1">if </span><span class="s0">method </span><span
+            class="s1">== </span><span class="s3">'pchip'</span><span class="s1">:</span>
+<a name="l534"><span class="ln">534  </span></a>            <span class="s0">_eval_func </span><span
+            class="s1">= </span><span class="s0">self</span><span class="s2">.</span><span class="s0">_do_pchip</span>
 <a name="l535"><span class="ln">535  </span></a>        <span class="s1">else:</span>
-<a name="l536"><span class="ln">536  </span></a>            <span class="s0">_eval_func </span><span class="s1">= </span><span class="s0">self</span><span class="s2">.</span><span class="s0">_do_spline_fit</span>
-<a name="l537"><span class="ln">537  </span></a>        <span class="s0">k </span><span class="s1">= </span><span class="s0">self</span><span class="s2">.</span><span class="s0">_SPLINE_DEGREE_MAP</span><span class="s2">[</span><span class="s0">method</span><span class="s2">]</span>
+<a name="l536"><span class="ln">536  </span></a>            <span class="s0">_eval_func </span><span
+            class="s1">= </span><span class="s0">self</span><span class="s2">.</span><span
+            class="s0">_do_spline_fit</span>
+<a name="l537"><span class="ln">537  </span></a>        <span class="s0">k </span><span class="s1">= </span><span
+            class="s0">self</span><span class="s2">.</span><span class="s0">_SPLINE_DEGREE_MAP</span><span
+            class="s2">[</span><span class="s0">method</span><span class="s2">]</span>
 <a name="l538"><span class="ln">538  </span></a>
 <a name="l539"><span class="ln">539  </span></a>        <span class="s4"># Non-stationary procedure: difficult to vectorize this part entirely</span>
 <a name="l540"><span class="ln">540  </span></a>        <span class="s4"># into numpy-level operations. Unfortunately this requires explicit</span>
@@ -562,58 +1008,131 @@ _rgi.py</font>
 <a name="l542"><span class="ln">542  </span></a>
 <a name="l543"><span class="ln">543  </span></a>        <span class="s4"># can at least vectorize the first pass across all points in the</span>
 <a name="l544"><span class="ln">544  </span></a>        <span class="s4"># last variable of xi.</span>
-<a name="l545"><span class="ln">545  </span></a>        <span class="s0">last_dim </span><span class="s1">= </span><span class="s0">n </span><span class="s1">- </span><span class="s5">1</span>
-<a name="l546"><span class="ln">546  </span></a>        <span class="s0">first_values </span><span class="s1">= </span><span class="s0">_eval_func</span><span class="s2">(</span><span class="s0">self</span><span class="s2">.</span><span class="s0">grid</span><span class="s2">[</span><span class="s0">last_dim</span><span class="s2">],</span>
-<a name="l547"><span class="ln">547  </span></a>                                  <span class="s0">values</span><span class="s2">,</span>
-<a name="l548"><span class="ln">548  </span></a>                                  <span class="s0">xi</span><span class="s2">[</span><span class="s1">:</span><span class="s2">, </span><span class="s0">last_dim</span><span class="s2">],</span>
-<a name="l549"><span class="ln">549  </span></a>                                  <span class="s0">k</span><span class="s2">)</span>
+<a name="l545"><span class="ln">545  </span></a>        <span class="s0">last_dim </span><span class="s1">= </span><span
+            class="s0">n </span><span class="s1">- </span><span class="s5">1</span>
+<a name="l546"><span class="ln">546  </span></a>        <span class="s0">first_values </span><span
+            class="s1">= </span><span class="s0">_eval_func</span><span class="s2">(</span><span
+            class="s0">self</span><span class="s2">.</span><span class="s0">grid</span><span class="s2">[</span><span
+            class="s0">last_dim</span><span class="s2">],</span>
+<a name="l547"><span class="ln">547  </span></a>                                  <span class="s0">values</span><span
+            class="s2">,</span>
+<a name="l548"><span class="ln">548  </span></a>                                  <span class="s0">xi</span><span
+            class="s2">[</span><span class="s1">:</span><span class="s2">, </span><span class="s0">last_dim</span><span
+            class="s2">],</span>
+<a name="l549"><span class="ln">549  </span></a>                                  <span class="s0">k</span><span
+            class="s2">)</span>
 <a name="l550"><span class="ln">550  </span></a>
 <a name="l551"><span class="ln">551  </span></a>        <span class="s4"># the rest of the dimensions have to be on a per point-in-xi basis</span>
-<a name="l552"><span class="ln">552  </span></a>        <span class="s0">shape </span><span class="s1">= </span><span class="s2">(</span><span class="s0">m</span><span class="s2">, </span><span class="s1">*</span><span class="s0">self</span><span class="s2">.</span><span class="s0">values</span><span class="s2">.</span><span class="s0">shape</span><span class="s2">[</span><span class="s0">n</span><span class="s1">:</span><span class="s2">])</span>
-<a name="l553"><span class="ln">553  </span></a>        <span class="s0">result </span><span class="s1">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">empty</span><span class="s2">(</span><span class="s0">shape</span><span class="s2">, </span><span class="s0">dtype</span><span class="s1">=</span><span class="s0">self</span><span class="s2">.</span><span class="s0">values</span><span class="s2">.</span><span class="s0">dtype</span><span class="s2">)</span>
-<a name="l554"><span class="ln">554  </span></a>        <span class="s1">for </span><span class="s0">j </span><span class="s1">in </span><span class="s0">range</span><span class="s2">(</span><span class="s0">m</span><span class="s2">)</span><span class="s1">:</span>
+<a name="l552"><span class="ln">552  </span></a>        <span class="s0">shape </span><span class="s1">= </span><span
+            class="s2">(</span><span class="s0">m</span><span class="s2">, </span><span class="s1">*</span><span
+            class="s0">self</span><span class="s2">.</span><span class="s0">values</span><span class="s2">.</span><span
+            class="s0">shape</span><span class="s2">[</span><span class="s0">n</span><span class="s1">:</span><span
+            class="s2">])</span>
+<a name="l553"><span class="ln">553  </span></a>        <span class="s0">result </span><span class="s1">= </span><span
+            class="s0">np</span><span class="s2">.</span><span class="s0">empty</span><span class="s2">(</span><span
+            class="s0">shape</span><span class="s2">, </span><span class="s0">dtype</span><span class="s1">=</span><span
+            class="s0">self</span><span class="s2">.</span><span class="s0">values</span><span class="s2">.</span><span
+            class="s0">dtype</span><span class="s2">)</span>
+<a name="l554"><span class="ln">554  </span></a>        <span class="s1">for </span><span class="s0">j </span><span
+            class="s1">in </span><span class="s0">range</span><span class="s2">(</span><span class="s0">m</span><span
+            class="s2">)</span><span class="s1">:</span>
 <a name="l555"><span class="ln">555  </span></a>            <span class="s4"># Main process: Apply 1D interpolate in each dimension</span>
 <a name="l556"><span class="ln">556  </span></a>            <span class="s4"># sequentially, starting with the last dimension.</span>
 <a name="l557"><span class="ln">557  </span></a>            <span class="s4"># These are then &quot;folded&quot; into the next dimension in-place.</span>
-<a name="l558"><span class="ln">558  </span></a>            <span class="s0">folded_values </span><span class="s1">= </span><span class="s0">first_values</span><span class="s2">[</span><span class="s0">j</span><span class="s2">, ...]</span>
-<a name="l559"><span class="ln">559  </span></a>            <span class="s1">for </span><span class="s0">i </span><span class="s1">in </span><span class="s0">range</span><span class="s2">(</span><span class="s0">last_dim</span><span class="s1">-</span><span class="s5">1</span><span class="s2">, </span><span class="s1">-</span><span class="s5">1</span><span class="s2">, </span><span class="s1">-</span><span class="s5">1</span><span class="s2">)</span><span class="s1">:</span>
+<a name="l558"><span class="ln">558  </span></a>            <span class="s0">folded_values </span><span
+            class="s1">= </span><span class="s0">first_values</span><span class="s2">[</span><span
+            class="s0">j</span><span class="s2">, ...]</span>
+<a name="l559"><span class="ln">559  </span></a>            <span class="s1">for </span><span class="s0">i </span><span
+            class="s1">in </span><span class="s0">range</span><span class="s2">(</span><span
+            class="s0">last_dim</span><span class="s1">-</span><span class="s5">1</span><span class="s2">, </span><span
+            class="s1">-</span><span class="s5">1</span><span class="s2">, </span><span class="s1">-</span><span
+            class="s5">1</span><span class="s2">)</span><span class="s1">:</span>
 <a name="l560"><span class="ln">560  </span></a>                <span class="s4"># Interpolate for each 1D from the last dimensions.</span>
 <a name="l561"><span class="ln">561  </span></a>                <span class="s4"># This collapses each 1D sequence into a scalar.</span>
-<a name="l562"><span class="ln">562  </span></a>                <span class="s0">folded_values </span><span class="s1">= </span><span class="s0">_eval_func</span><span class="s2">(</span><span class="s0">self</span><span class="s2">.</span><span class="s0">grid</span><span class="s2">[</span><span class="s0">i</span><span class="s2">],</span>
-<a name="l563"><span class="ln">563  </span></a>                                           <span class="s0">folded_values</span><span class="s2">,</span>
-<a name="l564"><span class="ln">564  </span></a>                                           <span class="s0">xi</span><span class="s2">[</span><span class="s0">j</span><span class="s2">, </span><span class="s0">i</span><span class="s2">],</span>
-<a name="l565"><span class="ln">565  </span></a>                                           <span class="s0">k</span><span class="s2">)</span>
-<a name="l566"><span class="ln">566  </span></a>            <span class="s0">result</span><span class="s2">[</span><span class="s0">j</span><span class="s2">, ...] </span><span class="s1">= </span><span class="s0">folded_values</span>
+<a name="l562"><span class="ln">562  </span></a>                <span class="s0">folded_values </span><span
+            class="s1">= </span><span class="s0">_eval_func</span><span class="s2">(</span><span
+            class="s0">self</span><span class="s2">.</span><span class="s0">grid</span><span class="s2">[</span><span
+            class="s0">i</span><span class="s2">],</span>
+<a name="l563"><span class="ln">563  </span></a>                                           <span class="s0">folded_values</span><span
+            class="s2">,</span>
+<a name="l564"><span class="ln">564  </span></a>                                           <span
+            class="s0">xi</span><span class="s2">[</span><span class="s0">j</span><span class="s2">, </span><span
+            class="s0">i</span><span class="s2">],</span>
+<a name="l565"><span class="ln">565  </span></a>                                           <span
+            class="s0">k</span><span class="s2">)</span>
+<a name="l566"><span class="ln">566  </span></a>            <span class="s0">result</span><span class="s2">[</span><span
+            class="s0">j</span><span class="s2">, ...] </span><span class="s1">= </span><span
+            class="s0">folded_values</span>
 <a name="l567"><span class="ln">567  </span></a>
 <a name="l568"><span class="ln">568  </span></a>        <span class="s1">return </span><span class="s0">result</span>
 <a name="l569"><span class="ln">569  </span></a>
 <a name="l570"><span class="ln">570  </span></a>    <span class="s1">@</span><span class="s0">staticmethod</span>
-<a name="l571"><span class="ln">571  </span></a>    <span class="s1">def </span><span class="s0">_do_spline_fit</span><span class="s2">(</span><span class="s0">x</span><span class="s2">, </span><span class="s0">y</span><span class="s2">, </span><span class="s0">pt</span><span class="s2">, </span><span class="s0">k</span><span class="s2">)</span><span class="s1">:</span>
-<a name="l572"><span class="ln">572  </span></a>        <span class="s0">local_interp </span><span class="s1">= </span><span class="s0">make_interp_spline</span><span class="s2">(</span><span class="s0">x</span><span class="s2">, </span><span class="s0">y</span><span class="s2">, </span><span class="s0">k</span><span class="s1">=</span><span class="s0">k</span><span class="s2">, </span><span class="s0">axis</span><span class="s1">=</span><span class="s5">0</span><span class="s2">)</span>
-<a name="l573"><span class="ln">573  </span></a>        <span class="s0">values </span><span class="s1">= </span><span class="s0">local_interp</span><span class="s2">(</span><span class="s0">pt</span><span class="s2">)</span>
+<a name="l571"><span class="ln">571  </span></a>    <span class="s1">def </span><span
+            class="s0">_do_spline_fit</span><span class="s2">(</span><span class="s0">x</span><span class="s2">, </span><span
+            class="s0">y</span><span class="s2">, </span><span class="s0">pt</span><span class="s2">, </span><span
+            class="s0">k</span><span class="s2">)</span><span class="s1">:</span>
+<a name="l572"><span class="ln">572  </span></a>        <span class="s0">local_interp </span><span
+            class="s1">= </span><span class="s0">make_interp_spline</span><span class="s2">(</span><span
+            class="s0">x</span><span class="s2">, </span><span class="s0">y</span><span class="s2">, </span><span
+            class="s0">k</span><span class="s1">=</span><span class="s0">k</span><span class="s2">, </span><span
+            class="s0">axis</span><span class="s1">=</span><span class="s5">0</span><span class="s2">)</span>
+<a name="l573"><span class="ln">573  </span></a>        <span class="s0">values </span><span class="s1">= </span><span
+            class="s0">local_interp</span><span class="s2">(</span><span class="s0">pt</span><span class="s2">)</span>
 <a name="l574"><span class="ln">574  </span></a>        <span class="s1">return </span><span class="s0">values</span>
 <a name="l575"><span class="ln">575  </span></a>
 <a name="l576"><span class="ln">576  </span></a>    <span class="s1">@</span><span class="s0">staticmethod</span>
-<a name="l577"><span class="ln">577  </span></a>    <span class="s1">def </span><span class="s0">_do_pchip</span><span class="s2">(</span><span class="s0">x</span><span class="s2">, </span><span class="s0">y</span><span class="s2">, </span><span class="s0">pt</span><span class="s2">, </span><span class="s0">k</span><span class="s2">)</span><span class="s1">:</span>
-<a name="l578"><span class="ln">578  </span></a>        <span class="s0">local_interp </span><span class="s1">= </span><span class="s0">PchipInterpolator</span><span class="s2">(</span><span class="s0">x</span><span class="s2">, </span><span class="s0">y</span><span class="s2">, </span><span class="s0">axis</span><span class="s1">=</span><span class="s5">0</span><span class="s2">)</span>
-<a name="l579"><span class="ln">579  </span></a>        <span class="s0">values </span><span class="s1">= </span><span class="s0">local_interp</span><span class="s2">(</span><span class="s0">pt</span><span class="s2">)</span>
+<a name="l577"><span class="ln">577  </span></a>    <span class="s1">def </span><span class="s0">_do_pchip</span><span
+            class="s2">(</span><span class="s0">x</span><span class="s2">, </span><span class="s0">y</span><span
+            class="s2">, </span><span class="s0">pt</span><span class="s2">, </span><span class="s0">k</span><span
+            class="s2">)</span><span class="s1">:</span>
+<a name="l578"><span class="ln">578  </span></a>        <span class="s0">local_interp </span><span
+            class="s1">= </span><span class="s0">PchipInterpolator</span><span class="s2">(</span><span
+            class="s0">x</span><span class="s2">, </span><span class="s0">y</span><span class="s2">, </span><span
+            class="s0">axis</span><span class="s1">=</span><span class="s5">0</span><span class="s2">)</span>
+<a name="l579"><span class="ln">579  </span></a>        <span class="s0">values </span><span class="s1">= </span><span
+            class="s0">local_interp</span><span class="s2">(</span><span class="s0">pt</span><span class="s2">)</span>
 <a name="l580"><span class="ln">580  </span></a>        <span class="s1">return </span><span class="s0">values</span>
 <a name="l581"><span class="ln">581  </span></a>
-<a name="l582"><span class="ln">582  </span></a>    <span class="s1">def </span><span class="s0">_find_indices</span><span class="s2">(</span><span class="s0">self</span><span class="s2">, </span><span class="s0">xi</span><span class="s2">)</span><span class="s1">:</span>
-<a name="l583"><span class="ln">583  </span></a>        <span class="s1">return </span><span class="s0">find_indices</span><span class="s2">(</span><span class="s0">self</span><span class="s2">.</span><span class="s0">grid</span><span class="s2">, </span><span class="s0">xi</span><span class="s2">)</span>
+<a name="l582"><span class="ln">582  </span></a>    <span class="s1">def </span><span
+            class="s0">_find_indices</span><span class="s2">(</span><span class="s0">self</span><span
+            class="s2">, </span><span class="s0">xi</span><span class="s2">)</span><span class="s1">:</span>
+<a name="l583"><span class="ln">583  </span></a>        <span class="s1">return </span><span
+            class="s0">find_indices</span><span class="s2">(</span><span class="s0">self</span><span class="s2">.</span><span
+            class="s0">grid</span><span class="s2">, </span><span class="s0">xi</span><span class="s2">)</span>
 <a name="l584"><span class="ln">584  </span></a>
-<a name="l585"><span class="ln">585  </span></a>    <span class="s1">def </span><span class="s0">_find_out_of_bounds</span><span class="s2">(</span><span class="s0">self</span><span class="s2">, </span><span class="s0">xi</span><span class="s2">)</span><span class="s1">:</span>
+<a name="l585"><span class="ln">585  </span></a>    <span class="s1">def </span><span
+            class="s0">_find_out_of_bounds</span><span class="s2">(</span><span class="s0">self</span><span
+            class="s2">, </span><span class="s0">xi</span><span class="s2">)</span><span class="s1">:</span>
 <a name="l586"><span class="ln">586  </span></a>        <span class="s4"># check for out of bounds xi</span>
-<a name="l587"><span class="ln">587  </span></a>        <span class="s0">out_of_bounds </span><span class="s1">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">zeros</span><span class="s2">((</span><span class="s0">xi</span><span class="s2">.</span><span class="s0">shape</span><span class="s2">[</span><span class="s5">1</span><span class="s2">]), </span><span class="s0">dtype</span><span class="s1">=</span><span class="s0">bool</span><span class="s2">)</span>
+<a name="l587"><span class="ln">587  </span></a>        <span class="s0">out_of_bounds </span><span class="s1">= </span><span
+            class="s0">np</span><span class="s2">.</span><span class="s0">zeros</span><span class="s2">((</span><span
+            class="s0">xi</span><span class="s2">.</span><span class="s0">shape</span><span class="s2">[</span><span
+            class="s5">1</span><span class="s2">]), </span><span class="s0">dtype</span><span class="s1">=</span><span
+            class="s0">bool</span><span class="s2">)</span>
 <a name="l588"><span class="ln">588  </span></a>        <span class="s4"># iterate through dimensions</span>
-<a name="l589"><span class="ln">589  </span></a>        <span class="s1">for </span><span class="s0">x</span><span class="s2">, </span><span class="s0">grid </span><span class="s1">in </span><span class="s0">zip</span><span class="s2">(</span><span class="s0">xi</span><span class="s2">, </span><span class="s0">self</span><span class="s2">.</span><span class="s0">grid</span><span class="s2">)</span><span class="s1">:</span>
-<a name="l590"><span class="ln">590  </span></a>            <span class="s0">out_of_bounds </span><span class="s1">+= </span><span class="s0">x </span><span class="s1">&lt; </span><span class="s0">grid</span><span class="s2">[</span><span class="s5">0</span><span class="s2">]</span>
-<a name="l591"><span class="ln">591  </span></a>            <span class="s0">out_of_bounds </span><span class="s1">+= </span><span class="s0">x </span><span class="s1">&gt; </span><span class="s0">grid</span><span class="s2">[</span><span class="s1">-</span><span class="s5">1</span><span class="s2">]</span>
-<a name="l592"><span class="ln">592  </span></a>        <span class="s1">return </span><span class="s0">out_of_bounds</span>
+<a name="l589"><span class="ln">589  </span></a>        <span class="s1">for </span><span class="s0">x</span><span
+            class="s2">, </span><span class="s0">grid </span><span class="s1">in </span><span class="s0">zip</span><span
+            class="s2">(</span><span class="s0">xi</span><span class="s2">, </span><span class="s0">self</span><span
+            class="s2">.</span><span class="s0">grid</span><span class="s2">)</span><span class="s1">:</span>
+<a name="l590"><span class="ln">590  </span></a>            <span class="s0">out_of_bounds </span><span
+            class="s1">+= </span><span class="s0">x </span><span class="s1">&lt; </span><span
+            class="s0">grid</span><span class="s2">[</span><span class="s5">0</span><span class="s2">]</span>
+<a name="l591"><span class="ln">591  </span></a>            <span class="s0">out_of_bounds </span><span
+            class="s1">+= </span><span class="s0">x </span><span class="s1">&gt; </span><span
+            class="s0">grid</span><span class="s2">[</span><span class="s1">-</span><span class="s5">1</span><span
+            class="s2">]</span>
+<a name="l592"><span class="ln">592  </span></a>        <span class="s1">return </span><span
+            class="s0">out_of_bounds</span>
 <a name="l593"><span class="ln">593  </span></a>
 <a name="l594"><span class="ln">594  </span></a>
-<a name="l595"><span class="ln">595  </span></a><span class="s1">def </span><span class="s0">interpn</span><span class="s2">(</span><span class="s0">points</span><span class="s2">, </span><span class="s0">values</span><span class="s2">, </span><span class="s0">xi</span><span class="s2">, </span><span class="s0">method</span><span class="s1">=</span><span class="s3">&quot;linear&quot;</span><span class="s2">, </span><span class="s0">bounds_error</span><span class="s1">=True</span><span class="s2">,</span>
-<a name="l596"><span class="ln">596  </span></a>            <span class="s0">fill_value</span><span class="s1">=</span><span class="s0">np</span><span class="s2">.</span><span class="s0">nan</span><span class="s2">)</span><span class="s1">:</span>
+<a name="l595"><span class="ln">595  </span></a><span class="s1">def </span><span class="s0">interpn</span><span
+            class="s2">(</span><span class="s0">points</span><span class="s2">, </span><span
+            class="s0">values</span><span class="s2">, </span><span class="s0">xi</span><span class="s2">, </span><span
+            class="s0">method</span><span class="s1">=</span><span class="s3">&quot;linear&quot;</span><span class="s2">, </span><span
+            class="s0">bounds_error</span><span class="s1">=True</span><span class="s2">,</span>
+<a name="l596"><span class="ln">596  </span></a>            <span class="s0">fill_value</span><span
+            class="s1">=</span><span class="s0">np</span><span class="s2">.</span><span class="s0">nan</span><span
+            class="s2">)</span><span class="s1">:</span>
 <a name="l597"><span class="ln">597  </span></a>    <span class="s4">&quot;&quot;&quot; 
 <a name="l598"><span class="ln">598  </span></a>    Multidimensional interpolation on regular or rectilinear grids. 
 <a name="l599"><span class="ln">599  </span></a> 
@@ -711,72 +1230,189 @@ _rgi.py</font>
 <a name="l691"><span class="ln">691  </span></a> 
 <a name="l692"><span class="ln">692  </span></a>    &quot;&quot;&quot;</span>
 <a name="l693"><span class="ln">693  </span></a>    <span class="s4"># sanity check 'method' kwarg</span>
-<a name="l694"><span class="ln">694  </span></a>    <span class="s1">if </span><span class="s0">method </span><span class="s1">not in </span><span class="s2">[</span><span class="s3">&quot;linear&quot;</span><span class="s2">, </span><span class="s3">&quot;nearest&quot;</span><span class="s2">, </span><span class="s3">&quot;cubic&quot;</span><span class="s2">, </span><span class="s3">&quot;quintic&quot;</span><span class="s2">, </span><span class="s3">&quot;pchip&quot;</span><span class="s2">,</span>
-<a name="l695"><span class="ln">695  </span></a>                      <span class="s3">&quot;splinef2d&quot;</span><span class="s2">, </span><span class="s3">&quot;slinear&quot;</span><span class="s2">,</span>
-<a name="l696"><span class="ln">696  </span></a>                      <span class="s3">&quot;slinear_legacy&quot;</span><span class="s2">, </span><span class="s3">&quot;cubic_legacy&quot;</span><span class="s2">, </span><span class="s3">&quot;quintic_legacy&quot;</span><span class="s2">]</span><span class="s1">:</span>
-<a name="l697"><span class="ln">697  </span></a>        <span class="s1">raise </span><span class="s0">ValueError</span><span class="s2">(</span><span class="s3">&quot;interpn only understands the methods 'linear', &quot;</span>
+<a name="l694"><span class="ln">694  </span></a>    <span class="s1">if </span><span class="s0">method </span><span
+            class="s1">not in </span><span class="s2">[</span><span class="s3">&quot;linear&quot;</span><span
+            class="s2">, </span><span class="s3">&quot;nearest&quot;</span><span class="s2">, </span><span class="s3">&quot;cubic&quot;</span><span
+            class="s2">, </span><span class="s3">&quot;quintic&quot;</span><span class="s2">, </span><span class="s3">&quot;pchip&quot;</span><span
+            class="s2">,</span>
+<a name="l695"><span class="ln">695  </span></a>                      <span class="s3">&quot;splinef2d&quot;</span><span
+            class="s2">, </span><span class="s3">&quot;slinear&quot;</span><span class="s2">,</span>
+<a name="l696"><span class="ln">696  </span></a>                      <span class="s3">&quot;slinear_legacy&quot;</span><span
+            class="s2">, </span><span class="s3">&quot;cubic_legacy&quot;</span><span class="s2">, </span><span
+            class="s3">&quot;quintic_legacy&quot;</span><span class="s2">]</span><span class="s1">:</span>
+<a name="l697"><span class="ln">697  </span></a>        <span class="s1">raise </span><span class="s0">ValueError</span><span
+            class="s2">(</span><span class="s3">&quot;interpn only understands the methods 'linear', &quot;</span>
 <a name="l698"><span class="ln">698  </span></a>                         <span class="s3">&quot;'nearest', 'slinear', 'cubic', 'quintic', 'pchip', &quot;</span>
-<a name="l699"><span class="ln">699  </span></a>                         <span class="s3">f&quot;and 'splinef2d'. You provided {</span><span class="s0">method</span><span class="s3">}.&quot;</span><span class="s2">)</span>
+<a name="l699"><span class="ln">699  </span></a>                         <span class="s3">f&quot;and 'splinef2d'. You provided {</span><span
+            class="s0">method</span><span class="s3">}.&quot;</span><span class="s2">)</span>
 <a name="l700"><span class="ln">700  </span></a>
-<a name="l701"><span class="ln">701  </span></a>    <span class="s1">if not </span><span class="s0">hasattr</span><span class="s2">(</span><span class="s0">values</span><span class="s2">, </span><span class="s3">'ndim'</span><span class="s2">)</span><span class="s1">:</span>
-<a name="l702"><span class="ln">702  </span></a>        <span class="s0">values </span><span class="s1">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">asarray</span><span class="s2">(</span><span class="s0">values</span><span class="s2">)</span>
+<a name="l701"><span class="ln">701  </span></a>    <span class="s1">if not </span><span class="s0">hasattr</span><span
+            class="s2">(</span><span class="s0">values</span><span class="s2">, </span><span
+            class="s3">'ndim'</span><span class="s2">)</span><span class="s1">:</span>
+<a name="l702"><span class="ln">702  </span></a>        <span class="s0">values </span><span class="s1">= </span><span
+            class="s0">np</span><span class="s2">.</span><span class="s0">asarray</span><span class="s2">(</span><span
+            class="s0">values</span><span class="s2">)</span>
 <a name="l703"><span class="ln">703  </span></a>
-<a name="l704"><span class="ln">704  </span></a>    <span class="s0">ndim </span><span class="s1">= </span><span class="s0">values</span><span class="s2">.</span><span class="s0">ndim</span>
-<a name="l705"><span class="ln">705  </span></a>    <span class="s1">if </span><span class="s0">ndim </span><span class="s1">&gt; </span><span class="s5">2 </span><span class="s1">and </span><span class="s0">method </span><span class="s1">== </span><span class="s3">&quot;splinef2d&quot;</span><span class="s1">:</span>
-<a name="l706"><span class="ln">706  </span></a>        <span class="s1">raise </span><span class="s0">ValueError</span><span class="s2">(</span><span class="s3">&quot;The method splinef2d can only be used for &quot;</span>
-<a name="l707"><span class="ln">707  </span></a>                         <span class="s3">&quot;2-dimensional input data&quot;</span><span class="s2">)</span>
-<a name="l708"><span class="ln">708  </span></a>    <span class="s1">if not </span><span class="s0">bounds_error </span><span class="s1">and </span><span class="s0">fill_value </span><span class="s1">is None and </span><span class="s0">method </span><span class="s1">== </span><span class="s3">&quot;splinef2d&quot;</span><span class="s1">:</span>
-<a name="l709"><span class="ln">709  </span></a>        <span class="s1">raise </span><span class="s0">ValueError</span><span class="s2">(</span><span class="s3">&quot;The method splinef2d does not support extrapolation.&quot;</span><span class="s2">)</span>
+<a name="l704"><span class="ln">704  </span></a>    <span class="s0">ndim </span><span class="s1">= </span><span
+            class="s0">values</span><span class="s2">.</span><span class="s0">ndim</span>
+<a name="l705"><span class="ln">705  </span></a>    <span class="s1">if </span><span class="s0">ndim </span><span
+            class="s1">&gt; </span><span class="s5">2 </span><span class="s1">and </span><span class="s0">method </span><span
+            class="s1">== </span><span class="s3">&quot;splinef2d&quot;</span><span class="s1">:</span>
+<a name="l706"><span class="ln">706  </span></a>        <span class="s1">raise </span><span class="s0">ValueError</span><span
+            class="s2">(</span><span class="s3">&quot;The method splinef2d can only be used for &quot;</span>
+<a name="l707"><span class="ln">707  </span></a>                         <span class="s3">&quot;2-dimensional input data&quot;</span><span
+            class="s2">)</span>
+<a name="l708"><span class="ln">708  </span></a>    <span class="s1">if not </span><span class="s0">bounds_error </span><span
+            class="s1">and </span><span class="s0">fill_value </span><span class="s1">is None and </span><span
+            class="s0">method </span><span class="s1">== </span><span class="s3">&quot;splinef2d&quot;</span><span
+            class="s1">:</span>
+<a name="l709"><span class="ln">709  </span></a>        <span class="s1">raise </span><span class="s0">ValueError</span><span
+            class="s2">(</span><span
+            class="s3">&quot;The method splinef2d does not support extrapolation.&quot;</span><span class="s2">)</span>
 <a name="l710"><span class="ln">710  </span></a>
-<a name="l711"><span class="ln">711  </span></a>    <span class="s4"># sanity check consistency of input dimensions</span>
-<a name="l712"><span class="ln">712  </span></a>    <span class="s1">if </span><span class="s0">len</span><span class="s2">(</span><span class="s0">points</span><span class="s2">) </span><span class="s1">&gt; </span><span class="s0">ndim</span><span class="s1">:</span>
-<a name="l713"><span class="ln">713  </span></a>        <span class="s1">raise </span><span class="s0">ValueError</span><span class="s2">(</span><span class="s3">&quot;There are %d point arrays, but values has %d &quot;</span>
-<a name="l714"><span class="ln">714  </span></a>                         <span class="s3">&quot;dimensions&quot; </span><span class="s1">% </span><span class="s2">(</span><span class="s0">len</span><span class="s2">(</span><span class="s0">points</span><span class="s2">), </span><span class="s0">ndim</span><span class="s2">))</span>
-<a name="l715"><span class="ln">715  </span></a>    <span class="s1">if </span><span class="s0">len</span><span class="s2">(</span><span class="s0">points</span><span class="s2">) </span><span class="s1">!= </span><span class="s0">ndim </span><span class="s1">and </span><span class="s0">method </span><span class="s1">== </span><span class="s3">'splinef2d'</span><span class="s1">:</span>
-<a name="l716"><span class="ln">716  </span></a>        <span class="s1">raise </span><span class="s0">ValueError</span><span class="s2">(</span><span class="s3">&quot;The method splinef2d can only be used for &quot;</span>
-<a name="l717"><span class="ln">717  </span></a>                         <span class="s3">&quot;scalar data with one point per coordinate&quot;</span><span class="s2">)</span>
+<a name="l711"><span class="ln">711  </span></a>    <span
+            class="s4"># sanity check consistency of input dimensions</span>
+<a name="l712"><span class="ln">712  </span></a>    <span class="s1">if </span><span class="s0">len</span><span
+            class="s2">(</span><span class="s0">points</span><span class="s2">) </span><span
+            class="s1">&gt; </span><span class="s0">ndim</span><span class="s1">:</span>
+<a name="l713"><span class="ln">713  </span></a>        <span class="s1">raise </span><span class="s0">ValueError</span><span
+            class="s2">(</span><span class="s3">&quot;There are %d point arrays, but values has %d &quot;</span>
+<a name="l714"><span class="ln">714  </span></a>                         <span class="s3">&quot;dimensions&quot; </span><span
+            class="s1">% </span><span class="s2">(</span><span class="s0">len</span><span class="s2">(</span><span
+            class="s0">points</span><span class="s2">), </span><span class="s0">ndim</span><span class="s2">))</span>
+<a name="l715"><span class="ln">715  </span></a>    <span class="s1">if </span><span class="s0">len</span><span
+            class="s2">(</span><span class="s0">points</span><span class="s2">) </span><span class="s1">!= </span><span
+            class="s0">ndim </span><span class="s1">and </span><span class="s0">method </span><span
+            class="s1">== </span><span class="s3">'splinef2d'</span><span class="s1">:</span>
+<a name="l716"><span class="ln">716  </span></a>        <span class="s1">raise </span><span class="s0">ValueError</span><span
+            class="s2">(</span><span class="s3">&quot;The method splinef2d can only be used for &quot;</span>
+<a name="l717"><span class="ln">717  </span></a>                         <span class="s3">&quot;scalar data with one point per coordinate&quot;</span><span
+            class="s2">)</span>
 <a name="l718"><span class="ln">718  </span></a>
-<a name="l719"><span class="ln">719  </span></a>    <span class="s0">grid</span><span class="s2">, </span><span class="s0">descending_dimensions </span><span class="s1">= </span><span class="s0">_check_points</span><span class="s2">(</span><span class="s0">points</span><span class="s2">)</span>
-<a name="l720"><span class="ln">720  </span></a>    <span class="s0">_check_dimensionality</span><span class="s2">(</span><span class="s0">grid</span><span class="s2">, </span><span class="s0">values</span><span class="s2">)</span>
+<a name="l719"><span class="ln">719  </span></a>    <span class="s0">grid</span><span class="s2">, </span><span
+            class="s0">descending_dimensions </span><span class="s1">= </span><span class="s0">_check_points</span><span
+            class="s2">(</span><span class="s0">points</span><span class="s2">)</span>
+<a name="l720"><span class="ln">720  </span></a>    <span class="s0">_check_dimensionality</span><span
+            class="s2">(</span><span class="s0">grid</span><span class="s2">, </span><span class="s0">values</span><span
+            class="s2">)</span>
 <a name="l721"><span class="ln">721  </span></a>
 <a name="l722"><span class="ln">722  </span></a>    <span class="s4"># sanity check requested xi</span>
-<a name="l723"><span class="ln">723  </span></a>    <span class="s0">xi </span><span class="s1">= </span><span class="s0">_ndim_coords_from_arrays</span><span class="s2">(</span><span class="s0">xi</span><span class="s2">, </span><span class="s0">ndim</span><span class="s1">=</span><span class="s0">len</span><span class="s2">(</span><span class="s0">grid</span><span class="s2">))</span>
-<a name="l724"><span class="ln">724  </span></a>    <span class="s1">if </span><span class="s0">xi</span><span class="s2">.</span><span class="s0">shape</span><span class="s2">[</span><span class="s1">-</span><span class="s5">1</span><span class="s2">] </span><span class="s1">!= </span><span class="s0">len</span><span class="s2">(</span><span class="s0">grid</span><span class="s2">)</span><span class="s1">:</span>
-<a name="l725"><span class="ln">725  </span></a>        <span class="s1">raise </span><span class="s0">ValueError</span><span class="s2">(</span><span class="s3">&quot;The requested sample points xi have dimension &quot;</span>
+<a name="l723"><span class="ln">723  </span></a>    <span class="s0">xi </span><span class="s1">= </span><span
+            class="s0">_ndim_coords_from_arrays</span><span class="s2">(</span><span class="s0">xi</span><span
+            class="s2">, </span><span class="s0">ndim</span><span class="s1">=</span><span class="s0">len</span><span
+            class="s2">(</span><span class="s0">grid</span><span class="s2">))</span>
+<a name="l724"><span class="ln">724  </span></a>    <span class="s1">if </span><span class="s0">xi</span><span
+            class="s2">.</span><span class="s0">shape</span><span class="s2">[</span><span class="s1">-</span><span
+            class="s5">1</span><span class="s2">] </span><span class="s1">!= </span><span class="s0">len</span><span
+            class="s2">(</span><span class="s0">grid</span><span class="s2">)</span><span class="s1">:</span>
+<a name="l725"><span class="ln">725  </span></a>        <span class="s1">raise </span><span class="s0">ValueError</span><span
+            class="s2">(</span><span class="s3">&quot;The requested sample points xi have dimension &quot;</span>
 <a name="l726"><span class="ln">726  </span></a>                         <span class="s3">&quot;%d, but this RegularGridInterpolator has &quot;</span>
-<a name="l727"><span class="ln">727  </span></a>                         <span class="s3">&quot;dimension %d&quot; </span><span class="s1">% </span><span class="s2">(</span><span class="s0">xi</span><span class="s2">.</span><span class="s0">shape</span><span class="s2">[</span><span class="s1">-</span><span class="s5">1</span><span class="s2">], </span><span class="s0">len</span><span class="s2">(</span><span class="s0">grid</span><span class="s2">)))</span>
+<a name="l727"><span class="ln">727  </span></a>                         <span
+            class="s3">&quot;dimension %d&quot; </span><span class="s1">% </span><span class="s2">(</span><span
+            class="s0">xi</span><span class="s2">.</span><span class="s0">shape</span><span class="s2">[</span><span
+            class="s1">-</span><span class="s5">1</span><span class="s2">], </span><span class="s0">len</span><span
+            class="s2">(</span><span class="s0">grid</span><span class="s2">)))</span>
 <a name="l728"><span class="ln">728  </span></a>
-<a name="l729"><span class="ln">729  </span></a>    <span class="s1">if </span><span class="s0">bounds_error</span><span class="s1">:</span>
-<a name="l730"><span class="ln">730  </span></a>        <span class="s1">for </span><span class="s0">i</span><span class="s2">, </span><span class="s0">p </span><span class="s1">in </span><span class="s0">enumerate</span><span class="s2">(</span><span class="s0">xi</span><span class="s2">.</span><span class="s0">T</span><span class="s2">)</span><span class="s1">:</span>
-<a name="l731"><span class="ln">731  </span></a>            <span class="s1">if not </span><span class="s0">np</span><span class="s2">.</span><span class="s0">logical_and</span><span class="s2">(</span><span class="s0">np</span><span class="s2">.</span><span class="s0">all</span><span class="s2">(</span><span class="s0">grid</span><span class="s2">[</span><span class="s0">i</span><span class="s2">][</span><span class="s5">0</span><span class="s2">] </span><span class="s1">&lt;= </span><span class="s0">p</span><span class="s2">),</span>
-<a name="l732"><span class="ln">732  </span></a>                                  <span class="s0">np</span><span class="s2">.</span><span class="s0">all</span><span class="s2">(</span><span class="s0">p </span><span class="s1">&lt;= </span><span class="s0">grid</span><span class="s2">[</span><span class="s0">i</span><span class="s2">][</span><span class="s1">-</span><span class="s5">1</span><span class="s2">]))</span><span class="s1">:</span>
-<a name="l733"><span class="ln">733  </span></a>                <span class="s1">raise </span><span class="s0">ValueError</span><span class="s2">(</span><span class="s3">&quot;One of the requested xi is out of bounds &quot;</span>
-<a name="l734"><span class="ln">734  </span></a>                                 <span class="s3">&quot;in dimension %d&quot; </span><span class="s1">% </span><span class="s0">i</span><span class="s2">)</span>
+<a name="l729"><span class="ln">729  </span></a>    <span class="s1">if </span><span class="s0">bounds_error</span><span
+            class="s1">:</span>
+<a name="l730"><span class="ln">730  </span></a>        <span class="s1">for </span><span class="s0">i</span><span
+            class="s2">, </span><span class="s0">p </span><span class="s1">in </span><span
+            class="s0">enumerate</span><span class="s2">(</span><span class="s0">xi</span><span class="s2">.</span><span
+            class="s0">T</span><span class="s2">)</span><span class="s1">:</span>
+<a name="l731"><span class="ln">731  </span></a>            <span class="s1">if not </span><span
+            class="s0">np</span><span class="s2">.</span><span class="s0">logical_and</span><span
+            class="s2">(</span><span class="s0">np</span><span class="s2">.</span><span class="s0">all</span><span
+            class="s2">(</span><span class="s0">grid</span><span class="s2">[</span><span class="s0">i</span><span
+            class="s2">][</span><span class="s5">0</span><span class="s2">] </span><span class="s1">&lt;= </span><span
+            class="s0">p</span><span class="s2">),</span>
+<a name="l732"><span class="ln">732  </span></a>                                  <span class="s0">np</span><span
+            class="s2">.</span><span class="s0">all</span><span class="s2">(</span><span class="s0">p </span><span
+            class="s1">&lt;= </span><span class="s0">grid</span><span class="s2">[</span><span class="s0">i</span><span
+            class="s2">][</span><span class="s1">-</span><span class="s5">1</span><span class="s2">]))</span><span
+            class="s1">:</span>
+<a name="l733"><span class="ln">733  </span></a>                <span class="s1">raise </span><span class="s0">ValueError</span><span
+            class="s2">(</span><span class="s3">&quot;One of the requested xi is out of bounds &quot;</span>
+<a name="l734"><span class="ln">734  </span></a>                                 <span class="s3">&quot;in dimension %d&quot; </span><span
+            class="s1">% </span><span class="s0">i</span><span class="s2">)</span>
 <a name="l735"><span class="ln">735  </span></a>
 <a name="l736"><span class="ln">736  </span></a>    <span class="s4"># perform interpolation</span>
-<a name="l737"><span class="ln">737  </span></a>    <span class="s1">if </span><span class="s0">method </span><span class="s1">in </span><span class="s0">RegularGridInterpolator</span><span class="s2">.</span><span class="s0">_ALL_METHODS</span><span class="s1">:</span>
-<a name="l738"><span class="ln">738  </span></a>        <span class="s0">interp </span><span class="s1">= </span><span class="s0">RegularGridInterpolator</span><span class="s2">(</span><span class="s0">points</span><span class="s2">, </span><span class="s0">values</span><span class="s2">, </span><span class="s0">method</span><span class="s1">=</span><span class="s0">method</span><span class="s2">,</span>
-<a name="l739"><span class="ln">739  </span></a>                                         <span class="s0">bounds_error</span><span class="s1">=</span><span class="s0">bounds_error</span><span class="s2">,</span>
-<a name="l740"><span class="ln">740  </span></a>                                         <span class="s0">fill_value</span><span class="s1">=</span><span class="s0">fill_value</span><span class="s2">)</span>
-<a name="l741"><span class="ln">741  </span></a>        <span class="s1">return </span><span class="s0">interp</span><span class="s2">(</span><span class="s0">xi</span><span class="s2">)</span>
-<a name="l742"><span class="ln">742  </span></a>    <span class="s1">elif </span><span class="s0">method </span><span class="s1">== </span><span class="s3">&quot;splinef2d&quot;</span><span class="s1">:</span>
-<a name="l743"><span class="ln">743  </span></a>        <span class="s0">xi_shape </span><span class="s1">= </span><span class="s0">xi</span><span class="s2">.</span><span class="s0">shape</span>
-<a name="l744"><span class="ln">744  </span></a>        <span class="s0">xi </span><span class="s1">= </span><span class="s0">xi</span><span class="s2">.</span><span class="s0">reshape</span><span class="s2">(</span><span class="s1">-</span><span class="s5">1</span><span class="s2">, </span><span class="s0">xi</span><span class="s2">.</span><span class="s0">shape</span><span class="s2">[</span><span class="s1">-</span><span class="s5">1</span><span class="s2">])</span>
+<a name="l737"><span class="ln">737  </span></a>    <span class="s1">if </span><span class="s0">method </span><span
+            class="s1">in </span><span class="s0">RegularGridInterpolator</span><span class="s2">.</span><span
+            class="s0">_ALL_METHODS</span><span class="s1">:</span>
+<a name="l738"><span class="ln">738  </span></a>        <span class="s0">interp </span><span class="s1">= </span><span
+            class="s0">RegularGridInterpolator</span><span class="s2">(</span><span class="s0">points</span><span
+            class="s2">, </span><span class="s0">values</span><span class="s2">, </span><span
+            class="s0">method</span><span class="s1">=</span><span class="s0">method</span><span class="s2">,</span>
+<a name="l739"><span class="ln">739  </span></a>                                         <span
+            class="s0">bounds_error</span><span class="s1">=</span><span class="s0">bounds_error</span><span class="s2">,</span>
+<a name="l740"><span class="ln">740  </span></a>                                         <span
+            class="s0">fill_value</span><span class="s1">=</span><span class="s0">fill_value</span><span
+            class="s2">)</span>
+<a name="l741"><span class="ln">741  </span></a>        <span class="s1">return </span><span
+            class="s0">interp</span><span class="s2">(</span><span class="s0">xi</span><span class="s2">)</span>
+<a name="l742"><span class="ln">742  </span></a>    <span class="s1">elif </span><span class="s0">method </span><span
+            class="s1">== </span><span class="s3">&quot;splinef2d&quot;</span><span class="s1">:</span>
+<a name="l743"><span class="ln">743  </span></a>        <span class="s0">xi_shape </span><span class="s1">= </span><span
+            class="s0">xi</span><span class="s2">.</span><span class="s0">shape</span>
+<a name="l744"><span class="ln">744  </span></a>        <span class="s0">xi </span><span class="s1">= </span><span
+            class="s0">xi</span><span class="s2">.</span><span class="s0">reshape</span><span class="s2">(</span><span
+            class="s1">-</span><span class="s5">1</span><span class="s2">, </span><span class="s0">xi</span><span
+            class="s2">.</span><span class="s0">shape</span><span class="s2">[</span><span class="s1">-</span><span
+            class="s5">1</span><span class="s2">])</span>
 <a name="l745"><span class="ln">745  </span></a>
 <a name="l746"><span class="ln">746  </span></a>        <span class="s4"># RectBivariateSpline doesn't support fill_value; we need to wrap here</span>
-<a name="l747"><span class="ln">747  </span></a>        <span class="s0">idx_valid </span><span class="s1">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">all</span><span class="s2">((</span><span class="s0">grid</span><span class="s2">[</span><span class="s5">0</span><span class="s2">][</span><span class="s5">0</span><span class="s2">] </span><span class="s1">&lt;= </span><span class="s0">xi</span><span class="s2">[</span><span class="s1">:</span><span class="s2">, </span><span class="s5">0</span><span class="s2">], </span><span class="s0">xi</span><span class="s2">[</span><span class="s1">:</span><span class="s2">, </span><span class="s5">0</span><span class="s2">] </span><span class="s1">&lt;= </span><span class="s0">grid</span><span class="s2">[</span><span class="s5">0</span><span class="s2">][</span><span class="s1">-</span><span class="s5">1</span><span class="s2">],</span>
-<a name="l748"><span class="ln">748  </span></a>                            <span class="s0">grid</span><span class="s2">[</span><span class="s5">1</span><span class="s2">][</span><span class="s5">0</span><span class="s2">] </span><span class="s1">&lt;= </span><span class="s0">xi</span><span class="s2">[</span><span class="s1">:</span><span class="s2">, </span><span class="s5">1</span><span class="s2">], </span><span class="s0">xi</span><span class="s2">[</span><span class="s1">:</span><span class="s2">, </span><span class="s5">1</span><span class="s2">] </span><span class="s1">&lt;= </span><span class="s0">grid</span><span class="s2">[</span><span class="s5">1</span><span class="s2">][</span><span class="s1">-</span><span class="s5">1</span><span class="s2">]),</span>
-<a name="l749"><span class="ln">749  </span></a>                           <span class="s0">axis</span><span class="s1">=</span><span class="s5">0</span><span class="s2">)</span>
-<a name="l750"><span class="ln">750  </span></a>        <span class="s0">result </span><span class="s1">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">empty_like</span><span class="s2">(</span><span class="s0">xi</span><span class="s2">[</span><span class="s1">:</span><span class="s2">, </span><span class="s5">0</span><span class="s2">])</span>
+<a name="l747"><span class="ln">747  </span></a>        <span class="s0">idx_valid </span><span
+            class="s1">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">all</span><span
+            class="s2">((</span><span class="s0">grid</span><span class="s2">[</span><span class="s5">0</span><span
+            class="s2">][</span><span class="s5">0</span><span class="s2">] </span><span class="s1">&lt;= </span><span
+            class="s0">xi</span><span class="s2">[</span><span class="s1">:</span><span class="s2">, </span><span
+            class="s5">0</span><span class="s2">], </span><span class="s0">xi</span><span class="s2">[</span><span
+            class="s1">:</span><span class="s2">, </span><span class="s5">0</span><span class="s2">] </span><span
+            class="s1">&lt;= </span><span class="s0">grid</span><span class="s2">[</span><span class="s5">0</span><span
+            class="s2">][</span><span class="s1">-</span><span class="s5">1</span><span class="s2">],</span>
+<a name="l748"><span class="ln">748  </span></a>                            <span class="s0">grid</span><span
+            class="s2">[</span><span class="s5">1</span><span class="s2">][</span><span class="s5">0</span><span
+            class="s2">] </span><span class="s1">&lt;= </span><span class="s0">xi</span><span class="s2">[</span><span
+            class="s1">:</span><span class="s2">, </span><span class="s5">1</span><span class="s2">], </span><span
+            class="s0">xi</span><span class="s2">[</span><span class="s1">:</span><span class="s2">, </span><span
+            class="s5">1</span><span class="s2">] </span><span class="s1">&lt;= </span><span class="s0">grid</span><span
+            class="s2">[</span><span class="s5">1</span><span class="s2">][</span><span class="s1">-</span><span
+            class="s5">1</span><span class="s2">]),</span>
+<a name="l749"><span class="ln">749  </span></a>                           <span class="s0">axis</span><span class="s1">=</span><span
+            class="s5">0</span><span class="s2">)</span>
+<a name="l750"><span class="ln">750  </span></a>        <span class="s0">result </span><span class="s1">= </span><span
+            class="s0">np</span><span class="s2">.</span><span class="s0">empty_like</span><span
+            class="s2">(</span><span class="s0">xi</span><span class="s2">[</span><span class="s1">:</span><span
+            class="s2">, </span><span class="s5">0</span><span class="s2">])</span>
 <a name="l751"><span class="ln">751  </span></a>
-<a name="l752"><span class="ln">752  </span></a>        <span class="s4"># make a copy of values for RectBivariateSpline</span>
-<a name="l753"><span class="ln">753  </span></a>        <span class="s0">interp </span><span class="s1">= </span><span class="s0">RectBivariateSpline</span><span class="s2">(</span><span class="s0">points</span><span class="s2">[</span><span class="s5">0</span><span class="s2">], </span><span class="s0">points</span><span class="s2">[</span><span class="s5">1</span><span class="s2">], </span><span class="s0">values</span><span class="s2">[</span><span class="s1">:</span><span class="s2">])</span>
-<a name="l754"><span class="ln">754  </span></a>        <span class="s0">result</span><span class="s2">[</span><span class="s0">idx_valid</span><span class="s2">] </span><span class="s1">= </span><span class="s0">interp</span><span class="s2">.</span><span class="s0">ev</span><span class="s2">(</span><span class="s0">xi</span><span class="s2">[</span><span class="s0">idx_valid</span><span class="s2">, </span><span class="s5">0</span><span class="s2">], </span><span class="s0">xi</span><span class="s2">[</span><span class="s0">idx_valid</span><span class="s2">, </span><span class="s5">1</span><span class="s2">])</span>
-<a name="l755"><span class="ln">755  </span></a>        <span class="s0">result</span><span class="s2">[</span><span class="s0">np</span><span class="s2">.</span><span class="s0">logical_not</span><span class="s2">(</span><span class="s0">idx_valid</span><span class="s2">)] </span><span class="s1">= </span><span class="s0">fill_value</span>
+<a name="l752"><span class="ln">752  </span></a>        <span
+            class="s4"># make a copy of values for RectBivariateSpline</span>
+<a name="l753"><span class="ln">753  </span></a>        <span class="s0">interp </span><span class="s1">= </span><span
+            class="s0">RectBivariateSpline</span><span class="s2">(</span><span class="s0">points</span><span
+            class="s2">[</span><span class="s5">0</span><span class="s2">], </span><span class="s0">points</span><span
+            class="s2">[</span><span class="s5">1</span><span class="s2">], </span><span class="s0">values</span><span
+            class="s2">[</span><span class="s1">:</span><span class="s2">])</span>
+<a name="l754"><span class="ln">754  </span></a>        <span class="s0">result</span><span class="s2">[</span><span
+            class="s0">idx_valid</span><span class="s2">] </span><span class="s1">= </span><span
+            class="s0">interp</span><span class="s2">.</span><span class="s0">ev</span><span class="s2">(</span><span
+            class="s0">xi</span><span class="s2">[</span><span class="s0">idx_valid</span><span
+            class="s2">, </span><span class="s5">0</span><span class="s2">], </span><span class="s0">xi</span><span
+            class="s2">[</span><span class="s0">idx_valid</span><span class="s2">, </span><span class="s5">1</span><span
+            class="s2">])</span>
+<a name="l755"><span class="ln">755  </span></a>        <span class="s0">result</span><span class="s2">[</span><span
+            class="s0">np</span><span class="s2">.</span><span class="s0">logical_not</span><span
+            class="s2">(</span><span class="s0">idx_valid</span><span class="s2">)] </span><span
+            class="s1">= </span><span class="s0">fill_value</span>
 <a name="l756"><span class="ln">756  </span></a>
-<a name="l757"><span class="ln">757  </span></a>        <span class="s1">return </span><span class="s0">result</span><span class="s2">.</span><span class="s0">reshape</span><span class="s2">(</span><span class="s0">xi_shape</span><span class="s2">[</span><span class="s1">:-</span><span class="s5">1</span><span class="s2">])</span>
+<a name="l757"><span class="ln">757  </span></a>        <span class="s1">return </span><span
+            class="s0">result</span><span class="s2">.</span><span class="s0">reshape</span><span
+            class="s2">(</span><span class="s0">xi_shape</span><span class="s2">[</span><span class="s1">:-</span><span
+            class="s5">1</span><span class="s2">])</span>
 <a name="l758"><span class="ln">758  </span></a>    <span class="s1">else:</span>
-<a name="l759"><span class="ln">759  </span></a>        <span class="s1">raise </span><span class="s0">ValueError</span><span class="s2">(</span><span class="s3">f&quot;unknown {</span><span class="s0">method </span><span class="s1">= </span><span class="s3">}&quot;</span><span class="s2">)</span>
+<a name="l759"><span class="ln">759  </span></a>        <span class="s1">raise </span><span class="s0">ValueError</span><span
+            class="s2">(</span><span class="s3">f&quot;unknown {</span><span class="s0">method </span><span
+            class="s1">= </span><span class="s3">}&quot;</span><span class="s2">)</span>
 <a name="l760"><span class="ln">760  </span></a></pre>
 </body>
 </html>
