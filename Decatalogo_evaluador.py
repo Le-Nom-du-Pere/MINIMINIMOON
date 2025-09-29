@@ -9,15 +9,11 @@ Conexión: INTEGRACIÓN TOTAL con todos los módulos del proyecto
 Autor: Sistema Doctoral de Políticas Públicas - Versión Industrial
 Fecha: 2025 - Versión de Producción
 """
-
-import hashlib
 import json
 import logging
 import sys
-from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
@@ -27,26 +23,20 @@ from contradiction_detector import (
     ContradictionAnalysis,
     ContradictionDetector,
     ContradictionMatch,
-    RiskLevel,
-)
+    )
 
 # Importaciones del sistema principal (Decatalogo_principal.py)
 from Decatalogo_principal import (  # Clases adicionales necesarias
     ClusterMetadata,
     DecalogoContext,
     DimensionDecalogo,
-    EslabonCadena,
-    EvaluacionCausalIndustrial,
-    MatrizTrazabilidad,
     ResultadoDimensionIndustrial,
     SistemaEvaluacionIndustrial,
-    TeoriaCambio,
     obtener_decalogo_contexto,
 )
 
 # Importaciones de detectores especializados (VERIFICADOS)
 from feasibility_scorer import (
-    BatchScoreResult,
     ComponentType,
     DetectionResult,
     FeasibilityScorer,

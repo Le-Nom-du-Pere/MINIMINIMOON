@@ -11,33 +11,24 @@ procesamiento paralelo industrial y reportes masivos granulares.
 """
 
 import argparse
-import atexit
 import hashlib
-import heapq
 import json
 import logging
 import re
-import signal
-import statistics
 import sys
 import warnings
 from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import networkx as nx
 import numpy as np
-import pandas as pd
-import scipy.stats as stats
 import torch
-import torch.nn.functional as F
-from scipy.optimize import minimize
 from sklearn.cluster import SpectralClustering
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
 
 from pdm_contra.bridges.decatalogo_provider import provide_decalogos
 
@@ -51,7 +42,6 @@ except ImportError:
     pdfplumber = None
 
 import spacy
-from joblib import Parallel, delayed
 from sentence_transformers import SentenceTransformer, util
 
 # Módulos matemáticos avanzados

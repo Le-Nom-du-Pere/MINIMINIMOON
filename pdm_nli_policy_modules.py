@@ -14,10 +14,9 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 
 import numpy as np
 import torch
-from mapie.classification import MapieClassifier
 from mapie.regression import MapieRegressor
 from pydantic import BaseModel, Field
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 

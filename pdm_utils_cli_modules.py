@@ -19,11 +19,8 @@ import typer
 from bs4 import BeautifulSoup
 from docx import Document as DocxDocument
 from packaging.version import parse
-from pydantic import ValidationError
 from pypdf import PdfReader
-from rich import print as rprint
 from rich.console import Console
-from rich.progress import track
 from rich.table import Table
 
 from pdm_contra.core import ContradictionDetector

@@ -13,7 +13,6 @@ import sys
 import tempfile
 import time
 from pathlib import Path
-from unittest.mock import patch
 
 def create_test_pdf_content():
     """Crea contenido de prueba que simule un plan de desarrollo"""

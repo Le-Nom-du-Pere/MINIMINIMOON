@@ -12,7 +12,7 @@ Comprehensive test suite for the CausalPatternDetector class, including tests fo
 """
 
 import unittest
-from causal_pattern_detector import CausalPatternDetector, CausalMatch
+from causal_pattern_detector import CausalPatternDetector
 
 
 class TestCausalPatternDetector(unittest.TestCase):
