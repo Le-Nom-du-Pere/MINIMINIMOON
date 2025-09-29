@@ -19,6 +19,7 @@ def test_bundle_hash_is_deterministic() -> None:
         ],
         crosswalk_path="out/crosswalk.v1.0.0.json",
     )
-    payload = json.dumps(bundle, ensure_ascii=False, sort_keys=True).encode("utf-8")
+    payload = json.dumps(bundle, ensure_ascii=False,
+                         sort_keys=True).encode("utf-8")
     digest = hashlib.sha256(payload).hexdigest()
     assert digest == hashlib.sha256(payload).hexdigest()

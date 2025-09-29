@@ -30,15 +30,21 @@ def _validate(payload: dict, schema_name: str) -> None:
 
 
 def test_full_schema() -> None:
-    payload = json.loads((OUT_DIR / "decalogo-full.v1.0.0.clean.json").read_text(encoding="utf-8"))
+    payload = json.loads(
+        (OUT_DIR / "decalogo-full.v1.0.0.clean.json").read_text(encoding="utf-8")
+    )
     _validate(payload, "decalogo-full.schema.json")
 
 
 def test_industrial_schema() -> None:
-    payload = json.loads((OUT_DIR / "decalogo-industrial.v1.0.0.clean.json").read_text(encoding="utf-8"))
+    payload = json.loads(
+        (OUT_DIR / "decalogo-industrial.v1.0.0.clean.json").read_text(encoding="utf-8")
+    )
     _validate(payload, "decalogo-industrial.schema.json")
 
 
 def test_dnp_schema() -> None:
-    payload = json.loads((OUT_DIR / "dnp-standards.v1.0.0.clean.json").read_text(encoding="utf-8"))
+    payload = json.loads(
+        (OUT_DIR / "dnp-standards.v1.0.0.clean.json").read_text(encoding="utf-8")
+    )
     _validate(payload, "dnp-standards.schema.json")

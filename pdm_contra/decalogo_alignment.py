@@ -162,7 +162,9 @@ def _load_decalogo_full(path: Path, audit: List[AuditIssue]) -> Dict[str, object
     return data
 
 
-def _load_decalogo_industrial(path: Path, audit: List[AuditIssue]) -> List[Dict[str, object]]:
+def _load_decalogo_industrial(
+    path: Path, audit: List[AuditIssue]
+) -> List[Dict[str, object]]:
     raw = path.read_text(encoding="utf-8")
     cleaned_lines = []
     for line in raw.splitlines():
@@ -184,7 +186,9 @@ def _load_decalogo_industrial(path: Path, audit: List[AuditIssue]) -> List[Dict[
         raise
 
 
-def _load_dnp_standards(path: Path, audit: List[AuditIssue]) -> Optional[Dict[str, object]]:
+def _load_dnp_standards(
+    path: Path, audit: List[AuditIssue]
+) -> Optional[Dict[str, object]]:
     raw = path.read_text(encoding="utf-8")
     trimmed = raw.strip()
     # El archivo está truncado; eliminamos la sección incompleta de emergent themes.
@@ -213,7 +217,9 @@ def _load_dnp_standards(path: Path, audit: List[AuditIssue]) -> Optional[Dict[st
     return data
 
 
-def _group_questions_by_point(full_data: Dict[str, object], audit: List[AuditIssue]) -> Dict[str, Dict[str, object]]:
+def _group_questions_by_point(
+    full_data: Dict[str, object], audit: List[AuditIssue]
+) -> Dict[str, Dict[str, object]]:
     questions = full_data.get("questions")
     if not isinstance(questions, list):
         audit.append(
@@ -227,7 +233,10 @@ def _group_questions_by_point(full_data: Dict[str, object], audit: List[AuditIss
     grouped: Dict[str, Dict[str, object]] = {}
     for entry in questions:
         point_code = _nfkc_trim(str(entry.get("point_code", "")))
-        point_title = _nfkc_trim(str(entry.get("point_title", ""))) or "evidencia_insuficiente"
+        point_title = (
+            _nfkc_trim(str(entry.get("point_title", ""))
+                       ) or "evidencia_insuficiente"
+        )
         if point_code not in grouped:
             grouped[point_code] = {
                 "title": point_title,
@@ -237,25 +246,37 @@ def _group_questions_by_point(full_data: Dict[str, object], audit: List[AuditIss
     return grouped
 
 
-def _build_canonical_clusters(grouped: Dict[str, Dict[str, object]]) -> List[ClusterSpec]:
+def _build_canonical_clusters(
+    grouped: Dict[str, Dict[str, object]],
+) -> List[ClusterSpec]:
     clusters: List[ClusterSpec] = []
-    for idx, (point_code, payload) in enumerate(sorted(grouped.items(), key=lambda kv: kv[0])):
+    for idx, (point_code, payload) in enumerate(
+        sorted(grouped.items(), key=lambda kv: kv[0])
+    ):
         order = idx
         label = _nfkc_trim(payload["title"]) or "evidencia_insuficiente"
         cluster_code = _sanitize_code("CL", point_code, idx + 1)
         point_code_canonical = _sanitize_code("PT", point_code, idx + 1)
-        cluster_id = f"cluster_{idx+1:02d}"
-        point_id = f"point_{idx+1:02d}"
+        cluster_id = f"cluster_{idx + 1:02d}"
+        point_id = f"point_{idx + 1:02d}"
         questions_specs: List[QuestionSpec] = []
-        for q_idx, entry in enumerate(sorted(payload["questions"], key=lambda e: str(e.get("id", "")))):
-            raw_id = _nfkc_trim(str(entry.get("id", f"Q{idx+1:02d}{q_idx+1:02d}")))
-            q_code = _sanitize_code("Q", f"{raw_id}-{idx+1}-{q_idx+1}", q_idx + 1)
-            prompt = _nfkc_trim(str(entry.get("prompt", "evidencia_insuficiente")))
+        for q_idx, entry in enumerate(
+            sorted(payload["questions"], key=lambda e: str(e.get("id", "")))
+        ):
+            raw_id = _nfkc_trim(
+                str(entry.get("id", f"Q{idx + 1:02d}{q_idx + 1:02d}")))
+            q_code = _sanitize_code(
+                "Q", f"{raw_id}-{idx + 1}-{q_idx + 1}", q_idx + 1)
+            prompt = _nfkc_trim(
+                str(entry.get("prompt", "evidencia_insuficiente")))
             hints = entry.get("hints") or []
             if not isinstance(hints, list):
                 hints = []
-            aliases = sorted({_nfkc_trim(raw_id)} | { _nfkc_trim(h) for h in hints if _nfkc_trim(h) })
-            refs = [hint for hint in ( _nfkc_trim(h) for h in hints ) if hint]
+            aliases = sorted(
+                {_nfkc_trim(raw_id)} | {_nfkc_trim(h)
+                                        for h in hints if _nfkc_trim(h)}
+            )
+            refs = [hint for hint in (_nfkc_trim(h) for h in hints) if hint]
             questions_specs.append(
                 QuestionSpec(
                     q_id=raw_id,
@@ -296,11 +317,15 @@ def _placeholder_clusters_from_canonical(
     placeholders: List[ClusterSpec] = []
     for cluster in canonical:
         order = cluster.cluster_order
-        cluster_code = _sanitize_code("CL", f"{domain_prefix}{order+1:02d}", order + 1)
-        point_code = _sanitize_code("PT", f"{domain_prefix}{order+1:02d}", order + 1)
+        cluster_code = _sanitize_code(
+            "CL", f"{domain_prefix}{order + 1:02d}", order + 1
+        )
+        point_code = _sanitize_code(
+            "PT", f"{domain_prefix}{order + 1:02d}", order + 1)
         placeholder_question = QuestionSpec(
-            q_id=f"{domain_prefix.lower()}_q_{order+1:02d}",
-            q_code=_sanitize_code("Q", f"{domain_prefix}{order+1:02d}", order + 1),
+            q_id=f"{domain_prefix.lower()}_q_{order + 1:02d}",
+            q_code=_sanitize_code(
+                "Q", f"{domain_prefix}{order + 1:02d}", order + 1),
             q_label="evidencia_insuficiente",
             aliases=[],
             refs=[],
@@ -308,13 +333,13 @@ def _placeholder_clusters_from_canonical(
         )
         placeholders.append(
             ClusterSpec(
-                cluster_id=f"{domain_prefix.lower()}_cluster_{order+1:02d}",
+                cluster_id=f"{domain_prefix.lower()}_cluster_{order + 1:02d}",
                 cluster_code=cluster_code,
                 cluster_label="evidencia_insuficiente",
                 cluster_order=order,
                 points=[
                     PointSpec(
-                        point_id=f"{domain_prefix.lower()}_point_{order+1:02d}",
+                        point_id=f"{domain_prefix.lower()}_point_{order + 1:02d}",
                         point_code=point_code,
                         point_label="evidencia_insuficiente",
                         point_order=0,
@@ -377,7 +402,8 @@ def align_decalogos(
     full_data = _load_decalogo_full(full_path, audit)
     grouped = _group_questions_by_point(full_data, audit)
     if not grouped:
-        raise ValueError("No se encontraron preguntas para construir el canónico")
+        raise ValueError(
+            "No se encontraron preguntas para construir el canónico")
     canonical_clusters = _build_canonical_clusters(grouped)
     full_clusters = canonical_clusters
 
@@ -415,13 +441,19 @@ def align_decalogos(
         canonical_clusters, "DNP", "faltante_en_dnp"
     )
 
-    crosswalk = _build_crosswalk(canonical_clusters, full_clusters, industrial_clusters, dnp_clusters)
+    crosswalk = _build_crosswalk(
+        canonical_clusters, full_clusters, industrial_clusters, dnp_clusters
+    )
 
     out_dir.mkdir(parents=True, exist_ok=True)
-    _write_clean_outputs(out_dir, canonical_clusters, industrial_clusters, dnp_clusters, crosswalk)
+    _write_clean_outputs(
+        out_dir, canonical_clusters, industrial_clusters, dnp_clusters, crosswalk
+    )
     _write_reports(out_dir.parent, audit)
 
-    return CanonicalBundle(clusters=canonical_clusters, audit=audit, crosswalk=crosswalk)
+    return CanonicalBundle(
+        clusters=canonical_clusters, audit=audit, crosswalk=crosswalk
+    )
 
 
 def _write_clean_outputs(
@@ -433,7 +465,8 @@ def _write_clean_outputs(
     version: str = "1.0.0",
 ) -> None:
     def dump_json(path: Path, payload: Dict[str, object]) -> None:
-        text = json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True)
+        text = json.dumps(payload, ensure_ascii=False,
+                          indent=2, sort_keys=True)
         path.write_text(text + "\n", encoding="utf-8")
 
     full_payload = {
@@ -464,14 +497,19 @@ def _write_clean_outputs(
     }
 
     dump_json(out_dir / "decalogo-full.v1.0.0.clean.json", full_payload)
-    dump_json(out_dir / "decalogo-industrial.v1.0.0.clean.json", industrial_payload)
+    dump_json(out_dir / "decalogo-industrial.v1.0.0.clean.json",
+              industrial_payload)
     dump_json(out_dir / "dnp-standards.v1.0.0.clean.json", dnp_payload)
-    dump_json(out_dir / "crosswalk.v1.0.0.json", {"version": version, **crosswalk})
+    dump_json(out_dir / "crosswalk.v1.0.0.json",
+              {"version": version, **crosswalk})
 
     # Symlinks para versiones latest.
     for target, link_name in [
         ("decalogo-full.v1.0.0.clean.json", "decalogo-full.latest.clean.json"),
-        ("decalogo-industrial.v1.0.0.clean.json", "decalogo-industrial.latest.clean.json"),
+        (
+            "decalogo-industrial.v1.0.0.clean.json",
+            "decalogo-industrial.latest.clean.json",
+        ),
         ("dnp-standards.v1.0.0.clean.json", "dnp-standards.latest.clean.json"),
         ("crosswalk.v1.0.0.json", "crosswalk.latest.json"),
     ]:
@@ -492,7 +530,15 @@ def _write_reports(root: Path, audit: List[AuditIssue]) -> None:
     else:
         audit_lines.extend(issue.as_markdown() for issue in audit)
 
-    (reports_dir / "decalogo_audit.md").write_text("\n".join(audit_lines) + "\n", encoding="utf-8")
+    (reports_dir / "decalogo_audit.md").write_text(
+        "\n".join(audit_lines) + "\n", encoding="utf-8"
+    )
 
-    changelog_lines = ["# Changelog de normalización", "", "- Normalización inicial versión 1.0.0"]
-    (reports_dir / "decalogo_changelog.md").write_text("\n".join(changelog_lines) + "\n", encoding="utf-8")
+    changelog_lines = [
+        "# Changelog de normalización",
+        "",
+        "- Normalización inicial versión 1.0.0",
+    ]
+    (reports_dir / "decalogo_changelog.md").write_text(
+        "\n".join(changelog_lines) + "\n", encoding="utf-8"
+    )

@@ -52,7 +52,9 @@ def _load_json(path: Path) -> Dict[str, object]:
         return json.load(handle)
 
 
-def load_decalogos(paths: List[str], crosswalk_path: Optional[str] = None) -> Dict[str, object]:
+def load_decalogos(
+    paths: List[str], crosswalk_path: Optional[str] = None
+) -> Dict[str, object]:
     if len(paths) != 3:
         raise ValueError("Se requieren tres rutas: full, industrial y dnp")
     payloads = []
@@ -60,7 +62,11 @@ def load_decalogos(paths: List[str], crosswalk_path: Optional[str] = None) -> Di
     version = None
     for path_str, schema_name in zip(
         paths,
-        ["decalogo-full.schema.json", "decalogo-industrial.schema.json", "dnp-standards.schema.json"],
+        [
+            "decalogo-full.schema.json",
+            "decalogo-industrial.schema.json",
+            "dnp-standards.schema.json",
+        ],
     ):
         path = Path(path_str)
         payload = _load_json(path)

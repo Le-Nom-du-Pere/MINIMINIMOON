@@ -39,7 +39,8 @@ def provide_decalogos(config_path: Path | None = None) -> Dict[str, object]:
     """Carga el bundle canónico de decálogos usando la configuración empaquetada."""
 
     config = _read_config(config_path)
-    config_file = CONFIG_PATH if config_path is None else Path(config_path).resolve()
+    config_file = CONFIG_PATH if config_path is None else Path(
+        config_path).resolve()
     config_dir = config_file.parent
 
     if not config.get("autoload", False):
@@ -65,8 +66,7 @@ def provide_decalogos(config_path: Path | None = None) -> Dict[str, object]:
     for path in (full_path, industrial_path, dnp_path, crosswalk_path):
         if not path.exists():
             raise DecalogoProviderError(
-                f"No se encuentra el archivo requerido: {path}"
-            )
+                f"No se encuentra el archivo requerido: {path}")
 
     bundle = load_decalogos(
         [str(full_path), str(industrial_path), str(dnp_path)],
