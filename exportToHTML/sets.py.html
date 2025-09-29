@@ -1,27 +1,37 @@
 <html>
 <head>
-<title>sets.py</title>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<style type="text/css">
-.s0 { color: #a71d5d;}
-.s1 { color: #333333;}
-.s2 { color: #63a35c;}
-.s3 { color: #969896;}
-.s4 { color: #183691;}
-.ln { color: #333333; font-weight: normal; font-style: normal; }
-</style>
+    <title>sets.py</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <style type="text/css">
+        .s0 { color: #a71d5d;}
+        .s1 { color: #333333;}
+        .s2 { color: #63a35c;}
+        .s3 { color: #969896;}
+        .s4 { color: #183691;}
+        .ln { color: #333333; font-weight: normal; font-style: normal; }
+    </style>
 </head>
 <body bgcolor="#ffffff">
-<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#c0c0c0" >
-<tr><td><center>
-<font face="Arial, Helvetica" color="#000000">
-sets.py</font>
-</center></td></tr></table>
-<pre><a name="l1"><span class="ln">1    </span></a><span class="s0">from </span><span class="s1">sympy</span><span class="s2">.</span><span class="s1">assumptions </span><span class="s0">import </span><span class="s1">Predicate</span>
-<a name="l2"><span class="ln">2    </span></a><span class="s0">from </span><span class="s1">sympy</span><span class="s2">.</span><span class="s1">multipledispatch </span><span class="s0">import </span><span class="s1">Dispatcher</span>
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#c0c0c0">
+    <tr>
+        <td>
+            <center>
+                <font face="Arial, Helvetica" color="#000000">
+                    sets.py</font>
+            </center>
+        </td>
+    </tr>
+</table>
+<pre><a name="l1"><span class="ln">1    </span></a><span class="s0">from </span><span class="s1">sympy</span><span
+        class="s2">.</span><span class="s1">assumptions </span><span class="s0">import </span><span
+        class="s1">Predicate</span>
+<a name="l2"><span class="ln">2    </span></a><span class="s0">from </span><span class="s1">sympy</span><span
+            class="s2">.</span><span class="s1">multipledispatch </span><span class="s0">import </span><span class="s1">Dispatcher</span>
 <a name="l3"><span class="ln">3    </span></a>
 <a name="l4"><span class="ln">4    </span></a>
-<a name="l5"><span class="ln">5    </span></a><span class="s0">class </span><span class="s1">IntegerPredicate</span><span class="s2">(</span><span class="s1">Predicate</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l5"><span class="ln">5    </span></a><span class="s0">class </span><span
+            class="s1">IntegerPredicate</span><span class="s2">(</span><span class="s1">Predicate</span><span
+            class="s2">)</span><span class="s0">:</span>
 <a name="l6"><span class="ln">6    </span></a>    <span class="s3">&quot;&quot;&quot; 
 <a name="l7"><span class="ln">7    </span></a>    Integer predicate. 
 <a name="l8"><span class="ln">8    </span></a> 
@@ -46,27 +56,40 @@ sets.py</font>
 <a name="l27"><span class="ln">27   </span></a>    .. [1] https://en.wikipedia.org/wiki/Integer 
 <a name="l28"><span class="ln">28   </span></a> 
 <a name="l29"><span class="ln">29   </span></a>    &quot;&quot;&quot;</span>
-<a name="l30"><span class="ln">30   </span></a>    <span class="s1">name </span><span class="s0">= </span><span class="s4">'integer'</span>
-<a name="l31"><span class="ln">31   </span></a>    <span class="s1">handler </span><span class="s0">= </span><span class="s1">Dispatcher</span><span class="s2">(</span>
-<a name="l32"><span class="ln">32   </span></a>        <span class="s4">&quot;IntegerHandler&quot;</span><span class="s2">,</span>
-<a name="l33"><span class="ln">33   </span></a>        <span class="s1">doc</span><span class="s0">=</span><span class="s2">(</span><span class="s4">&quot;Handler for Q.integer.\n\n&quot;</span>
-<a name="l34"><span class="ln">34   </span></a>        <span class="s4">&quot;Test that an expression belongs to the field of integer numbers.&quot;</span><span class="s2">)</span>
+<a name="l30"><span class="ln">30   </span></a>    <span class="s1">name </span><span class="s0">= </span><span
+            class="s4">'integer'</span>
+<a name="l31"><span class="ln">31   </span></a>    <span class="s1">handler </span><span class="s0">= </span><span
+            class="s1">Dispatcher</span><span class="s2">(</span>
+<a name="l32"><span class="ln">32   </span></a>        <span class="s4">&quot;IntegerHandler&quot;</span><span
+            class="s2">,</span>
+<a name="l33"><span class="ln">33   </span></a>        <span class="s1">doc</span><span class="s0">=</span><span
+            class="s2">(</span><span class="s4">&quot;Handler for Q.integer.\n\n&quot;</span>
+<a name="l34"><span class="ln">34   </span></a>        <span class="s4">&quot;Test that an expression belongs to the field of integer numbers.&quot;</span><span
+            class="s2">)</span>
 <a name="l35"><span class="ln">35   </span></a>    <span class="s2">)</span>
 <a name="l36"><span class="ln">36   </span></a>
 <a name="l37"><span class="ln">37   </span></a>
-<a name="l38"><span class="ln">38   </span></a><span class="s0">class </span><span class="s1">NonIntegerPredicate</span><span class="s2">(</span><span class="s1">Predicate</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l38"><span class="ln">38   </span></a><span class="s0">class </span><span class="s1">NonIntegerPredicate</span><span
+            class="s2">(</span><span class="s1">Predicate</span><span class="s2">)</span><span class="s0">:</span>
 <a name="l39"><span class="ln">39   </span></a>    <span class="s3">&quot;&quot;&quot; 
 <a name="l40"><span class="ln">40   </span></a>    Non-integer extended real predicate. 
 <a name="l41"><span class="ln">41   </span></a>    &quot;&quot;&quot;</span>
-<a name="l42"><span class="ln">42   </span></a>    <span class="s1">name </span><span class="s0">= </span><span class="s4">'noninteger'</span>
-<a name="l43"><span class="ln">43   </span></a>    <span class="s1">handler </span><span class="s0">= </span><span class="s1">Dispatcher</span><span class="s2">(</span>
-<a name="l44"><span class="ln">44   </span></a>        <span class="s4">&quot;NonIntegerHandler&quot;</span><span class="s2">,</span>
-<a name="l45"><span class="ln">45   </span></a>        <span class="s1">doc</span><span class="s0">=</span><span class="s2">(</span><span class="s4">&quot;Handler for Q.noninteger.\n\n&quot;</span>
-<a name="l46"><span class="ln">46   </span></a>        <span class="s4">&quot;Test that an expression is a non-integer extended real number.&quot;</span><span class="s2">)</span>
+<a name="l42"><span class="ln">42   </span></a>    <span class="s1">name </span><span class="s0">= </span><span
+            class="s4">'noninteger'</span>
+<a name="l43"><span class="ln">43   </span></a>    <span class="s1">handler </span><span class="s0">= </span><span
+            class="s1">Dispatcher</span><span class="s2">(</span>
+<a name="l44"><span class="ln">44   </span></a>        <span class="s4">&quot;NonIntegerHandler&quot;</span><span
+            class="s2">,</span>
+<a name="l45"><span class="ln">45   </span></a>        <span class="s1">doc</span><span class="s0">=</span><span
+            class="s2">(</span><span class="s4">&quot;Handler for Q.noninteger.\n\n&quot;</span>
+<a name="l46"><span class="ln">46   </span></a>        <span class="s4">&quot;Test that an expression is a non-integer extended real number.&quot;</span><span
+            class="s2">)</span>
 <a name="l47"><span class="ln">47   </span></a>    <span class="s2">)</span>
 <a name="l48"><span class="ln">48   </span></a>
 <a name="l49"><span class="ln">49   </span></a>
-<a name="l50"><span class="ln">50   </span></a><span class="s0">class </span><span class="s1">RationalPredicate</span><span class="s2">(</span><span class="s1">Predicate</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l50"><span class="ln">50   </span></a><span class="s0">class </span><span
+            class="s1">RationalPredicate</span><span class="s2">(</span><span class="s1">Predicate</span><span
+            class="s2">)</span><span class="s0">:</span>
 <a name="l51"><span class="ln">51   </span></a>    <span class="s3">&quot;&quot;&quot; 
 <a name="l52"><span class="ln">52   </span></a>    Rational number predicate. 
 <a name="l53"><span class="ln">53   </span></a> 
@@ -93,15 +116,21 @@ sets.py</font>
 <a name="l74"><span class="ln">74   </span></a>    .. [1] https://en.wikipedia.org/wiki/Rational_number 
 <a name="l75"><span class="ln">75   </span></a> 
 <a name="l76"><span class="ln">76   </span></a>    &quot;&quot;&quot;</span>
-<a name="l77"><span class="ln">77   </span></a>    <span class="s1">name </span><span class="s0">= </span><span class="s4">'rational'</span>
-<a name="l78"><span class="ln">78   </span></a>    <span class="s1">handler </span><span class="s0">= </span><span class="s1">Dispatcher</span><span class="s2">(</span>
-<a name="l79"><span class="ln">79   </span></a>        <span class="s4">&quot;RationalHandler&quot;</span><span class="s2">,</span>
-<a name="l80"><span class="ln">80   </span></a>        <span class="s1">doc</span><span class="s0">=</span><span class="s2">(</span><span class="s4">&quot;Handler for Q.rational.\n\n&quot;</span>
-<a name="l81"><span class="ln">81   </span></a>        <span class="s4">&quot;Test that an expression belongs to the field of rational numbers.&quot;</span><span class="s2">)</span>
+<a name="l77"><span class="ln">77   </span></a>    <span class="s1">name </span><span class="s0">= </span><span
+            class="s4">'rational'</span>
+<a name="l78"><span class="ln">78   </span></a>    <span class="s1">handler </span><span class="s0">= </span><span
+            class="s1">Dispatcher</span><span class="s2">(</span>
+<a name="l79"><span class="ln">79   </span></a>        <span class="s4">&quot;RationalHandler&quot;</span><span
+            class="s2">,</span>
+<a name="l80"><span class="ln">80   </span></a>        <span class="s1">doc</span><span class="s0">=</span><span
+            class="s2">(</span><span class="s4">&quot;Handler for Q.rational.\n\n&quot;</span>
+<a name="l81"><span class="ln">81   </span></a>        <span class="s4">&quot;Test that an expression belongs to the field of rational numbers.&quot;</span><span
+            class="s2">)</span>
 <a name="l82"><span class="ln">82   </span></a>    <span class="s2">)</span>
 <a name="l83"><span class="ln">83   </span></a>
 <a name="l84"><span class="ln">84   </span></a>
-<a name="l85"><span class="ln">85   </span></a><span class="s0">class </span><span class="s1">IrrationalPredicate</span><span class="s2">(</span><span class="s1">Predicate</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l85"><span class="ln">85   </span></a><span class="s0">class </span><span class="s1">IrrationalPredicate</span><span
+            class="s2">(</span><span class="s1">Predicate</span><span class="s2">)</span><span class="s0">:</span>
 <a name="l86"><span class="ln">86   </span></a>    <span class="s3">&quot;&quot;&quot; 
 <a name="l87"><span class="ln">87   </span></a>    Irrational number predicate. 
 <a name="l88"><span class="ln">88   </span></a> 
@@ -130,15 +159,21 @@ sets.py</font>
 <a name="l111"><span class="ln">111  </span></a>    .. [1] https://en.wikipedia.org/wiki/Irrational_number 
 <a name="l112"><span class="ln">112  </span></a> 
 <a name="l113"><span class="ln">113  </span></a>    &quot;&quot;&quot;</span>
-<a name="l114"><span class="ln">114  </span></a>    <span class="s1">name </span><span class="s0">= </span><span class="s4">'irrational'</span>
-<a name="l115"><span class="ln">115  </span></a>    <span class="s1">handler </span><span class="s0">= </span><span class="s1">Dispatcher</span><span class="s2">(</span>
-<a name="l116"><span class="ln">116  </span></a>        <span class="s4">&quot;IrrationalHandler&quot;</span><span class="s2">,</span>
-<a name="l117"><span class="ln">117  </span></a>        <span class="s1">doc</span><span class="s0">=</span><span class="s2">(</span><span class="s4">&quot;Handler for Q.irrational.\n\n&quot;</span>
-<a name="l118"><span class="ln">118  </span></a>        <span class="s4">&quot;Test that an expression is irrational numbers.&quot;</span><span class="s2">)</span>
+<a name="l114"><span class="ln">114  </span></a>    <span class="s1">name </span><span class="s0">= </span><span
+            class="s4">'irrational'</span>
+<a name="l115"><span class="ln">115  </span></a>    <span class="s1">handler </span><span class="s0">= </span><span
+            class="s1">Dispatcher</span><span class="s2">(</span>
+<a name="l116"><span class="ln">116  </span></a>        <span class="s4">&quot;IrrationalHandler&quot;</span><span
+            class="s2">,</span>
+<a name="l117"><span class="ln">117  </span></a>        <span class="s1">doc</span><span class="s0">=</span><span
+            class="s2">(</span><span class="s4">&quot;Handler for Q.irrational.\n\n&quot;</span>
+<a name="l118"><span class="ln">118  </span></a>        <span class="s4">&quot;Test that an expression is irrational numbers.&quot;</span><span
+            class="s2">)</span>
 <a name="l119"><span class="ln">119  </span></a>    <span class="s2">)</span>
 <a name="l120"><span class="ln">120  </span></a>
 <a name="l121"><span class="ln">121  </span></a>
-<a name="l122"><span class="ln">122  </span></a><span class="s0">class </span><span class="s1">RealPredicate</span><span class="s2">(</span><span class="s1">Predicate</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l122"><span class="ln">122  </span></a><span class="s0">class </span><span class="s1">RealPredicate</span><span
+            class="s2">(</span><span class="s1">Predicate</span><span class="s2">)</span><span class="s0">:</span>
 <a name="l123"><span class="ln">123  </span></a>    <span class="s3">r&quot;&quot;&quot; 
 <a name="l124"><span class="ln">124  </span></a>    Real number predicate. 
 <a name="l125"><span class="ln">125  </span></a> 
@@ -196,15 +231,21 @@ sets.py</font>
 <a name="l177"><span class="ln">177  </span></a>    .. [1] https://en.wikipedia.org/wiki/Real_number 
 <a name="l178"><span class="ln">178  </span></a> 
 <a name="l179"><span class="ln">179  </span></a>    &quot;&quot;&quot;</span>
-<a name="l180"><span class="ln">180  </span></a>    <span class="s1">name </span><span class="s0">= </span><span class="s4">'real'</span>
-<a name="l181"><span class="ln">181  </span></a>    <span class="s1">handler </span><span class="s0">= </span><span class="s1">Dispatcher</span><span class="s2">(</span>
+<a name="l180"><span class="ln">180  </span></a>    <span class="s1">name </span><span class="s0">= </span><span
+            class="s4">'real'</span>
+<a name="l181"><span class="ln">181  </span></a>    <span class="s1">handler </span><span class="s0">= </span><span
+            class="s1">Dispatcher</span><span class="s2">(</span>
 <a name="l182"><span class="ln">182  </span></a>        <span class="s4">&quot;RealHandler&quot;</span><span class="s2">,</span>
-<a name="l183"><span class="ln">183  </span></a>        <span class="s1">doc</span><span class="s0">=</span><span class="s2">(</span><span class="s4">&quot;Handler for Q.real.\n\n&quot;</span>
-<a name="l184"><span class="ln">184  </span></a>        <span class="s4">&quot;Test that an expression belongs to the field of real numbers.&quot;</span><span class="s2">)</span>
+<a name="l183"><span class="ln">183  </span></a>        <span class="s1">doc</span><span class="s0">=</span><span
+            class="s2">(</span><span class="s4">&quot;Handler for Q.real.\n\n&quot;</span>
+<a name="l184"><span class="ln">184  </span></a>        <span class="s4">&quot;Test that an expression belongs to the field of real numbers.&quot;</span><span
+            class="s2">)</span>
 <a name="l185"><span class="ln">185  </span></a>    <span class="s2">)</span>
 <a name="l186"><span class="ln">186  </span></a>
 <a name="l187"><span class="ln">187  </span></a>
-<a name="l188"><span class="ln">188  </span></a><span class="s0">class </span><span class="s1">ExtendedRealPredicate</span><span class="s2">(</span><span class="s1">Predicate</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l188"><span class="ln">188  </span></a><span class="s0">class </span><span
+            class="s1">ExtendedRealPredicate</span><span class="s2">(</span><span class="s1">Predicate</span><span
+            class="s2">)</span><span class="s0">:</span>
 <a name="l189"><span class="ln">189  </span></a>    <span class="s3">r&quot;&quot;&quot; 
 <a name="l190"><span class="ln">190  </span></a>    Extended real predicate. 
 <a name="l191"><span class="ln">191  </span></a> 
@@ -229,16 +270,22 @@ sets.py</font>
 <a name="l210"><span class="ln">210  </span></a>    True 
 <a name="l211"><span class="ln">211  </span></a> 
 <a name="l212"><span class="ln">212  </span></a>    &quot;&quot;&quot;</span>
-<a name="l213"><span class="ln">213  </span></a>    <span class="s1">name </span><span class="s0">= </span><span class="s4">'extended_real'</span>
-<a name="l214"><span class="ln">214  </span></a>    <span class="s1">handler </span><span class="s0">= </span><span class="s1">Dispatcher</span><span class="s2">(</span>
-<a name="l215"><span class="ln">215  </span></a>        <span class="s4">&quot;ExtendedRealHandler&quot;</span><span class="s2">,</span>
-<a name="l216"><span class="ln">216  </span></a>        <span class="s1">doc</span><span class="s0">=</span><span class="s2">(</span><span class="s4">&quot;Handler for Q.extended_real.\n\n&quot;</span>
+<a name="l213"><span class="ln">213  </span></a>    <span class="s1">name </span><span class="s0">= </span><span
+            class="s4">'extended_real'</span>
+<a name="l214"><span class="ln">214  </span></a>    <span class="s1">handler </span><span class="s0">= </span><span
+            class="s1">Dispatcher</span><span class="s2">(</span>
+<a name="l215"><span class="ln">215  </span></a>        <span class="s4">&quot;ExtendedRealHandler&quot;</span><span
+            class="s2">,</span>
+<a name="l216"><span class="ln">216  </span></a>        <span class="s1">doc</span><span class="s0">=</span><span
+            class="s2">(</span><span class="s4">&quot;Handler for Q.extended_real.\n\n&quot;</span>
 <a name="l217"><span class="ln">217  </span></a>        <span class="s4">&quot;Test that an expression belongs to the field of extended real\n&quot;</span>
-<a name="l218"><span class="ln">218  </span></a>        <span class="s4">&quot;numbers, that is real numbers union {Infinity, -Infinity}.&quot;</span><span class="s2">)</span>
+<a name="l218"><span class="ln">218  </span></a>        <span class="s4">&quot;numbers, that is real numbers union {Infinity, -Infinity}.&quot;</span><span
+            class="s2">)</span>
 <a name="l219"><span class="ln">219  </span></a>    <span class="s2">)</span>
 <a name="l220"><span class="ln">220  </span></a>
 <a name="l221"><span class="ln">221  </span></a>
-<a name="l222"><span class="ln">222  </span></a><span class="s0">class </span><span class="s1">HermitianPredicate</span><span class="s2">(</span><span class="s1">Predicate</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l222"><span class="ln">222  </span></a><span class="s0">class </span><span class="s1">HermitianPredicate</span><span
+            class="s2">(</span><span class="s1">Predicate</span><span class="s2">)</span><span class="s0">:</span>
 <a name="l223"><span class="ln">223  </span></a>    <span class="s3">&quot;&quot;&quot; 
 <a name="l224"><span class="ln">224  </span></a>    Hermitian predicate. 
 <a name="l225"><span class="ln">225  </span></a> 
@@ -255,15 +302,22 @@ sets.py</font>
 <a name="l236"><span class="ln">236  </span></a> 
 <a name="l237"><span class="ln">237  </span></a>    &quot;&quot;&quot;</span>
 <a name="l238"><span class="ln">238  </span></a>    <span class="s3"># TODO: Add examples</span>
-<a name="l239"><span class="ln">239  </span></a>    <span class="s1">name </span><span class="s0">= </span><span class="s4">'hermitian'</span>
-<a name="l240"><span class="ln">240  </span></a>    <span class="s1">handler </span><span class="s0">= </span><span class="s1">Dispatcher</span><span class="s2">(</span>
-<a name="l241"><span class="ln">241  </span></a>        <span class="s4">&quot;HermitianHandler&quot;</span><span class="s2">,</span>
-<a name="l242"><span class="ln">242  </span></a>        <span class="s1">doc</span><span class="s0">=</span><span class="s2">(</span><span class="s4">&quot;Handler for Q.hermitian.\n\n&quot;</span>
-<a name="l243"><span class="ln">243  </span></a>        <span class="s4">&quot;Test that an expression belongs to the field of Hermitian operators.&quot;</span><span class="s2">)</span>
+<a name="l239"><span class="ln">239  </span></a>    <span class="s1">name </span><span class="s0">= </span><span
+            class="s4">'hermitian'</span>
+<a name="l240"><span class="ln">240  </span></a>    <span class="s1">handler </span><span class="s0">= </span><span
+            class="s1">Dispatcher</span><span class="s2">(</span>
+<a name="l241"><span class="ln">241  </span></a>        <span class="s4">&quot;HermitianHandler&quot;</span><span
+            class="s2">,</span>
+<a name="l242"><span class="ln">242  </span></a>        <span class="s1">doc</span><span class="s0">=</span><span
+            class="s2">(</span><span class="s4">&quot;Handler for Q.hermitian.\n\n&quot;</span>
+<a name="l243"><span class="ln">243  </span></a>        <span class="s4">&quot;Test that an expression belongs to the field of Hermitian operators.&quot;</span><span
+            class="s2">)</span>
 <a name="l244"><span class="ln">244  </span></a>    <span class="s2">)</span>
 <a name="l245"><span class="ln">245  </span></a>
 <a name="l246"><span class="ln">246  </span></a>
-<a name="l247"><span class="ln">247  </span></a><span class="s0">class </span><span class="s1">ComplexPredicate</span><span class="s2">(</span><span class="s1">Predicate</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l247"><span class="ln">247  </span></a><span class="s0">class </span><span
+            class="s1">ComplexPredicate</span><span class="s2">(</span><span class="s1">Predicate</span><span
+            class="s2">)</span><span class="s0">:</span>
 <a name="l248"><span class="ln">248  </span></a>    <span class="s3">&quot;&quot;&quot; 
 <a name="l249"><span class="ln">249  </span></a>    Complex number predicate. 
 <a name="l250"><span class="ln">250  </span></a> 
@@ -291,15 +345,21 @@ sets.py</font>
 <a name="l272"><span class="ln">272  </span></a>    .. [1] https://en.wikipedia.org/wiki/Complex_number 
 <a name="l273"><span class="ln">273  </span></a> 
 <a name="l274"><span class="ln">274  </span></a>    &quot;&quot;&quot;</span>
-<a name="l275"><span class="ln">275  </span></a>    <span class="s1">name </span><span class="s0">= </span><span class="s4">'complex'</span>
-<a name="l276"><span class="ln">276  </span></a>    <span class="s1">handler </span><span class="s0">= </span><span class="s1">Dispatcher</span><span class="s2">(</span>
-<a name="l277"><span class="ln">277  </span></a>        <span class="s4">&quot;ComplexHandler&quot;</span><span class="s2">,</span>
-<a name="l278"><span class="ln">278  </span></a>        <span class="s1">doc</span><span class="s0">=</span><span class="s2">(</span><span class="s4">&quot;Handler for Q.complex.\n\n&quot;</span>
-<a name="l279"><span class="ln">279  </span></a>        <span class="s4">&quot;Test that an expression belongs to the field of complex numbers.&quot;</span><span class="s2">)</span>
+<a name="l275"><span class="ln">275  </span></a>    <span class="s1">name </span><span class="s0">= </span><span
+            class="s4">'complex'</span>
+<a name="l276"><span class="ln">276  </span></a>    <span class="s1">handler </span><span class="s0">= </span><span
+            class="s1">Dispatcher</span><span class="s2">(</span>
+<a name="l277"><span class="ln">277  </span></a>        <span class="s4">&quot;ComplexHandler&quot;</span><span
+            class="s2">,</span>
+<a name="l278"><span class="ln">278  </span></a>        <span class="s1">doc</span><span class="s0">=</span><span
+            class="s2">(</span><span class="s4">&quot;Handler for Q.complex.\n\n&quot;</span>
+<a name="l279"><span class="ln">279  </span></a>        <span class="s4">&quot;Test that an expression belongs to the field of complex numbers.&quot;</span><span
+            class="s2">)</span>
 <a name="l280"><span class="ln">280  </span></a>    <span class="s2">)</span>
 <a name="l281"><span class="ln">281  </span></a>
 <a name="l282"><span class="ln">282  </span></a>
-<a name="l283"><span class="ln">283  </span></a><span class="s0">class </span><span class="s1">ImaginaryPredicate</span><span class="s2">(</span><span class="s1">Predicate</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l283"><span class="ln">283  </span></a><span class="s0">class </span><span class="s1">ImaginaryPredicate</span><span
+            class="s2">(</span><span class="s1">Predicate</span><span class="s2">)</span><span class="s0">:</span>
 <a name="l284"><span class="ln">284  </span></a>    <span class="s3">&quot;&quot;&quot; 
 <a name="l285"><span class="ln">285  </span></a>    Imaginary number predicate. 
 <a name="l286"><span class="ln">286  </span></a> 
@@ -327,16 +387,23 @@ sets.py</font>
 <a name="l308"><span class="ln">308  </span></a>    .. [1] https://en.wikipedia.org/wiki/Imaginary_number 
 <a name="l309"><span class="ln">309  </span></a> 
 <a name="l310"><span class="ln">310  </span></a>    &quot;&quot;&quot;</span>
-<a name="l311"><span class="ln">311  </span></a>    <span class="s1">name </span><span class="s0">= </span><span class="s4">'imaginary'</span>
-<a name="l312"><span class="ln">312  </span></a>    <span class="s1">handler </span><span class="s0">= </span><span class="s1">Dispatcher</span><span class="s2">(</span>
-<a name="l313"><span class="ln">313  </span></a>        <span class="s4">&quot;ImaginaryHandler&quot;</span><span class="s2">,</span>
-<a name="l314"><span class="ln">314  </span></a>        <span class="s1">doc</span><span class="s0">=</span><span class="s2">(</span><span class="s4">&quot;Handler for Q.imaginary.\n\n&quot;</span>
+<a name="l311"><span class="ln">311  </span></a>    <span class="s1">name </span><span class="s0">= </span><span
+            class="s4">'imaginary'</span>
+<a name="l312"><span class="ln">312  </span></a>    <span class="s1">handler </span><span class="s0">= </span><span
+            class="s1">Dispatcher</span><span class="s2">(</span>
+<a name="l313"><span class="ln">313  </span></a>        <span class="s4">&quot;ImaginaryHandler&quot;</span><span
+            class="s2">,</span>
+<a name="l314"><span class="ln">314  </span></a>        <span class="s1">doc</span><span class="s0">=</span><span
+            class="s2">(</span><span class="s4">&quot;Handler for Q.imaginary.\n\n&quot;</span>
 <a name="l315"><span class="ln">315  </span></a>        <span class="s4">&quot;Test that an expression belongs to the field of imaginary numbers,\n&quot;</span>
-<a name="l316"><span class="ln">316  </span></a>        <span class="s4">&quot;that is, numbers in the form x*I, where x is real.&quot;</span><span class="s2">)</span>
+<a name="l316"><span class="ln">316  </span></a>        <span class="s4">&quot;that is, numbers in the form x*I, where x is real.&quot;</span><span
+            class="s2">)</span>
 <a name="l317"><span class="ln">317  </span></a>    <span class="s2">)</span>
 <a name="l318"><span class="ln">318  </span></a>
 <a name="l319"><span class="ln">319  </span></a>
-<a name="l320"><span class="ln">320  </span></a><span class="s0">class </span><span class="s1">AntihermitianPredicate</span><span class="s2">(</span><span class="s1">Predicate</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l320"><span class="ln">320  </span></a><span class="s0">class </span><span
+            class="s1">AntihermitianPredicate</span><span class="s2">(</span><span class="s1">Predicate</span><span
+            class="s2">)</span><span class="s0">:</span>
 <a name="l321"><span class="ln">321  </span></a>    <span class="s3">&quot;&quot;&quot; 
 <a name="l322"><span class="ln">322  </span></a>    Antihermitian predicate. 
 <a name="l323"><span class="ln">323  </span></a> 
@@ -354,16 +421,22 @@ sets.py</font>
 <a name="l335"><span class="ln">335  </span></a> 
 <a name="l336"><span class="ln">336  </span></a>    &quot;&quot;&quot;</span>
 <a name="l337"><span class="ln">337  </span></a>    <span class="s3"># TODO: Add examples</span>
-<a name="l338"><span class="ln">338  </span></a>    <span class="s1">name </span><span class="s0">= </span><span class="s4">'antihermitian'</span>
-<a name="l339"><span class="ln">339  </span></a>    <span class="s1">handler </span><span class="s0">= </span><span class="s1">Dispatcher</span><span class="s2">(</span>
-<a name="l340"><span class="ln">340  </span></a>        <span class="s4">&quot;AntiHermitianHandler&quot;</span><span class="s2">,</span>
-<a name="l341"><span class="ln">341  </span></a>        <span class="s1">doc</span><span class="s0">=</span><span class="s2">(</span><span class="s4">&quot;Handler for Q.antihermitian.\n\n&quot;</span>
+<a name="l338"><span class="ln">338  </span></a>    <span class="s1">name </span><span class="s0">= </span><span
+            class="s4">'antihermitian'</span>
+<a name="l339"><span class="ln">339  </span></a>    <span class="s1">handler </span><span class="s0">= </span><span
+            class="s1">Dispatcher</span><span class="s2">(</span>
+<a name="l340"><span class="ln">340  </span></a>        <span class="s4">&quot;AntiHermitianHandler&quot;</span><span
+            class="s2">,</span>
+<a name="l341"><span class="ln">341  </span></a>        <span class="s1">doc</span><span class="s0">=</span><span
+            class="s2">(</span><span class="s4">&quot;Handler for Q.antihermitian.\n\n&quot;</span>
 <a name="l342"><span class="ln">342  </span></a>        <span class="s4">&quot;Test that an expression belongs to the field of anti-Hermitian\n&quot;</span>
-<a name="l343"><span class="ln">343  </span></a>        <span class="s4">&quot;operators, that is, operators in the form x*I, where x is Hermitian.&quot;</span><span class="s2">)</span>
+<a name="l343"><span class="ln">343  </span></a>        <span class="s4">&quot;operators, that is, operators in the form x*I, where x is Hermitian.&quot;</span><span
+            class="s2">)</span>
 <a name="l344"><span class="ln">344  </span></a>    <span class="s2">)</span>
 <a name="l345"><span class="ln">345  </span></a>
 <a name="l346"><span class="ln">346  </span></a>
-<a name="l347"><span class="ln">347  </span></a><span class="s0">class </span><span class="s1">AlgebraicPredicate</span><span class="s2">(</span><span class="s1">Predicate</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l347"><span class="ln">347  </span></a><span class="s0">class </span><span class="s1">AlgebraicPredicate</span><span
+            class="s2">(</span><span class="s1">Predicate</span><span class="s2">)</span><span class="s0">:</span>
 <a name="l348"><span class="ln">348  </span></a>    <span class="s3">r&quot;&quot;&quot; 
 <a name="l349"><span class="ln">349  </span></a>    Algebraic number predicate. 
 <a name="l350"><span class="ln">350  </span></a> 
@@ -391,14 +464,20 @@ sets.py</font>
 <a name="l372"><span class="ln">372  </span></a>    .. [1] https://en.wikipedia.org/wiki/Algebraic_number 
 <a name="l373"><span class="ln">373  </span></a> 
 <a name="l374"><span class="ln">374  </span></a>    &quot;&quot;&quot;</span>
-<a name="l375"><span class="ln">375  </span></a>    <span class="s1">name </span><span class="s0">= </span><span class="s4">'algebraic'</span>
-<a name="l376"><span class="ln">376  </span></a>    <span class="s1">AlgebraicHandler </span><span class="s0">= </span><span class="s1">Dispatcher</span><span class="s2">(</span>
-<a name="l377"><span class="ln">377  </span></a>        <span class="s4">&quot;AlgebraicHandler&quot;</span><span class="s2">,</span>
-<a name="l378"><span class="ln">378  </span></a>        <span class="s1">doc</span><span class="s0">=</span><span class="s4">&quot;&quot;&quot;Handler for Q.algebraic key.&quot;&quot;&quot;</span>
+<a name="l375"><span class="ln">375  </span></a>    <span class="s1">name </span><span class="s0">= </span><span
+            class="s4">'algebraic'</span>
+<a name="l376"><span class="ln">376  </span></a>    <span class="s1">AlgebraicHandler </span><span
+            class="s0">= </span><span class="s1">Dispatcher</span><span class="s2">(</span>
+<a name="l377"><span class="ln">377  </span></a>        <span class="s4">&quot;AlgebraicHandler&quot;</span><span
+            class="s2">,</span>
+<a name="l378"><span class="ln">378  </span></a>        <span class="s1">doc</span><span class="s0">=</span><span
+            class="s4">&quot;&quot;&quot;Handler for Q.algebraic key.&quot;&quot;&quot;</span>
 <a name="l379"><span class="ln">379  </span></a>    <span class="s2">)</span>
 <a name="l380"><span class="ln">380  </span></a>
 <a name="l381"><span class="ln">381  </span></a>
-<a name="l382"><span class="ln">382  </span></a><span class="s0">class </span><span class="s1">TranscendentalPredicate</span><span class="s2">(</span><span class="s1">Predicate</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l382"><span class="ln">382  </span></a><span class="s0">class </span><span
+            class="s1">TranscendentalPredicate</span><span class="s2">(</span><span class="s1">Predicate</span><span
+            class="s2">)</span><span class="s0">:</span>
 <a name="l383"><span class="ln">383  </span></a>    <span class="s3">&quot;&quot;&quot; 
 <a name="l384"><span class="ln">384  </span></a>    Transcedental number predicate. 
 <a name="l385"><span class="ln">385  </span></a> 
@@ -411,10 +490,14 @@ sets.py</font>
 <a name="l392"><span class="ln">392  </span></a> 
 <a name="l393"><span class="ln">393  </span></a>    &quot;&quot;&quot;</span>
 <a name="l394"><span class="ln">394  </span></a>    <span class="s3"># TODO: Add examples</span>
-<a name="l395"><span class="ln">395  </span></a>    <span class="s1">name </span><span class="s0">= </span><span class="s4">'transcendental'</span>
-<a name="l396"><span class="ln">396  </span></a>    <span class="s1">handler </span><span class="s0">= </span><span class="s1">Dispatcher</span><span class="s2">(</span>
-<a name="l397"><span class="ln">397  </span></a>        <span class="s4">&quot;Transcendental&quot;</span><span class="s2">,</span>
-<a name="l398"><span class="ln">398  </span></a>        <span class="s1">doc</span><span class="s0">=</span><span class="s4">&quot;&quot;&quot;Handler for Q.transcendental key.&quot;&quot;&quot;</span>
+<a name="l395"><span class="ln">395  </span></a>    <span class="s1">name </span><span class="s0">= </span><span
+            class="s4">'transcendental'</span>
+<a name="l396"><span class="ln">396  </span></a>    <span class="s1">handler </span><span class="s0">= </span><span
+            class="s1">Dispatcher</span><span class="s2">(</span>
+<a name="l397"><span class="ln">397  </span></a>        <span class="s4">&quot;Transcendental&quot;</span><span
+            class="s2">,</span>
+<a name="l398"><span class="ln">398  </span></a>        <span class="s1">doc</span><span class="s0">=</span><span
+            class="s4">&quot;&quot;&quot;Handler for Q.transcendental key.&quot;&quot;&quot;</span>
 <a name="l399"><span class="ln">399  </span></a>    <span class="s2">)</span>
 <a name="l400"><span class="ln">400  </span></a></pre>
 </body>

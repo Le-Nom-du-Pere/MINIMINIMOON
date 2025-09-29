@@ -1,34 +1,52 @@
 <html>
 <head>
-<title>_milp.py</title>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<style type="text/css">
-.s0 { color: #a71d5d;}
-.s1 { color: #333333;}
-.s2 { color: #63a35c;}
-.s3 { color: #969896;}
-.s4 { color: #183691;}
-.s5 { color: #0086b3;}
-.ln { color: #333333; font-weight: normal; font-style: normal; }
-</style>
+    <title>_milp.py</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <style type="text/css">
+        .s0 { color: #a71d5d;}
+        .s1 { color: #333333;}
+        .s2 { color: #63a35c;}
+        .s3 { color: #969896;}
+        .s4 { color: #183691;}
+        .s5 { color: #0086b3;}
+        .ln { color: #333333; font-weight: normal; font-style: normal; }
+    </style>
 </head>
 <body bgcolor="#ffffff">
-<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#c0c0c0" >
-<tr><td><center>
-<font face="Arial, Helvetica" color="#000000">
-_milp.py</font>
-</center></td></tr></table>
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#c0c0c0">
+    <tr>
+        <td>
+            <center>
+                <font face="Arial, Helvetica" color="#000000">
+                    _milp.py</font>
+            </center>
+        </td>
+    </tr>
+</table>
 <pre><a name="l1"><span class="ln">1    </span></a><span class="s0">import </span><span class="s1">warnings</span>
-<a name="l2"><span class="ln">2    </span></a><span class="s0">import </span><span class="s1">numpy </span><span class="s0">as </span><span class="s1">np</span>
-<a name="l3"><span class="ln">3    </span></a><span class="s0">from </span><span class="s1">scipy</span><span class="s2">.</span><span class="s1">sparse </span><span class="s0">import </span><span class="s1">csc_array</span><span class="s2">, </span><span class="s1">vstack</span><span class="s2">, </span><span class="s1">issparse</span>
-<a name="l4"><span class="ln">4    </span></a><span class="s0">from </span><span class="s1">scipy</span><span class="s2">.</span><span class="s1">_lib</span><span class="s2">.</span><span class="s1">_util </span><span class="s0">import </span><span class="s1">VisibleDeprecationWarning</span>
-<a name="l5"><span class="ln">5    </span></a><span class="s0">from </span><span class="s2">.</span><span class="s1">_highspy</span><span class="s2">.</span><span class="s1">_highs_wrapper </span><span class="s0">import </span><span class="s1">_highs_wrapper  </span><span class="s3"># type: ignore[import-not-found,import-untyped]</span>
-<a name="l6"><span class="ln">6    </span></a><span class="s0">from </span><span class="s2">.</span><span class="s1">_constraints </span><span class="s0">import </span><span class="s1">LinearConstraint</span><span class="s2">, </span><span class="s1">Bounds</span>
-<a name="l7"><span class="ln">7    </span></a><span class="s0">from </span><span class="s2">.</span><span class="s1">_optimize </span><span class="s0">import </span><span class="s1">OptimizeResult</span>
-<a name="l8"><span class="ln">8    </span></a><span class="s0">from </span><span class="s2">.</span><span class="s1">_linprog_highs </span><span class="s0">import </span><span class="s1">_highs_to_scipy_status_message</span>
+<a name="l2"><span class="ln">2    </span></a><span class="s0">import </span><span class="s1">numpy </span><span
+            class="s0">as </span><span class="s1">np</span>
+<a name="l3"><span class="ln">3    </span></a><span class="s0">from </span><span class="s1">scipy</span><span
+            class="s2">.</span><span class="s1">sparse </span><span class="s0">import </span><span
+            class="s1">csc_array</span><span class="s2">, </span><span class="s1">vstack</span><span
+            class="s2">, </span><span class="s1">issparse</span>
+<a name="l4"><span class="ln">4    </span></a><span class="s0">from </span><span class="s1">scipy</span><span
+            class="s2">.</span><span class="s1">_lib</span><span class="s2">.</span><span class="s1">_util </span><span
+            class="s0">import </span><span class="s1">VisibleDeprecationWarning</span>
+<a name="l5"><span class="ln">5    </span></a><span class="s0">from </span><span class="s2">.</span><span class="s1">_highspy</span><span
+            class="s2">.</span><span class="s1">_highs_wrapper </span><span class="s0">import </span><span class="s1">_highs_wrapper  </span><span
+            class="s3"># type: ignore[import-not-found,import-untyped]</span>
+<a name="l6"><span class="ln">6    </span></a><span class="s0">from </span><span class="s2">.</span><span class="s1">_constraints </span><span
+            class="s0">import </span><span class="s1">LinearConstraint</span><span class="s2">, </span><span class="s1">Bounds</span>
+<a name="l7"><span class="ln">7    </span></a><span class="s0">from </span><span class="s2">.</span><span class="s1">_optimize </span><span
+            class="s0">import </span><span class="s1">OptimizeResult</span>
+<a name="l8"><span class="ln">8    </span></a><span class="s0">from </span><span class="s2">.</span><span class="s1">_linprog_highs </span><span
+            class="s0">import </span><span class="s1">_highs_to_scipy_status_message</span>
 <a name="l9"><span class="ln">9    </span></a>
 <a name="l10"><span class="ln">10   </span></a>
-<a name="l11"><span class="ln">11   </span></a><span class="s0">def </span><span class="s1">_constraints_to_components</span><span class="s2">(</span><span class="s1">constraints</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l11"><span class="ln">11   </span></a><span class="s0">def </span><span
+            class="s1">_constraints_to_components</span><span class="s2">(</span><span
+            class="s1">constraints</span><span class="s2">)</span><span class="s0">:</span>
 <a name="l12"><span class="ln">12   </span></a>    <span class="s3">&quot;&quot;&quot; 
 <a name="l13"><span class="ln">13   </span></a>    Convert sequence of constraints to a single set of components A, b_l, b_u. 
 <a name="l14"><span class="ln">14   </span></a> 
@@ -42,134 +60,322 @@ _milp.py</font>
 <a name="l22"><span class="ln">22   </span></a> 
 <a name="l23"><span class="ln">23   </span></a>    We want to accept 1, 2, and 4 and reject 3 and 5. 
 <a name="l24"><span class="ln">24   </span></a>    &quot;&quot;&quot;</span>
-<a name="l25"><span class="ln">25   </span></a>    <span class="s1">message </span><span class="s0">= </span><span class="s2">(</span><span class="s4">&quot;`constraints` (or each element within `constraints`) must be &quot;</span>
+<a name="l25"><span class="ln">25   </span></a>    <span class="s1">message </span><span class="s0">= </span><span
+            class="s2">(</span><span class="s4">&quot;`constraints` (or each element within `constraints`) must be &quot;</span>
 <a name="l26"><span class="ln">26   </span></a>               <span class="s4">&quot;convertible into an instance of &quot;</span>
-<a name="l27"><span class="ln">27   </span></a>               <span class="s4">&quot;`scipy.optimize.LinearConstraint`.&quot;</span><span class="s2">)</span>
-<a name="l28"><span class="ln">28   </span></a>    <span class="s1">As </span><span class="s0">= </span><span class="s2">[]</span>
-<a name="l29"><span class="ln">29   </span></a>    <span class="s1">b_ls </span><span class="s0">= </span><span class="s2">[]</span>
-<a name="l30"><span class="ln">30   </span></a>    <span class="s1">b_us </span><span class="s0">= </span><span class="s2">[]</span>
+<a name="l27"><span class="ln">27   </span></a>               <span class="s4">&quot;`scipy.optimize.LinearConstraint`.&quot;</span><span
+            class="s2">)</span>
+<a name="l28"><span class="ln">28   </span></a>    <span class="s1">As </span><span class="s0">= </span><span
+            class="s2">[]</span>
+<a name="l29"><span class="ln">29   </span></a>    <span class="s1">b_ls </span><span class="s0">= </span><span
+            class="s2">[]</span>
+<a name="l30"><span class="ln">30   </span></a>    <span class="s1">b_us </span><span class="s0">= </span><span
+            class="s2">[]</span>
 <a name="l31"><span class="ln">31   </span></a>
 <a name="l32"><span class="ln">32   </span></a>    <span class="s3"># Accept case 1 by standardizing as case 4</span>
-<a name="l33"><span class="ln">33   </span></a>    <span class="s0">if </span><span class="s1">isinstance</span><span class="s2">(</span><span class="s1">constraints</span><span class="s2">, </span><span class="s1">LinearConstraint</span><span class="s2">)</span><span class="s0">:</span>
-<a name="l34"><span class="ln">34   </span></a>        <span class="s1">constraints </span><span class="s0">= </span><span class="s2">[</span><span class="s1">constraints</span><span class="s2">]</span>
+<a name="l33"><span class="ln">33   </span></a>    <span class="s0">if </span><span class="s1">isinstance</span><span
+            class="s2">(</span><span class="s1">constraints</span><span class="s2">, </span><span class="s1">LinearConstraint</span><span
+            class="s2">)</span><span class="s0">:</span>
+<a name="l34"><span class="ln">34   </span></a>        <span class="s1">constraints </span><span
+            class="s0">= </span><span class="s2">[</span><span class="s1">constraints</span><span class="s2">]</span>
 <a name="l35"><span class="ln">35   </span></a>    <span class="s0">else:</span>
 <a name="l36"><span class="ln">36   </span></a>        <span class="s3"># Reject case 3</span>
 <a name="l37"><span class="ln">37   </span></a>        <span class="s0">try:</span>
-<a name="l38"><span class="ln">38   </span></a>            <span class="s1">iter</span><span class="s2">(</span><span class="s1">constraints</span><span class="s2">)</span>
-<a name="l39"><span class="ln">39   </span></a>        <span class="s0">except </span><span class="s1">TypeError </span><span class="s0">as </span><span class="s1">exc</span><span class="s0">:</span>
-<a name="l40"><span class="ln">40   </span></a>            <span class="s0">raise </span><span class="s1">ValueError</span><span class="s2">(</span><span class="s1">message</span><span class="s2">) </span><span class="s0">from </span><span class="s1">exc</span>
+<a name="l38"><span class="ln">38   </span></a>            <span class="s1">iter</span><span class="s2">(</span><span
+            class="s1">constraints</span><span class="s2">)</span>
+<a name="l39"><span class="ln">39   </span></a>        <span class="s0">except </span><span class="s1">TypeError </span><span
+            class="s0">as </span><span class="s1">exc</span><span class="s0">:</span>
+<a name="l40"><span class="ln">40   </span></a>            <span class="s0">raise </span><span
+            class="s1">ValueError</span><span class="s2">(</span><span class="s1">message</span><span
+            class="s2">) </span><span class="s0">from </span><span class="s1">exc</span>
 <a name="l41"><span class="ln">41   </span></a>
-<a name="l42"><span class="ln">42   </span></a>        <span class="s3"># Accept case 2 by standardizing as case 4</span>
-<a name="l43"><span class="ln">43   </span></a>        <span class="s0">if </span><span class="s1">len</span><span class="s2">(</span><span class="s1">constraints</span><span class="s2">) </span><span class="s0">== </span><span class="s5">3</span><span class="s0">:</span>
+<a name="l42"><span class="ln">42   </span></a>        <span
+            class="s3"># Accept case 2 by standardizing as case 4</span>
+<a name="l43"><span class="ln">43   </span></a>        <span class="s0">if </span><span class="s1">len</span><span
+            class="s2">(</span><span class="s1">constraints</span><span class="s2">) </span><span
+            class="s0">== </span><span class="s5">3</span><span class="s0">:</span>
 <a name="l44"><span class="ln">44   </span></a>            <span class="s3"># argument could be a single tuple representing a LinearConstraint</span>
 <a name="l45"><span class="ln">45   </span></a>            <span class="s0">try:</span>
-<a name="l46"><span class="ln">46   </span></a>                <span class="s1">constraints </span><span class="s0">= </span><span class="s2">[</span><span class="s1">LinearConstraint</span><span class="s2">(</span><span class="s0">*</span><span class="s1">constraints</span><span class="s2">)]</span>
-<a name="l47"><span class="ln">47   </span></a>            <span class="s0">except </span><span class="s2">(</span><span class="s1">TypeError</span><span class="s2">, </span><span class="s1">ValueError</span><span class="s2">, </span><span class="s1">VisibleDeprecationWarning</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l46"><span class="ln">46   </span></a>                <span class="s1">constraints </span><span
+            class="s0">= </span><span class="s2">[</span><span class="s1">LinearConstraint</span><span
+            class="s2">(</span><span class="s0">*</span><span class="s1">constraints</span><span class="s2">)]</span>
+<a name="l47"><span class="ln">47   </span></a>            <span class="s0">except </span><span class="s2">(</span><span
+            class="s1">TypeError</span><span class="s2">, </span><span class="s1">ValueError</span><span
+            class="s2">, </span><span class="s1">VisibleDeprecationWarning</span><span class="s2">)</span><span
+            class="s0">:</span>
 <a name="l48"><span class="ln">48   </span></a>                <span class="s3"># argument was not a tuple representing a LinearConstraint</span>
 <a name="l49"><span class="ln">49   </span></a>                <span class="s0">pass</span>
 <a name="l50"><span class="ln">50   </span></a>
 <a name="l51"><span class="ln">51   </span></a>    <span class="s3"># Address cases 4/5</span>
-<a name="l52"><span class="ln">52   </span></a>    <span class="s0">for </span><span class="s1">constraint </span><span class="s0">in </span><span class="s1">constraints</span><span class="s0">:</span>
+<a name="l52"><span class="ln">52   </span></a>    <span class="s0">for </span><span class="s1">constraint </span><span
+            class="s0">in </span><span class="s1">constraints</span><span class="s0">:</span>
 <a name="l53"><span class="ln">53   </span></a>        <span class="s3"># if it's not a LinearConstraint or something that represents a</span>
-<a name="l54"><span class="ln">54   </span></a>        <span class="s3"># LinearConstraint at this point, it's invalid</span>
-<a name="l55"><span class="ln">55   </span></a>        <span class="s0">if not </span><span class="s1">isinstance</span><span class="s2">(</span><span class="s1">constraint</span><span class="s2">, </span><span class="s1">LinearConstraint</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l54"><span class="ln">54   </span></a>        <span
+            class="s3"># LinearConstraint at this point, it's invalid</span>
+<a name="l55"><span class="ln">55   </span></a>        <span class="s0">if not </span><span class="s1">isinstance</span><span
+            class="s2">(</span><span class="s1">constraint</span><span class="s2">, </span><span class="s1">LinearConstraint</span><span
+            class="s2">)</span><span class="s0">:</span>
 <a name="l56"><span class="ln">56   </span></a>            <span class="s0">try:</span>
-<a name="l57"><span class="ln">57   </span></a>                <span class="s1">constraint </span><span class="s0">= </span><span class="s1">LinearConstraint</span><span class="s2">(</span><span class="s0">*</span><span class="s1">constraint</span><span class="s2">)</span>
-<a name="l58"><span class="ln">58   </span></a>            <span class="s0">except </span><span class="s1">TypeError </span><span class="s0">as </span><span class="s1">exc</span><span class="s0">:</span>
-<a name="l59"><span class="ln">59   </span></a>                <span class="s0">raise </span><span class="s1">ValueError</span><span class="s2">(</span><span class="s1">message</span><span class="s2">) </span><span class="s0">from </span><span class="s1">exc</span>
-<a name="l60"><span class="ln">60   </span></a>        <span class="s1">As</span><span class="s2">.</span><span class="s1">append</span><span class="s2">(</span><span class="s1">csc_array</span><span class="s2">(</span><span class="s1">constraint</span><span class="s2">.</span><span class="s1">A</span><span class="s2">))</span>
-<a name="l61"><span class="ln">61   </span></a>        <span class="s1">b_ls</span><span class="s2">.</span><span class="s1">append</span><span class="s2">(</span><span class="s1">np</span><span class="s2">.</span><span class="s1">atleast_1d</span><span class="s2">(</span><span class="s1">constraint</span><span class="s2">.</span><span class="s1">lb</span><span class="s2">).</span><span class="s1">astype</span><span class="s2">(</span><span class="s1">np</span><span class="s2">.</span><span class="s1">float64</span><span class="s2">))</span>
-<a name="l62"><span class="ln">62   </span></a>        <span class="s1">b_us</span><span class="s2">.</span><span class="s1">append</span><span class="s2">(</span><span class="s1">np</span><span class="s2">.</span><span class="s1">atleast_1d</span><span class="s2">(</span><span class="s1">constraint</span><span class="s2">.</span><span class="s1">ub</span><span class="s2">).</span><span class="s1">astype</span><span class="s2">(</span><span class="s1">np</span><span class="s2">.</span><span class="s1">float64</span><span class="s2">))</span>
+<a name="l57"><span class="ln">57   </span></a>                <span class="s1">constraint </span><span
+            class="s0">= </span><span class="s1">LinearConstraint</span><span class="s2">(</span><span
+            class="s0">*</span><span class="s1">constraint</span><span class="s2">)</span>
+<a name="l58"><span class="ln">58   </span></a>            <span class="s0">except </span><span
+            class="s1">TypeError </span><span class="s0">as </span><span class="s1">exc</span><span class="s0">:</span>
+<a name="l59"><span class="ln">59   </span></a>                <span class="s0">raise </span><span
+            class="s1">ValueError</span><span class="s2">(</span><span class="s1">message</span><span
+            class="s2">) </span><span class="s0">from </span><span class="s1">exc</span>
+<a name="l60"><span class="ln">60   </span></a>        <span class="s1">As</span><span class="s2">.</span><span
+            class="s1">append</span><span class="s2">(</span><span class="s1">csc_array</span><span
+            class="s2">(</span><span class="s1">constraint</span><span class="s2">.</span><span class="s1">A</span><span
+            class="s2">))</span>
+<a name="l61"><span class="ln">61   </span></a>        <span class="s1">b_ls</span><span class="s2">.</span><span
+            class="s1">append</span><span class="s2">(</span><span class="s1">np</span><span class="s2">.</span><span
+            class="s1">atleast_1d</span><span class="s2">(</span><span class="s1">constraint</span><span
+            class="s2">.</span><span class="s1">lb</span><span class="s2">).</span><span class="s1">astype</span><span
+            class="s2">(</span><span class="s1">np</span><span class="s2">.</span><span class="s1">float64</span><span
+            class="s2">))</span>
+<a name="l62"><span class="ln">62   </span></a>        <span class="s1">b_us</span><span class="s2">.</span><span
+            class="s1">append</span><span class="s2">(</span><span class="s1">np</span><span class="s2">.</span><span
+            class="s1">atleast_1d</span><span class="s2">(</span><span class="s1">constraint</span><span
+            class="s2">.</span><span class="s1">ub</span><span class="s2">).</span><span class="s1">astype</span><span
+            class="s2">(</span><span class="s1">np</span><span class="s2">.</span><span class="s1">float64</span><span
+            class="s2">))</span>
 <a name="l63"><span class="ln">63   </span></a>
-<a name="l64"><span class="ln">64   </span></a>    <span class="s0">if </span><span class="s1">len</span><span class="s2">(</span><span class="s1">As</span><span class="s2">) </span><span class="s0">&gt; </span><span class="s5">1</span><span class="s0">:</span>
-<a name="l65"><span class="ln">65   </span></a>        <span class="s1">A </span><span class="s0">= </span><span class="s1">vstack</span><span class="s2">(</span><span class="s1">As</span><span class="s2">, </span><span class="s1">format</span><span class="s0">=</span><span class="s4">&quot;csc&quot;</span><span class="s2">)</span>
-<a name="l66"><span class="ln">66   </span></a>        <span class="s1">b_l </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">concatenate</span><span class="s2">(</span><span class="s1">b_ls</span><span class="s2">)</span>
-<a name="l67"><span class="ln">67   </span></a>        <span class="s1">b_u </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">concatenate</span><span class="s2">(</span><span class="s1">b_us</span><span class="s2">)</span>
+<a name="l64"><span class="ln">64   </span></a>    <span class="s0">if </span><span class="s1">len</span><span
+            class="s2">(</span><span class="s1">As</span><span class="s2">) </span><span class="s0">&gt; </span><span
+            class="s5">1</span><span class="s0">:</span>
+<a name="l65"><span class="ln">65   </span></a>        <span class="s1">A </span><span class="s0">= </span><span
+            class="s1">vstack</span><span class="s2">(</span><span class="s1">As</span><span class="s2">, </span><span
+            class="s1">format</span><span class="s0">=</span><span class="s4">&quot;csc&quot;</span><span
+            class="s2">)</span>
+<a name="l66"><span class="ln">66   </span></a>        <span class="s1">b_l </span><span class="s0">= </span><span
+            class="s1">np</span><span class="s2">.</span><span class="s1">concatenate</span><span
+            class="s2">(</span><span class="s1">b_ls</span><span class="s2">)</span>
+<a name="l67"><span class="ln">67   </span></a>        <span class="s1">b_u </span><span class="s0">= </span><span
+            class="s1">np</span><span class="s2">.</span><span class="s1">concatenate</span><span
+            class="s2">(</span><span class="s1">b_us</span><span class="s2">)</span>
 <a name="l68"><span class="ln">68   </span></a>    <span class="s0">else:  </span><span class="s3"># avoid unnecessary copying</span>
-<a name="l69"><span class="ln">69   </span></a>        <span class="s1">A </span><span class="s0">= </span><span class="s1">As</span><span class="s2">[</span><span class="s5">0</span><span class="s2">]</span>
-<a name="l70"><span class="ln">70   </span></a>        <span class="s1">b_l </span><span class="s0">= </span><span class="s1">b_ls</span><span class="s2">[</span><span class="s5">0</span><span class="s2">]</span>
-<a name="l71"><span class="ln">71   </span></a>        <span class="s1">b_u </span><span class="s0">= </span><span class="s1">b_us</span><span class="s2">[</span><span class="s5">0</span><span class="s2">]</span>
+<a name="l69"><span class="ln">69   </span></a>        <span class="s1">A </span><span class="s0">= </span><span
+            class="s1">As</span><span class="s2">[</span><span class="s5">0</span><span class="s2">]</span>
+<a name="l70"><span class="ln">70   </span></a>        <span class="s1">b_l </span><span class="s0">= </span><span
+            class="s1">b_ls</span><span class="s2">[</span><span class="s5">0</span><span class="s2">]</span>
+<a name="l71"><span class="ln">71   </span></a>        <span class="s1">b_u </span><span class="s0">= </span><span
+            class="s1">b_us</span><span class="s2">[</span><span class="s5">0</span><span class="s2">]</span>
 <a name="l72"><span class="ln">72   </span></a>
-<a name="l73"><span class="ln">73   </span></a>    <span class="s0">return </span><span class="s1">A</span><span class="s2">, </span><span class="s1">b_l</span><span class="s2">, </span><span class="s1">b_u</span>
+<a name="l73"><span class="ln">73   </span></a>    <span class="s0">return </span><span class="s1">A</span><span
+            class="s2">, </span><span class="s1">b_l</span><span class="s2">, </span><span class="s1">b_u</span>
 <a name="l74"><span class="ln">74   </span></a>
 <a name="l75"><span class="ln">75   </span></a>
-<a name="l76"><span class="ln">76   </span></a><span class="s0">def </span><span class="s1">_milp_iv</span><span class="s2">(</span><span class="s1">c</span><span class="s2">, </span><span class="s1">integrality</span><span class="s2">, </span><span class="s1">bounds</span><span class="s2">, </span><span class="s1">constraints</span><span class="s2">, </span><span class="s1">options</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l76"><span class="ln">76   </span></a><span class="s0">def </span><span class="s1">_milp_iv</span><span
+            class="s2">(</span><span class="s1">c</span><span class="s2">, </span><span
+            class="s1">integrality</span><span class="s2">, </span><span class="s1">bounds</span><span
+            class="s2">, </span><span class="s1">constraints</span><span class="s2">, </span><span
+            class="s1">options</span><span class="s2">)</span><span class="s0">:</span>
 <a name="l77"><span class="ln">77   </span></a>    <span class="s3"># objective IV</span>
-<a name="l78"><span class="ln">78   </span></a>    <span class="s0">if </span><span class="s1">issparse</span><span class="s2">(</span><span class="s1">c</span><span class="s2">)</span><span class="s0">:</span>
-<a name="l79"><span class="ln">79   </span></a>        <span class="s0">raise </span><span class="s1">ValueError</span><span class="s2">(</span><span class="s4">&quot;`c` must be a dense array.&quot;</span><span class="s2">)</span>
-<a name="l80"><span class="ln">80   </span></a>    <span class="s1">c </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">atleast_1d</span><span class="s2">(</span><span class="s1">c</span><span class="s2">).</span><span class="s1">astype</span><span class="s2">(</span><span class="s1">np</span><span class="s2">.</span><span class="s1">float64</span><span class="s2">)</span>
-<a name="l81"><span class="ln">81   </span></a>    <span class="s0">if </span><span class="s1">c</span><span class="s2">.</span><span class="s1">ndim </span><span class="s0">!= </span><span class="s5">1 </span><span class="s0">or </span><span class="s1">c</span><span class="s2">.</span><span class="s1">size </span><span class="s0">== </span><span class="s5">0 </span><span class="s0">or not </span><span class="s1">np</span><span class="s2">.</span><span class="s1">all</span><span class="s2">(</span><span class="s1">np</span><span class="s2">.</span><span class="s1">isfinite</span><span class="s2">(</span><span class="s1">c</span><span class="s2">))</span><span class="s0">:</span>
-<a name="l82"><span class="ln">82   </span></a>        <span class="s1">message </span><span class="s0">= </span><span class="s2">(</span><span class="s4">&quot;`c` must be a one-dimensional array of finite numbers &quot;</span>
-<a name="l83"><span class="ln">83   </span></a>                   <span class="s4">&quot;with at least one element.&quot;</span><span class="s2">)</span>
-<a name="l84"><span class="ln">84   </span></a>        <span class="s0">raise </span><span class="s1">ValueError</span><span class="s2">(</span><span class="s1">message</span><span class="s2">)</span>
+<a name="l78"><span class="ln">78   </span></a>    <span class="s0">if </span><span class="s1">issparse</span><span
+            class="s2">(</span><span class="s1">c</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l79"><span class="ln">79   </span></a>        <span class="s0">raise </span><span
+            class="s1">ValueError</span><span class="s2">(</span><span
+            class="s4">&quot;`c` must be a dense array.&quot;</span><span class="s2">)</span>
+<a name="l80"><span class="ln">80   </span></a>    <span class="s1">c </span><span class="s0">= </span><span class="s1">np</span><span
+            class="s2">.</span><span class="s1">atleast_1d</span><span class="s2">(</span><span class="s1">c</span><span
+            class="s2">).</span><span class="s1">astype</span><span class="s2">(</span><span class="s1">np</span><span
+            class="s2">.</span><span class="s1">float64</span><span class="s2">)</span>
+<a name="l81"><span class="ln">81   </span></a>    <span class="s0">if </span><span class="s1">c</span><span class="s2">.</span><span
+            class="s1">ndim </span><span class="s0">!= </span><span class="s5">1 </span><span class="s0">or </span><span
+            class="s1">c</span><span class="s2">.</span><span class="s1">size </span><span class="s0">== </span><span
+            class="s5">0 </span><span class="s0">or not </span><span class="s1">np</span><span class="s2">.</span><span
+            class="s1">all</span><span class="s2">(</span><span class="s1">np</span><span class="s2">.</span><span
+            class="s1">isfinite</span><span class="s2">(</span><span class="s1">c</span><span class="s2">))</span><span
+            class="s0">:</span>
+<a name="l82"><span class="ln">82   </span></a>        <span class="s1">message </span><span class="s0">= </span><span
+            class="s2">(</span><span
+            class="s4">&quot;`c` must be a one-dimensional array of finite numbers &quot;</span>
+<a name="l83"><span class="ln">83   </span></a>                   <span class="s4">&quot;with at least one element.&quot;</span><span
+            class="s2">)</span>
+<a name="l84"><span class="ln">84   </span></a>        <span class="s0">raise </span><span
+            class="s1">ValueError</span><span class="s2">(</span><span class="s1">message</span><span
+            class="s2">)</span>
 <a name="l85"><span class="ln">85   </span></a>
 <a name="l86"><span class="ln">86   </span></a>    <span class="s3"># integrality IV</span>
-<a name="l87"><span class="ln">87   </span></a>    <span class="s0">if </span><span class="s1">issparse</span><span class="s2">(</span><span class="s1">integrality</span><span class="s2">)</span><span class="s0">:</span>
-<a name="l88"><span class="ln">88   </span></a>        <span class="s0">raise </span><span class="s1">ValueError</span><span class="s2">(</span><span class="s4">&quot;`integrality` must be a dense array.&quot;</span><span class="s2">)</span>
-<a name="l89"><span class="ln">89   </span></a>    <span class="s1">message </span><span class="s0">= </span><span class="s2">(</span><span class="s4">&quot;`integrality` must contain integers 0-3 and be broadcastable &quot;</span>
-<a name="l90"><span class="ln">90   </span></a>               <span class="s4">&quot;to `c.shape`.&quot;</span><span class="s2">)</span>
-<a name="l91"><span class="ln">91   </span></a>    <span class="s0">if </span><span class="s1">integrality </span><span class="s0">is None:</span>
-<a name="l92"><span class="ln">92   </span></a>        <span class="s1">integrality </span><span class="s0">= </span><span class="s5">0</span>
+<a name="l87"><span class="ln">87   </span></a>    <span class="s0">if </span><span class="s1">issparse</span><span
+            class="s2">(</span><span class="s1">integrality</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l88"><span class="ln">88   </span></a>        <span class="s0">raise </span><span
+            class="s1">ValueError</span><span class="s2">(</span><span class="s4">&quot;`integrality` must be a dense array.&quot;</span><span
+            class="s2">)</span>
+<a name="l89"><span class="ln">89   </span></a>    <span class="s1">message </span><span class="s0">= </span><span
+            class="s2">(</span><span class="s4">&quot;`integrality` must contain integers 0-3 and be broadcastable &quot;</span>
+<a name="l90"><span class="ln">90   </span></a>               <span class="s4">&quot;to `c.shape`.&quot;</span><span
+            class="s2">)</span>
+<a name="l91"><span class="ln">91   </span></a>    <span class="s0">if </span><span class="s1">integrality </span><span
+            class="s0">is None:</span>
+<a name="l92"><span class="ln">92   </span></a>        <span class="s1">integrality </span><span
+            class="s0">= </span><span class="s5">0</span>
 <a name="l93"><span class="ln">93   </span></a>    <span class="s0">try:</span>
-<a name="l94"><span class="ln">94   </span></a>        <span class="s1">integrality </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">broadcast_to</span><span class="s2">(</span><span class="s1">integrality</span><span class="s2">, </span><span class="s1">c</span><span class="s2">.</span><span class="s1">shape</span><span class="s2">).</span><span class="s1">astype</span><span class="s2">(</span><span class="s1">np</span><span class="s2">.</span><span class="s1">uint8</span><span class="s2">)</span>
-<a name="l95"><span class="ln">95   </span></a>    <span class="s0">except </span><span class="s1">ValueError</span><span class="s0">:</span>
-<a name="l96"><span class="ln">96   </span></a>        <span class="s0">raise </span><span class="s1">ValueError</span><span class="s2">(</span><span class="s1">message</span><span class="s2">)</span>
-<a name="l97"><span class="ln">97   </span></a>    <span class="s0">if </span><span class="s1">integrality</span><span class="s2">.</span><span class="s1">min</span><span class="s2">() </span><span class="s0">&lt; </span><span class="s5">0 </span><span class="s0">or </span><span class="s1">integrality</span><span class="s2">.</span><span class="s1">max</span><span class="s2">() </span><span class="s0">&gt; </span><span class="s5">3</span><span class="s0">:</span>
-<a name="l98"><span class="ln">98   </span></a>        <span class="s0">raise </span><span class="s1">ValueError</span><span class="s2">(</span><span class="s1">message</span><span class="s2">)</span>
+<a name="l94"><span class="ln">94   </span></a>        <span class="s1">integrality </span><span
+            class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span
+            class="s1">broadcast_to</span><span class="s2">(</span><span class="s1">integrality</span><span
+            class="s2">, </span><span class="s1">c</span><span class="s2">.</span><span class="s1">shape</span><span
+            class="s2">).</span><span class="s1">astype</span><span class="s2">(</span><span class="s1">np</span><span
+            class="s2">.</span><span class="s1">uint8</span><span class="s2">)</span>
+<a name="l95"><span class="ln">95   </span></a>    <span class="s0">except </span><span
+            class="s1">ValueError</span><span class="s0">:</span>
+<a name="l96"><span class="ln">96   </span></a>        <span class="s0">raise </span><span
+            class="s1">ValueError</span><span class="s2">(</span><span class="s1">message</span><span
+            class="s2">)</span>
+<a name="l97"><span class="ln">97   </span></a>    <span class="s0">if </span><span class="s1">integrality</span><span
+            class="s2">.</span><span class="s1">min</span><span class="s2">() </span><span class="s0">&lt; </span><span
+            class="s5">0 </span><span class="s0">or </span><span class="s1">integrality</span><span
+            class="s2">.</span><span class="s1">max</span><span class="s2">() </span><span class="s0">&gt; </span><span
+            class="s5">3</span><span class="s0">:</span>
+<a name="l98"><span class="ln">98   </span></a>        <span class="s0">raise </span><span
+            class="s1">ValueError</span><span class="s2">(</span><span class="s1">message</span><span
+            class="s2">)</span>
 <a name="l99"><span class="ln">99   </span></a>
 <a name="l100"><span class="ln">100  </span></a>    <span class="s3"># bounds IV</span>
-<a name="l101"><span class="ln">101  </span></a>    <span class="s0">if </span><span class="s1">bounds </span><span class="s0">is None:</span>
-<a name="l102"><span class="ln">102  </span></a>        <span class="s1">bounds </span><span class="s0">= </span><span class="s1">Bounds</span><span class="s2">(</span><span class="s5">0</span><span class="s2">, </span><span class="s1">np</span><span class="s2">.</span><span class="s1">inf</span><span class="s2">)</span>
-<a name="l103"><span class="ln">103  </span></a>    <span class="s0">elif not </span><span class="s1">isinstance</span><span class="s2">(</span><span class="s1">bounds</span><span class="s2">, </span><span class="s1">Bounds</span><span class="s2">)</span><span class="s0">:</span>
-<a name="l104"><span class="ln">104  </span></a>        <span class="s1">message </span><span class="s0">= </span><span class="s2">(</span><span class="s4">&quot;`bounds` must be convertible into an instance of &quot;</span>
-<a name="l105"><span class="ln">105  </span></a>                   <span class="s4">&quot;`scipy.optimize.Bounds`.&quot;</span><span class="s2">)</span>
+<a name="l101"><span class="ln">101  </span></a>    <span class="s0">if </span><span class="s1">bounds </span><span
+            class="s0">is None:</span>
+<a name="l102"><span class="ln">102  </span></a>        <span class="s1">bounds </span><span class="s0">= </span><span
+            class="s1">Bounds</span><span class="s2">(</span><span class="s5">0</span><span class="s2">, </span><span
+            class="s1">np</span><span class="s2">.</span><span class="s1">inf</span><span class="s2">)</span>
+<a name="l103"><span class="ln">103  </span></a>    <span class="s0">elif not </span><span
+            class="s1">isinstance</span><span class="s2">(</span><span class="s1">bounds</span><span
+            class="s2">, </span><span class="s1">Bounds</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l104"><span class="ln">104  </span></a>        <span class="s1">message </span><span class="s0">= </span><span
+            class="s2">(</span><span class="s4">&quot;`bounds` must be convertible into an instance of &quot;</span>
+<a name="l105"><span class="ln">105  </span></a>                   <span
+            class="s4">&quot;`scipy.optimize.Bounds`.&quot;</span><span class="s2">)</span>
 <a name="l106"><span class="ln">106  </span></a>        <span class="s0">try:</span>
-<a name="l107"><span class="ln">107  </span></a>            <span class="s1">bounds </span><span class="s0">= </span><span class="s1">Bounds</span><span class="s2">(</span><span class="s0">*</span><span class="s1">bounds</span><span class="s2">)</span>
-<a name="l108"><span class="ln">108  </span></a>        <span class="s0">except </span><span class="s1">TypeError </span><span class="s0">as </span><span class="s1">exc</span><span class="s0">:</span>
-<a name="l109"><span class="ln">109  </span></a>            <span class="s0">raise </span><span class="s1">ValueError</span><span class="s2">(</span><span class="s1">message</span><span class="s2">) </span><span class="s0">from </span><span class="s1">exc</span>
+<a name="l107"><span class="ln">107  </span></a>            <span class="s1">bounds </span><span
+            class="s0">= </span><span class="s1">Bounds</span><span class="s2">(</span><span class="s0">*</span><span
+            class="s1">bounds</span><span class="s2">)</span>
+<a name="l108"><span class="ln">108  </span></a>        <span class="s0">except </span><span
+            class="s1">TypeError </span><span class="s0">as </span><span class="s1">exc</span><span class="s0">:</span>
+<a name="l109"><span class="ln">109  </span></a>            <span class="s0">raise </span><span
+            class="s1">ValueError</span><span class="s2">(</span><span class="s1">message</span><span
+            class="s2">) </span><span class="s0">from </span><span class="s1">exc</span>
 <a name="l110"><span class="ln">110  </span></a>
 <a name="l111"><span class="ln">111  </span></a>    <span class="s0">try:</span>
-<a name="l112"><span class="ln">112  </span></a>        <span class="s1">lb </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">broadcast_to</span><span class="s2">(</span><span class="s1">bounds</span><span class="s2">.</span><span class="s1">lb</span><span class="s2">, </span><span class="s1">c</span><span class="s2">.</span><span class="s1">shape</span><span class="s2">).</span><span class="s1">astype</span><span class="s2">(</span><span class="s1">np</span><span class="s2">.</span><span class="s1">float64</span><span class="s2">)</span>
-<a name="l113"><span class="ln">113  </span></a>        <span class="s1">ub </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">broadcast_to</span><span class="s2">(</span><span class="s1">bounds</span><span class="s2">.</span><span class="s1">ub</span><span class="s2">, </span><span class="s1">c</span><span class="s2">.</span><span class="s1">shape</span><span class="s2">).</span><span class="s1">astype</span><span class="s2">(</span><span class="s1">np</span><span class="s2">.</span><span class="s1">float64</span><span class="s2">)</span>
-<a name="l114"><span class="ln">114  </span></a>    <span class="s0">except </span><span class="s2">(</span><span class="s1">ValueError</span><span class="s2">, </span><span class="s1">TypeError</span><span class="s2">) </span><span class="s0">as </span><span class="s1">exc</span><span class="s0">:</span>
-<a name="l115"><span class="ln">115  </span></a>        <span class="s1">message </span><span class="s0">= </span><span class="s2">(</span><span class="s4">&quot;`bounds.lb` and `bounds.ub` must contain reals and &quot;</span>
-<a name="l116"><span class="ln">116  </span></a>                   <span class="s4">&quot;be broadcastable to `c.shape`.&quot;</span><span class="s2">)</span>
-<a name="l117"><span class="ln">117  </span></a>        <span class="s0">raise </span><span class="s1">ValueError</span><span class="s2">(</span><span class="s1">message</span><span class="s2">) </span><span class="s0">from </span><span class="s1">exc</span>
+<a name="l112"><span class="ln">112  </span></a>        <span class="s1">lb </span><span class="s0">= </span><span
+            class="s1">np</span><span class="s2">.</span><span class="s1">broadcast_to</span><span
+            class="s2">(</span><span class="s1">bounds</span><span class="s2">.</span><span class="s1">lb</span><span
+            class="s2">, </span><span class="s1">c</span><span class="s2">.</span><span class="s1">shape</span><span
+            class="s2">).</span><span class="s1">astype</span><span class="s2">(</span><span class="s1">np</span><span
+            class="s2">.</span><span class="s1">float64</span><span class="s2">)</span>
+<a name="l113"><span class="ln">113  </span></a>        <span class="s1">ub </span><span class="s0">= </span><span
+            class="s1">np</span><span class="s2">.</span><span class="s1">broadcast_to</span><span
+            class="s2">(</span><span class="s1">bounds</span><span class="s2">.</span><span class="s1">ub</span><span
+            class="s2">, </span><span class="s1">c</span><span class="s2">.</span><span class="s1">shape</span><span
+            class="s2">).</span><span class="s1">astype</span><span class="s2">(</span><span class="s1">np</span><span
+            class="s2">.</span><span class="s1">float64</span><span class="s2">)</span>
+<a name="l114"><span class="ln">114  </span></a>    <span class="s0">except </span><span class="s2">(</span><span
+            class="s1">ValueError</span><span class="s2">, </span><span class="s1">TypeError</span><span
+            class="s2">) </span><span class="s0">as </span><span class="s1">exc</span><span class="s0">:</span>
+<a name="l115"><span class="ln">115  </span></a>        <span class="s1">message </span><span class="s0">= </span><span
+            class="s2">(</span><span class="s4">&quot;`bounds.lb` and `bounds.ub` must contain reals and &quot;</span>
+<a name="l116"><span class="ln">116  </span></a>                   <span class="s4">&quot;be broadcastable to `c.shape`.&quot;</span><span
+            class="s2">)</span>
+<a name="l117"><span class="ln">117  </span></a>        <span class="s0">raise </span><span class="s1">ValueError</span><span
+            class="s2">(</span><span class="s1">message</span><span class="s2">) </span><span
+            class="s0">from </span><span class="s1">exc</span>
 <a name="l118"><span class="ln">118  </span></a>
 <a name="l119"><span class="ln">119  </span></a>    <span class="s3"># constraints IV</span>
-<a name="l120"><span class="ln">120  </span></a>    <span class="s0">if not </span><span class="s1">constraints</span><span class="s0">:</span>
-<a name="l121"><span class="ln">121  </span></a>        <span class="s1">constraints </span><span class="s0">= </span><span class="s2">[</span><span class="s1">LinearConstraint</span><span class="s2">(</span><span class="s1">np</span><span class="s2">.</span><span class="s1">empty</span><span class="s2">((</span><span class="s5">0</span><span class="s2">, </span><span class="s1">c</span><span class="s2">.</span><span class="s1">size</span><span class="s2">)),</span>
-<a name="l122"><span class="ln">122  </span></a>                                        <span class="s1">np</span><span class="s2">.</span><span class="s1">empty</span><span class="s2">((</span><span class="s5">0</span><span class="s2">,)), </span><span class="s1">np</span><span class="s2">.</span><span class="s1">empty</span><span class="s2">((</span><span class="s5">0</span><span class="s2">,)))]</span>
+<a name="l120"><span class="ln">120  </span></a>    <span class="s0">if not </span><span
+            class="s1">constraints</span><span class="s0">:</span>
+<a name="l121"><span class="ln">121  </span></a>        <span class="s1">constraints </span><span
+            class="s0">= </span><span class="s2">[</span><span class="s1">LinearConstraint</span><span
+            class="s2">(</span><span class="s1">np</span><span class="s2">.</span><span class="s1">empty</span><span
+            class="s2">((</span><span class="s5">0</span><span class="s2">, </span><span class="s1">c</span><span
+            class="s2">.</span><span class="s1">size</span><span class="s2">)),</span>
+<a name="l122"><span class="ln">122  </span></a>                                        <span class="s1">np</span><span
+            class="s2">.</span><span class="s1">empty</span><span class="s2">((</span><span class="s5">0</span><span
+            class="s2">,)), </span><span class="s1">np</span><span class="s2">.</span><span class="s1">empty</span><span
+            class="s2">((</span><span class="s5">0</span><span class="s2">,)))]</span>
 <a name="l123"><span class="ln">123  </span></a>    <span class="s0">try:</span>
-<a name="l124"><span class="ln">124  </span></a>        <span class="s1">A</span><span class="s2">, </span><span class="s1">b_l</span><span class="s2">, </span><span class="s1">b_u </span><span class="s0">= </span><span class="s1">_constraints_to_components</span><span class="s2">(</span><span class="s1">constraints</span><span class="s2">)</span>
-<a name="l125"><span class="ln">125  </span></a>    <span class="s0">except </span><span class="s1">ValueError </span><span class="s0">as </span><span class="s1">exc</span><span class="s0">:</span>
-<a name="l126"><span class="ln">126  </span></a>        <span class="s1">message </span><span class="s0">= </span><span class="s2">(</span><span class="s4">&quot;`constraints` (or each element within `constraints`) must &quot;</span>
+<a name="l124"><span class="ln">124  </span></a>        <span class="s1">A</span><span class="s2">, </span><span
+            class="s1">b_l</span><span class="s2">, </span><span class="s1">b_u </span><span class="s0">= </span><span
+            class="s1">_constraints_to_components</span><span class="s2">(</span><span
+            class="s1">constraints</span><span class="s2">)</span>
+<a name="l125"><span class="ln">125  </span></a>    <span class="s0">except </span><span
+            class="s1">ValueError </span><span class="s0">as </span><span class="s1">exc</span><span class="s0">:</span>
+<a name="l126"><span class="ln">126  </span></a>        <span class="s1">message </span><span class="s0">= </span><span
+            class="s2">(</span><span
+            class="s4">&quot;`constraints` (or each element within `constraints`) must &quot;</span>
 <a name="l127"><span class="ln">127  </span></a>                   <span class="s4">&quot;be convertible into an instance of &quot;</span>
-<a name="l128"><span class="ln">128  </span></a>                   <span class="s4">&quot;`scipy.optimize.LinearConstraint`.&quot;</span><span class="s2">)</span>
-<a name="l129"><span class="ln">129  </span></a>        <span class="s0">raise </span><span class="s1">ValueError</span><span class="s2">(</span><span class="s1">message</span><span class="s2">) </span><span class="s0">from </span><span class="s1">exc</span>
+<a name="l128"><span class="ln">128  </span></a>                   <span class="s4">&quot;`scipy.optimize.LinearConstraint`.&quot;</span><span
+            class="s2">)</span>
+<a name="l129"><span class="ln">129  </span></a>        <span class="s0">raise </span><span class="s1">ValueError</span><span
+            class="s2">(</span><span class="s1">message</span><span class="s2">) </span><span
+            class="s0">from </span><span class="s1">exc</span>
 <a name="l130"><span class="ln">130  </span></a>
-<a name="l131"><span class="ln">131  </span></a>    <span class="s0">if </span><span class="s1">A</span><span class="s2">.</span><span class="s1">shape </span><span class="s0">!= </span><span class="s2">(</span><span class="s1">b_l</span><span class="s2">.</span><span class="s1">size</span><span class="s2">, </span><span class="s1">c</span><span class="s2">.</span><span class="s1">size</span><span class="s2">)</span><span class="s0">:</span>
-<a name="l132"><span class="ln">132  </span></a>        <span class="s1">message </span><span class="s0">= </span><span class="s4">&quot;The shape of `A` must be (len(b_l), len(c)).&quot;</span>
-<a name="l133"><span class="ln">133  </span></a>        <span class="s0">raise </span><span class="s1">ValueError</span><span class="s2">(</span><span class="s1">message</span><span class="s2">)</span>
-<a name="l134"><span class="ln">134  </span></a>    <span class="s1">indptr</span><span class="s2">, </span><span class="s1">indices</span><span class="s2">, </span><span class="s1">data </span><span class="s0">= </span><span class="s1">A</span><span class="s2">.</span><span class="s1">indptr</span><span class="s2">, </span><span class="s1">A</span><span class="s2">.</span><span class="s1">indices</span><span class="s2">, </span><span class="s1">A</span><span class="s2">.</span><span class="s1">data</span><span class="s2">.</span><span class="s1">astype</span><span class="s2">(</span><span class="s1">np</span><span class="s2">.</span><span class="s1">float64</span><span class="s2">)</span>
+<a name="l131"><span class="ln">131  </span></a>    <span class="s0">if </span><span class="s1">A</span><span
+            class="s2">.</span><span class="s1">shape </span><span class="s0">!= </span><span class="s2">(</span><span
+            class="s1">b_l</span><span class="s2">.</span><span class="s1">size</span><span class="s2">, </span><span
+            class="s1">c</span><span class="s2">.</span><span class="s1">size</span><span class="s2">)</span><span
+            class="s0">:</span>
+<a name="l132"><span class="ln">132  </span></a>        <span class="s1">message </span><span class="s0">= </span><span
+            class="s4">&quot;The shape of `A` must be (len(b_l), len(c)).&quot;</span>
+<a name="l133"><span class="ln">133  </span></a>        <span class="s0">raise </span><span class="s1">ValueError</span><span
+            class="s2">(</span><span class="s1">message</span><span class="s2">)</span>
+<a name="l134"><span class="ln">134  </span></a>    <span class="s1">indptr</span><span class="s2">, </span><span
+            class="s1">indices</span><span class="s2">, </span><span class="s1">data </span><span
+            class="s0">= </span><span class="s1">A</span><span class="s2">.</span><span class="s1">indptr</span><span
+            class="s2">, </span><span class="s1">A</span><span class="s2">.</span><span class="s1">indices</span><span
+            class="s2">, </span><span class="s1">A</span><span class="s2">.</span><span class="s1">data</span><span
+            class="s2">.</span><span class="s1">astype</span><span class="s2">(</span><span class="s1">np</span><span
+            class="s2">.</span><span class="s1">float64</span><span class="s2">)</span>
 <a name="l135"><span class="ln">135  </span></a>
 <a name="l136"><span class="ln">136  </span></a>    <span class="s3"># options IV</span>
-<a name="l137"><span class="ln">137  </span></a>    <span class="s1">options </span><span class="s0">= </span><span class="s1">options </span><span class="s0">or </span><span class="s2">{}</span>
-<a name="l138"><span class="ln">138  </span></a>    <span class="s1">supported_options </span><span class="s0">= </span><span class="s2">{</span><span class="s4">'disp'</span><span class="s2">, </span><span class="s4">'presolve'</span><span class="s2">, </span><span class="s4">'time_limit'</span><span class="s2">, </span><span class="s4">'node_limit'</span><span class="s2">,</span>
-<a name="l139"><span class="ln">139  </span></a>                         <span class="s4">'mip_rel_gap'</span><span class="s2">}</span>
-<a name="l140"><span class="ln">140  </span></a>    <span class="s1">unsupported_options </span><span class="s0">= </span><span class="s1">set</span><span class="s2">(</span><span class="s1">options</span><span class="s2">).</span><span class="s1">difference</span><span class="s2">(</span><span class="s1">supported_options</span><span class="s2">)</span>
-<a name="l141"><span class="ln">141  </span></a>    <span class="s0">if </span><span class="s1">unsupported_options</span><span class="s0">:</span>
-<a name="l142"><span class="ln">142  </span></a>        <span class="s1">message </span><span class="s0">= </span><span class="s2">(</span><span class="s4">f&quot;Unrecognized options detected: {</span><span class="s1">unsupported_options</span><span class="s4">}. &quot;</span>
-<a name="l143"><span class="ln">143  </span></a>                   <span class="s4">&quot;These will be passed to HiGHS verbatim.&quot;</span><span class="s2">)</span>
-<a name="l144"><span class="ln">144  </span></a>        <span class="s1">warnings</span><span class="s2">.</span><span class="s1">warn</span><span class="s2">(</span><span class="s1">message</span><span class="s2">, </span><span class="s1">RuntimeWarning</span><span class="s2">, </span><span class="s1">stacklevel</span><span class="s0">=</span><span class="s5">3</span><span class="s2">)</span>
-<a name="l145"><span class="ln">145  </span></a>    <span class="s1">options_iv </span><span class="s0">= </span><span class="s2">{</span><span class="s4">'log_to_console'</span><span class="s0">: </span><span class="s1">options</span><span class="s2">.</span><span class="s1">pop</span><span class="s2">(</span><span class="s4">&quot;disp&quot;</span><span class="s2">, </span><span class="s0">False</span><span class="s2">),</span>
-<a name="l146"><span class="ln">146  </span></a>                  <span class="s4">'mip_max_nodes'</span><span class="s0">: </span><span class="s1">options</span><span class="s2">.</span><span class="s1">pop</span><span class="s2">(</span><span class="s4">&quot;node_limit&quot;</span><span class="s2">, </span><span class="s0">None</span><span class="s2">)}</span>
-<a name="l147"><span class="ln">147  </span></a>    <span class="s1">options_iv</span><span class="s2">.</span><span class="s1">update</span><span class="s2">(</span><span class="s1">options</span><span class="s2">)</span>
+<a name="l137"><span class="ln">137  </span></a>    <span class="s1">options </span><span class="s0">= </span><span
+            class="s1">options </span><span class="s0">or </span><span class="s2">{}</span>
+<a name="l138"><span class="ln">138  </span></a>    <span class="s1">supported_options </span><span class="s0">= </span><span
+            class="s2">{</span><span class="s4">'disp'</span><span class="s2">, </span><span
+            class="s4">'presolve'</span><span class="s2">, </span><span class="s4">'time_limit'</span><span
+            class="s2">, </span><span class="s4">'node_limit'</span><span class="s2">,</span>
+<a name="l139"><span class="ln">139  </span></a>                         <span class="s4">'mip_rel_gap'</span><span
+            class="s2">}</span>
+<a name="l140"><span class="ln">140  </span></a>    <span class="s1">unsupported_options </span><span
+            class="s0">= </span><span class="s1">set</span><span class="s2">(</span><span class="s1">options</span><span
+            class="s2">).</span><span class="s1">difference</span><span class="s2">(</span><span class="s1">supported_options</span><span
+            class="s2">)</span>
+<a name="l141"><span class="ln">141  </span></a>    <span class="s0">if </span><span
+            class="s1">unsupported_options</span><span class="s0">:</span>
+<a name="l142"><span class="ln">142  </span></a>        <span class="s1">message </span><span class="s0">= </span><span
+            class="s2">(</span><span class="s4">f&quot;Unrecognized options detected: {</span><span class="s1">unsupported_options</span><span
+            class="s4">}. &quot;</span>
+<a name="l143"><span class="ln">143  </span></a>                   <span class="s4">&quot;These will be passed to HiGHS verbatim.&quot;</span><span
+            class="s2">)</span>
+<a name="l144"><span class="ln">144  </span></a>        <span class="s1">warnings</span><span class="s2">.</span><span
+            class="s1">warn</span><span class="s2">(</span><span class="s1">message</span><span
+            class="s2">, </span><span class="s1">RuntimeWarning</span><span class="s2">, </span><span class="s1">stacklevel</span><span
+            class="s0">=</span><span class="s5">3</span><span class="s2">)</span>
+<a name="l145"><span class="ln">145  </span></a>    <span class="s1">options_iv </span><span class="s0">= </span><span
+            class="s2">{</span><span class="s4">'log_to_console'</span><span class="s0">: </span><span class="s1">options</span><span
+            class="s2">.</span><span class="s1">pop</span><span class="s2">(</span><span
+            class="s4">&quot;disp&quot;</span><span class="s2">, </span><span class="s0">False</span><span
+            class="s2">),</span>
+<a name="l146"><span class="ln">146  </span></a>                  <span class="s4">'mip_max_nodes'</span><span
+            class="s0">: </span><span class="s1">options</span><span class="s2">.</span><span class="s1">pop</span><span
+            class="s2">(</span><span class="s4">&quot;node_limit&quot;</span><span class="s2">, </span><span class="s0">None</span><span
+            class="s2">)}</span>
+<a name="l147"><span class="ln">147  </span></a>    <span class="s1">options_iv</span><span class="s2">.</span><span
+            class="s1">update</span><span class="s2">(</span><span class="s1">options</span><span class="s2">)</span>
 <a name="l148"><span class="ln">148  </span></a>
-<a name="l149"><span class="ln">149  </span></a>    <span class="s0">return </span><span class="s1">c</span><span class="s2">, </span><span class="s1">integrality</span><span class="s2">, </span><span class="s1">lb</span><span class="s2">, </span><span class="s1">ub</span><span class="s2">, </span><span class="s1">indptr</span><span class="s2">, </span><span class="s1">indices</span><span class="s2">, </span><span class="s1">data</span><span class="s2">, </span><span class="s1">b_l</span><span class="s2">, </span><span class="s1">b_u</span><span class="s2">, </span><span class="s1">options_iv</span>
+<a name="l149"><span class="ln">149  </span></a>    <span class="s0">return </span><span class="s1">c</span><span
+            class="s2">, </span><span class="s1">integrality</span><span class="s2">, </span><span
+            class="s1">lb</span><span class="s2">, </span><span class="s1">ub</span><span class="s2">, </span><span
+            class="s1">indptr</span><span class="s2">, </span><span class="s1">indices</span><span
+            class="s2">, </span><span class="s1">data</span><span class="s2">, </span><span class="s1">b_l</span><span
+            class="s2">, </span><span class="s1">b_u</span><span class="s2">, </span><span class="s1">options_iv</span>
 <a name="l150"><span class="ln">150  </span></a>
 <a name="l151"><span class="ln">151  </span></a>
-<a name="l152"><span class="ln">152  </span></a><span class="s0">def </span><span class="s1">milp</span><span class="s2">(</span><span class="s1">c</span><span class="s2">, </span><span class="s0">*</span><span class="s2">, </span><span class="s1">integrality</span><span class="s0">=None</span><span class="s2">, </span><span class="s1">bounds</span><span class="s0">=None</span><span class="s2">, </span><span class="s1">constraints</span><span class="s0">=None</span><span class="s2">, </span><span class="s1">options</span><span class="s0">=None</span><span class="s2">)</span><span class="s0">:</span>
+<a name="l152"><span class="ln">152  </span></a><span class="s0">def </span><span class="s1">milp</span><span
+            class="s2">(</span><span class="s1">c</span><span class="s2">, </span><span class="s0">*</span><span
+            class="s2">, </span><span class="s1">integrality</span><span class="s0">=None</span><span
+            class="s2">, </span><span class="s1">bounds</span><span class="s0">=None</span><span
+            class="s2">, </span><span class="s1">constraints</span><span class="s0">=None</span><span
+            class="s2">, </span><span class="s1">options</span><span class="s0">=None</span><span
+            class="s2">)</span><span class="s0">:</span>
 <a name="l153"><span class="ln">153  </span></a>    <span class="s3">r&quot;&quot;&quot; 
 <a name="l154"><span class="ln">154  </span></a>    Mixed-integer linear programming 
 <a name="l155"><span class="ln">155  </span></a> 
@@ -386,30 +592,87 @@ _milp.py</font>
 <a name="l366"><span class="ln">366  </span></a>    Other examples are given :ref:`in the tutorial &lt;tutorial-optimize_milp&gt;`. 
 <a name="l367"><span class="ln">367  </span></a> 
 <a name="l368"><span class="ln">368  </span></a>    &quot;&quot;&quot;</span>
-<a name="l369"><span class="ln">369  </span></a>    <span class="s1">args_iv </span><span class="s0">= </span><span class="s1">_milp_iv</span><span class="s2">(</span><span class="s1">c</span><span class="s2">, </span><span class="s1">integrality</span><span class="s2">, </span><span class="s1">bounds</span><span class="s2">, </span><span class="s1">constraints</span><span class="s2">, </span><span class="s1">options</span><span class="s2">)</span>
-<a name="l370"><span class="ln">370  </span></a>    <span class="s1">c</span><span class="s2">, </span><span class="s1">integrality</span><span class="s2">, </span><span class="s1">lb</span><span class="s2">, </span><span class="s1">ub</span><span class="s2">, </span><span class="s1">indptr</span><span class="s2">, </span><span class="s1">indices</span><span class="s2">, </span><span class="s1">data</span><span class="s2">, </span><span class="s1">b_l</span><span class="s2">, </span><span class="s1">b_u</span><span class="s2">, </span><span class="s1">options </span><span class="s0">= </span><span class="s1">args_iv</span>
+<a name="l369"><span class="ln">369  </span></a>    <span class="s1">args_iv </span><span class="s0">= </span><span
+            class="s1">_milp_iv</span><span class="s2">(</span><span class="s1">c</span><span class="s2">, </span><span
+            class="s1">integrality</span><span class="s2">, </span><span class="s1">bounds</span><span
+            class="s2">, </span><span class="s1">constraints</span><span class="s2">, </span><span
+            class="s1">options</span><span class="s2">)</span>
+<a name="l370"><span class="ln">370  </span></a>    <span class="s1">c</span><span class="s2">, </span><span class="s1">integrality</span><span
+            class="s2">, </span><span class="s1">lb</span><span class="s2">, </span><span class="s1">ub</span><span
+            class="s2">, </span><span class="s1">indptr</span><span class="s2">, </span><span
+            class="s1">indices</span><span class="s2">, </span><span class="s1">data</span><span
+            class="s2">, </span><span class="s1">b_l</span><span class="s2">, </span><span class="s1">b_u</span><span
+            class="s2">, </span><span class="s1">options </span><span class="s0">= </span><span
+            class="s1">args_iv</span>
 <a name="l371"><span class="ln">371  </span></a>
-<a name="l372"><span class="ln">372  </span></a>    <span class="s1">highs_res </span><span class="s0">= </span><span class="s1">_highs_wrapper</span><span class="s2">(</span><span class="s1">c</span><span class="s2">, </span><span class="s1">indptr</span><span class="s2">, </span><span class="s1">indices</span><span class="s2">, </span><span class="s1">data</span><span class="s2">, </span><span class="s1">b_l</span><span class="s2">, </span><span class="s1">b_u</span><span class="s2">,</span>
-<a name="l373"><span class="ln">373  </span></a>                               <span class="s1">lb</span><span class="s2">, </span><span class="s1">ub</span><span class="s2">, </span><span class="s1">integrality</span><span class="s2">, </span><span class="s1">options</span><span class="s2">)</span>
+<a name="l372"><span class="ln">372  </span></a>    <span class="s1">highs_res </span><span class="s0">= </span><span
+            class="s1">_highs_wrapper</span><span class="s2">(</span><span class="s1">c</span><span class="s2">, </span><span
+            class="s1">indptr</span><span class="s2">, </span><span class="s1">indices</span><span
+            class="s2">, </span><span class="s1">data</span><span class="s2">, </span><span class="s1">b_l</span><span
+            class="s2">, </span><span class="s1">b_u</span><span class="s2">,</span>
+<a name="l373"><span class="ln">373  </span></a>                               <span class="s1">lb</span><span
+            class="s2">, </span><span class="s1">ub</span><span class="s2">, </span><span
+            class="s1">integrality</span><span class="s2">, </span><span class="s1">options</span><span
+            class="s2">)</span>
 <a name="l374"><span class="ln">374  </span></a>
-<a name="l375"><span class="ln">375  </span></a>    <span class="s1">res </span><span class="s0">= </span><span class="s2">{}</span>
+<a name="l375"><span class="ln">375  </span></a>    <span class="s1">res </span><span class="s0">= </span><span
+            class="s2">{}</span>
 <a name="l376"><span class="ln">376  </span></a>
 <a name="l377"><span class="ln">377  </span></a>    <span class="s3"># Convert to scipy-style status and message</span>
-<a name="l378"><span class="ln">378  </span></a>    <span class="s1">highs_status </span><span class="s0">= </span><span class="s1">highs_res</span><span class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span class="s4">'status'</span><span class="s2">, </span><span class="s0">None</span><span class="s2">)</span>
-<a name="l379"><span class="ln">379  </span></a>    <span class="s1">highs_message </span><span class="s0">= </span><span class="s1">highs_res</span><span class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span class="s4">'message'</span><span class="s2">, </span><span class="s0">None</span><span class="s2">)</span>
-<a name="l380"><span class="ln">380  </span></a>    <span class="s1">status</span><span class="s2">, </span><span class="s1">message </span><span class="s0">= </span><span class="s1">_highs_to_scipy_status_message</span><span class="s2">(</span><span class="s1">highs_status</span><span class="s2">,</span>
-<a name="l381"><span class="ln">381  </span></a>                                                     <span class="s1">highs_message</span><span class="s2">)</span>
-<a name="l382"><span class="ln">382  </span></a>    <span class="s1">res</span><span class="s2">[</span><span class="s4">'status'</span><span class="s2">] </span><span class="s0">= </span><span class="s1">status</span>
-<a name="l383"><span class="ln">383  </span></a>    <span class="s1">res</span><span class="s2">[</span><span class="s4">'message'</span><span class="s2">] </span><span class="s0">= </span><span class="s1">message</span>
-<a name="l384"><span class="ln">384  </span></a>    <span class="s1">res</span><span class="s2">[</span><span class="s4">'success'</span><span class="s2">] </span><span class="s0">= </span><span class="s2">(</span><span class="s1">status </span><span class="s0">== </span><span class="s5">0</span><span class="s2">)</span>
-<a name="l385"><span class="ln">385  </span></a>    <span class="s1">x </span><span class="s0">= </span><span class="s1">highs_res</span><span class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span class="s4">'x'</span><span class="s2">, </span><span class="s0">None</span><span class="s2">)</span>
-<a name="l386"><span class="ln">386  </span></a>    <span class="s1">res</span><span class="s2">[</span><span class="s4">'x'</span><span class="s2">] </span><span class="s0">= </span><span class="s1">np</span><span class="s2">.</span><span class="s1">array</span><span class="s2">(</span><span class="s1">x</span><span class="s2">) </span><span class="s0">if </span><span class="s1">x </span><span class="s0">is not None else None</span>
-<a name="l387"><span class="ln">387  </span></a>    <span class="s1">res</span><span class="s2">[</span><span class="s4">'fun'</span><span class="s2">] </span><span class="s0">= </span><span class="s1">highs_res</span><span class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span class="s4">'fun'</span><span class="s2">, </span><span class="s0">None</span><span class="s2">)</span>
-<a name="l388"><span class="ln">388  </span></a>    <span class="s1">res</span><span class="s2">[</span><span class="s4">'mip_node_count'</span><span class="s2">] </span><span class="s0">= </span><span class="s1">highs_res</span><span class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span class="s4">'mip_node_count'</span><span class="s2">, </span><span class="s0">None</span><span class="s2">)</span>
-<a name="l389"><span class="ln">389  </span></a>    <span class="s1">res</span><span class="s2">[</span><span class="s4">'mip_dual_bound'</span><span class="s2">] </span><span class="s0">= </span><span class="s1">highs_res</span><span class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span class="s4">'mip_dual_bound'</span><span class="s2">, </span><span class="s0">None</span><span class="s2">)</span>
-<a name="l390"><span class="ln">390  </span></a>    <span class="s1">res</span><span class="s2">[</span><span class="s4">'mip_gap'</span><span class="s2">] </span><span class="s0">= </span><span class="s1">highs_res</span><span class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span class="s4">'mip_gap'</span><span class="s2">, </span><span class="s0">None</span><span class="s2">)</span>
+<a name="l378"><span class="ln">378  </span></a>    <span class="s1">highs_status </span><span class="s0">= </span><span
+            class="s1">highs_res</span><span class="s2">.</span><span class="s1">get</span><span
+            class="s2">(</span><span class="s4">'status'</span><span class="s2">, </span><span
+            class="s0">None</span><span class="s2">)</span>
+<a name="l379"><span class="ln">379  </span></a>    <span class="s1">highs_message </span><span
+            class="s0">= </span><span class="s1">highs_res</span><span class="s2">.</span><span
+            class="s1">get</span><span class="s2">(</span><span class="s4">'message'</span><span
+            class="s2">, </span><span class="s0">None</span><span class="s2">)</span>
+<a name="l380"><span class="ln">380  </span></a>    <span class="s1">status</span><span class="s2">, </span><span
+            class="s1">message </span><span class="s0">= </span><span
+            class="s1">_highs_to_scipy_status_message</span><span class="s2">(</span><span
+            class="s1">highs_status</span><span class="s2">,</span>
+<a name="l381"><span class="ln">381  </span></a>                                                     <span class="s1">highs_message</span><span
+            class="s2">)</span>
+<a name="l382"><span class="ln">382  </span></a>    <span class="s1">res</span><span class="s2">[</span><span
+            class="s4">'status'</span><span class="s2">] </span><span class="s0">= </span><span class="s1">status</span>
+<a name="l383"><span class="ln">383  </span></a>    <span class="s1">res</span><span class="s2">[</span><span
+            class="s4">'message'</span><span class="s2">] </span><span class="s0">= </span><span
+            class="s1">message</span>
+<a name="l384"><span class="ln">384  </span></a>    <span class="s1">res</span><span class="s2">[</span><span
+            class="s4">'success'</span><span class="s2">] </span><span class="s0">= </span><span
+            class="s2">(</span><span class="s1">status </span><span class="s0">== </span><span class="s5">0</span><span
+            class="s2">)</span>
+<a name="l385"><span class="ln">385  </span></a>    <span class="s1">x </span><span class="s0">= </span><span
+            class="s1">highs_res</span><span class="s2">.</span><span class="s1">get</span><span
+            class="s2">(</span><span class="s4">'x'</span><span class="s2">, </span><span class="s0">None</span><span
+            class="s2">)</span>
+<a name="l386"><span class="ln">386  </span></a>    <span class="s1">res</span><span class="s2">[</span><span
+            class="s4">'x'</span><span class="s2">] </span><span class="s0">= </span><span class="s1">np</span><span
+            class="s2">.</span><span class="s1">array</span><span class="s2">(</span><span class="s1">x</span><span
+            class="s2">) </span><span class="s0">if </span><span class="s1">x </span><span class="s0">is not None else None</span>
+<a name="l387"><span class="ln">387  </span></a>    <span class="s1">res</span><span class="s2">[</span><span
+            class="s4">'fun'</span><span class="s2">] </span><span class="s0">= </span><span class="s1">highs_res</span><span
+            class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span class="s4">'fun'</span><span
+            class="s2">, </span><span class="s0">None</span><span class="s2">)</span>
+<a name="l388"><span class="ln">388  </span></a>    <span class="s1">res</span><span class="s2">[</span><span
+            class="s4">'mip_node_count'</span><span class="s2">] </span><span class="s0">= </span><span class="s1">highs_res</span><span
+            class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span
+            class="s4">'mip_node_count'</span><span class="s2">, </span><span class="s0">None</span><span
+            class="s2">)</span>
+<a name="l389"><span class="ln">389  </span></a>    <span class="s1">res</span><span class="s2">[</span><span
+            class="s4">'mip_dual_bound'</span><span class="s2">] </span><span class="s0">= </span><span class="s1">highs_res</span><span
+            class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span
+            class="s4">'mip_dual_bound'</span><span class="s2">, </span><span class="s0">None</span><span
+            class="s2">)</span>
+<a name="l390"><span class="ln">390  </span></a>    <span class="s1">res</span><span class="s2">[</span><span
+            class="s4">'mip_gap'</span><span class="s2">] </span><span class="s0">= </span><span
+            class="s1">highs_res</span><span class="s2">.</span><span class="s1">get</span><span
+            class="s2">(</span><span class="s4">'mip_gap'</span><span class="s2">, </span><span
+            class="s0">None</span><span class="s2">)</span>
 <a name="l391"><span class="ln">391  </span></a>
-<a name="l392"><span class="ln">392  </span></a>    <span class="s0">return </span><span class="s1">OptimizeResult</span><span class="s2">(</span><span class="s1">res</span><span class="s2">)</span>
+<a name="l392"><span class="ln">392  </span></a>    <span class="s0">return </span><span
+            class="s1">OptimizeResult</span><span class="s2">(</span><span class="s1">res</span><span
+            class="s2">)</span>
 <a name="l393"><span class="ln">393  </span></a></pre>
 </body>
 </html>
