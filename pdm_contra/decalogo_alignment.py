@@ -20,7 +20,7 @@ import re
 import unicodedata
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 AUDIT_SEPARATOR = "\n---\n"
 
@@ -163,7 +163,7 @@ def _load_decalogo_full(path: Path, audit: List[AuditIssue]) -> Dict[str, object
 
 
 def _load_decalogo_industrial(
-    path: Path, audit: List[AuditIssue]
+        path: Path, audit: List[AuditIssue]
 ) -> List[Dict[str, object]]:
     raw = path.read_text(encoding="utf-8")
     cleaned_lines = []
@@ -187,7 +187,7 @@ def _load_decalogo_industrial(
 
 
 def _load_dnp_standards(
-    path: Path, audit: List[AuditIssue]
+        path: Path, audit: List[AuditIssue]
 ) -> Optional[Dict[str, object]]:
     raw = path.read_text(encoding="utf-8")
     trimmed = raw.strip()
@@ -218,7 +218,7 @@ def _load_dnp_standards(
 
 
 def _group_questions_by_point(
-    full_data: Dict[str, object], audit: List[AuditIssue]
+        full_data: Dict[str, object], audit: List[AuditIssue]
 ) -> Dict[str, Dict[str, object]]:
     questions = full_data.get("questions")
     if not isinstance(questions, list):
@@ -234,8 +234,8 @@ def _group_questions_by_point(
     for entry in questions:
         point_code = _nfkc_trim(str(entry.get("point_code", "")))
         point_title = (
-            _nfkc_trim(str(entry.get("point_title", ""))
-                       ) or "evidencia_insuficiente"
+                _nfkc_trim(str(entry.get("point_title", ""))
+                           ) or "evidencia_insuficiente"
         )
         if point_code not in grouped:
             grouped[point_code] = {
@@ -247,11 +247,11 @@ def _group_questions_by_point(
 
 
 def _build_canonical_clusters(
-    grouped: Dict[str, Dict[str, object]],
+        grouped: Dict[str, Dict[str, object]],
 ) -> List[ClusterSpec]:
     clusters: List[ClusterSpec] = []
     for idx, (point_code, payload) in enumerate(
-        sorted(grouped.items(), key=lambda kv: kv[0])
+            sorted(grouped.items(), key=lambda kv: kv[0])
     ):
         order = idx
         label = _nfkc_trim(payload["title"]) or "evidencia_insuficiente"
@@ -261,7 +261,7 @@ def _build_canonical_clusters(
         point_id = f"point_{idx + 1:02d}"
         questions_specs: List[QuestionSpec] = []
         for q_idx, entry in enumerate(
-            sorted(payload["questions"], key=lambda e: str(e.get("id", "")))
+                sorted(payload["questions"], key=lambda e: str(e.get("id", "")))
         ):
             raw_id = _nfkc_trim(
                 str(entry.get("id", f"Q{idx + 1:02d}{q_idx + 1:02d}")))
@@ -310,9 +310,9 @@ def _build_canonical_clusters(
 
 
 def _placeholder_clusters_from_canonical(
-    canonical: List[ClusterSpec],
-    domain_prefix: str,
-    status_suffix: str,
+        canonical: List[ClusterSpec],
+        domain_prefix: str,
+        status_suffix: str,
 ) -> List[ClusterSpec]:
     placeholders: List[ClusterSpec] = []
     for cluster in canonical:
@@ -354,10 +354,10 @@ def _placeholder_clusters_from_canonical(
 
 
 def _build_crosswalk(
-    canonical_clusters: List[ClusterSpec],
-    full_clusters: List[ClusterSpec],
-    industrial_clusters: List[ClusterSpec],
-    dnp_clusters: List[ClusterSpec],
+        canonical_clusters: List[ClusterSpec],
+        full_clusters: List[ClusterSpec],
+        industrial_clusters: List[ClusterSpec],
+        dnp_clusters: List[ClusterSpec],
 ) -> Dict[str, List[Dict[str, str]]]:
     crosswalk = {"clusters": [], "points": [], "questions": []}
     for idx, canon_cluster in enumerate(canonical_clusters):
@@ -393,10 +393,10 @@ def _build_crosswalk(
 
 
 def align_decalogos(
-    full_path: Path,
-    industrial_path: Path,
-    dnp_path: Path,
-    out_dir: Path,
+        full_path: Path,
+        industrial_path: Path,
+        dnp_path: Path,
+        out_dir: Path,
 ) -> CanonicalBundle:
     audit: List[AuditIssue] = []
     full_data = _load_decalogo_full(full_path, audit)
@@ -457,12 +457,12 @@ def align_decalogos(
 
 
 def _write_clean_outputs(
-    out_dir: Path,
-    full_clusters: List[ClusterSpec],
-    industrial_clusters: List[ClusterSpec],
-    dnp_clusters: List[ClusterSpec],
-    crosswalk: Dict[str, List[Dict[str, str]]],
-    version: str = "1.0.0",
+        out_dir: Path,
+        full_clusters: List[ClusterSpec],
+        industrial_clusters: List[ClusterSpec],
+        dnp_clusters: List[ClusterSpec],
+        crosswalk: Dict[str, List[Dict[str, str]]],
+        version: str = "1.0.0",
 ) -> None:
     def dump_json(path: Path, payload: Dict[str, object]) -> None:
         text = json.dumps(payload, ensure_ascii=False,
@@ -507,8 +507,8 @@ def _write_clean_outputs(
     for target, link_name in [
         ("decalogo-full.v1.0.0.clean.json", "decalogo-full.latest.clean.json"),
         (
-            "decalogo-industrial.v1.0.0.clean.json",
-            "decalogo-industrial.latest.clean.json",
+                "decalogo-industrial.v1.0.0.clean.json",
+                "decalogo-industrial.latest.clean.json",
         ),
         ("dnp-standards.v1.0.0.clean.json", "dnp-standards.latest.clean.json"),
         ("crosswalk.v1.0.0.json", "crosswalk.latest.json"),

@@ -1,7 +1,11 @@
 {
   "$id": "common.decalogo.schema.json",
   "type": "object",
-  "required": ["version", "domain", "clusters"],
+  "required": [
+    "version",
+    "domain",
+    "clusters"
+  ],
   "properties": {
     "version": {
       "type": "string",
@@ -9,7 +13,11 @@
     },
     "domain": {
       "type": "string",
-      "enum": ["PDM", "Industrial", "DNP"]
+      "enum": [
+        "PDM",
+        "Industrial",
+        "DNP"
+      ]
     },
     "clusters": {
       "type": "array",
@@ -23,21 +31,29 @@
           "points"
         ],
         "properties": {
-          "cluster_id": {"type": "string"},
+          "cluster_id": {
+            "type": "string"
+          },
           "cluster_code": {
             "type": "string",
             "pattern": "^CL-[A-Z0-9]{2,}$"
           },
-          "cluster_label": {"type": "string"},
+          "cluster_label": {
+            "type": "string"
+          },
           "cluster_order": {
             "type": "integer",
             "minimum": 0
           },
           "aliases": {
             "type": "array",
-            "items": {"type": "string"}
+            "items": {
+              "type": "string"
+            }
           },
-          "status": {"type": "string"},
+          "status": {
+            "type": "string"
+          },
           "points": {
             "type": "array",
             "items": {
@@ -50,21 +66,29 @@
                 "questions"
               ],
               "properties": {
-                "point_id": {"type": "string"},
+                "point_id": {
+                  "type": "string"
+                },
                 "point_code": {
                   "type": "string",
                   "pattern": "^PT-[A-Z0-9]{2,}(-\\d+)?$"
                 },
-                "point_label": {"type": "string"},
+                "point_label": {
+                  "type": "string"
+                },
                 "point_order": {
                   "type": "integer",
                   "minimum": 0
                 },
                 "aliases": {
                   "type": "array",
-                  "items": {"type": "string"}
+                  "items": {
+                    "type": "string"
+                  }
                 },
-                "status": {"type": "string"},
+                "status": {
+                  "type": "string"
+                },
                 "questions": {
                   "type": "array",
                   "items": {
@@ -76,12 +100,16 @@
                       "q_type"
                     ],
                     "properties": {
-                      "q_id": {"type": "string"},
+                      "q_id": {
+                        "type": "string"
+                      },
                       "q_code": {
                         "type": "string",
                         "pattern": "^Q-[A-Z0-9]{2,}(-\\d+)?$"
                       },
-                      "q_label": {"type": "string"},
+                      "q_label": {
+                        "type": "string"
+                      },
                       "q_type": {
                         "type": "string",
                         "enum": [
@@ -97,16 +125,24 @@
                         "type": "number",
                         "minimum": 0
                       },
-                      "q_logic": {"type": "object"},
+                      "q_logic": {
+                        "type": "object"
+                      },
                       "aliases": {
                         "type": "array",
-                        "items": {"type": "string"}
+                        "items": {
+                          "type": "string"
+                        }
                       },
                       "refs": {
                         "type": "array",
-                        "items": {"type": "string"}
+                        "items": {
+                          "type": "string"
+                        }
                       },
-                      "status": {"type": "string"}
+                      "status": {
+                        "type": "string"
+                      }
                     },
                     "additionalProperties": false
                   }
@@ -119,18 +155,26 @@
         "additionalProperties": false
       }
     },
-    "crosswalk": {"type": "object"},
+    "crosswalk": {
+      "type": "object"
+    },
     "subclusters": {
       "type": "array",
-      "items": {"type": "object"}
+      "items": {
+        "type": "object"
+      }
     },
     "kpi_templates": {
       "type": "array",
-      "items": {"type": "object"}
+      "items": {
+        "type": "object"
+      }
     },
     "norm_refs": {
       "type": "array",
-      "items": {"type": "string"}
+      "items": {
+        "type": "string"
+      }
     },
     "competence_map": {
       "type": "object"

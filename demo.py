@@ -138,7 +138,7 @@ def main():
         quality_level = "High" if score >= 0.7 else "Medium" if score >= 0.4 else "Low"
 
         display_text = fragment[:50] + \
-            "..." if len(fragment) > 50 else fragment
+                       "..." if len(fragment) > 50 else fragment
         print(f"{i}. Score: {score:.3f} ({quality_level:>6}) | {display_text}")
 
     print(f"\n{'=' * 60}")

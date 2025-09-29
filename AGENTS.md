@@ -3,6 +3,7 @@
 ## Commands
 
 ### Setup
+
 ```bash
 # Python project with embedding models, text processing, and responsibility detection components
 python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt
@@ -11,6 +12,7 @@ python3 -m spacy download es_core_news_sm
 ```
 
 ### Build
+
 ```bash
 # Text processing components
 python3 -c "import text_processor, utils; print('Text processing build successful')" || echo "Text processing components not available"
@@ -29,6 +31,7 @@ python3 -m py_compile spacy_loader.py
 ```
 
 ### Lint
+
 ```bash
 # Code follows PEP 8 conventions
 python3 -m py_compile embedding_model.py test_embedding_model.py example_usage.py
@@ -45,6 +48,7 @@ python3 -m py_compile spacy_loader.py test_spacy_loader.py
 ```
 
 ### Test
+
 ```bash
 # Embedding model tests
 python3 -m pytest test_embedding_model.py -v
@@ -61,6 +65,7 @@ python3 validate.py 2>/dev/null || echo "Full validation suite not available"
 ```
 
 ### Dev Server
+
 ```bash
 # Embedding model demo
 python3 example_usage.py
@@ -76,12 +81,15 @@ python3 dag_validation.py 2>/dev/null || echo "DAG validation demo not available
 ```
 
 ## Tech Stack
+
 - **Language**: Python 3.7+
-- **Framework**: sentence-transformers, scikit-learn, numpy for embedding models; spaCy for NER; standard library for text processing and atomic file operations
+- **Framework**: sentence-transformers, scikit-learn, numpy for embedding models; spaCy for NER; standard library for
+  text processing and atomic file operations
 - **Package Manager**: pip
 - **Testing**: pytest and unittest
 
 ## Architecture
+
 ```
 # Embedding Model Components
 embedding_model.py              # Core embedding model with fallback mechanism
@@ -152,6 +160,7 @@ teoria_cambio.py               # TeoriaCambio class with cached causal graph con
 ```
 
 ## Code Style
+
 - Follows PEP 8 Python conventions
 - Comprehensive docstrings with examples
 - Type hints using typing module

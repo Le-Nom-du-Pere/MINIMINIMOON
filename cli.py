@@ -8,14 +8,15 @@ with configurable parameters for parallel processing, device selection, and outp
 """
 
 import argparse
-import sys
 import os
+import sys
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict
+
 
 def create_parser() -> argparse.ArgumentParser:
     """Create and configure the argument parser with all supported flags."""
-    
+
     parser = argparse.ArgumentParser(
         description="Policy Analysis System - Feasibility Scoring and Evaluation",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -26,7 +27,7 @@ Examples:
   python cli.py --input ./documents --topk 10 --umbral 0.75 --max-segmentos 1000
         """
     )
-    
+
     # Input/Output paths
     parser.add_argument(
         '--input',
@@ -34,14 +35,14 @@ Examples:
         default='.',
         help='Input directory path containing documents to analyze (default: current directory)'
     )
-    
+
     parser.add_argument(
         '--outdir',
         type=str,
         default='output',
         help='Output directory path for results (default: "output")'
     )
-    
+
     # Parallel processing configuration
     parser.add_argument(
         '--workers',
@@ -49,7 +50,7 @@ Examples:
         default=min(os.cpu_count() or 1, 8),
         help=f'Number of parallel workers for processing (default: {min(os.cpu_count() or 1, 8)})'
     )
-    
+
     # Device selection for computation
     parser.add_argument(
         '--device',
@@ -58,7 +59,7 @@ Examples:
         choices=['auto', 'cpu', 'cuda', 'cuda:0', 'cuda:1', 'mps'],
         help='Computation device selection (default: auto-detect)'
     )
-    
+
     # Numerical precision settings
     parser.add_argument(
         '--precision',
@@ -67,7 +68,7 @@ Examples:
         choices=['float16', 'float32', 'float64'],
         help='Numerical precision for calculations (default: float32)'
     )
-    
+
     # Top-k search results
     parser.add_argument(
         '--topk',
@@ -75,7 +76,7 @@ Examples:
         default=10,
         help='Number of top-k search results to return (default: 10)'
     )
-    
+
     # Threshold values
     parser.add_argument(
         '--umbral',
@@ -83,7 +84,7 @@ Examples:
         default=0.5,
         help='Threshold value for similarity/confidence filtering (default: 0.5)'
     )
-    
+
     # Maximum segments limit
     parser.add_argument(
         '--max-segmentos',
@@ -91,7 +92,7 @@ Examples:
         default=1000,
         help='Maximum number of text segments to process (default: 1000)'
     )
-    
+
     # Processing mode selection
     parser.add_argument(
         '--mode',
@@ -100,26 +101,26 @@ Examples:
         choices=['feasibility', 'decatalogo', 'embedding', 'demo'],
         help='Processing mode to execute (default: feasibility)'
     )
-    
+
     # Additional options
     parser.add_argument(
         '--verbose',
         action='store_true',
         help='Enable verbose output for debugging'
     )
-    
+
     parser.add_argument(
         '--config',
         type=str,
         help='Path to JSON configuration file (overrides command-line options)'
     )
-    
+
     parser.add_argument(
         '--dry-run',
         action='store_true',
         help='Show configuration without executing processing'
     )
-    
+
     return parser
 
 
@@ -136,13 +137,13 @@ def load_config_file(config_path: str) -> Dict[str, Any]:
 
 def validate_args(args: argparse.Namespace) -> None:
     """Validate and adjust parsed arguments."""
-    
+
     # Validate input path exists
     input_path = Path(args.input)
     if not input_path.exists():
         print(f"Error: Input path '{args.input}' does not exist")
         sys.exit(1)
-    
+
     # Create output directory if it doesn't exist
     output_path = Path(args.outdir)
     try:
@@ -150,22 +151,22 @@ def validate_args(args: argparse.Namespace) -> None:
     except Exception as e:
         print(f"Error creating output directory '{args.outdir}': {e}")
         sys.exit(1)
-    
+
     # Validate workers count
     if args.workers < 1:
         print("Error: Workers count must be at least 1")
         sys.exit(1)
-    
+
     # Validate topk value
     if args.topk < 1:
         print("Error: topk value must be at least 1")
         sys.exit(1)
-    
+
     # Validate umbral range
     if not 0.0 <= args.umbral <= 1.0:
         print("Error: umbral value must be between 0.0 and 1.0")
         sys.exit(1)
-    
+
     # Validate max_segmentos
     if args.max_segmentos < 1:
         print("Error: max-segmentos value must be at least 1")
@@ -192,10 +193,10 @@ def get_device_config(device_arg: str) -> str:
 def setup_logging(verbose: bool = False):
     """Setup logging configuration based on verbosity level."""
     import logging
-    
+
     level = logging.DEBUG if verbose else logging.INFO
     format_str = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    
+
     logging.basicConfig(
         level=level,
         format=format_str,
@@ -210,7 +211,7 @@ def run_feasibility_mode(args: argparse.Namespace) -> int:
     """Execute feasibility scoring mode."""
     try:
         from feasibility_scorer import FeasibilityScorer
-        
+
         print(f"Running feasibility analysis...")
         print(f"Input directory: {args.input}")
         print(f"Output directory: {args.outdir}")
@@ -220,27 +221,27 @@ def run_feasibility_mode(args: argparse.Namespace) -> int:
         print(f"Top-k: {args.topk}")
         print(f"Umbral: {args.umbral}")
         print(f"Max segments: {args.max_segmentos}")
-        
+
         # Initialize scorer with CLI parameters
         scorer = FeasibilityScorer(
             enable_parallel=args.workers > 1,
             n_jobs=args.workers,
             backend='loky'
         )
-        
+
         # Process input directory for text files
         input_path = Path(args.input)
         text_files = []
-        
+
         for ext in ['*.txt', '*.md', '*.pdf']:
             text_files.extend(input_path.glob(ext))
-        
+
         if not text_files:
             print(f"No text files found in {args.input}")
             return 1
-        
+
         print(f"Found {len(text_files)} files to process")
-        
+
         # Read and process files
         indicators = []
         for file_path in text_files:
@@ -254,13 +255,13 @@ def run_feasibility_mode(args: argparse.Namespace) -> int:
                     indicators.extend(segments)
             except Exception as e:
                 print(f"Warning: Could not read {file_path}: {e}")
-        
+
         if not indicators:
             print("No content found to analyze")
             return 1
-        
+
         print(f"Analyzing {len(indicators)} indicators...")
-        
+
         # Score indicators using CLI parameters
         if args.workers > 1:
             results = scorer.batch_score(
@@ -269,17 +270,17 @@ def run_feasibility_mode(args: argparse.Namespace) -> int:
             )
         else:
             results = [scorer.calculate_feasibility_score(ind) for ind in indicators[:args.max_segmentos]]
-        
+
         # Filter results by umbral threshold
         filtered_results = [
             (ind, result) for ind, result in zip(indicators, results)
             if result.feasibility_score >= args.umbral
         ]
-        
+
         # Sort by score and take top-k
         filtered_results.sort(key=lambda x: x[1].feasibility_score, reverse=True)
         top_results = filtered_results[:args.topk]
-        
+
         # Generate report
         output_file = Path(args.outdir) / 'feasibility_report.json'
         report_data = {
@@ -310,20 +311,20 @@ def run_feasibility_mode(args: argparse.Namespace) -> int:
                 for text, result in top_results
             ]
         }
-        
+
         import json
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(report_data, f, indent=2, ensure_ascii=False)
-        
+
         print(f"Analysis complete. Results saved to {output_file}")
         print(f"Top {len(top_results)} results (threshold >= {args.umbral}):")
-        
+
         for i, (text, result) in enumerate(top_results[:5], 1):
             display_text = text[:100] + ('...' if len(text) > 100 else '')
             print(f"{i}. Score: {result.feasibility_score:.3f} | {result.quality_tier} | {display_text}")
-        
+
         return 0
-        
+
     except ImportError as e:
         print(f"Error: Required module not available: {e}")
         return 1
@@ -336,23 +337,23 @@ def run_embedding_mode(args: argparse.Namespace) -> int:
     """Execute embedding model mode."""
     try:
         from embedding_model import create_embedding_model
-        
+
         print(f"Running embedding analysis...")
-        
+
         # Get device configuration
         device = get_device_config(args.device)
-        
+
         # Create embedding model with CLI parameters
         model = create_embedding_model(
             device=device,
             precision=args.precision,
             enable_cache=True
         )
-        
+
         # Process input files
         input_path = Path(args.input)
         documents = []
-        
+
         for file_path in input_path.glob('*.txt'):
             try:
                 with open(file_path, 'r', encoding='utf-8') as f:
@@ -364,28 +365,28 @@ def run_embedding_mode(args: argparse.Namespace) -> int:
                         })
             except Exception as e:
                 print(f"Warning: Could not read {file_path}: {e}")
-        
+
         if not documents:
             print("No documents found to process")
             return 1
-        
+
         print(f"Processing {len(documents)} documents...")
-        
+
         # Generate embeddings
         texts = [doc['content'] for doc in documents]
         embeddings = model.encode(texts)
-        
+
         print(f"Generated embeddings: {embeddings.shape}")
-        
+
         # Save results
         output_file = Path(args.outdir) / 'embeddings.npy'
         metadata_file = Path(args.outdir) / 'embeddings_metadata.json'
-        
+
         import numpy as np
         import json
-        
+
         np.save(output_file, embeddings)
-        
+
         metadata = {
             'config': {
                 'device': device,
@@ -396,15 +397,15 @@ def run_embedding_mode(args: argparse.Namespace) -> int:
             'shape': list(embeddings.shape),
             'dtype': str(embeddings.dtype)
         }
-        
+
         with open(metadata_file, 'w', encoding='utf-8') as f:
             json.dump(metadata, f, indent=2)
-        
+
         print(f"Embeddings saved to {output_file}")
         print(f"Metadata saved to {metadata_file}")
-        
+
         return 0
-        
+
     except ImportError as e:
         print(f"Error: Required module not available: {e}")
         return 1
@@ -420,18 +421,18 @@ def run_demo_mode(args: argparse.Namespace) -> int:
         os.environ['CLI_WORKERS'] = str(args.workers)
         os.environ['CLI_DEVICE'] = args.device
         os.environ['CLI_OUTPUT_DIR'] = args.outdir
-        
+
         print(f"Running demo mode with CLI configuration...")
         print(f"Workers: {args.workers}")
         print(f"Device: {args.device}")
         print(f"Output directory: {args.outdir}")
-        
+
         # Import and run demo with environment configuration
         import demo
         demo.main()
-        
+
         return 0
-        
+
     except ImportError as e:
         print(f"Error: Demo module not available: {e}")
         return 1
@@ -453,38 +454,38 @@ def run_decatalogo_mode(args: argparse.Namespace) -> int:
         os.environ['CLI_MAX_SEGMENTOS'] = str(args.max_segmentos)
         os.environ['CLI_INPUT_DIR'] = args.input
         os.environ['CLI_OUTPUT_DIR'] = args.outdir
-        
+
         print(f"Running Decatalogo evaluation...")
         print(f"Configuration passed via environment variables")
-        
+
         # Import and run the evaluator
         from Decatalogo_evaluador import IndustrialDecatalogoEvaluatorFull
-        
+
         evaluator = IndustrialDecatalogoEvaluatorFull()
-        
+
         # Process input files
         input_path = Path(args.input)
         text_files = list(input_path.glob('*.txt'))
-        
+
         if not text_files:
             print(f"No text files found in {args.input}")
             return 1
-        
+
         print(f"Found {len(text_files)} files to evaluate")
-        
+
         # Process each file
         for file_path in text_files:
             try:
                 with open(file_path, 'r', encoding='utf-8') as f:
                     content = f.read()
-                
+
                 # Evaluate each of the 10 Decatalogo points
                 for punto_id in range(1, 11):
                     result = evaluator.evaluar_punto_completo(content, punto_id)
-                    
+
                     # Save individual results
                     output_file = Path(args.outdir) / f'decatalogo_punto_{punto_id}_{file_path.stem}.json'
-                    
+
                     import json
                     with open(output_file, 'w', encoding='utf-8') as f:
                         json.dump({
@@ -500,15 +501,15 @@ def run_decatalogo_mode(args: argparse.Namespace) -> int:
                                 for ed in result.evaluaciones_dimensiones
                             ]
                         }, f, indent=2, ensure_ascii=False)
-                
+
                 print(f"Processed {file_path.name}")
-                
+
             except Exception as e:
                 print(f"Error processing {file_path}: {e}")
-        
+
         print(f"Decatalogo evaluation complete. Results in {args.outdir}")
         return 0
-        
+
     except ImportError as e:
         print(f"Error: Decatalogo module not available: {e}")
         return 1
@@ -519,11 +520,11 @@ def run_decatalogo_mode(args: argparse.Namespace) -> int:
 
 def main():
     """Main entry point for the CLI application."""
-    
+
     # Create and parse arguments
     parser = create_parser()
     args = parser.parse_args()
-    
+
     # Load configuration file if provided
     if args.config:
         config = load_config_file(args.config)
@@ -531,13 +532,13 @@ def main():
         for key, value in config.items():
             if hasattr(args, key):
                 setattr(args, key, value)
-    
+
     # Setup logging
     setup_logging(args.verbose)
-    
+
     # Validate arguments
     validate_args(args)
-    
+
     # Show configuration and exit if dry-run
     if args.dry_run:
         print("Configuration (dry-run mode):")
@@ -552,7 +553,7 @@ def main():
         print(f"  Mode: {args.mode}")
         print(f"  Verbose: {args.verbose}")
         return 0
-    
+
     # Execute the selected mode
     if args.mode == 'feasibility':
         return run_feasibility_mode(args)

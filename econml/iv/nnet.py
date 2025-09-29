@@ -14,4 +14,3 @@ class DeepIV:
             return 0.0
         except Exception:
             return 0.0
-

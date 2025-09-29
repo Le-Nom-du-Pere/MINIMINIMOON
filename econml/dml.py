@@ -23,4 +23,3 @@ class CausalForestDML:
     def effect_interval(self, X, alpha=0.05):
         eff = self.effect(X)
         return (eff, eff)
-

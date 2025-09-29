@@ -8,7 +8,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional
 
-import jsonschema
 from jsonschema import validator_for, RefResolver
 
 SCHEMA_DIR = Path("schemas")
@@ -53,7 +52,7 @@ def _load_json(path: Path) -> Dict[str, object]:
 
 
 def load_decalogos(
-    paths: List[str], crosswalk_path: Optional[str] = None
+        paths: List[str], crosswalk_path: Optional[str] = None
 ) -> Dict[str, object]:
     if len(paths) != 3:
         raise ValueError("Se requieren tres rutas: full, industrial y dnp")
@@ -61,12 +60,12 @@ def load_decalogos(
     domains = []
     version = None
     for path_str, schema_name in zip(
-        paths,
-        [
-            "decalogo-full.schema.json",
-            "decalogo-industrial.schema.json",
-            "dnp-standards.schema.json",
-        ],
+            paths,
+            [
+                "decalogo-full.schema.json",
+                "decalogo-industrial.schema.json",
+                "dnp-standards.schema.json",
+            ],
     ):
         path = Path(path_str)
         payload = _load_json(path)
