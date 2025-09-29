@@ -54,7 +54,8 @@ class TestContradictionDetector:
         esperados solo crecerán un 10% según las proyecciones.
         """
 
-    def test_basic_contradiction_detection(self, detector, sample_pdm_text):
+    @staticmethod
+    def test_basic_contradiction_detection(detector, sample_pdm_text):
         """Test basic contradiction detection."""
         result = detector.detect_contradictions(sample_pdm_text)
 
@@ -62,7 +63,8 @@ class TestContradictionDetector:
         assert result.risk_score > 0
         assert result.risk_level in [level.value for level in RiskLevel]
 
-    def test_competence_validation(self, detector, sample_pdm_text):
+    @staticmethod
+    def test_competence_validation(detector, sample_pdm_text):
         """Test competence validation."""
         result = detector.detect_contradictions(
             sample_pdm_text, sectors=["salud", "educacion"]
@@ -77,7 +79,8 @@ class TestContradictionDetector:
             i for i in competence_issues if "hospital" in str(i).lower()]
         assert len(hospital_issues) > 0
 
-    def test_empty_text(self, detector):
+    @staticmethod
+    def test_empty_text(detector):
         """Test handling of empty text."""
         result = detector.detect_contradictions("")
 
@@ -85,7 +88,8 @@ class TestContradictionDetector:
         assert result.risk_score == 0
         assert result.risk_level == RiskLevel.LOW.value
 
-    def test_quantitative_contradictions(self, detector):
+    @staticmethod
+    def test_quantitative_contradictions(detector):
         """Test detection of quantitative contradictions."""
         text = """
         META: Incrementar la inversión en infraestructura en 80%.
@@ -119,7 +123,8 @@ class TestPatternMatcher:
         """Create pattern matcher instance."""
         return PatternMatcher(language="es")
 
-    def test_adversative_detection(self, matcher):
+    @staticmethod
+    def test_adversative_detection(matcher):
         """Test adversative connector detection."""
         text = "El objetivo es claro, sin embargo no hay recursos."
         matches = matcher.find_adversatives(text)
@@ -127,7 +132,8 @@ class TestPatternMatcher:
         assert len(matches) > 0
         assert "sin embargo" in matches[0]["adversative"].lower()
 
-    def test_competence_verb_extraction(self, matcher):
+    @staticmethod
+    def test_competence_verb_extraction(matcher):
         """Test extraction of competence-sensitive verbs."""
         text = """
         El municipio procederá a contratar docentes para las escuelas.
@@ -142,7 +148,8 @@ class TestPatternMatcher:
         assert any("contratar" in v and "docentes" in v for v in verb_texts)
         assert any("construi" in v and "hospital" in v for v in verb_texts)
 
-    def test_quantitative_pattern_detection(self, matcher):
+    @staticmethod
+    def test_quantitative_pattern_detection(matcher):
         """Test detection of quantitative patterns."""
         text = """
         La meta es alcanzar 95% de cobertura.
@@ -180,7 +187,8 @@ class TestCompetenceValidator:
         """Create competence validator instance."""
         return CompetenceValidator()
 
-    def test_municipal_overreach_detection(self, validator):
+    @staticmethod
+    def test_municipal_overreach_detection(validator):
         """Test detection of municipal overreach."""
         text = """
         El municipio construirá y administrará un hospital de tercer nivel
@@ -194,7 +202,8 @@ class TestCompetenceValidator:
         assert issues[0]["sector"] == "salud"
         assert "departamental" in issues[0]["required_level"]
 
-    def test_valid_municipal_action(self, validator):
+    @staticmethod
+    def test_valid_municipal_action(validator):
         """Test validation of proper municipal actions."""
         text = """
         El municipio gestionará convenios con el departamento para mejorar
@@ -207,7 +216,8 @@ class TestCompetenceValidator:
         overreach = [i for i in issues if i["type"] == "competence_overreach"]
         assert len(overreach) == 0
 
-    def test_education_competence(self, validator):
+    @staticmethod
+    def test_education_competence(validator):
         """Test education sector competence validation."""
         text = """
         El municipio procederá a nombrar y contratar 50 docentes nuevos
@@ -220,7 +230,8 @@ class TestCompetenceValidator:
         # Nombramiento de docentes es competencia departamental
         assert any("nombrar" in i["text"] for i in issues)
 
-    def test_suggested_fixes(self, validator):
+    @staticmethod
+    def test_suggested_fixes(validator):
         """Test that suggested fixes are provided."""
         text = "El municipio administrará directamente el hospital regional."
 
@@ -245,7 +256,8 @@ class TestRiskScorer:
         """Create risk scorer instance."""
         return RiskScorer(alpha=0.1)
 
-    def test_basic_risk_calculation(self, scorer):
+    @staticmethod
+    def test_basic_risk_calculation(scorer):
         """Test basic risk calculation."""
         # Mock contradiction data
         contradictions = [
@@ -261,7 +273,8 @@ class TestRiskScorer:
         assert "risk_level" in result
         assert "confidence_intervals" in result
 
-    def test_confidence_intervals(self, scorer):
+    @staticmethod
+    def test_confidence_intervals(scorer):
         """Test confidence interval calculation."""
         # Add some calibration data
         for _ in range(30):
@@ -279,7 +292,8 @@ class TestRiskScorer:
         assert len(intervals["overall"]) == 2
         assert intervals["overall"][0] <= intervals["overall"][1]
 
-    def test_risk_levels(self, scorer):
+    @staticmethod
+    def test_risk_levels(scorer):
         """Test risk level assignment."""
         # Test different severity levels
         test_cases = [
@@ -377,7 +391,8 @@ class TestIntegration:
             json.dump(matrix, f)
             return Path(f.name)
 
-    def test_full_pipeline(self, sample_pdm_file, competence_matrix_file):
+    @staticmethod
+    def test_full_pipeline(sample_pdm_file, competence_matrix_file):
         """Test complete analysis pipeline."""
         # Load document
         loader = PDMLoader()
@@ -410,7 +425,8 @@ class TestIntegration:
         sample_pdm_file.unlink()
         competence_matrix_file.unlink()
 
-    def test_multiple_file_formats(self):
+    @staticmethod
+    def test_multiple_file_formats():
         """Test loading different file formats."""
         loader = PDMLoader()
 

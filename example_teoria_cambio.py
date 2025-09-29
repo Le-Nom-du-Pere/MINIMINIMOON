@@ -87,7 +87,8 @@ if not NETWORKX_AVAILABLE:
         def has_path(graph, source, target):
             return graph.has_path(source, target)
 
-        def shortest_path(self, graph, source, target):
+        @staticmethod
+        def shortest_path(graph, source, target):
             return graph.shortest_path(source, target)
 
     nx = MockNetworkX()

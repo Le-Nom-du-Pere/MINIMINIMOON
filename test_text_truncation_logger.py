@@ -19,7 +19,8 @@ from text_truncation_logger import (
 class TestTextReference:
     """Test TextReference dataclass functionality."""
 
-    def test_text_reference_creation(self):
+    @staticmethod
+    def test_text_reference_creation():
         """Test basic TextReference creation."""
         ref = TextReference("abc123", page_number=5,
                             relevance_score=0.85, length=150)
@@ -28,7 +29,8 @@ class TestTextReference:
         assert ref.relevance_score == 0.85
         assert ref.length == 150
 
-    def test_text_reference_str_all_fields(self):
+    @staticmethod
+    def test_text_reference_str_all_fields():
         """Test string representation with all fields."""
         ref = TextReference("abc123", page_number=5,
                             relevance_score=0.85, length=150)
@@ -38,7 +40,8 @@ class TestTextReference:
         assert "rel:0.85" in result
         assert "len:150" in result
 
-    def test_text_reference_str_partial_fields(self):
+    @staticmethod
+    def test_text_reference_str_partial_fields():
         """Test string representation with partial fields."""
         ref = TextReference("abc123", page_number=5)
         result = str(ref)
@@ -47,7 +50,8 @@ class TestTextReference:
         assert "rel:" not in result
         assert "len:" not in result
 
-    def test_text_reference_str_hash_only(self):
+    @staticmethod
+    def test_text_reference_str_hash_only():
         """Test string representation with hash only."""
         ref = TextReference("abc123")
         result = str(ref)
@@ -60,20 +64,23 @@ class TestTextReference:
 class TestTextTruncationLogger:
     """Test TextTruncationLogger functionality."""
 
-    def test_initialization(self):
+    @staticmethod
+    def test_initialization():
         """Test logger initialization with defaults."""
         logger = TextTruncationLogger()
         assert logger.max_log_length == 250
         assert logger.hash_length == 8
         assert len(logger.text_registry) == 0
 
-    def test_initialization_custom(self):
+    @staticmethod
+    def test_initialization_custom():
         """Test logger initialization with custom values."""
         logger = TextTruncationLogger(max_log_length=100, hash_length=12)
         assert logger.max_log_length == 100
         assert logger.hash_length == 12
 
-    def test_generate_text_hash(self):
+    @staticmethod
+    def test_generate_text_hash():
         """Test hash generation consistency."""
         logger = TextTruncationLogger()
         text = "This is a test text for hashing"
@@ -85,21 +92,24 @@ class TestTextTruncationLogger:
         assert len(hash1) == 8  # Default hash length
         assert isinstance(hash1, str)
 
-    def test_generate_text_hash_empty(self):
+    @staticmethod
+    def test_generate_text_hash_empty():
         """Test hash generation for empty text."""
         logger = TextTruncationLogger()
         assert logger.generate_text_hash("") == "empty"
         assert logger.generate_text_hash("   ") == "empty"
         assert logger.generate_text_hash(None) == "empty"
 
-    def test_generate_text_hash_different_texts(self):
+    @staticmethod
+    def test_generate_text_hash_different_texts():
         """Test that different texts generate different hashes."""
         logger = TextTruncationLogger()
         hash1 = logger.generate_text_hash("Text one")
         hash2 = logger.generate_text_hash("Text two")
         assert hash1 != hash2
 
-    def test_create_text_reference(self):
+    @staticmethod
+    def test_create_text_reference():
         """Test text reference creation."""
         logger = TextTruncationLogger()
         text = "Sample text for reference creation"
@@ -114,7 +124,8 @@ class TestTextTruncationLogger:
         assert ref.hash_id in logger.text_registry
         assert logger.text_registry[ref.hash_id] == text
 
-    def test_truncate_for_logging_short_text(self):
+    @staticmethod
+    def test_truncate_for_logging_short_text():
         """Test truncation of short text (should not be truncated)."""
         logger = TextTruncationLogger(max_log_length=100)
         short_text = "This is a short text."
@@ -123,7 +134,8 @@ class TestTextTruncationLogger:
         assert result == short_text
         assert len(logger.text_registry) == 0  # Should not be registered
 
-    def test_truncate_for_logging_long_text(self):
+    @staticmethod
+    def test_truncate_for_logging_long_text():
         """Test truncation of long text."""
         logger = TextTruncationLogger(max_log_length=50)
         long_text = "This is a very long text that should be truncated because it exceeds the maximum length limit set for logging purposes."
@@ -141,7 +153,8 @@ class TestTextTruncationLogger:
         assert "rel:0.90" in result
         assert len(logger.text_registry) == 1
 
-    def test_get_full_text(self):
+    @staticmethod
+    def test_get_full_text():
         """Test retrieval of full text by hash."""
         logger = TextTruncationLogger()
         text = "Original text content for testing retrieval"
@@ -151,13 +164,15 @@ class TestTextTruncationLogger:
 
         assert retrieved == text
 
-    def test_get_full_text_nonexistent(self):
+    @staticmethod
+    def test_get_full_text_nonexistent():
         """Test retrieval of non-existent hash."""
         logger = TextTruncationLogger()
         result = logger.get_full_text("nonexistent")
         assert result is None
 
-    def test_get_registry_summary_empty(self):
+    @staticmethod
+    def test_get_registry_summary_empty():
         """Test registry summary when empty."""
         logger = TextTruncationLogger()
         summary = logger.get_registry_summary()
@@ -165,7 +180,8 @@ class TestTextTruncationLogger:
         assert summary["total_texts"] == 0
         assert summary["total_characters"] == 0
 
-    def test_get_registry_summary_with_data(self):
+    @staticmethod
+    def test_get_registry_summary_with_data():
         """Test registry summary with data."""
         logger = TextTruncationLogger()
         text1 = "First text"  # 10 chars
@@ -181,7 +197,8 @@ class TestTextTruncationLogger:
         assert summary["average_length"] == 16.5
         assert len(summary["hash_ids"]) == 2
 
-    def test_clear_registry(self):
+    @staticmethod
+    def test_clear_registry():
         """Test clearing the registry."""
         logger = TextTruncationLogger()
         logger.create_text_reference("Test text")
@@ -196,7 +213,8 @@ class TestTextTruncationLogger:
 class TestConvenienceFunctions:
     """Test convenience functions."""
 
-    def test_truncate_text_for_log(self):
+    @staticmethod
+    def test_truncate_text_for_log():
         """Test global convenience function."""
         result = truncate_text_for_log("Short text")
         assert result == "Short text"
@@ -210,7 +228,8 @@ class TestConvenienceFunctions:
         assert len(result) < len(long_text)
         assert "p5" in result
 
-    def test_create_text_ref(self):
+    @staticmethod
+    def test_create_text_ref():
         """Test global text reference creation."""
         text = "Test text for reference"
         ref = create_text_ref(text, page_number=8, relevance_score=0.6)
@@ -223,7 +242,8 @@ class TestConvenienceFunctions:
 class TestLoggingIntegration:
     """Test integration with Python logging."""
 
-    def test_log_info_with_text(self):
+    @staticmethod
+    def test_log_info_with_text():
         """Test logging integration with info level."""
         # Create a string buffer to capture log output
         log_stream = io.StringIO()
@@ -263,7 +283,8 @@ class TestLoggingIntegration:
 class TestEdgeCases:
     """Test edge cases and error conditions."""
 
-    def test_very_small_max_length(self):
+    @staticmethod
+    def test_very_small_max_length():
         """Test with very small maximum length."""
         logger = TextTruncationLogger(max_log_length=10)
         text = "This text is longer than 10 characters"
@@ -274,7 +295,8 @@ class TestEdgeCases:
         assert len(result) >= 10  # At least the minimum to show reference
         assert "#" in result
 
-    def test_unicode_text(self):
+    @staticmethod
+    def test_unicode_text():
         """Test with unicode characters."""
         logger = TextTruncationLogger()
         unicode_text = "Texto con acentos: café, niño, señor, corazón, música 🎵"
@@ -285,7 +307,8 @@ class TestEdgeCases:
         assert len(hash_id) == 8
         assert logger.get_full_text(ref.hash_id) == unicode_text
 
-    def test_newlines_and_tabs(self):
+    @staticmethod
+    def test_newlines_and_tabs():
         """Test with newlines and tabs in text."""
         logger = TextTruncationLogger()
         text_with_whitespace = "Line 1\nLine 2\tTabbed content\n\nBlank line above"

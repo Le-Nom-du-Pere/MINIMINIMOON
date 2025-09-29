@@ -85,7 +85,8 @@ class MemoryWatchdog:
         self.logger = logging.getLogger(__name__)
         self._setup_logging()
 
-    def _get_memory_limit(self, memory_limit_mb: Optional[int]) -> int:
+    @staticmethod
+    def _get_memory_limit(memory_limit_mb: Optional[int]) -> int:
         """Get memory limit with fallback to environment variable and default."""
         if memory_limit_mb is not None:
             return memory_limit_mb

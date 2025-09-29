@@ -6,7 +6,8 @@ from teoria_cambio import CategoriaCausal, TeoriaCambio
 
 
 class TestTeoriaCambioValidacion(unittest.TestCase):
-    def test_validacion_orden_causal_valido(self):
+    @staticmethod
+    def test_validacion_orden_causal_valido():
         """Test de validación con orden causal correcto"""
         tc = TeoriaCambio()
 
@@ -29,7 +30,8 @@ class TestTeoriaCambioValidacion(unittest.TestCase):
         assert resultado.es_valida
         assert len(resultado.violaciones_orden) == 0
 
-    def test_validacion_orden_causal_invalido(self):
+    @staticmethod
+    def test_validacion_orden_causal_invalido():
         """Test de validación con violaciones de orden causal"""
         tc = TeoriaCambio()
 
@@ -47,7 +49,8 @@ class TestTeoriaCambioValidacion(unittest.TestCase):
         assert resultado.violaciones_orden[0]["categoria_origen"] == "INSUMOS"
         assert resultado.violaciones_orden[0]["categoria_destino"] == "IMPACTOS"
 
-    def test_detectar_caminos_completos_existentes(self):
+    @staticmethod
+    def test_detectar_caminos_completos_existentes():
         """Test de detección de caminos completos válidos"""
         tc = TeoriaCambio()
 
@@ -73,7 +76,8 @@ class TestTeoriaCambioValidacion(unittest.TestCase):
         assert camino[0] == "insumos"
         assert camino[-1] == "impactos"
 
-    def test_detectar_caminos_incompletos(self):
+    @staticmethod
+    def test_detectar_caminos_incompletos():
         """Test cuando no hay caminos completos disponibles"""
         tc = TeoriaCambio()
 
@@ -91,7 +95,8 @@ class TestTeoriaCambioValidacion(unittest.TestCase):
         assert not resultado.es_valida
         assert len(resultado.caminos_completos) == 0
 
-    def test_generar_sugerencias_categorias_faltantes(self):
+    @staticmethod
+    def test_generar_sugerencias_categorias_faltantes():
         """Test de generación de sugerencias para categorías faltantes"""
         tc = TeoriaCambio()
 
@@ -115,7 +120,8 @@ class TestTeoriaCambioValidacion(unittest.TestCase):
         assert "PROCESOS" in sugerencias_texto
         assert "PRODUCTOS" in sugerencias_texto
 
-    def test_generar_sugerencias_conexiones_faltantes(self):
+    @staticmethod
+    def test_generar_sugerencias_conexiones_faltantes():
         """Test de sugerencias para conexiones faltantes entre categorías"""
         tc = TeoriaCambio()
 
@@ -131,7 +137,8 @@ class TestTeoriaCambioValidacion(unittest.TestCase):
         # Debe sugerir conexiones entre categorías adyacentes
         assert len(resultado.sugerencias) > 0
 
-    def test_validacion_completa_integracion(self):
+    @staticmethod
+    def test_validacion_completa_integracion():
         """Test de validación completa integrando todas las funcionalidades"""
         tc = TeoriaCambio()
 
@@ -152,7 +159,8 @@ class TestTeoriaCambioValidacion(unittest.TestCase):
         assert len(resultado.categorias_faltantes) > 0
         assert len(resultado.sugerencias) > 0
 
-    def test_obtener_categoria_nodo_por_nombre(self):
+    @staticmethod
+    def test_obtener_categoria_nodo_por_nombre():
         """Test de identificación de categorías por nombre del nodo"""
         tc = TeoriaCambio()
         grafo = nx.DiGraph()
@@ -184,7 +192,8 @@ class TestTeoriaCambioValidacion(unittest.TestCase):
             == CategoriaCausal.IMPACTOS
         )
 
-    def test_obtener_categoria_nodo_por_posicion(self):
+    @staticmethod
+    def test_obtener_categoria_nodo_por_posicion():
         """Test de inferencia de categorías por posición topológica"""
         tc = TeoriaCambio()
         grafo = nx.DiGraph()
@@ -212,7 +221,8 @@ class TestTeoriaCambioValidacion(unittest.TestCase):
                 "nodo_medio", grafo) == CategoriaCausal.PRODUCTOS
         )
 
-    def test_es_conexion_valida(self):
+    @staticmethod
+    def test_es_conexion_valida():
         """Test de validación de conexiones entre categorías"""
         tc = TeoriaCambio()
 
@@ -238,7 +248,8 @@ class TestTeoriaCambioValidacion(unittest.TestCase):
             CategoriaCausal.PROCESOS, CategoriaCausal.INSUMOS
         )  # diff = -1
 
-    def test_es_camino_completo(self):
+    @staticmethod
+    def test_es_camino_completo():
         """Test de verificación de caminos completos"""
         tc = TeoriaCambio()
         grafo = nx.DiGraph()
@@ -274,7 +285,8 @@ class TestTeoriaCambioValidacion(unittest.TestCase):
                              "producto_entregable", "impactos"]
         assert not tc._es_camino_completo(camino_sin_inicio, grafo)
 
-    def test_obtener_nodos_por_categoria(self):
+    @staticmethod
+    def test_obtener_nodos_por_categoria():
         """Test de obtención de nodos por categoría específica"""
         tc = TeoriaCambio()
         grafo = nx.DiGraph()
