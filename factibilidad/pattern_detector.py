@@ -221,9 +221,9 @@ class PatternDetector:
 
         """
         return {
-            'baseline': PatternDetector._find_matches(text, self.baseline_patterns, 'baseline'),
-            'target': PatternDetector._find_matches(text, self.target_patterns, 'target'),
-            'timeframe': PatternDetector._find_matches(text, self.timeframe_patterns, 'timeframe')
+            'baseline': self._find_matches(text, self.baseline_patterns, 'baseline'),
+            'target': self._find_matches(text, self.target_patterns, 'target'),
+            'timeframe': self._find_matches(text, self.timeframe_patterns, 'timeframe')
         }
 
     def _find_matches(self, text: str, patterns: List[re.Pattern], pattern_type: str) -> List[PatternMatch]:
