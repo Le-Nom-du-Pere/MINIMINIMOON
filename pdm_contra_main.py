@@ -133,10 +133,7 @@ import re
 import unicodedata
 
 from sentence_transformers import SentenceTransformer, util
-from transformers import pipeline
 import torch
-import numpy as np
-from pydantic import BaseModel, Field
 
 from pdm_contra.models import (
     ContradictionMatch,
