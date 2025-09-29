@@ -14,6 +14,7 @@ Esta versión refactorizada mejora:
 - Interfaz simple para integrarse en pipelines o usarse desde CLI
 
 """
+
 from __future__ import annotations
 
 import logging
@@ -21,7 +22,6 @@ import re
 import unicodedata
 from enum import Enum
 from typing import Dict, List, Optional, Pattern, Tuple
-
 
 logger = logging.getLogger(__name__)
 
@@ -168,7 +168,8 @@ class ContradictionDetector:
         self.compiled_adversative = [re.compile(p, flags) for p in adversative]
         self.compiled_goals = [re.compile(p, flags) for p in goals]
         self.compiled_actions = [re.compile(p, flags) for p in actions]
-        self.compiled_quantitative = [re.compile(p, flags) for p in quantitative]
+        self.compiled_quantitative = [
+            re.compile(p, flags) for p in quantitative]
 
     @staticmethod
     def _normalize_text(text: str) -> str:
@@ -181,7 +182,9 @@ class ContradictionDetector:
         return normalized
 
     @staticmethod
-    def _find_pattern_matches(text: str, patterns: List[Pattern]) -> List[Tuple[str, int, int]]:
+    def _find_pattern_matches(
+        text: str, patterns: List[Pattern]
+    ) -> List[Tuple[str, int, int]]:
         """Devuelve lista de (matched_text, start, end) para los patrones dados."""
         matches = []
         for pat in patterns:
@@ -200,10 +203,12 @@ class ContradictionDetector:
         return text[start:end].strip(), start
 
     @staticmethod
-    def _calculate_contradiction_confidence(adversative_pos_in_context: int,
-                                            goal_matches: List[Tuple[str, int, int]],
-                                            action_matches: List[Tuple[str, int, int]],
-                                            quantitative_matches: List[Tuple[str, int, int]]) -> float:
+    def _calculate_contradiction_confidence(
+        adversative_pos_in_context: int,
+        goal_matches: List[Tuple[str, int, int]],
+        action_matches: List[Tuple[str, int, int]],
+        quantitative_matches: List[Tuple[str, int, int]],
+    ) -> float:
         """Calcula una puntuación de confianza entre 0 y 1 basada en proximidad y presencia.
 
         adversative_pos_in_context: posición (índice) dentro de la ventana de contexto.
@@ -212,16 +217,26 @@ class ContradictionDetector:
         confidence += 0.3  # base por tener conector adversativo
 
         # Evitar división por cero y manejar distancias
-        for matches, weight in ((goal_matches, 0.4), (action_matches, 0.2), (quantitative_matches, 0.3)):
+        for matches, weight in (
+            (goal_matches, 0.4),
+            (action_matches, 0.2),
+            (quantitative_matches, 0.3),
+        ):
             if matches:
                 # distancia mínima desde el inicio de cada match a la posición adversativa
-                min_distance = min(abs(m[1] - adversative_pos_in_context) for m in matches)
+                min_distance = min(
+                    abs(m[1] - adversative_pos_in_context) for m in matches
+                )
                 # proximidad con decaimiento exponencial (50 chars ~ 0.5)
                 proximity_score = weight * (0.5 ** (min_distance / 50))
                 confidence += proximity_score
 
         # En lugar de contar ocurrencias, contamos tipos presentes
-        types_present = int(bool(goal_matches)) + int(bool(action_matches)) + int(bool(quantitative_matches))
+        types_present = (
+            int(bool(goal_matches))
+            + int(bool(action_matches))
+            + int(bool(quantitative_matches))
+        )
         confidence += types_present * 0.1
 
         return min(1.0, confidence)
@@ -242,24 +257,46 @@ class ContradictionDetector:
         """Analiza `text` y devuelve un objeto `ContradictionAnalysis` con los hallazgos."""
         normalized = self._normalize_text(text)
         if not normalized:
-            return ContradictionAnalysis([], 0, 0.0, RiskLevel.LOW, None, {"low": 0, "medium": 0, "medium-high": 0, "high": 0})
+            return ContradictionAnalysis(
+                [],
+                0,
+                0.0,
+                RiskLevel.LOW,
+                None,
+                {"low": 0, "medium": 0, "medium-high": 0, "high": 0},
+            )
 
         # Buscar conectores adversativos en el texto completo (posiciones absolutas)
-        adversative_matches = self._find_pattern_matches(normalized, self.compiled_adversative)
+        adversative_matches = self._find_pattern_matches(
+            normalized, self.compiled_adversative
+        )
         if not adversative_matches:
-            return ContradictionAnalysis([], 0, 0.0, RiskLevel.LOW, None, {"low": 0, "medium": 0, "medium-high": 0, "high": 0})
+            return ContradictionAnalysis(
+                [],
+                0,
+                0.0,
+                RiskLevel.LOW,
+                None,
+                {"low": 0, "medium": 0, "medium-high": 0, "high": 0},
+            )
 
         contradictions = []
 
         for adv_text, adv_start, adv_end in adversative_matches:
             # Extraer ventana de contexto alrededor del inicio del conector
-            context_text, context_start = self._extract_context(normalized, adv_start)
+            context_text, context_start = self._extract_context(
+                normalized, adv_start)
             # Buscar patrones dentro de la ventana de contexto; las posiciones devueltas
             # son relativas a la ventana (0..len(context_text)) si queremos compararlas
             # con la posición del adversativo en esa ventana, debemos ajustar.
-            goal_matches = self._find_pattern_matches(context_text, self.compiled_goals)
-            action_matches = self._find_pattern_matches(context_text, self.compiled_actions)
-            quantitative_matches = self._find_pattern_matches(context_text, self.compiled_quantitative)
+            goal_matches = self._find_pattern_matches(
+                context_text, self.compiled_goals)
+            action_matches = self._find_pattern_matches(
+                context_text, self.compiled_actions
+            )
+            quantitative_matches = self._find_pattern_matches(
+                context_text, self.compiled_quantitative
+            )
 
             if not (goal_matches or action_matches or quantitative_matches):
                 # No hay evidencia de contradicción en la ventana
@@ -272,8 +309,12 @@ class ContradictionDetector:
             confidence = self._calculate_contradiction_confidence(
                 adv_pos_in_context, goal_matches, action_matches, quantitative_matches
             )
-            context_complexity = len(goal_matches) + len(action_matches) + len(quantitative_matches)
-            risk_level = self._determine_risk_level(confidence, context_complexity)
+            context_complexity = (
+                len(goal_matches) + len(action_matches) +
+                len(quantitative_matches)
+            )
+            risk_level = self._determine_risk_level(
+                confidence, context_complexity)
 
             contradiction = ContradictionMatch(
                 adversative_connector=adv_text,
@@ -292,9 +333,11 @@ class ContradictionDetector:
 
         # Agregar cálculos agregados
         if contradictions:
-            risk_score = sum(c.confidence for c in contradictions) / len(contradictions)
+            risk_score = sum(
+                c.confidence for c in contradictions) / len(contradictions)
             highest_conf = max(contradictions, key=lambda c: c.confidence)
-            overall_risk = self._determine_risk_level(risk_score, len(contradictions))
+            overall_risk = self._determine_risk_level(
+                risk_score, len(contradictions))
         else:
             risk_score = 0.0
             highest_conf = None
@@ -320,7 +363,9 @@ class ContradictionDetector:
             summary=summary,
         )
 
-    def integrate_with_risk_assessment(self, text: str, existing_score: float = 0.0) -> Dict[str, float]:
+    def integrate_with_risk_assessment(
+        self, text: str, existing_score: float = 0.0
+    ) -> Dict[str, float]:
         """Integra el análisis de contradicciones con una puntuación de riesgo existente.
 
         Devuelve un diccionario con la puntuación integrada y metadatos.
@@ -334,11 +379,17 @@ class ContradictionDetector:
             high_count = analysis.summary.get("high", 0)
             medium_high_count = analysis.summary.get("medium-high", 0)
             severity_risk = (high_count * 0.2) + (medium_high_count * 0.15)
-            contradiction_risk = min(1.0, base_risk + confidence_risk + severity_risk)
+            contradiction_risk = min(
+                1.0, base_risk + confidence_risk + severity_risk)
 
-        integrated_score = min(1.0, float(existing_score) + contradiction_risk * 0.3)
+        integrated_score = min(1.0, float(
+            existing_score) + contradiction_risk * 0.3)
 
-        highest_confidence = analysis.highest_confidence_contradiction.confidence if analysis.highest_confidence_contradiction else 0.0
+        highest_confidence = (
+            analysis.highest_confidence_contradiction.confidence
+            if analysis.highest_confidence_contradiction
+            else 0.0
+        )
 
         return {
             "base_score": float(existing_score),
@@ -360,4 +411,9 @@ if __name__ == "__main__":
     analysis = detector.detect_contradictions(sample)
     logger.info("Total contradicciones: %d", analysis.total_contradictions)
     for c in analysis.contradictions:
-        logger.info("Connector: %s | confidence: %.3f | risk: %s", c.adversative_connector, c.confidence, c.risk_level.value)
+        logger.info(
+            "Connector: %s | confidence: %.3f | risk: %s",
+            c.adversative_connector,
+            c.confidence,
+            c.risk_level.value,
+        )
