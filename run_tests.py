@@ -21,15 +21,18 @@ class TestRunner:
             raise AssertionError(
                 f"Expected {expected}, got {actual}. {message}")
 
-    def assert_true(self, condition, message=""):
+    @staticmethod
+    def assert_true(condition, message=""):
         if not condition:
             raise AssertionError(f"Condition was False. {message}")
 
-    def assert_false(self, condition, message=""):
+    @staticmethod
+    def assert_false(condition, message=""):
         if condition:
             raise AssertionError(f"Condition was True. {message}")
 
-    def assert_in(self, item, container, message=""):
+    @staticmethod
+    def assert_in(item, container, message=""):
         if item not in container:
             raise AssertionError(f"{item} not in {container}. {message}")
 

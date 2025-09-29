@@ -168,7 +168,8 @@ class ResponsibilityDetector:
 
     # ---------- Internal helpers ----------
 
-    def _load_spacy_pipeline(self, preferred: str):
+    @staticmethod
+    def _load_spacy_pipeline(preferred: str):
         """
         Load spaCy pipeline with robust fallbacks while preserving the same constructor signature.
         """

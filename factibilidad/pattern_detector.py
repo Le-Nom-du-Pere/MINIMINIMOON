@@ -90,7 +90,8 @@ class PatternDetector:
         self.target_patterns = self._compile_target_patterns()
         self.timeframe_patterns = self._compile_timeframe_patterns()
 
-    def _compile_baseline_patterns(self) -> List[re.Pattern]:
+    @staticmethod
+    def _compile_baseline_patterns() -> List[re.Pattern]:
         """
         Compile comprehensive regex patterns for baseline indicators.
         
@@ -120,7 +121,8 @@ class PatternDetector:
         ]
         return [re.compile(p, re.IGNORECASE) for p in patterns]
 
-    def _compile_target_patterns(self) -> List[re.Pattern]:
+    @staticmethod
+    def _compile_target_patterns() -> List[re.Pattern]:
         """
         Compile comprehensive regex patterns for target/goal indicators.
         
@@ -153,7 +155,8 @@ class PatternDetector:
         ]
         return [re.compile(p, re.IGNORECASE) for p in patterns]
 
-    def _compile_timeframe_patterns(self) -> List[re.Pattern]:
+    @staticmethod
+    def _compile_timeframe_patterns() -> List[re.Pattern]:
         """
         Compile comprehensive regex patterns for timeframe indicators.
         
@@ -226,7 +229,8 @@ class PatternDetector:
             'timeframe': self._find_matches(text, self.timeframe_patterns, 'timeframe')
         }
 
-    def _find_matches(self, text: str, patterns: List[re.Pattern], pattern_type: str) -> List[PatternMatch]:
+    @staticmethod
+    def _find_matches(text: str, patterns: List[re.Pattern], pattern_type: str) -> List[PatternMatch]:
         """
         Find all matches for a specific pattern type with overlap resolution.
         
@@ -332,7 +336,8 @@ class PatternDetector:
 
         return clusters
 
-    def _within_proximity(self, a: PatternMatch, b: PatternMatch, proximity_window: int) -> bool:
+    @staticmethod
+    def _within_proximity(a: PatternMatch, b: PatternMatch, proximity_window: int) -> bool:
         """
         Check if two matches are within the specified proximity window.
         

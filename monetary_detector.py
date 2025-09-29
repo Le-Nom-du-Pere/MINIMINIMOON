@@ -130,11 +130,13 @@ class MonetaryDetector:
             'BRL': 'BRL',
         }
     
-    def normalize_unicode(self, text: str) -> str:
+    @staticmethod
+    def normalize_unicode(text: str) -> str:
         """Normalize Unicode text using NFKC normalization."""
         return unicodedata.normalize("NFKC", text)
     
-    def _parse_number(self, number_str: str) -> float:
+    @staticmethod
+    def _parse_number(number_str: str) -> float:
         """
         Parse a number string handling Spanish decimal conventions.
         

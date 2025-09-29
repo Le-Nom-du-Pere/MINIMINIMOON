@@ -23,7 +23,8 @@ def _install_stubs():
     sys.modules["spacy"] = dummy_spacy
 
     class _DummySentenceModel:
-        def encode(self, *args, **kwargs):
+        @staticmethod
+        def encode(*args, **kwargs):
             return [0]
 
         def to(self, *args, **kwargs):
@@ -47,7 +48,8 @@ class TestDecatalogoEvaluatorIntegrationExtra(unittest.TestCase):
         self.module = de
         self.evaluator = de.IndustrialDecatalogoEvaluatorFull()
 
-    def _sample_evidence(self):
+    @staticmethod
+    def _sample_evidence():
         return {
             "indicadores": [
                 {"texto": "La línea base actual es 50 beneficiarios y la meta es 120 en 2025."},
