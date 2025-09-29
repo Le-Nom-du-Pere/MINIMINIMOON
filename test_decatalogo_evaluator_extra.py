@@ -1,8 +1,8 @@
 import importlib
 import sys
+import unittest
 from types import ModuleType, SimpleNamespace
 from unittest.mock import MagicMock
-import unittest
 
 
 def _install_stubs():
@@ -31,7 +31,8 @@ def _install_stubs():
 
     dummy_sentence = ModuleType("sentence_transformers")
     dummy_sentence.SentenceTransformer = lambda *args, **kwargs: _DummySentenceModel()
-    dummy_sentence.util = SimpleNamespace(pytorch_cos_sim=lambda *args, **kwargs: 0)
+    dummy_sentence.util = SimpleNamespace(
+        pytorch_cos_sim=lambda *args, **kwargs: 0)
     sys.modules["sentence_transformers"] = dummy_sentence
 
     sys.modules["pdfplumber"] = MagicMock()
@@ -41,8 +42,9 @@ class TestDecatalogoEvaluatorIntegrationExtra(unittest.TestCase):
     def setUp(self):
         _install_stubs()
         # Ensure fresh import
-        sys.modules.pop('Decatalogo_evaluador', None)
+        sys.modules.pop("Decatalogo_evaluador", None)
         import Decatalogo_evaluador as de
+
         importlib.reload(de)
         self.module = de
         self.evaluator = de.IndustrialDecatalogoEvaluatorFull()
@@ -50,21 +52,31 @@ class TestDecatalogoEvaluatorIntegrationExtra(unittest.TestCase):
     def _sample_evidence(self):
         return {
             "indicadores": [
-                {"texto": "La línea base actual es 50 beneficiarios y la meta es 120 en 2025."},
+                {
+                    "texto": "La línea base actual es 50 beneficiarios y la meta es 120 en 2025."
+                },
             ],
-            "metas": [{"texto": "Meta transformadora alcanzar 120 familias antes de diciembre de 2025."}],
+            "metas": [
+                {
+                    "texto": "Meta transformadora alcanzar 120 familias antes de diciembre de 2025."
+                }
+            ],
             "recursos": [{"texto": "Se asignan $500 millones para el programa."}],
             "plazos": [{"texto": "Plan plurianual 2024-2027"}],
-            "riesgos": [{"texto": "Riesgo de retraso por capacidad operativa limitada."}],
+            "riesgos": [
+                {"texto": "Riesgo de retraso por capacidad operativa limitada."}
+            ],
             "responsables": [{"texto": "El Ministerio de Salud será responsable."}],
         }
 
     def test_evaluator_has_detector_and_uses_it(self):
-        self.assertTrue(hasattr(self.evaluator, 'contradiction_detector'))
+        self.assertTrue(hasattr(self.evaluator, "contradiction_detector"))
         cd = self.evaluator.contradiction_detector
         self.assertIsNotNone(cd)
         # Run a quick detection
-        analysis = cd.detect_contradictions('La meta es 95%, sin embargo no hay presupuesto')
+        analysis = cd.detect_contradictions(
+            "La meta es 95%, sin embargo no hay presupuesto"
+        )
         self.assertIsInstance(analysis, self.module.ContradictionAnalysis)
 
     def test_evaluar_punto_completo_returns_expected_tuple(self):
@@ -74,16 +86,18 @@ class TestDecatalogoEvaluatorIntegrationExtra(unittest.TestCase):
         self.assertIsInstance(result, tuple)
         self.assertGreaterEqual(len(result), 2)
         evaluacion_punto, analisis = result[0], result[1]
-        self.assertTrue(hasattr(evaluacion_punto, 'puntaje_agregado_punto'))
-        self.assertTrue(hasattr(analisis, 'contradicciones'))
+        self.assertTrue(hasattr(evaluacion_punto, "puntaje_agregado_punto"))
+        self.assertTrue(hasattr(analisis, "contradicciones"))
 
     def test_generar_reporte_final_structure(self):
-        evidencias_por_punto = {1: self._sample_evidence(), 2: self._sample_evidence()}
-        reporte = self.evaluator.generar_reporte_final(evidencias_por_punto, nombre_plan='Plan Extra')
+        evidencias_por_punto = {
+            1: self._sample_evidence(), 2: self._sample_evidence()}
+        reporte = self.evaluator.generar_reporte_final(
+            evidencias_por_punto, nombre_plan="Plan Extra"
+        )
         self.assertIsInstance(reporte, self.module.ReporteFinalDecatalogo)
-        self.assertIn('resultados_industriales', reporte.anexos_serializables)
+        self.assertIn("resultados_industriales", reporte.anexos_serializables)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
-
