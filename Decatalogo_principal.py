@@ -139,7 +139,8 @@ def log_warning_with_text(logger, text):
 
 
 # Requerimiento de versión
-assert sys.version_info >= (3, 11), "Python 3.11 or higher is required"
+if sys.version_info < (3, 11):
+    raise AssertionError("Python 3.11 or higher is required")
 
 # Suprimir warnings innecesarios
 warnings.filterwarnings("ignore", category=FutureWarning)

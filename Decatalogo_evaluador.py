@@ -69,8 +69,9 @@ except ImportError:
     HAS_MONETARY = False
 
 # Verificación de versión Python
-assert sys.version_info >= (
-    3, 11), "Python 3.11+ required for production deployment"
+if sys.version_info < (
+    3, 11):
+    raise AssertionError("Python 3.11+ required for production deployment")
 
 # ==================== CONFIGURACIÓN DE LOGGING ====================
 
