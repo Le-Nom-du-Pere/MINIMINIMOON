@@ -66,13 +66,11 @@ import networkx as nx
 import numpy as np
 import scipy.stats as stats
 
+from json_utils import safe_json_dump, safe_json_dumps
 from log_config import configure_logging
-
 
 configure_logging()
 LOGGER = logging.getLogger(__name__)
-
-from json_utils import safe_json_dump, safe_json_dumps
 
 
 class GraphType(Enum):
@@ -442,8 +440,7 @@ class AdvancedDAGValidator:
 
             # Path-based metrics
             if nx.is_weakly_connected(G):
-                metrics["average_path_length"] = nx.average_shortest_path_length(
-                    G)
+                metrics["average_path_length"] = nx.average_shortest_path_length(G)
                 metrics["diameter"] = nx.diameter(G)
             else:
                 metrics["average_path_length"] = float("inf")
@@ -455,8 +452,7 @@ class AdvancedDAGValidator:
             metrics["closeness_centrality"] = nx.closeness_centrality(G)
 
             # Clustering and connectivity
-            metrics["clustering_coefficient"] = nx.average_clustering(
-                G.to_undirected())
+            metrics["clustering_coefficient"] = nx.average_clustering(G.to_undirected())
             metrics["strongly_connected_components"] = list(
                 nx.strongly_connected_components(G)
             )
@@ -533,8 +529,7 @@ class AdvancedDAGValidator:
                     in_degree[node_name] += 1
 
         # Kahn's algorithm with cycle detection
-        queue = deque(
-            [name for name, degree in in_degree.items() if degree == 0])
+        queue = deque([name for name, degree in in_degree.items() if degree == 0])
         processed = 0
         topological_order = []
 
@@ -598,8 +593,7 @@ class AdvancedDAGValidator:
             min_size = max(min_size, 5)
 
         subgraph_size = self._rng.randint(min_size, max_size)
-        selected_nodes = self._rng.sample(
-            list(self.graph_nodes.keys()), subgraph_size)
+        selected_nodes = self._rng.sample(list(self.graph_nodes.keys()), subgraph_size)
 
         return self._create_subgraph_from_nodes(selected_nodes)
 
@@ -651,8 +645,7 @@ class AdvancedDAGValidator:
         subgraph = {}
         for node_name in selected_nodes:
             original_node = self.graph_nodes[node_name]
-            filtered_deps = original_node.dependencies.intersection(
-                set(selected_nodes))
+            filtered_deps = original_node.dependencies.intersection(set(selected_nodes))
 
             # Create enhanced node copy
             subgraph_node = AdvancedGraphNode(
@@ -692,8 +685,7 @@ class AdvancedDAGValidator:
         self, plan_name: str, perturbation_level: float = 0.1, iterations: int = 500
     ) -> Dict[str, Any]:
         """Perform sensitivity analysis by perturbing edges."""
-        base_result = self.calculate_acyclicity_pvalue_advanced(
-            plan_name, iterations)
+        base_result = self.calculate_acyclicity_pvalue_advanced(plan_name, iterations)
         base_p_value = base_result.p_value
 
         # Edge removal sensitivity
@@ -776,15 +768,13 @@ class AdvancedDAGValidator:
         )
 
         # Bayesian posterior
-        posterior = self.calculate_bayesian_posterior(
-            iterations=min(iterations, 1000))
+        posterior = self.calculate_bayesian_posterior(iterations=min(iterations, 1000))
 
         # Effect size and power
         effect_size = AdvancedDAGValidator._calculate_effect_size(
             acyclic_count, iterations
         )
-        statistical_power = self._calculate_statistical_power(
-            acyclic_count, iterations)
+        statistical_power = self._calculate_statistical_power(acyclic_count, iterations)
 
         # Sensitivity analysis
         sensitivity = self.perform_sensitivity_analysis(
@@ -806,16 +796,14 @@ class AdvancedDAGValidator:
             effect_size=effect_size,
             statistical_power=statistical_power,
             average_path_length=graph_metrics.get("average_path_length", 0),
-            clustering_coefficient=graph_metrics.get(
-                "clustering_coefficient", 0),
+            clustering_coefficient=graph_metrics.get("clustering_coefficient", 0),
             degree_distribution=graph_metrics.get("degree_distribution", {}),
             connectivity_ratio=graph_metrics.get("connectivity_ratio", 0),
             edge_sensitivity=sensitivity["edge_sensitivity"],
             node_importance=self._calculate_node_importance(),
             robustness_score=self._calculate_robustness_score(sensitivity),
             reproducible=self.verify_advanced_reproducibility(plan_name),
-            convergence_achieved=self._check_convergence(
-                acyclic_count, iterations),
+            convergence_achieved=self._check_convergence(acyclic_count, iterations),
             adequate_power=statistical_power >= self.config["power_threshold"],
             computation_time=computation_time,
             graph_statistics=self.get_advanced_graph_stats(),
@@ -839,8 +827,7 @@ class AdvancedDAGValidator:
 
         with ProcessPoolExecutor(max_workers=self.config["num_processes"]) as executor:
             futures = [
-                executor.submit(self._monte_carlo_chunk,
-                                chunk, min_size, max_size)
+                executor.submit(self._monte_carlo_chunk, chunk, min_size, max_size)
                 for chunk in chunks
             ]
 
@@ -873,8 +860,7 @@ class AdvancedDAGValidator:
             )
             subgraph_sizes.append(len(subgraph))
 
-            is_acyclic, cycle_info = AdvancedDAGValidator._is_acyclic_advanced(
-                subgraph)
+            is_acyclic, cycle_info = AdvancedDAGValidator._is_acyclic_advanced(subgraph)
             if is_acyclic:
                 acyclic_count += 1
 
@@ -935,10 +921,8 @@ class AdvancedDAGValidator:
 
         p = successes / trials
         # Power for one-sample proportion test against 0.5
-        effect_size = AdvancedDAGValidator._calculate_effect_size(
-            successes, trials)
-        power = stats.norm.sf(stats.norm.ppf(
-            1 - alpha) - effect_size * np.sqrt(trials))
+        effect_size = AdvancedDAGValidator._calculate_effect_size(successes, trials)
+        power = stats.norm.sf(stats.norm.ppf(1 - alpha) - effect_size * np.sqrt(trials))
 
         return power
 
@@ -978,8 +962,7 @@ class AdvancedDAGValidator:
     def _get_basic_graph_stats(self) -> Dict[str, Any]:
         """Get basic graph statistics."""
         total_nodes = len(self.graph_nodes)
-        total_edges = sum(len(node.dependencies)
-                          for node in self.graph_nodes.values())
+        total_edges = sum(len(node.dependencies) for node in self.graph_nodes.values())
 
         return {
             "total_nodes": total_nodes,
@@ -1064,8 +1047,7 @@ class AdvancedDAGValidator:
             degree_importance = len(node.dependencies) / max(
                 1, len(self.graph_nodes) - 1
             )
-            role_importance = 1.0 if node.role in [
-                "intervention", "outcome"] else 0.5
+            role_importance = 1.0 if node.role in ["intervention", "outcome"] else 0.5
             importance[node_name] = (degree_importance + role_importance) / 2
 
         return importance
@@ -1088,8 +1070,7 @@ class AdvancedDAGValidator:
         # Simple convergence check based on recent stability
         # For sophisticated implementation, would track running estimates
         expected_variance = (
-            (acyclic_count / iterations) *
-            (1 - acyclic_count / iterations) / iterations
+            (acyclic_count / iterations) * (1 - acyclic_count / iterations) / iterations
         )
         return expected_variance < self.config["convergence_threshold"]
 
@@ -1334,19 +1315,23 @@ GraphNode = AdvancedGraphNode
 # Add simple deterministic seed function expected by tests
 def _simple_seed_from_plan_name(plan_name: str) -> int:
     import hashlib
+
     h = hashlib.sha256(plan_name.encode("utf-8")).digest()[:8]
     return int.from_bytes(h, "big", signed=False)
+
 
 # Inject methods into AdvancedDAGValidator for test compatibility
 def _create_seed_from_plan_name(self, plan_name: str) -> int:
     seed = _simple_seed_from_plan_name(plan_name)
     return seed
 
+
 def _initialize_rng(self, plan_name: str, salt: str = "") -> None:
     seed = _create_seed_from_plan_name(self, plan_name + salt)
     self._rng = random.Random(seed)
     np.random.seed(seed)
     return None
+
 
 def _is_acyclic(self, nodes: Dict[str, AdvancedGraphNode]) -> bool:
     # Simple DFS-based cycle detection
@@ -1375,7 +1360,10 @@ def _is_acyclic(self, nodes: Dict[str, AdvancedGraphNode]) -> bool:
                 return False
     return True
 
-def _generate_random_subgraph(self, min_size: int, max_size: int) -> Dict[str, AdvancedGraphNode]:
+
+def _generate_random_subgraph(
+    self, min_size: int, max_size: int
+) -> Dict[str, AdvancedGraphNode]:
     names = list(self.graph_nodes.keys())
     if not names:
         return {}
@@ -1384,7 +1372,10 @@ def _generate_random_subgraph(self, min_size: int, max_size: int) -> Dict[str, A
     sub = {n: self.graph_nodes[n] for n in chosen}
     return sub
 
-def calculate_acyclicity_pvalue(self, plan_name: str, iterations: int = 100) -> MonteCarloAdvancedResult:
+
+def calculate_acyclicity_pvalue(
+    self, plan_name: str, iterations: int = 100
+) -> MonteCarloAdvancedResult:
     seed = _create_seed_from_plan_name(self, plan_name)
     self._rng = random.Random(seed)
     total_nodes = len(self.graph_nodes)
@@ -1422,7 +1413,10 @@ def calculate_acyclicity_pvalue(self, plan_name: str, iterations: int = 100) -> 
     for i in range(iterations):
         # choose random subgraph size between min_subgraph_size and min(len,nodes,10)
         min_s = max(1, self.config.get("min_subgraph_size", 1))
-        max_s = min(len(self.graph_nodes), self.config.get("max_subgraph_size") or len(self.graph_nodes))
+        max_s = min(
+            len(self.graph_nodes),
+            self.config.get("max_subgraph_size") or len(self.graph_nodes),
+        )
         if min_s > max_s:
             min_s = 1
             max_s = len(self.graph_nodes)
@@ -1465,6 +1459,7 @@ def calculate_acyclicity_pvalue(self, plan_name: str, iterations: int = 100) -> 
     self.validation_history.append(result)
     return result
 
+
 def verify_reproducibility(self, plan_name: str, iterations: int = 50) -> bool:
     r1 = calculate_acyclicity_pvalue(self, plan_name, iterations)
     r2 = calculate_acyclicity_pvalue(self, plan_name, iterations)
@@ -1475,6 +1470,7 @@ def verify_reproducibility(self, plan_name: str, iterations: int = 50) -> bool:
         and r1.subgraph_sizes == r2.subgraph_sizes
     )
 
+
 def get_graph_stats(self) -> Dict[str, int]:
     total_nodes = len(self.graph_nodes)
     total_edges = sum(len(n.dependencies) for n in self.graph_nodes.values())
@@ -1484,6 +1480,7 @@ def get_graph_stats(self) -> Dict[str, int]:
         "total_edges": total_edges,
         "max_possible_edges": max_possible_edges,
     }
+
 
 # Attach these methods to the class
 AdvancedDAGValidator._create_seed_from_plan_name = _create_seed_from_plan_name
@@ -1501,22 +1498,19 @@ def create_complex_causal_graph() -> AdvancedDAGValidator:
 
     # Define nodes with roles and metadata
     nodes_config = [
-        ("recursos_financieros", "intervention",
-         {"budget": 100000, "currency": "USD"}),
+        ("recursos_financieros", "intervention", {"budget": 100000, "currency": "USD"}),
         (
             "capacitacion_personal",
             "intervention",
             {"duration": 6, "format": "workshop"},
         ),
-        ("infraestructura", "intervention", {
-         "type": "physical", "scale": "large"}),
+        ("infraestructura", "intervention", {"type": "physical", "scale": "large"}),
         (
             "programas_intervencion",
             "mediator",
             {"intensity": "high", "frequency": "weekly"},
         ),
-        ("participacion_comunidad", "mediator", {
-         "engagement": "active", "reach": 500}),
+        ("participacion_comunidad", "mediator", {"engagement": "active", "reach": 500}),
         (
             "cambio_comportamiento",
             "outcome",
@@ -1537,8 +1531,7 @@ def create_complex_causal_graph() -> AdvancedDAGValidator:
             "covariate",
             {"stability": "medium", "influence": "moderate"},
         ),
-        ("factores_externos", "covariate", {
-         "control": "low", "variability": "high"}),
+        ("factores_externos", "covariate", {"control": "low", "variability": "high"}),
     ]
 
     for name, role, metadata in nodes_config:
