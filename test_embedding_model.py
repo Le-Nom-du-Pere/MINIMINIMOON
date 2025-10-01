@@ -60,7 +60,9 @@ class _FakeIsotonicRegression:
     def __init__(self, *args, **kwargs) -> None:  # noqa: D401 - signature parity
         self.fit_args = None
 
-    def fit_transform(self, scores: Iterable[float], labels: Iterable[int]) -> np.ndarray:
+    def fit_transform(
+        self, scores: Iterable[float], labels: Iterable[int]
+    ) -> np.ndarray:
         scores = list(scores)
         self.fit_args = (scores, list(labels))
         # Return a smoothly increasing sequence with deterministic spread
@@ -143,7 +145,9 @@ class TestSotaEmbedding(unittest.TestCase):
             domain_distribution={"PDM": 80, "rural": 20},
         )
 
-        with patch("embedding_model.IsotonicRegression", return_value=_FakeIsotonicRegression()):
+        with patch(
+            "embedding_model.IsotonicRegression", return_value=_FakeIsotonicRegression()
+        ):
             card = self.backend.calibrate(corpus_stats)
 
         self.assertEqual(card.embedding_dim, corpus_stats.embedding_dim)
@@ -156,9 +160,11 @@ class TestSotaEmbedding(unittest.TestCase):
     def test_get_default_embedding_uses_configuration_factory(self) -> None:
         """The factory returns a SotaEmbedding wired with the supplied config."""
 
-        config = self.config.model_copy(update={
-            "calibration_card": str(Path(self.temp_dir.name) / "default_card.json")
-        })
+        config = self.config.model_copy(
+            update={
+                "calibration_card": str(Path(self.temp_dir.name) / "default_card.json")
+            }
+        )
 
         with patch("embedding_model.load_embedding_config", return_value=config):
             backend = get_default_embedding()
