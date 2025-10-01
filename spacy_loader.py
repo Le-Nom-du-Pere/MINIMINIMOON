@@ -1,7 +1,9 @@
 # coding=utf-8
 import logging
 import os
+import threading
 import time
+from collections import OrderedDict
 from logging.handlers import RotatingFileHandler
 from typing import Any, Optional
 
@@ -13,17 +15,28 @@ from text_truncation_logger import log_debug_with_text, log_warning_with_text
 
 logger = logging.getLogger(__name__)
 
+_SPACY_SINGLETONS: dict[int, "SpacyModelLoader"] = {}
+_SPACY_SINGLETON_LOCK = threading.RLock()
+
 
 class SpacyModelLoader:
     """
     Robust spaCy model loader with automatic download, retry logic, and degraded mode fallback.
     """
 
-    def __init__(self, max_retries: int = 2, retry_delay: float = 1.0):
+    def __init__(
+        self,
+        max_retries: int = 2,
+        retry_delay: float = 1.0,
+        *,
+        max_cache_size: int = 4,
+    ):
         self.max_retries = max_retries
         self.retry_delay = retry_delay
         self.degraded_mode = False
-        self.loaded_models = {}
+        self._max_cache_size = max(1, max_cache_size)
+        self.loaded_models: "OrderedDict[str, Language]" = OrderedDict()
+        self._lock = threading.RLock()
         return None
 
     def load_model(
@@ -39,13 +52,18 @@ class SpacyModelLoader:
         Returns:
             Loaded spaCy model or None if loading fails completely
         """
-        if model_name in self.loaded_models:
-            return self.loaded_models[model_name]
+        with self._lock:
+            if model_name in self.loaded_models:
+                self.loaded_models.move_to_end(model_name)
+                return self.loaded_models[model_name]
 
         # First attempt to load the model
         model = self._try_load_model(model_name, disable)
         if model is not None:
-            self.loaded_models[model_name] = model
+            with self._lock:
+                self.loaded_models[model_name] = model
+                self.loaded_models.move_to_end(model_name)
+                self._prune_cache_if_needed()
             return model
 
         # Model not found, attempt automatic download
@@ -57,7 +75,10 @@ class SpacyModelLoader:
             # Try loading again after successful download
             model = self._try_load_model(model_name, disable)
             if model is not None:
-                self.loaded_models[model_name] = model
+                with self._lock:
+                    self.loaded_models[model_name] = model
+                    self.loaded_models.move_to_end(model_name)
+                    self._prune_cache_if_needed()
                 logger.info(
                     f"Successfully loaded spaCy model '{model_name}' after download"
                 )
@@ -67,7 +88,8 @@ class SpacyModelLoader:
         logger.error(
             f"Failed to load spaCy model '{model_name}'. Operating in degraded mode."
         )
-        self.degraded_mode = True
+        with self._lock:
+            self.degraded_mode = True
         return None
 
     def _try_load_model(
@@ -127,13 +149,20 @@ class SpacyModelLoader:
 
         return False
 
+    def _prune_cache_if_needed(self) -> None:
+        """Ensure the in-memory cache respects the configured capacity."""
+        while len(self.loaded_models) > self._max_cache_size:
+            self.loaded_models.popitem(last=False)
+
     def is_degraded_mode(self) -> bool:
         """Check if the loader is operating in degraded mode."""
-        return self.degraded_mode
+        with self._lock:
+            return self.degraded_mode
 
     def get_loaded_models(self) -> dict:
         """Get dictionary of successfully loaded models."""
-        return self.loaded_models.copy()
+        with self._lock:
+            return dict(self.loaded_models)
 
 
 class SafeSpacyProcessor:
@@ -141,8 +170,13 @@ class SafeSpacyProcessor:
     Example processor that gracefully handles missing spaCy models.
     """
 
-    def __init__(self, preferred_model: str = "en_core_web_sm"):
-        self.loader = SpacyModelLoader()
+    def __init__(
+        self,
+        preferred_model: str = "en_core_web_sm",
+        *,
+        loader: Optional[SpacyModelLoader] = None,
+    ):
+        self.loader = loader or get_spacy_model_loader()
         self.model = self.loader.load_model(preferred_model)
         self.preferred_model = preferred_model
         return None
@@ -188,6 +222,25 @@ class SafeSpacyProcessor:
         return self.model is not None and not self.loader.is_degraded_mode()
 
 
+def get_spacy_model_loader() -> SpacyModelLoader:
+    """Return a per-process singleton loader instance."""
+
+    pid = os.getpid()
+    with _SPACY_SINGLETON_LOCK:
+        loader = _SPACY_SINGLETONS.get(pid)
+        if loader is None:
+            loader = SpacyModelLoader()
+            _SPACY_SINGLETONS[pid] = loader
+        return loader
+
+
+def _reset_spacy_singleton_for_testing() -> None:
+    """Clear singleton cache – intended for test suites only."""
+
+    with _SPACY_SINGLETON_LOCK:
+        _SPACY_SINGLETONS.pop(os.getpid(), None)
+
+
 def setup_logging():
     """
     Setup logging with RotatingFileHandler and configurable log directory.
@@ -218,7 +271,6 @@ def setup_logging():
                 f.write("test")
             os.remove(test_file)
         except (PermissionError, OSError, IOError) as fallback_e:
-<<<<<<< HEAD
             print(
                 f"WARNING: Cannot write to fallback directory '{log_dir}': {fallback_e}"
             )

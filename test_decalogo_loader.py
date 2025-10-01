@@ -1,3 +1,4 @@
+import logging
 from unittest.mock import patch
 
 from decalogo_loader import (
@@ -11,6 +12,7 @@ class TestDecalogoLoader:
     @staticmethod
     def test_load_decalogo_no_target_path(caplog):
         """Test loading without target path returns template and logs appropriately."""
+        caplog.set_level(logging.INFO, logger="decalogo_loader")
         result = load_decalogo_industrial(None)
 
         assert result == DECALOGO_INDUSTRIAL_TEMPLATE.strip()
@@ -21,6 +23,7 @@ class TestDecalogoLoader:
     @staticmethod
     def test_load_decalogo_successful_file_write(tmp_path, caplog):
         """Test successful file write and atomic rename."""
+        caplog.set_level(logging.INFO, logger="decalogo_loader")
         target_path = tmp_path / "decalogo.txt"
 
         result = load_decalogo_industrial(str(target_path))
@@ -36,6 +39,7 @@ class TestDecalogoLoader:
     @staticmethod
     def test_load_decalogo_permission_error_fallback(caplog):
         """Test fallback to in-memory template on permission error."""
+        caplog.set_level(logging.INFO, logger="decalogo_loader")
         with patch("tempfile.NamedTemporaryFile") as mock_temp:
             mock_temp.side_effect = PermissionError("Access denied")
 
@@ -49,6 +53,7 @@ class TestDecalogoLoader:
     @staticmethod
     def test_load_decalogo_io_error_fallback(caplog):
         """Test fallback to in-memory template on I/O error."""
+        caplog.set_level(logging.INFO, logger="decalogo_loader")
         with patch("tempfile.NamedTemporaryFile") as mock_temp:
             mock_temp.side_effect = IOError("Disk full")
 
@@ -61,6 +66,7 @@ class TestDecalogoLoader:
     @staticmethod
     def test_load_decalogo_os_error_fallback(caplog):
         """Test fallback to in-memory template on OS error."""
+        caplog.set_level(logging.INFO, logger="decalogo_loader")
         with patch("tempfile.NamedTemporaryFile") as mock_temp:
             mock_temp.side_effect = OSError("No space left on device")
 
@@ -73,6 +79,7 @@ class TestDecalogoLoader:
     @staticmethod
     def test_load_decalogo_unexpected_error_fallback(caplog):
         """Test fallback to in-memory template on unexpected error."""
+        caplog.set_level(logging.INFO, logger="decalogo_loader")
         with patch("tempfile.NamedTemporaryFile") as mock_temp:
             mock_temp.side_effect = ValueError("Unexpected error")
 
@@ -87,8 +94,10 @@ class TestDecalogoLoader:
         """Test fallback when atomic rename fails."""
         target_path = tmp_path / "decalogo.txt"
 
-        with patch("pathlib.Path.rename") as mock_rename:
-            mock_rename.side_effect = PermissionError("Cannot rename file")
+        caplog.set_level(logging.INFO, logger="decalogo_loader")
+
+        with patch("decalogo_loader.os.replace") as mock_replace:
+            mock_replace.side_effect = PermissionError("Cannot rename file")
 
             result = load_decalogo_industrial(str(target_path))
 
@@ -113,6 +122,7 @@ class TestDecalogoLoader:
     @staticmethod
     def test_get_decalogo_no_cache(caplog):
         """Test convenience function without caching."""
+        caplog.set_level(logging.INFO, logger="decalogo_loader")
         result = get_decalogo_industrial(None)
 
         assert result == DECALOGO_INDUSTRIAL_TEMPLATE.strip()
@@ -123,8 +133,8 @@ class TestDecalogoLoader:
         """Test that temporary files are cleaned up when rename fails."""
         target_path = tmp_path / "decalogo.txt"
 
-        with patch("pathlib.Path.rename") as mock_rename:
-            mock_rename.side_effect = PermissionError("Cannot rename")
+        with patch("decalogo_loader.os.replace") as mock_replace:
+            mock_replace.side_effect = PermissionError("Cannot rename")
 
             load_decalogo_industrial(str(target_path))
 

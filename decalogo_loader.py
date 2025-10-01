@@ -1,5 +1,6 @@
 # coding=utf-8
 import logging
+import os
 import tempfile
 from pathlib import Path
 from typing import Optional
@@ -58,10 +59,11 @@ def load_decalogo_industrial(target_path: Optional[str] = None) -> str:
             ) as temp_file:
                 temp_file.write(template_content)
                 temp_file.flush()
+                os.fsync(temp_file.fileno())
                 temp_path = Path(temp_file.name)
 
-            # Atomically rename temporary file to target location
-            temp_path.rename(target_file)
+            # Atomically replace/rename temporary file to target location
+            os.replace(temp_path, target_file)
             log_info_with_text(
                 logger,
                 f"DECALOGO_INDUSTRIAL loaded and written to file: {target_path}",

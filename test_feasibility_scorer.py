@@ -3,6 +3,7 @@ Comprehensive test suite for FeasibilityScorer with manually annotated dataset.
 Tests precision and recall of quality detection patterns.
 """
 
+import pickle
 import tempfile
 import unicodedata
 from pathlib import Path
@@ -1135,6 +1136,23 @@ class TestAtomicReportGeneration:
         # Other results should score normally
         assert results[1].feasibility_score > 0.0
         assert results[1].quality_tier != "REQUIERE MAYOR EVIDENCIA"
+
+
+def test_feasibility_scorer_picklable_roundtrip():
+    """FeasibilityScorer instances should survive pickle/unpickle."""
+
+    scorer = FeasibilityScorer(enable_parallel=False)
+    payload = pickle.dumps(scorer)
+    restored = pickle.loads(payload)
+
+    assert isinstance(restored, FeasibilityScorer)
+
+    sample_text = "Incrementar la cobertura del 60% al 80% para 2025"
+    original_score = scorer.calculate_feasibility_score(sample_text)
+    restored_score = restored.calculate_feasibility_score(sample_text)
+
+    assert pytest.approx(original_score.feasibility_score) == restored_score.feasibility_score
+    assert original_score.components_detected == restored_score.components_detected
 
 
 if __name__ == "__main__":

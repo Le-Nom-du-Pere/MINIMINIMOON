@@ -1,10 +1,17 @@
-import unittest
-from unittest.mock import patch, MagicMock
 import logging
-from spacy_loader import SpacyModelLoader, SafeSpacyProcessor
+import threading
+import unittest
+from unittest.mock import MagicMock, patch
+
+from spacy_loader import (
+    SpacyModelLoader,
+    SafeSpacyProcessor,
+    _reset_spacy_singleton_for_testing,
+    get_spacy_model_loader,
+)
 
 class TestSpacyModelLoader(unittest.TestCase):
-    
+
     def setUp(self):
         self.loader = SpacyModelLoader(max_retries=1, retry_delay=0.1)
         
@@ -54,18 +61,67 @@ class TestSpacyModelLoader(unittest.TestCase):
         with patch('spacy.load') as mock_load:
             mock_model = MagicMock()
             mock_load.return_value = mock_model
-            
+
             # Load same model twice
             result1 = self.loader.load_model('en_core_web_sm')
             result2 = self.loader.load_model('en_core_web_sm')
-            
+
             # spacy.load should only be called once
             mock_load.assert_called_once()
             self.assertEqual(result1, result2)
 
+    def test_cache_prunes_oldest_entry(self):
+        """LRU cache drops the oldest model when capacity is exceeded."""
+        loader = SpacyModelLoader(max_retries=0, retry_delay=0.0, max_cache_size=2)
+        with patch('spacy.load') as mock_load:
+            mock_load.side_effect = [MagicMock(name='m1'), MagicMock(name='m2'), MagicMock(name='m3')]
+
+            loader.load_model('model-1')
+            loader.load_model('model-2')
+            loader.load_model('model-3')
+
+            cached = loader.get_loaded_models()
+
+            self.assertNotIn('model-1', cached)
+            self.assertIn('model-2', cached)
+            self.assertIn('model-3', cached)
+
+    def test_thread_safe_loading(self):
+        """Concurrent loads result in a single underlying spaCy load."""
+
+        with patch('spacy.load') as mock_load:
+            mock_model = MagicMock()
+            mock_load.return_value = mock_model
+
+            barrier = threading.Barrier(4)
+            results = []
+            errors = []
+
+            def worker():
+                try:
+                    barrier.wait()
+                    results.append(self.loader.load_model('es_core_news_sm'))
+                except BaseException as exc:  # pragma: no cover - diagnostic aid
+                    errors.append(exc)
+
+            threads = [threading.Thread(target=worker) for _ in range(4)]
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join()
+
+        self.assertFalse(errors)
+        self.assertEqual(mock_load.call_count, 1)
+        for model in results:
+            self.assertIs(model, mock_model)
+
 
 class TestSafeSpacyProcessor(unittest.TestCase):
-    
+
+    def setUp(self):
+        _reset_spacy_singleton_for_testing()
+        self.addCleanup(_reset_spacy_singleton_for_testing)
+
     def test_full_functionality_mode(self):
         """Test processor with full spaCy functionality"""
         with patch('spacy.load') as mock_load:
@@ -83,7 +139,7 @@ class TestSafeSpacyProcessor(unittest.TestCase):
             mock_model.return_value = mock_doc
             mock_load.return_value = mock_model
             
-            processor = SafeSpacyProcessor()
+            processor = SafeSpacyProcessor(loader=SpacyModelLoader())
             result = processor.process_text("Test sentence.")
             
             self.assertEqual(result['processing_mode'], 'full')
@@ -98,7 +154,7 @@ class TestSafeSpacyProcessor(unittest.TestCase):
             mock_load.side_effect = OSError("Model not found")
             mock_download.side_effect = Exception("Download failed")
             
-            processor = SafeSpacyProcessor()
+            processor = SafeSpacyProcessor(loader=SpacyModelLoader())
             result = processor.process_text("Test sentence. Another sentence.")
             
             self.assertEqual(result['processing_mode'], 'degraded')
@@ -117,13 +173,28 @@ class TestSafeSpacyProcessor(unittest.TestCase):
             
             # This should not raise SystemExit
             try:
-                processor = SafeSpacyProcessor()
+                processor = SafeSpacyProcessor(loader=SpacyModelLoader())
                 result = processor.process_text("Test")
                 # Should still get a result in degraded mode
                 self.assertIsNotNone(result)
                 self.assertEqual(result['processing_mode'], 'degraded')
             except SystemExit:
                 self.fail("SystemExit should not be raised")
+
+
+class TestSpacySingleton(unittest.TestCase):
+
+    def setUp(self):
+        _reset_spacy_singleton_for_testing()
+        self.addCleanup(_reset_spacy_singleton_for_testing)
+
+    def test_singleton_returns_same_instance(self):
+        """get_spacy_model_loader returns a stable per-process singleton."""
+
+        loader_a = get_spacy_model_loader()
+        loader_b = get_spacy_model_loader()
+
+        self.assertIs(loader_a, loader_b)
 
 
 if __name__ == '__main__':
