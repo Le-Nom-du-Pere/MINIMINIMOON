@@ -1,4 +1,3 @@
-# coding=utf-8
 """
 Plan name sanitization and JSON key standardization utilities.
 

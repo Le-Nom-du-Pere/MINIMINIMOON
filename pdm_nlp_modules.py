@@ -1,5 +1,3 @@
-# coding=utf-8
-# pdm_contra/models.py
 """
 Data models for PDM contradiction detection.
 """

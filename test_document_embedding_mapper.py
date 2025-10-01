@@ -1,4 +1,3 @@
-# coding=utf-8
 """
 Test suite for DocumentEmbeddingMapper with focus on duplicate text handling
 and verification that top-k similarity search indices correctly map to

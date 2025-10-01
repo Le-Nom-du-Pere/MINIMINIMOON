@@ -1,4 +1,3 @@
-# coding=utf-8
 """
 Responsibility Detection Module using spaCy NER and Lexical Rules
 """

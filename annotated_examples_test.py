@@ -1,4 +1,3 @@
-# coding=utf-8
 """
 ANNOTATED EXAMPLES TEST FOR CAUSAL PATTERN DETECTOR
 ===================================================
