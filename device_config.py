@@ -6,6 +6,7 @@ Centralized device management for PyTorch operations across the application.
 
 import argparse
 import logging
+import threading
 from typing import Optional
 
 import torch
@@ -156,23 +157,44 @@ class DeviceConfig:
         return info
 
 
-# Global device configuration instance
+# Global device configuration instance (lazy initialised via get_device_config)
 _device_config: Optional[DeviceConfig] = None
+_device_config_lock = threading.Lock()
 
 
 def get_device_config() -> DeviceConfig:
-    """Get the global device configuration instance."""
+    """Return the shared :class:`DeviceConfig`, creating it on first use.
+
+    The instance is created lazily with a thread-safe double-checked locking
+    pattern so concurrent initialisation attempts do not race. The returned
+    object should be treated as immutable after creation.
+    """
+
     global _device_config
     if _device_config is None:
-        _device_config = DeviceConfig()
+        with _device_config_lock:
+            if _device_config is None:
+                _device_config = DeviceConfig()
     return _device_config
 
 
 def initialize_device_config(device_str: Optional[str] = None) -> DeviceConfig:
     """Initialize the global device configuration."""
+    config = DeviceConfig(device_str)
+    replace_device_config(config)
+    return config
+
+
+def replace_device_config(config: Optional[DeviceConfig]) -> None:
+    """Replace the shared device configuration (intended for tests).
+
+    This helper allows tests to inject deterministic configurations while the
+    production code treats the singleton as effectively immutable.
+    """
+
     global _device_config
-    _device_config = DeviceConfig(device_str)
-    return _device_config
+    with _device_config_lock:
+        _device_config = config
 
 
 def get_device() -> torch.device:

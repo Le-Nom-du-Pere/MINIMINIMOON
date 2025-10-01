@@ -13,8 +13,10 @@ from pathlib import Path
 from typing import Dict, Any
 import logging
 
-# Configurar logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+from log_config import configure_logging
+
+
+configure_logging()
 logger = logging.getLogger(__name__)
 
 
@@ -304,8 +306,8 @@ def test_deterministic_behavior():
             if 'pdf_path' in locals():
                 pdf_path.unlink(missing_ok=True)
                 pdf_path.parent.rmdir()
-        except:
-            pass
+        except OSError as cleanup_error:
+            logger.debug("Cleanup failed: %s", cleanup_error)
 
 
 if __name__ == "__main__":

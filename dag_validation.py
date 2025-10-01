@@ -51,6 +51,7 @@ Note:
 """
 
 import hashlib
+import logging
 import multiprocessing as mp
 import random
 import time
@@ -64,6 +65,12 @@ from typing import Any, Dict, List, Set, Tuple
 import networkx as nx
 import numpy as np
 import scipy.stats as stats
+
+from log_config import configure_logging
+
+
+configure_logging()
+LOGGER = logging.getLogger(__name__)
 
 from json_utils import safe_json_dump, safe_json_dumps
 
@@ -1003,7 +1010,8 @@ class AdvancedDAGValidator:
                 "transitivity": nx.transitivity(G.to_undirected()),
                 "assortativity": nx.degree_assortativity_coefficient(G.to_undirected()),
             }
-        except:
+        except (nx.NetworkXException, ValueError):
+            LOGGER.exception("NetworkX topological statistics failed")
             return {"topological_error": "NetworkX computation failed"}
 
     def _get_causal_stats(self) -> Dict[str, Any]:

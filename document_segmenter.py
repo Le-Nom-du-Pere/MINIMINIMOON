@@ -41,7 +41,12 @@ from typing import (
     Union,
 )
 
+from log_config import configure_logging
 from spacy_loader import SpacyModelLoader
+
+
+configure_logging()
+LOGGER = logging.getLogger(__name__)
 
 # Suppress non-critical warnings for production deployment
 warnings.filterwarnings("ignore", category=UserWarning, module="transformers")
@@ -57,12 +62,10 @@ try:
     from sklearn.metrics.pairwise import cosine_similarity
 
     HAS_ADVANCED_ML = True
-    logger = logging.getLogger(__name__)
-    logger.info("Advanced ML libraries loaded successfully")
+    LOGGER.info("Advanced ML libraries loaded successfully")
 except ImportError as e:
     HAS_ADVANCED_ML = False
-    logger = logging.getLogger(__name__)
-    logger.warning(f"Advanced ML libraries unavailable: {e}")
+    LOGGER.warning("Advanced ML libraries unavailable: %s", e)
 
 try:
     import torch
@@ -84,10 +87,10 @@ try:
     # Suppress transformers logging for production
     transformers_logging.set_verbosity_error()
     HAS_TRANSFORMERS = True
-    logger.info("Transformer libraries loaded successfully")
+    LOGGER.info("Transformer libraries loaded successfully")
 except ImportError as e:
     HAS_TRANSFORMERS = False
-    logger.warning(f"Transformer libraries unavailable: {e}")
+    LOGGER.warning("Transformer libraries unavailable: %s", e)
 
 try:
     import nltk
@@ -125,18 +128,16 @@ try:
         except LookupError:
             try:
                 nltk.download(data, quiet=True)
-            except:
-                pass
+            except Exception as download_error:
+                LOGGER.debug(
+                    "Failed to download NLTK resource '%s': %s", data, download_error
+                )
 
 except ImportError:
     HAS_NLTK = False
-    logger.warning("NLTK unavailable - using fallback tokenization")
+    LOGGER.warning("NLTK unavailable - using fallback tokenization")
 
 # Original spaCy loader import maintained for compatibility
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -192,7 +193,8 @@ class IndustrialSemanticAnalyzer:
             try:
                 self._lemmatizer = WordNetLemmatizer()
                 self._stop_words = set(stopwords.words("english"))
-            except:
+            except (LookupError, OSError) as exc:
+                LOGGER.debug("NLTK resources unavailable during init: %s", exc)
                 self._stop_words = set()
         else:
             self._stop_words = {
@@ -221,19 +223,20 @@ class IndustrialSemanticAnalyzer:
         try:
             if HAS_TRANSFORMERS:
                 self._embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
-                logger.info(
-                    "Loaded SentenceTransformer model for semantic analysis")
-        except Exception as e:
-            logger.warning(f"Failed to load SentenceTransformer: {e}")
+                LOGGER.info(
+                    "Loaded SentenceTransformer model for semantic analysis"
+                )
+        except Exception as exc:
+            LOGGER.warning("Failed to load SentenceTransformer: %s", exc)
 
         try:
             if HAS_TRANSFORMERS:
                 self._sentiment_analyzer = pipeline(
                     "sentiment-analysis", return_all_scores=True
                 )
-                logger.info("Loaded transformer model for sentiment analysis")
-        except Exception as e:
-            logger.warning(f"Failed to load sentiment analyzer: {e}")
+                LOGGER.info("Loaded transformer model for sentiment analysis")
+        except Exception as exc:
+            LOGGER.warning("Failed to load sentiment analyzer: %s", exc)
 
     def analyze_comprehensive_coherence(
         self, text: str
@@ -317,8 +320,8 @@ class IndustrialSemanticAnalyzer:
 
             return max(0.0, min(1.0, avg_similarity))
 
-        except Exception as e:
-            logger.debug(f"Embedding coherence computation failed: {e}")
+        except Exception as exc:
+            LOGGER.debug("Embedding coherence computation failed: %s", exc)
             return 0.5
 
     def _compute_lexical_coherence(self, text: str) -> float:
@@ -416,8 +419,8 @@ class IndustrialSemanticAnalyzer:
         if HAS_NLTK:
             try:
                 sentences = sent_tokenize(text)
-            except:
-                pass
+            except (LookupError, ValueError) as exc:
+                LOGGER.debug("NLTK sentence tokenization failed: %s", exc)
 
         if not sentences:
             # Fallback to regex-based segmentation
@@ -469,8 +472,8 @@ class IndustrialSemanticAnalyzer:
 
                 return content_words
 
-            except Exception as e:
-                logger.debug(f"NLTK content word extraction failed: {e}")
+            except Exception as exc:
+                LOGGER.debug("NLTK content word extraction failed: %s", exc)
 
         # Fallback to regex-based extraction
         words = re.findall(r"\b[a-zA-Z]{3,}\b", text.lower())
@@ -552,17 +555,18 @@ class DocumentSegmenter:
         try:
             self.nlp = self.spacy_loader.load_model("es_core_news_sm")
             if self.nlp is None:
-                logger.warning(
-                    "spaCy Spanish model not available, using English model")
+                LOGGER.warning(
+                    "spaCy Spanish model not available, using English model"
+                )
                 self.nlp = self.spacy_loader.load_model("en_core_web_sm")
 
             if self.nlp is None:
-                logger.warning(
+                LOGGER.warning(
                     "No spaCy models available, using rule-based segmentation"
                 )
 
-        except Exception as e:
-            logger.error(f"Failed to initialize spaCy model: {e}")
+        except Exception as exc:
+            LOGGER.error("Failed to initialize spaCy model: %s", exc)
             self.nlp = None
 
     def segment_document(self, text: str) -> List[Dict[str, Any]]:
@@ -611,8 +615,8 @@ class DocumentSegmenter:
 
             return segments
 
-        except Exception as e:
-            logger.error(f"Document segmentation failed: {e}")
+        except Exception as exc:
+            LOGGER.error("Document segmentation failed: %s", exc)
             # Emergency fallback: simple character-based chunking (maintain original)
             return self._emergency_fallback_segmentation(text)
 
