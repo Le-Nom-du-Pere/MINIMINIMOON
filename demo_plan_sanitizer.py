@@ -38,7 +38,7 @@ def demo_plan_name_sanitization():
             with tempfile.TemporaryDirectory() as temp_dir:
                 safe_dir = os.path.join(temp_dir, sanitized)
                 os.makedirs(safe_dir, exist_ok=True)
-                print(f"  ✓ Directory creation successful")
+                print("  ✓ Directory creation successful")
         except Exception as e:
             print(f"  ✗ Directory creation failed: {e}")
         

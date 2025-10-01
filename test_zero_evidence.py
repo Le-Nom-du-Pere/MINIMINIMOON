@@ -34,7 +34,7 @@ def test_zero_evidence_support():
     print(f"   Quality tier: {zero_evidence_result.quality_tier}")
     print(
         f"   Components detected: {len(zero_evidence_result.components_detected)}")
-    print(f"   Risk level: HIGH (due to zero evidence)")
+    print("   Risk level: HIGH (due to zero evidence)")
 
     # Test with non-zero evidence support
     print("\n3. With non-zero evidence support (evidencia_soporte=1):")

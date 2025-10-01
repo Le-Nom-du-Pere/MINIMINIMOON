@@ -212,7 +212,7 @@ class TestAnnotatedExamples(unittest.TestCase):
         self.assertGreater(recall, 0.8, "Recall should be > 80% for true causal relationships")
         self.assertLessEqual(false_positive_rate, 1.0, "False positive rate should be <= 100%")
         
-        print(f"\n=== Performance Metrics ===")
+        print("\n=== Performance Metrics ===")
         print(f"Recall (True Causal Detection): {recall:.2%}")
         print(f"False Positive Rate: {false_positive_rate:.2%}")
 
@@ -239,7 +239,7 @@ class TestAnnotatedExamples(unittest.TestCase):
             self.assertGreater(avg_true, avg_false,
                 "True causal relationships should have higher average confidence than false positives")
             
-            print(f"\n=== Confidence Analysis ===")
+            print("\n=== Confidence Analysis ===")
             print(f"Average confidence for true causal: {avg_true:.2f}")
             print(f"Average confidence for false positives: {avg_false:.2f}")
 

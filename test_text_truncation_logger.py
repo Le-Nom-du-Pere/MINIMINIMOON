@@ -355,7 +355,7 @@ def run_all_tests():
                 # Uncomment for detailed error info:
                 # traceback.print_exc()
 
-    print(f"\n=== Test Results ===")
+    print("\n=== Test Results ===")
     print(f"Passed: {passed}")
     print(f"Failed: {failed}")
     print(f"Total: {passed + failed}")

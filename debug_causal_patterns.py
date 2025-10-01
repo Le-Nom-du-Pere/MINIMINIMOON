@@ -25,13 +25,13 @@ for key, text in failing_texts.items():
         print(f"  Context after: '{match.context_after[:50]}...'")
 
 # Test specific false positive patterns
-print(f"\n=== Testing False Positive Patterns ===")
+print("\n=== Testing False Positive Patterns ===")
 for pattern in detector.false_positive_contexts:
     print(f"Pattern: {pattern.pattern}")
 
     # Test against the logical example
     logical_text = "Si x > 5, entonces la ecuación implica que y debe ser negativo."
     if pattern.search(logical_text):
-        print(f"  Matches logical text: YES")
+        print("  Matches logical text: YES")
     else:
-        print(f"  Matches logical text: NO")
+        print("  Matches logical text: NO")

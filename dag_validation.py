@@ -1651,7 +1651,7 @@ def demonstrate_advanced_features():
 
     # Run sensitivity analysis
     sensitivity = validator.perform_sensitivity_analysis(plan_name)
-    print(f"\nSENSITIVITY ANALYSIS:")
+    print("\nSENSITIVITY ANALYSIS:")
     print(f"Average Sensitivity: {sensitivity['average_sensitivity']:.4f}")
     print(
         f"Most Sensitive Edge: {max(sensitivity['edge_sensitivity'].items(), key=lambda x: x[1]) if sensitivity['edge_sensitivity'] else 'N/A'}"
