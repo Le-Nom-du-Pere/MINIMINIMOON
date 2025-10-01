@@ -44,7 +44,6 @@ from typing import (
 from log_config import configure_logging
 from spacy_loader import SpacyModelLoader
 
-
 configure_logging()
 LOGGER = logging.getLogger(__name__)
 
@@ -223,9 +222,7 @@ class IndustrialSemanticAnalyzer:
         try:
             if HAS_TRANSFORMERS:
                 self._embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
-                LOGGER.info(
-                    "Loaded SentenceTransformer model for semantic analysis"
-                )
+                LOGGER.info("Loaded SentenceTransformer model for semantic analysis")
         except Exception as exc:
             LOGGER.warning("Failed to load SentenceTransformer: %s", exc)
 
@@ -267,8 +264,7 @@ class IndustrialSemanticAnalyzer:
             )
 
         # 3. Topic modeling coherence
-        coherence_components["topic_coherence"] = self._compute_topic_coherence(
-            text)
+        coherence_components["topic_coherence"] = self._compute_topic_coherence(text)
 
         # 4. Syntactic coherence
         coherence_components["syntactic_coherence"] = self._compute_syntactic_coherence(
@@ -276,8 +272,7 @@ class IndustrialSemanticAnalyzer:
         )
 
         # 5. Entity coherence
-        coherence_components["entity_coherence"] = self._compute_entity_coherence(
-            text)
+        coherence_components["entity_coherence"] = self._compute_entity_coherence(text)
 
         # Sophisticated weighted combination
         weights = self._compute_adaptive_weights(coherence_components, text)
@@ -310,8 +305,7 @@ class IndustrialSemanticAnalyzer:
             if len(sentences) < 2:
                 return 1.0
 
-            embeddings = self._embedding_model.encode(
-                sentences, convert_to_numpy=True)
+            embeddings = self._embedding_model.encode(sentences, convert_to_numpy=True)
 
             # Calculate pairwise cosine similarity
             similarity_matrix = cosine_similarity(embeddings)
@@ -375,8 +369,7 @@ class IndustrialSemanticAnalyzer:
             return 0.5
 
         entity_freq = Counter(entities)
-        repeated_entities = sum(
-            1 for count in entity_freq.values() if count > 1)
+        repeated_entities = sum(1 for count in entity_freq.values() if count > 1)
 
         return min(1.0, repeated_entities / max(len(entities), 1) * 2)
 
@@ -555,9 +548,7 @@ class DocumentSegmenter:
         try:
             self.nlp = self.spacy_loader.load_model("es_core_news_sm")
             if self.nlp is None:
-                LOGGER.warning(
-                    "spaCy Spanish model not available, using English model"
-                )
+                LOGGER.warning("spaCy Spanish model not available, using English model")
                 self.nlp = self.spacy_loader.load_model("en_core_web_sm")
 
             if self.nlp is None:
@@ -600,8 +591,7 @@ class DocumentSegmenter:
 
             # Enhanced with industrial features
             if self.enable_advanced_semantics:
-                segments = self._enhance_segments_with_advanced_metrics(
-                    segments)
+                segments = self._enhance_segments_with_advanced_metrics(segments)
 
             # Calculate final statistics (maintain compatibility)
             self._calculate_segmentation_stats(segments)
@@ -610,8 +600,7 @@ class DocumentSegmenter:
             if self.performance_monitoring:
                 processing_time = (time.perf_counter() - start_time) * 1000
                 self.segmentation_stats.processing_time_ms = processing_time
-                self._performance_metrics["processing_times"].append(
-                    processing_time)
+                self._performance_metrics["processing_times"].append(processing_time)
 
             return segments
 
@@ -839,8 +828,7 @@ class DocumentSegmenter:
             ):
                 segment_text = " ".join(current_segment_words)
                 segments.append(
-                    self._create_segment_dict(
-                        segment_text, [], "character_based")
+                    self._create_segment_dict(segment_text, [], "character_based")
                 )
 
                 current_segment_words = [word]
@@ -875,8 +863,7 @@ class DocumentSegmenter:
             coherence_score, coherence_components = (
                 self.semantic_analyzer.analyze_comprehensive_coherence(text)
             )
-            embedding_coherence = coherence_components.get(
-                "embedding_coherence", 0.0)
+            embedding_coherence = coherence_components.get("embedding_coherence", 0.0)
         else:
             coherence_score = self._estimate_semantic_coherence(text)
             embedding_coherence = None

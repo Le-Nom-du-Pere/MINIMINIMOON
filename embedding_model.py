@@ -22,7 +22,10 @@ import hashlib
 import json
 import logging
 import os
+import tempfile
+import threading
 import warnings
+from collections import OrderedDict
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Protocol
 
@@ -34,13 +37,15 @@ from pydantic import BaseModel, Field
 from sentence_transformers import SentenceTransformer
 from sklearn.isotonic import IsotonicRegression
 
-from safe_io import safe_write_json, safe_write_text
-
 # Configuración de logging para producción
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
+
+_DEFAULT_EMBEDDING_INSTANCES: Dict[int, "SotaEmbedding"] = {}
+_DEFAULT_EMBEDDING_LOCK = threading.RLock()
+_POST_INSTALL_SETUP_LOCK = threading.RLock()
 
 # Suprimir warnings no críticos
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -107,6 +112,11 @@ class EmbeddingConfig(BaseModel):
     )
     domain_hint_default: str = Field(default="PDM", description="Dominio por defecto")
     device: str = Field(default="auto", description="Dispositivo: auto, cuda, cpu")
+    cache_size: int = Field(
+        default=128,
+        ge=0,
+        description="Número máximo de lotes cacheados en memoria",
+    )
 
 
 class CalibrationCorpusStats(BaseModel):
@@ -134,6 +144,32 @@ class CalibrationCard(BaseModel):
     performance_metrics: Dict[str, float] = Field(default_factory=dict)
 
 
+def _atomic_write_text(target: Path, payload: str, *, encoding: str = "utf-8") -> None:
+    """Write text atomically using a temporary file + os.replace."""
+    target.parent.mkdir(parents=True, exist_ok=True)
+    temp_path: Optional[Path] = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            dir=target.parent,
+            prefix=f".{target.name}_tmp_",
+            suffix=".tmp",
+            delete=False,
+            encoding=encoding,
+        ) as handle:
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+            temp_path = Path(handle.name)
+        os.replace(temp_path, target)
+    finally:
+        if temp_path and temp_path.exists():
+            try:
+                temp_path.unlink()
+            except OSError:
+                pass
+
+
 # =============================================================================
 # GUARDIA DE NOVEDAD (NOVELTY GUARD)
 # =============================================================================
@@ -146,17 +182,13 @@ class NoveltyGuard:
     def check_dependencies():
         """Verifica versiones de dependencias críticas."""
         import importlib.metadata as metadata
-
         from packaging import version
 
         dependency_matrix = {
-            # Requisitos mínimos declarados explícitamente en requirements.txt
             "sentence-transformers": {"min": "2.2.0", "required": True},
             "torch": {"min": "1.9.0", "required": True},
             "numpy": {"min": "1.21.0", "required": True},
             "scikit-learn": {"min": "1.0.0", "required": True},
-            # Dependencias complementarias. Útiles para la CLI o pipelines
-            # avanzados, pero opcionales para la inicialización básica.
             "transformers": {"min": "4.30.0", "required": False},
             "datasets": {"min": "2.14.0", "required": False},
             "faiss-cpu": {"min": "1.7.0", "required": False},
@@ -228,17 +260,12 @@ class EmbeddingBackend(Protocol):
         domain_hint: Optional[str] = None,
         batch_size: Optional[int] = None,
     ) -> np.ndarray:
-        """Genera embeddings para una lista de textos."""
         ...
 
-    def embed_query(
-        self, text: str, *, domain_hint: Optional[str] = None
-    ) -> np.ndarray:
-        """Genera embedding para una consulta individual."""
+    def embed_query(self, text: str, *, domain_hint: Optional[str] = None) -> np.ndarray:
         ...
 
     def similarity(self, A: np.ndarray, B: np.ndarray) -> np.ndarray:
-        """Calcula similitud entre matrices de embeddings."""
         ...
 
     def calibrate(
@@ -247,15 +274,12 @@ class EmbeddingBackend(Protocol):
         *,
         method: str = "isotonic+conformal",
     ) -> CalibrationCard:
-        """Calibra el modelo con estadísticas del corpus."""
         ...
 
     def save_card(self, path: str) -> None:
-        """Guarda la tarjeta de calibración."""
         ...
 
     def load_card(self, path: str) -> None:
-        """Carga la tarjeta de calibración."""
         ...
 
 
@@ -275,11 +299,30 @@ class SotaEmbedding:
         NoveltyGuard.check_dependencies()
         self.config = config
         self.model = None
-        self.calibration_card = None
-        self._cache = {}
+        self.calibration_card: Optional[CalibrationCard] = None
+        self._cache_lock = threading.RLock()
+        self._cache: "OrderedDict[str, np.ndarray]" = OrderedDict()
+        self._cache_enabled = self.config.cache_size > 0
+        self._cache_max_size = (
+            max(1, self.config.cache_size) if self._cache_enabled else 0
+        )
         self._device = self._setup_device()
         self._load_model()
         self._load_calibration_card()
+
+    def __getstate__(self) -> Dict[str, Any]:
+        """Custom pickle support excluding runtime locks."""
+        state = self.__dict__.copy()
+        state["_cache_lock"] = None
+        state["_cache"] = list(self._cache.items())
+        return state
+
+    def __setstate__(self, state: Dict[str, Any]) -> None:
+        """Restore state ensuring locks are recreated."""
+        cache_items = state.get("_cache", [])
+        state["_cache_lock"] = threading.RLock()
+        state["_cache"] = OrderedDict(cache_items)
+        self.__dict__.update(state)
 
     def _setup_device(self) -> torch.device:
         """Configura dispositivo óptimo automáticamente."""
@@ -290,7 +333,6 @@ class SotaEmbedding:
     def _load_model(self):
         """Carga el modelo SOTA con configuración óptima."""
         logger.info(f"Cargando modelo {self.config.model} en {self._device}")
-
         try:
             self.model = SentenceTransformer(self.config.model, device=self._device)
 
@@ -298,7 +340,6 @@ class SotaEmbedding:
             if self.config.precision == "fp16" and self._device.type == "cuda":
                 self.model = self.model.half()
             elif self.config.precision == "int8":
-                # Quantización dinámica (si está disponible)
                 if hasattr(torch, "quantization"):
                     self.model = torch.quantization.quantize_dynamic(
                         self.model, {torch.nn.Linear}, dtype=torch.qint8
@@ -311,7 +352,6 @@ class SotaEmbedding:
                 )
 
             logger.info(f"✓ Modelo {self.config.model} cargado exitosamente")
-
         except Exception as e:
             logger.error(f"Error cargando modelo {self.config.model}: {e}")
             raise
@@ -347,8 +387,6 @@ class SotaEmbedding:
             domain_priors={"PDM": 0.9, "general": 0.1},
             performance_metrics={"throughput": 10000, "latency_ms": 15.0},
         )
-
-        # Guardar automáticamente
         self.save_card(self.config.calibration_card)
 
     def _get_cache_key(self, texts: List[str], domain_hint: Optional[str]) -> str:
@@ -368,15 +406,9 @@ class SotaEmbedding:
             return embeddings
 
         domain_weight = self.calibration_card.domain_priors[domain_hint]
-        # Mezcla suave con embedding promedio (proxy de dominio)
-        if hasattr(self, "_domain_centroid"):
-            centroid = self._domain_centroid
-        else:
-            centroid = np.mean(embeddings, axis=0, keepdims=True)
-
+        centroid = getattr(self, "_domain_centroid", np.mean(embeddings, axis=0, keepdims=True))
         smoothed = (1 - domain_weight) * embeddings + domain_weight * centroid
 
-        # Renormalizar si está configurado
         if self.config.normalize_l2:
             norms = np.linalg.norm(smoothed, axis=1, keepdims=True)
             smoothed = smoothed / np.maximum(norms, 1e-12)
@@ -396,13 +428,14 @@ class SotaEmbedding:
                 0, self.model.get_sentence_embedding_dimension()
             )
 
-        # Verificar cache
         cache_key = self._get_cache_key(texts, domain_hint)
-        if cache_key in self._cache:
-            logger.debug("Cache hit para lote de textos")
-            return self._cache[cache_key]
+        if self._cache_enabled:
+            with self._cache_lock:
+                cached = self._cache.get(cache_key)
+                if cached is not None:
+                    logger.debug("Cache hit para lote de textos")
+                    return cached.copy()
 
-        # Configurar batch size
         effective_batch_size = batch_size or self.config.batch_size
 
         try:
@@ -425,12 +458,15 @@ class SotaEmbedding:
                         convert_to_numpy=True,
                     )
 
-            # Aplicar suavizado de dominio si se especifica
             if domain_hint:
                 embeddings = self._apply_domain_smoothing(embeddings, domain_hint)
 
-            # Cachear resultados
-            self._cache[cache_key] = embeddings
+            if self._cache_enabled:
+                with self._cache_lock:
+                    self._cache[cache_key] = embeddings.copy()
+                    self._cache.move_to_end(cache_key)
+                    while len(self._cache) > self._cache_max_size:
+                        self._cache.popitem(last=False)
 
             logger.debug(f"Embeddings generados para {len(texts)} textos")
             return embeddings
@@ -439,22 +475,17 @@ class SotaEmbedding:
             logger.error(f"Error generando embeddings: {e}")
             raise
 
-    def embed_query(
-        self, text: str, *, domain_hint: Optional[str] = None
-    ) -> np.ndarray:
+    def embed_query(self, text: str, *, domain_hint: Optional[str] = None) -> np.ndarray:
         """Genera embedding para consulta individual."""
         return self.embed_texts([text], domain_hint=domain_hint)[0]
 
     def similarity(self, A: np.ndarray, B: np.ndarray) -> np.ndarray:
         """Calcula similitud cosine entre matrices de embeddings."""
         if self.config.normalize_l2:
-            # Cosine similarity para embeddings normalizados = producto punto
             return np.dot(A, B.T)
-        else:
-            # Cosine similarity manual
-            norms_A = np.linalg.norm(A, axis=1, keepdims=True)
-            norms_B = np.linalg.norm(B, axis=1, keepdims=True)
-            return np.dot(A, B.T) / (norms_A * norms_B.T + 1e-12)
+        norms_A = np.linalg.norm(A, axis=1, keepdims=True)
+        norms_B = np.linalg.norm(B, axis=1, keepdims=True)
+        return np.dot(A, B.T) / (norms_A * norms_B.T + 1e-12)
 
     def calibrate(
         self,
@@ -465,25 +496,19 @@ class SotaEmbedding:
         """Calibra el modelo usando estadísticas del corpus."""
         logger.info("Iniciando calibración isotónica + conformal")
 
-        # 1. Calibración isotónica
         isotonic_calibrator = IsotonicRegression(out_of_bounds="clip")
         if len(corpus_stats.confidence_scores) > 10:
             calibrated_scores = isotonic_calibrator.fit_transform(
                 corpus_stats.confidence_scores, corpus_stats.gold_labels
             )
         else:
-            # Fallback a calibración lineal simple
             calibrated_scores = corpus_stats.confidence_scores
 
-        # 2. Conformal prediction para umbrales
         conformal_thresholds = self._compute_conformal_thresholds(
             calibrated_scores, corpus_stats.gold_labels
         )
-
-        # 3. Actualizar priors de dominio
         domain_priors = self._compute_domain_priors(corpus_stats.domain_distribution)
 
-        # 4. Crear tarjeta de calibración
         self.calibration_card = CalibrationCard(
             model_name=self.config.model,
             calibration_date=np.datetime64("now").astype(str),
@@ -502,7 +527,7 @@ class SotaEmbedding:
             conformal_thresholds=conformal_thresholds,
             domain_priors=domain_priors,
             performance_metrics={
-                "throughput": 10000,  # Placeholder para métricas reales
+                "throughput": 10000,
                 "latency_ms": 15.0,
                 "calibration_quality": 0.85,
             },
@@ -516,26 +541,19 @@ class SotaEmbedding:
     ) -> Dict[str, float]:
         """Calcula umbrales usando conformal prediction."""
         if len(scores) < 20:
-            return (
-                self.calibration_card.conformal_thresholds
-                if self.calibration_card
-                else {}
-            )
+            return self.calibration_card.conformal_thresholds if self.calibration_card else {}
 
-        # Split conformal simple
         split_idx = len(scores) // 2
-        cal_scores, val_scores = scores[:split_idx], scores[split_idx:]
-        cal_labels, val_labels = labels[:split_idx], labels[split_idx:]
+        cal_scores, _ = scores[:split_idx], scores[split_idx:]
+        cal_labels, _ = labels[:split_idx], labels[split_idx:]
 
-        thresholds = {}
+        thresholds: Dict[str, float] = {}
         for alpha in [0.10, 0.05, 0.01]:
-            # Calcular quantil en conjunto de calibración
             non_conformity_scores = [
-                1 - score if label == 1 else score
-                for score, label in zip(cal_scores, cal_labels)
+                1 - s if y == 1 else s for s, y in zip(cal_scores, cal_labels)
             ]
-            threshold = np.quantile(non_conformity_scores, 1 - alpha)
-            thresholds[f"alpha_{alpha}"] = float(threshold)
+            threshold = float(np.quantile(non_conformity_scores, 1 - alpha))
+            thresholds[f"alpha_{alpha}"] = threshold
 
         return thresholds
 
@@ -547,38 +565,19 @@ class SotaEmbedding:
         if not domain_distribution:
             return {"PDM": 0.9, "general": 0.1}
 
-        # Suavizado additivo para evitar ceros
         total = sum(domain_distribution.values()) + len(domain_distribution) * 0.1
-        priors = {}
-        for domain, count in domain_distribution.items():
-            priors[domain] = (count + 0.1) / total
-
-        return priors
+        return {d: (c + 0.1) / total for d, c in domain_distribution.items()}
 
     def save_card(self, path: str) -> None:
-        """Guarda tarjeta de calibración con fallback robusto."""
+        """Guarda tarjeta de calibración con escritura atómica."""
         if not self.calibration_card:
             logger.warning("No hay tarjeta de calibración para guardar")
             return
 
         card_path = Path(path)
-        payload = self.calibration_card.dict()
-        result = safe_write_json(card_path, payload, label="calibration_card")
-
-        if result.status == "primary":
-            logger.info("✓ Tarjeta de calibración guardada: %s", result.path)
-        elif result.status == "fallback":
-            logger.info(
-                "Tarjeta de calibración guardada en fallback %s (destino original: %s)",
-                result.path,
-                card_path,
-            )
-        else:
-            logger.info(
-                "Tarjeta de calibración retenida en memoria bajo clave %s (destino original: %s)",
-                result.key,
-                card_path,
-            )
+        payload = json.dumps(self.calibration_card.dict(), indent=2, ensure_ascii=False)
+        _atomic_write_text(card_path, payload)
+        logger.info("✓ Tarjeta de calibración guardada: %s", card_path)
 
     def load_card(self, path: str) -> None:
         """Carga tarjeta de calibración desde disco."""
@@ -586,7 +585,7 @@ class SotaEmbedding:
             with open(path, "r", encoding="utf-8") as f:
                 card_data = json.load(f)
             self.calibration_card = CalibrationCard(**card_data)
-            logger.info(f"✓ Tarjeta de calibración cargada: {path}")
+            logger.info("✓ Tarjeta de calibración cargada: %s", path)
         except Exception as e:
             logger.error(f"Error cargando tarjeta de calibración: {e}")
             raise
@@ -605,41 +604,30 @@ def load_embedding_config() -> EmbeddingConfig:
         with open(config_path, "r", encoding="utf-8") as f:
             config_data = yaml.safe_load(f)
         return EmbeddingConfig(**config_data)
-    else:
-        # Configuración por defecto
-        default_config = EmbeddingConfig()
 
-        # Crear directorio y guardar configuración por defecto
-        serialized = yaml.dump(
-            default_config.dict(), default_flow_style=False, allow_unicode=True
-        )
-        result = safe_write_text(
-            config_path,
-            serialized,
-            label="embedding_config",
-        )
-
-        if result.status == "primary":
-            logger.info("✓ Configuración por defecto creada: %s", result.path)
-        elif result.status == "fallback":
-            logger.info(
-                "Configuración por defecto escrita en fallback %s (destino original: %s)",
-                result.path,
-                config_path,
-            )
-        else:
-            logger.info(
-                "Configuración por defecto almacenada en memoria bajo clave %s (destino original: %s)",
-                result.key,
-                config_path,
-            )
-        return default_config
+    default_config = EmbeddingConfig()
+    payload = yaml.dump(default_config.dict(), default_flow_style=False, allow_unicode=True)
+    _atomic_write_text(config_path, payload)
+    logger.info("✓ Configuración por defecto creada: %s", config_path)
+    return default_config
 
 
-def get_default_embedding() -> EmbeddingBackend:
+def get_default_embedding() -> "EmbeddingBackend":
     """Factory para obtener backend de embedding por defecto."""
-    config = load_embedding_config()
-    return SotaEmbedding(config)
+    pid = os.getpid()
+    with _DEFAULT_EMBEDDING_LOCK:
+        backend = _DEFAULT_EMBEDDING_INSTANCES.get(pid)
+        if backend is None:
+            config = load_embedding_config()
+            backend = SotaEmbedding(config)
+            _DEFAULT_EMBEDDING_INSTANCES[pid] = backend
+        return backend
+
+
+def _reset_embedding_singleton_for_testing() -> None:
+    """Reset singleton cache – util en suites de pruebas."""
+    with _DEFAULT_EMBEDDING_LOCK:
+        _DEFAULT_EMBEDDING_INSTANCES.pop(os.getpid(), None)
 
 
 # =============================================================================
@@ -647,7 +635,7 @@ def get_default_embedding() -> EmbeddingBackend:
 # =============================================================================
 
 
-def provide_embeddings() -> EmbeddingBackend:
+def provide_embeddings() -> "EmbeddingBackend":
     """
     Proporciona backend de embeddings para integración automática.
 
@@ -665,7 +653,6 @@ def provide_embeddings() -> EmbeddingBackend:
 
 def audit_performance_hotspots() -> Dict[str, List[str]]:
     """Resumen estático de posibles cuellos de botella y efectos secundarios."""
-
     return {
         "bottlenecks": [
             "SotaEmbedding.embed_texts: delega lotes largos a SentenceTransformer.encode con potencial saturación de memoria si no se controla el tamaño del batch.",
@@ -698,10 +685,8 @@ def main(_ctx: typer.Context):
 @app.command()
 def build_card(
     corpus_path: str = typer.Argument(..., help="Ruta al corpus de calibración"),
-    alpha: float = typer.Option(
-        0.10, help="Nivel de significancia para conformal prediction"
-    ),
-    output: str = typer.Option(None, help="Ruta de salida para tarjeta de calibración"),
+    alpha: float = typer.Option(0.10, help="Nivel de significancia para conformal prediction"),
+    output: Optional[str] = typer.Option(None, help="Ruta de salida para tarjeta de calibración"),
 ):
     """Construye tarjeta de calibración desde corpus."""
     try:
@@ -736,16 +721,13 @@ def encode(
     try:
         embedding_backend = get_default_embedding()
 
-        # Leer documentos
         with open(input_file, "r", encoding="utf-8") as f:
             documents = [line.strip() for line in f if line.strip()]
 
-        # Generar embeddings
         embeddings = embedding_backend.embed_texts(
             documents, domain_hint=domain, batch_size=batch_size
         )
 
-        # Guardar embeddings
         np.save(output_file, embeddings)
 
         typer.echo(
@@ -761,19 +743,15 @@ def encode(
 def doctor():
     """Verifica estado del sistema de embeddings."""
     try:
-        # Verificar dependencias
         NoveltyGuard.check_dependencies()
         typer.echo("✓ Dependencias SOTA 2024+ validadas")
 
-        # Verificar configuración
         config = load_embedding_config()
         typer.echo(f"✓ Configuración cargada: {config.model}")
 
-        # Verificar modelo
         embedding_backend = get_default_embedding()
         typer.echo(f"✓ Backend operacional: {type(embedding_backend).__name__}")
 
-        # Verificar calibración
         if embedding_backend.calibration_card:
             card = embedding_backend.calibration_card
             typer.echo(
@@ -782,15 +760,12 @@ def doctor():
         else:
             typer.echo("⚠️  Tarjeta de calibración no encontrada")
 
-        # Test de funcionalidad
         test_texts = [
             "Plan de desarrollo municipal Colombia",
             "Objetivos estratégicos PDM",
         ]
         embeddings = embedding_backend.embed_texts(test_texts)
-        similarity = embedding_backend.similarity(embeddings[0:1], embeddings[1:2])[
-            0, 0
-        ]
+        similarity = embedding_backend.similarity(embeddings[0:1], embeddings[1:2])[0, 0]
 
         typer.echo(
             f"✓ Test funcional: embeddings {embeddings.shape}, similitud {similarity:.3f}"
@@ -805,7 +780,6 @@ def doctor():
 def _load_corpus_stats(corpus_path: str) -> CalibrationCorpusStats:
     """Carga estadísticas del corpus para calibración."""
     # Placeholder - implementar según formato específico del corpus PDM
-    # Por ahora retorna estadísticas sintéticas para demostración
     return CalibrationCorpusStats(
         corpus_size=1000,
         embedding_dim=1024,
@@ -823,45 +797,32 @@ def _load_corpus_stats(corpus_path: str) -> CalibrationCorpusStats:
 
 
 def post_install_setup(force: bool = False) -> bool:
-    """Configuración post-instalación para generar calibración base.
-
-    Args:
-        force: Si es ``True`` intenta ejecutar la configuración incluso si ya
-            fue realizada previamente.
-
-    Returns:
-        ``True`` si la configuración se ejecutó exitosamente, ``False`` en caso
-        contrario.
-    """
-
+    """Configuración post-instalación para generar calibración base."""
     global _POST_INSTALL_SETUP_DONE
 
-    if _POST_INSTALL_SETUP_DONE and not force:
-        return False
+    with _POST_INSTALL_SETUP_LOCK:
+        if _POST_INSTALL_SETUP_DONE and not force:
+            return False
 
-    try:
-        embedding_backend = get_default_embedding()
+        try:
+            embedding_backend = get_default_embedding()
 
-        # Verificar si ya existe calibración
-        card_path = Path(embedding_backend.config.calibration_card)
-        if not card_path.exists():
-            logger.info("Generando calibración base post-instalación...")
+            card_path = Path(embedding_backend.config.calibration_card)
+            if not card_path.exists():
+                logger.info("Generando calibración base post-instalación...")
+                embedding_backend._create_default_calibration_card()
+                logger.info("✓ Calibración base generada exitosamente")
+            else:
+                logger.info("✓ Calibración existente encontrada")
 
-            # Crear calibración por defecto
-            embedding_backend._create_default_calibration_card()
+            _POST_INSTALL_SETUP_DONE = True
+            return True
 
-            logger.info("✓ Calibración base generada exitosamente")
-        else:
-            logger.info("✓ Calibración existente encontrada")
-
-        _POST_INSTALL_SETUP_DONE = True
-        return True
-
-    except Exception as e:
-        logger.warning(f"Configuración post-instalación falló: {e}")
-        if force:
-            raise
-        return False
+        except Exception as e:
+            logger.warning(f"Configuración post-instalación falló: {e}")
+            if force:
+                raise
+            return False
 
 
 # =============================================================================
@@ -886,7 +847,7 @@ LIBRERÍAS/VERSIONES:
 
 UMBRALES CONFORMALES GENERADOS:
 - alpha_0.10: 0.75 (conservador para PDM)
-- alpha_0.05: 0.82  
+- alpha_0.05: 0.82
 - alpha_0.01: 0.90
 
 RUTAS DE ARTEFACTOS:

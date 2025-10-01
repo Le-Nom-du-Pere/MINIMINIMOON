@@ -1,27 +1,29 @@
-# Embedding model dependencies
-sentence-transformers>=2.2.0
-scikit-learn>=1.0.0
-numpy>=1.21.0
-torch>=1.9.0
-psutil>=5.8.0
+# Core ML and NLP dependencies
+sentence-transformers==2.2.2
+scikit-learn==1.3.2
+numpy==1.24.4
+torch==2.3.1
+psutil==5.9.8
 
-# Responsibility detection dependencies
-spacy>=3.4.0
-spacy-transformers>=1.1.0
+# NLP pipeline
+spacy==3.8.7
+spacy-transformers==1.3.9
 
 # PDF processing
-pdfplumber>=0.7.0
+pdfplumber==0.11.4
 
-# Testing dependencies
-pytest>=7.0.0
-jsonschema>=4.0.0
+# Data processing and parallelism
+pandas==2.2.3
+joblib==1.4.2
 
-# Parallel processing
-joblib>=1.3.0
+# Testing and validation
+pytest==8.3.3
+jsonschema==4.23.0
 
-# CSV export functionality
-pandas>=1.3.0
-
-# Note: Factibilidad scoring module uses only Python standard library
-# Note: Text processing and DAG validation components (if present) use only Python standard library
-psutil>=5.9.0
+# Tooling for quality gates
+black==24.10.0
+isort==5.13.2
+flake8==7.1.1
+mypy==1.13.0
+ruff==0.6.9
+pre-commit==4.0.1

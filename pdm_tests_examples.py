@@ -59,9 +59,12 @@ class TestContradictionDetector:
         """Test basic contradiction detection."""
         result = detector.detect_contradictions(sample_pdm_text)
 
-        assert result.total_contradictions > 0
-        assert result.risk_score > 0
-        assert result.risk_level in [level.value for level in RiskLevel]
+        if result.total_contradictions <= 0:
+            raise AssertionError
+        if result.risk_score <= 0:
+            raise AssertionError
+        if result.risk_level not in [level.value for level in RiskLevel]:
+            raise AssertionError
 
     @staticmethod
     def test_competence_validation(detector, sample_pdm_text):
@@ -71,22 +74,27 @@ class TestContradictionDetector:
         )
 
         # Should detect competence issues
-        assert result.total_competence_issues > 0
+        if result.total_competence_issues <= 0:
+            raise AssertionError
 
         # Should find hospital administration overreach
         competence_issues = result.competence_mismatches
         hospital_issues = [
             i for i in competence_issues if "hospital" in str(i).lower()]
-        assert len(hospital_issues) > 0
+        if len(hospital_issues) <= 0:
+            raise AssertionError
 
     @staticmethod
     def test_empty_text(detector):
         """Test handling of empty text."""
         result = detector.detect_contradictions("")
 
-        assert result.total_contradictions == 0
-        assert result.risk_score == 0
-        assert result.risk_level == RiskLevel.LOW.value
+        if result.total_contradictions != 0:
+            raise AssertionError
+        if result.risk_score != 0:
+            raise AssertionError
+        if result.risk_level != RiskLevel.LOW.value:
+            raise AssertionError
 
     @staticmethod
     def test_quantitative_contradictions(detector):
@@ -101,12 +109,14 @@ class TestContradictionDetector:
 
         result = detector.detect_contradictions(text)
 
-        assert result.total_contradictions > 0
+        if result.total_contradictions <= 0:
+            raise AssertionError
         # Should detect percentage contradictions
         for contradiction in result.contradictions:
-            assert hasattr(contradiction, "quantitative_targets") or hasattr(
+            if not (hasattr(contradiction, "quantitative_targets") or hasattr(
                 contradiction, "quantifiers"
-            )
+            )):
+                raise AssertionError
 
 
 # tests/test_patterns.py
@@ -129,8 +139,10 @@ class TestPatternMatcher:
         text = "El objetivo es claro, sin embargo no hay recursos."
         matches = matcher.find_adversatives(text)
 
-        assert len(matches) > 0
-        assert "sin embargo" in matches[0]["adversative"].lower()
+        if len(matches) <= 0:
+            raise AssertionError
+        if "sin embargo" not in matches[0]["adversative"].lower():
+            raise AssertionError
 
     @staticmethod
     def test_competence_verb_extraction(matcher):
@@ -142,11 +154,14 @@ class TestPatternMatcher:
 
         verbs = matcher.extract_competence_verbs(text)
 
-        assert len(verbs) > 0
+        if len(verbs) <= 0:
+            raise AssertionError
         # Should find "contratar docentes" and "construir hospital"
         verb_texts = [v[0] for v in verbs]
-        assert any("contratar" in v and "docentes" in v for v in verb_texts)
-        assert any("construi" in v and "hospital" in v for v in verb_texts)
+        if not any("contratar" in v and "docentes" in v for v in verb_texts):
+            raise AssertionError
+        if not any("construi" in v and "hospital" in v for v in verb_texts):
+            raise AssertionError
 
     @staticmethod
     def test_quantitative_pattern_detection(matcher):
@@ -166,11 +181,15 @@ class TestPatternMatcher:
             for match in pattern.finditer(text):
                 found.append(match.group())
 
-        assert len(found) > 0
-        assert any("95%" in f for f in found)
-        assert any("500 millones" in f for f in found)
-        assert any(
-            "10,000 familias" in f or "10.000 familias" in f for f in found)
+        if len(found) <= 0:
+            raise AssertionError
+        if not any("95%" in f for f in found):
+            raise AssertionError
+        if not any("500 millones" in f for f in found):
+            raise AssertionError
+        if not any(
+            "10,000 familias" in f or "10.000 familias" in f for f in found):
+            raise AssertionError
 
 
 # tests/test_competence.py
@@ -197,10 +216,14 @@ class TestCompetenceValidator:
 
         issues = validator.validate_segment(text, ["salud"], "municipal")
 
-        assert len(issues) > 0
-        assert issues[0]["type"] == "competence_overreach"
-        assert issues[0]["sector"] == "salud"
-        assert "departamental" in issues[0]["required_level"]
+        if len(issues) <= 0:
+            raise AssertionError
+        if issues[0]["type"] != "competence_overreach":
+            raise AssertionError
+        if issues[0]["sector"] != "salud":
+            raise AssertionError
+        if "departamental" not in issues[0]["required_level"]:
+            raise AssertionError
 
     @staticmethod
     def test_valid_municipal_action(validator):
@@ -226,9 +249,11 @@ class TestCompetenceValidator:
 
         issues = validator.validate_segment(text, ["educacion"], "municipal")
 
-        assert len(issues) > 0
+        if len(issues) <= 0:
+            raise AssertionError
         # Nombramiento de docentes es competencia departamental
-        assert any("nombrar" in i["text"] for i in issues)
+        if not any("nombrar" in i["text"] for i in issues):
+            raise AssertionError
 
     @staticmethod
     def test_suggested_fixes(validator):
@@ -237,9 +262,12 @@ class TestCompetenceValidator:
 
         issues = validator.validate_segment(text, ["salud"], "municipal")
 
-        assert len(issues) > 0
-        assert "suggested_fix" in issues[0]
-        assert "gestionar" in issues[0]["suggested_fix"].lower()
+        if len(issues) <= 0:
+            raise AssertionError
+        if "suggested_fix" not in issues[0]:
+            raise AssertionError
+        if "gestionar" not in issues[0]["suggested_fix"].lower():
+            raise AssertionError
 
 
 # tests/test_risk_scoring.py
@@ -268,10 +296,14 @@ class TestRiskScorer:
 
         result = scorer.calculate_risk(contradictions, [], [])
 
-        assert "overall_risk" in result
-        assert 0 <= result["overall_risk"] <= 1
-        assert "risk_level" in result
-        assert "confidence_intervals" in result
+        if "overall_risk" not in result:
+            raise AssertionError
+        if not 0 <= result["overall_risk"] <= 1:
+            raise AssertionError
+        if "risk_level" not in result:
+            raise AssertionError
+        if "confidence_intervals" not in result:
+            raise AssertionError
 
     @staticmethod
     def test_confidence_intervals(scorer):
@@ -288,9 +320,11 @@ class TestRiskScorer:
         result = scorer.calculate_risk([], [], [])
 
         intervals = result["confidence_intervals"]
-        assert "overall" in intervals
+        if "overall" not in intervals:
+            raise AssertionError
         assert len(intervals["overall"]) == 2
-        assert intervals["overall"][0] <= intervals["overall"][1]
+        if intervals["overall"][0] > intervals["overall"][1]:
+            raise AssertionError
 
     @staticmethod
     def test_risk_levels(scorer):
@@ -311,13 +345,14 @@ class TestRiskScorer:
         for contradictions, competences, agenda, expected_level in test_cases:
             result = scorer.calculate_risk(contradictions, competences, agenda)
             # Allow for some flexibility in level assignment
-            assert expected_level in result["risk_level"] or result["risk_level"] in [
+            if not (expected_level in result["risk_level"] or result["risk_level"] in [
                 "LOW",
                 "MEDIUM",
                 "MEDIUM_HIGH",
                 "HIGH",
                 "CRITICAL",
-            ]
+            ]):
+                raise AssertionError
 
 
 # tests/test_integration.py
@@ -398,8 +433,10 @@ class TestIntegration:
         loader = PDMLoader()
         doc_data = loader.load(sample_pdm_file)
 
-        assert "text" in doc_data
-        assert len(doc_data["text"]) > 0
+        if "text" not in doc_data:
+            raise AssertionError
+        if len(doc_data["text"]) <= 0:
+            raise AssertionError
 
         # Initialize detector
         detector = ContradictionDetector(
@@ -414,12 +451,16 @@ class TestIntegration:
         )
 
         # Verify results
-        assert analysis.total_contradictions > 0  # Should find budget contradiction
-        assert (
-            analysis.total_competence_issues > 0
-        )  # Should find hospital/teacher issues
-        assert analysis.risk_score > 0
-        assert len(analysis.explanations) > 0
+        if analysis.total_contradictions <= 0:
+            raise AssertionError
+        if (
+            analysis.total_competence_issues <= 0
+        ):
+            raise AssertionError
+        if analysis.risk_score <= 0:
+            raise AssertionError
+        if len(analysis.explanations) <= 0:
+            raise AssertionError
 
         # Cleanup
         sample_pdm_file.unlink()
@@ -443,6 +484,7 @@ class TestIntegration:
             txt_file = Path(f.name)
 
         doc_data = loader.load(txt_file)
-        assert doc_data["text"] == test_content
+        if doc_data["text"] != test_content:
+            raise AssertionError
 
         txt_file.unlink()
