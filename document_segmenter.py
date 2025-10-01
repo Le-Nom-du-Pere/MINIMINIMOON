@@ -913,3 +913,22 @@ class DocumentSegmenter:
         )
 
         # Return dictionary with exact original structure + enhan
+
+
+def audit_performance_hotspots() -> Dict[str, List[str]]:
+    """Resumen estático de posibles hotspots de rendimiento y efectos laterales."""
+
+    return {
+        "bottlenecks": [
+            "IndustrialSemanticAnalyzer.analyze_comprehensive_coherence: combina múltiples analizadores secuenciales (lexical, transformer, tópicos) que procesan texto completo en cada invocación.",
+            "DocumentSegmenter.segment_document: ejecuta pipelines de spaCy, clustering y cálculo de métricas por segmento, costoso en colecciones extensas.",
+        ],
+        "side_effects": [
+            "IndustrialSemanticAnalyzer._initialize_models: descarga modelos externos y mantiene referencias en caché compartida.",
+            "IndustrialSemanticAnalyzer.analyze_comprehensive_coherence: muta _coherence_cache con resultados memoizados.",
+        ],
+        "vectorization_opportunities": [
+            "IndustrialSemanticAnalyzer._compute_lexical_coherence: podría reemplazar contadores Python por operaciones NumPy para textos largos.",
+            "IndustrialSemanticAnalyzer._compute_topic_coherence: admite paralelización segura sobre ventanas de términos cuando HAS_ADVANCED_ML es True.",
+        ],
+    }

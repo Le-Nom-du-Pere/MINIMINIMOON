@@ -34,6 +34,8 @@ from pydantic import BaseModel, Field
 from sentence_transformers import SentenceTransformer
 from sklearn.isotonic import IsotonicRegression
 
+from safe_io import safe_write_json, safe_write_text
+
 # Configuración de logging para producción
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -554,18 +556,29 @@ class SotaEmbedding:
         return priors
 
     def save_card(self, path: str) -> None:
-        """Guarda tarjeta de calibración a disco."""
+        """Guarda tarjeta de calibración con fallback robusto."""
         if not self.calibration_card:
             logger.warning("No hay tarjeta de calibración para guardar")
             return
 
         card_path = Path(path)
-        card_path.parent.mkdir(parents=True, exist_ok=True)
+        payload = self.calibration_card.dict()
+        result = safe_write_json(card_path, payload, label="calibration_card")
 
-        with open(card_path, "w", encoding="utf-8") as f:
-            json.dump(self.calibration_card.dict(), f, indent=2, ensure_ascii=False)
-
-        logger.info(f"✓ Tarjeta de calibración guardada: {card_path}")
+        if result.status == "primary":
+            logger.info("✓ Tarjeta de calibración guardada: %s", result.path)
+        elif result.status == "fallback":
+            logger.info(
+                "Tarjeta de calibración guardada en fallback %s (destino original: %s)",
+                result.path,
+                card_path,
+            )
+        else:
+            logger.info(
+                "Tarjeta de calibración retenida en memoria bajo clave %s (destino original: %s)",
+                result.key,
+                card_path,
+            )
 
     def load_card(self, path: str) -> None:
         """Carga tarjeta de calibración desde disco."""
@@ -597,11 +610,29 @@ def load_embedding_config() -> EmbeddingConfig:
         default_config = EmbeddingConfig()
 
         # Crear directorio y guardar configuración por defecto
-        config_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(config_path, "w", encoding="utf-8") as f:
-            yaml.dump(default_config.dict(), f, default_flow_style=False)
+        serialized = yaml.dump(
+            default_config.dict(), default_flow_style=False, allow_unicode=True
+        )
+        result = safe_write_text(
+            config_path,
+            serialized,
+            label="embedding_config",
+        )
 
-        logger.info(f"✓ Configuración por defecto creada: {config_path}")
+        if result.status == "primary":
+            logger.info("✓ Configuración por defecto creada: %s", result.path)
+        elif result.status == "fallback":
+            logger.info(
+                "Configuración por defecto escrita en fallback %s (destino original: %s)",
+                result.path,
+                config_path,
+            )
+        else:
+            logger.info(
+                "Configuración por defecto almacenada en memoria bajo clave %s (destino original: %s)",
+                result.key,
+                config_path,
+            )
         return default_config
 
 
@@ -625,6 +656,30 @@ def provide_embeddings() -> EmbeddingBackend:
     - decatalogo_evaluador
     """
     return get_default_embedding()
+
+
+# =============================================================================
+# AUDITORÍA DE RENDIMIENTO Y PUREZA
+# =============================================================================
+
+
+def audit_performance_hotspots() -> Dict[str, List[str]]:
+    """Resumen estático de posibles cuellos de botella y efectos secundarios."""
+
+    return {
+        "bottlenecks": [
+            "SotaEmbedding.embed_texts: delega lotes largos a SentenceTransformer.encode con potencial saturación de memoria si no se controla el tamaño del batch.",
+            "SotaEmbedding.calibrate: combina ajuste isotónico y cálculo de cuantiles en Python (_compute_conformal_thresholds), lo que escala de forma lineal con el tamaño del corpus.",
+        ],
+        "side_effects": [
+            "load_embedding_config: crea embedding.yaml al importarse cuando no existe.",
+            "post_install_setup: descarga modelos externos y modifica el flag global _POST_INSTALL_SETUP_DONE.",
+        ],
+        "vectorization_opportunities": [
+            "SotaEmbedding._compute_conformal_thresholds: los non-conformity scores pueden derivarse con NumPy en bloque para reducir el overhead de Python.",
+            "SotaEmbedding.similarity: admite reemplazo directo por operaciones matriciales de NumPy/Faiss cuando se requieran lotes masivos.",
+        ],
+    }
 
 
 # =============================================================================
