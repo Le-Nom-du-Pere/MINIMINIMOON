@@ -44,7 +44,9 @@ Note:
 
 import argparse
 import datetime
+import errno
 import gzip
+import io
 import json
 import logging
 import os
@@ -57,6 +59,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
+from safe_io import SafeWriteResult, safe_write_bytes, safe_write_json, safe_write_text
+
 try:
     import pandas as pd
 
@@ -67,9 +71,12 @@ except ImportError:
 try:
     from joblib import Parallel, delayed
 
-    JOBLIB_AVAILABLE = True
+JOBLIB_AVAILABLE = True
 except ImportError:
     JOBLIB_AVAILABLE = False
+
+
+_RECOVERABLE_ERRNOS = {errno.EACCES, errno.EROFS, errno.ENOSPC}
 
 
 class ComponentType(Enum):
@@ -250,6 +257,32 @@ class FeasibilityScorer:
             handler.setFormatter(formatter)
             self.logger.addHandler(handler)
             self.logger.setLevel(logging.INFO)
+
+    @staticmethod
+    def _is_recoverable_io_error(exc: Exception) -> bool:
+        return isinstance(exc, PermissionError) or (
+            isinstance(exc, OSError) and getattr(exc, "errno", None) in _RECOVERABLE_ERRNOS
+        )
+
+    def _log_safe_write_result(
+        self, label: str, original_path: Path, result: SafeWriteResult
+    ) -> None:
+        if result.status == "primary":
+            self.logger.info("%s guardado en %s", label, result.path)
+        elif result.status == "fallback":
+            self.logger.warning(
+                "%s persistido en fallback %s (ruta original: %s)",
+                label,
+                result.path,
+                original_path,
+            )
+        else:
+            self.logger.error(
+                "%s retenido en memoria bajo clave %s (ruta original: %s)",
+                label,
+                result.key,
+                original_path,
+            )
 
     @staticmethod
     def _initialize_patterns() -> Dict[ComponentType, List[Dict]]:
@@ -1153,33 +1186,54 @@ The feasibility scorer evaluates indicator quality by detecting three core compo
             raise ValueError("Indicators list cannot be empty")
 
         output_file = Path(output_path)
+        report_content = self._generate_report_content(indicators)
 
-        # Create a unique temporary file in the same directory as the target
+        try:
+            output_file.parent.mkdir(parents=True, exist_ok=True)
+        except (PermissionError, OSError) as exc:
+            if self._is_recoverable_io_error(exc):
+                result = safe_write_text(
+                    output_file, report_content, label="feasibility_report"
+                )
+                self._log_safe_write_result(
+                    "Reporte de factibilidad", output_file, result
+                )
+                return
+            raise IOError(f"Failed to prepare report directory: {exc}") from exc
+
         temp_file = (
-            output_file.parent /
-            f"{output_file.name}.tmp.{uuid.uuid4().hex[:8]}"
+            output_file.parent
+            / f"{output_file.name}.tmp.{uuid.uuid4().hex[:8]}"
         )
 
         try:
-            # Generate the complete report content
-            report_content = self._generate_report_content(indicators)
-
-            # Write to temporary file first
             with temp_file.open("w", encoding="utf-8") as f:
                 f.write(report_content)
-                f.flush()  # Ensure all content is written to disk
-
-            # Atomically move temporary file to final destination
+                f.flush()
             temp_file.rename(output_file)
-
-        except Exception as e:
-            # Clean up temporary file if it exists
+            self.logger.info("Reporte de factibilidad guardado en %s", output_file)
+        except (PermissionError, OSError) as exc:
             if temp_file.exists():
                 try:
                     temp_file.unlink()
                 except OSError:
-                    pass  # Ignore cleanup errors
-            raise IOError(f"Failed to generate report: {e}") from e
+                    pass
+            if self._is_recoverable_io_error(exc):
+                result = safe_write_text(
+                    output_file, report_content, label="feasibility_report"
+                )
+                self._log_safe_write_result(
+                    "Reporte de factibilidad", output_file, result
+                )
+                return
+            raise IOError(f"Failed to generate report: {exc}") from exc
+        except Exception as exc:
+            if temp_file.exists():
+                try:
+                    temp_file.unlink()
+                except OSError:
+                    pass
+            raise IOError(f"Failed to generate report: {exc}") from exc
 
     def _generate_report_content(self, indicators: List[str]) -> str:
         """Generate the complete report content for the given indicators."""
@@ -1386,29 +1440,44 @@ The feasibility scorer evaluates indicator quality by detecting three core compo
         # Sort by feasibility score (descending)
         df = df.sort_values("Puntuación de Factibilidad", ascending=False)
 
-        # Generate output filename
-        output_path = Path(output_dir) / "matriz_trazabilidad_factibilidad.csv"
+        csv_content = df.to_csv(index=False, encoding="utf-8-sig")
+        csv_bytes = csv_content.encode("utf-8-sig")
+        file_size_mb = len(csv_bytes) / (1024 * 1024)
 
-        # Check if we need gzip compression
-        csv_content = df.to_csv(
-            index=False, encoding="utf-8-sig"
-        )  # utf-8-sig for Excel compatibility
-        file_size_mb = len(csv_content.encode("utf-8")) / (1024 * 1024)
+        intended_path = Path(output_dir) / "matriz_trazabilidad_factibilidad.csv"
+        if file_size_mb > 5.0:
+            intended_path = intended_path.with_suffix(".csv.gz")
+            result = safe_write_bytes(
+                intended_path, gzip.compress(csv_bytes), label="feasibility_traceability_csv"
+            )
+            summary = "CSV exportado con compresión gzip"
+        else:
+            result = safe_write_text(
+                intended_path,
+                csv_content,
+                label="feasibility_traceability_csv",
+                encoding="utf-8-sig",
+            )
+            summary = "CSV exportado"
 
-        if file_size_mb > 5.0:  # Compress if larger than 5MB
-            output_path = output_path.with_suffix(".csv.gz")
-            with gzip.open(output_path, "wt", encoding="utf-8-sig") as f:
-                f.write(csv_content)
+        self._log_safe_write_result(
+            "Matriz de trazabilidad CSV", intended_path, result
+        )
+
+        if result.status == "primary":
+            print(f"{summary}: {result.path} (tamaño: {file_size_mb:.1f}MB)")
+        elif result.status == "fallback":
             print(
-                f"CSV exportado con compresión gzip: {output_path} (tamaño original: {file_size_mb:.1f}MB)"
+                f"{summary} (fallback en {result.path}, original: {intended_path})"
+                f" [tamaño estimado: {file_size_mb:.1f}MB]"
             )
         else:
-            with open(output_path, "w", encoding="utf-8-sig", newline="") as f:
-                f.write(csv_content)
             print(
-                f"CSV exportado: {output_path} (tamaño: {file_size_mb:.1f}MB)")
+                f"{summary} retenido en memoria (clave {result.key})"
+                f" [tamaño estimado: {file_size_mb:.1f}MB]"
+            )
 
-        return str(output_path)
+        return str(result.path or result.key or intended_path)
 
     @staticmethod
     def translate_quality_tier_spanish(tier: str) -> str:
@@ -1543,35 +1612,50 @@ The feasibility scorer evaluates indicator quality by detecting three core compo
         rows.sort(key=lambda x: x[0], reverse=True)
         sorted_rows = [row[1] for row in rows]
 
-        # Generate output filename
-        output_path = Path(output_dir) / "matriz_trazabilidad_factibilidad.csv"
+        intended_path = Path(output_dir) / "matriz_trazabilidad_factibilidad.csv"
+        buffer = io.StringIO()
+        writer = csv.writer(buffer)
+        writer.writerow(headers)
+        writer.writerows(sorted_rows)
+        csv_content = buffer.getvalue()
+        csv_bytes = csv_content.encode("utf-8-sig")
+        file_size_mb = len(csv_bytes) / (1024 * 1024)
 
-        # Write CSV and check size for compression
-        with open(output_path, "w", encoding="utf-8-sig", newline="") as f:
-            writer = csv.writer(f)
-            writer.writerow(headers)
-            writer.writerows(sorted_rows)
-
-        # Check file size for compression
-        file_size_mb = os.path.getsize(output_path) / (1024 * 1024)
-
-        if file_size_mb > 5.0:  # Compress if larger than 5MB
-            compressed_path = output_path.with_suffix(".csv.gz")
-            with open(output_path, "rb") as f_in:
-                with gzip.open(compressed_path, "wb") as f_out:
-                    f_out.write(f_in.read())
-
-            # Remove uncompressed file
-            output_path.unlink()
-
-            print(
-                f"CSV exportado con compresión gzip: {compressed_path} (tamaño original: {file_size_mb:.1f}MB)"
+        if file_size_mb > 5.0:
+            intended_path = intended_path.with_suffix(".csv.gz")
+            result = safe_write_bytes(
+                intended_path,
+                gzip.compress(csv_bytes),
+                label="feasibility_traceability_csv_fallback",
             )
-            return str(compressed_path)
+            summary = "CSV exportado con compresión gzip"
+        else:
+            result = safe_write_text(
+                intended_path,
+                csv_content,
+                label="feasibility_traceability_csv_fallback",
+                encoding="utf-8-sig",
+            )
+            summary = "CSV exportado"
+
+        self._log_safe_write_result(
+            "Matriz de trazabilidad CSV (fallback)", intended_path, result
+        )
+
+        if result.status == "primary":
+            print(f"{summary}: {result.path} (tamaño: {file_size_mb:.1f}MB)")
+        elif result.status == "fallback":
+            print(
+                f"{summary} (fallback en {result.path}, original: {intended_path})"
+                f" [tamaño estimado: {file_size_mb:.1f}MB]"
+            )
         else:
             print(
-                f"CSV exportado: {output_path} (tamaño: {file_size_mb:.1f}MB)")
-            return str(output_path)
+                f"{summary} retenido en memoria (clave {result.key})"
+                f" [tamaño estimado: {file_size_mb:.1f}MB]"
+            )
+
+        return str(result.path or result.key or intended_path)
 
 
 def main():
@@ -1757,69 +1841,128 @@ Examples:
                 ],
             }
 
-        with open(json_path, "w", encoding="utf-8") as f:
-            json.dump(json_data, f, indent=2, ensure_ascii=False)
-        print(f"✓ Resultados JSON exportados: {json_path}")
+        result = safe_write_json(json_path, json_data, label="feasibility_results_json")
+        scorer._log_safe_write_result("Resultados JSON", json_path, result)
+        if result.status == "primary":
+            print(f"✓ Resultados JSON exportados: {result.path}")
+        elif result.status == "fallback":
+            print(
+                f"✓ Resultados JSON exportados en fallback: {result.path} (original: {json_path})"
+            )
+        else:
+            print(
+                f"✓ Resultados JSON almacenados en memoria (clave {result.key})"
+            )
 
     if args.export_markdown:
         md_path = output_dir / "reporte_factibilidad.md"
-        with open(md_path, "w", encoding="utf-8") as f:
-            f.write("# Reporte de Evaluación de Factibilidad de Indicadores\n\n")
-            f.write(
-                f"**Fecha de generación:** {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+        md_lines: List[str] = []
+        md_lines.append("# Reporte de Evaluación de Factibilidad de Indicadores\n\n")
+        md_lines.append(
+            f"**Fecha de generación:** {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+        )
+        md_lines.append(
+            f"**Número total de indicadores evaluados:** {len(results)}\n\n"
+        )
+
+        scores = [score.feasibility_score for score in results.values()]
+        tiers = [score.quality_tier for score in results.values()]
+
+        md_lines.append("## Resumen Estadístico\n\n")
+        if scores:
+            md_lines.append(
+                f"- **Puntuación promedio:** {sum(scores) / len(scores):.3f}\n"
             )
-            f.write(
-                f"**Número total de indicadores evaluados:** {len(results)}\n\n")
+            md_lines.append(f"- **Puntuación máxima:** {max(scores):.3f}\n")
+            md_lines.append(f"- **Puntuación mínima:** {min(scores):.3f}\n")
 
-            # Summary statistics
-            scores = [score.feasibility_score for score in results.values()]
-            tiers = [score.quality_tier for score in results.values()]
+            tier_counts = {tier: tiers.count(tier) for tier in set(tiers)}
+            md_lines.append("\n### Distribución por Nivel de Calidad\n\n")
+            for tier, count in tier_counts.items():
+                tier_spanish = scorer.translate_quality_tier_spanish(tier)
+                percentage = (count / len(tiers)) * 100 if tiers else 0
+                md_lines.append(
+                    f"- {tier_spanish}: {count} indicadores ({percentage:.1f}%)\n"
+                )
 
-            f.write("## Resumen Estadístico\n\n")
-            if scores:
-                f.write(
-                    f"- **Puntuación promedio:** {sum(scores) / len(scores):.3f}\n")
-                f.write(f"- **Puntuación máxima:** {max(scores):.3f}\n")
-                f.write(f"- **Puntuación mínima:** {min(scores):.3f}\n")
-
-                tier_counts = {tier: tiers.count(tier) for tier in set(tiers)}
-                f.write(f"\n### Distribución por Nivel de Calidad\n\n")
-                for tier, count in tier_counts.items():
-                    tier_spanish = scorer.translate_quality_tier_spanish(tier)
-                    percentage = (count / len(tiers)) * 100
-                    f.write(
-                        f"- **{tier_spanish}:** {count} indicadores ({percentage:.1f}%)\n"
-                    )
-
-            f.write("\n## Resultados Detallados\n\n")
-
-            # Sort results by score
+        md_lines.append("\n## Resultados Detallados\n\n")
+        if not results:
+            md_lines.append("No se encontraron indicadores para evaluar.\n")
+        else:
             sorted_results = sorted(
                 results.items(), key=lambda x: x[1].feasibility_score, reverse=True
             )
-
             for filename, score in sorted_results:
-                f.write(f"### {filename}\n\n")
-                f.write(f"- **Puntuación:** {score.feasibility_score:.3f}\n")
-                f.write(
-                    f"- **Nivel de calidad:** {scorer.translate_quality_tier_spanish(score.quality_tier)}\n"
+                tier_spanish = scorer.translate_quality_tier_spanish(score.quality_tier)
+                recommendation = scorer.get_recommendation_spanish(score.quality_tier)
+                md_lines.append(f"### {filename}\n")
+                md_lines.append(
+                    f"- **Puntuación de factibilidad:** {score.feasibility_score:.3f}\n"
                 )
-                f.write(
-                    f"- **Línea base cuantitativa:** {'Sí' if score.has_quantitative_baseline else 'No'}\n"
-                )
-                f.write(
-                    f"- **Meta cuantitativa:** {'Sí' if score.has_quantitative_target else 'No'}\n"
-                )
-                f.write(
-                    f"- **Componentes detectados:** {len(score.components_detected)}\n"
-                )
-                f.write(
-                    f"- **Recomendación:** {scorer.get_recommendation_spanish(score.quality_tier)}\n\n"
-                )
+                md_lines.append(f"- **Nivel de calidad:** {tier_spanish}\n")
+                md_lines.append(f"- **Recomendación:** {recommendation}\n")
 
-        print(f"✓ Reporte Markdown exportado: {md_path}")
+                components = score.components_detected
+                has_baseline = ComponentType.BASELINE in components
+                has_target = ComponentType.TARGET in components
+                has_time_horizon = ComponentType.TIME_HORIZON in components
+                has_numerical = ComponentType.NUMERICAL in components
+                has_dates = ComponentType.DATE in components
+
+                md_lines.append("- **Componentes detectados:**\n")
+                md_lines.append(f"  - Línea base: {'Sí' if has_baseline else 'No'}\n")
+                md_lines.append(f"  - Meta: {'Sí' if has_target else 'No'}\n")
+                md_lines.append(
+                    f"  - Horizonte temporal: {'Sí' if has_time_horizon else 'No'}\n"
+                )
+                md_lines.append(
+                    f"  - Valores numéricos: {'Sí' if has_numerical else 'No'}\n"
+                )
+                md_lines.append(f"  - Fechas: {'Sí' if has_dates else 'No'}\n")
+
+                if score.detailed_matches:
+                    md_lines.append("- **Coincidencias detalladas:**\n")
+                    for match in score.detailed_matches:
+                        md_lines.append(
+                            f"  - {match.component_type.value}: '{match.matched_text}' (confianza: {match.confidence:.2f})\n"
+                        )
+                else:
+                    md_lines.append("- **Coincidencias detalladas:** Ninguna\n")
+
+                md_lines.append("\n")
+
+        md_content = "".join(md_lines)
+        result = safe_write_text(md_path, md_content, label="feasibility_markdown_report")
+        scorer._log_safe_write_result("Reporte Markdown", md_path, result)
+        if result.status == "primary":
+            print(f"✓ Reporte Markdown exportado: {result.path}")
+        elif result.status == "fallback":
+            print(
+                f"✓ Reporte Markdown exportado en fallback: {result.path} (original: {md_path})"
+            )
+        else:
+            print(f"✓ Reporte Markdown en memoria (clave {result.key})")
 
     return 0
+
+
+def audit_performance_hotspots() -> Dict[str, List[str]]:
+    """Resumen estático de cuellos de botella, efectos laterales y vectorización posible."""
+
+    return {
+        "bottlenecks": [
+            "FeasibilityScorer.batch_score: procesa indicadores en serie cuando JOBLIB no está disponible.",
+            "FeasibilityScorer.generate_traceability_matrix_csv: construye DataFrame completo en memoria antes de exportar.",
+        ],
+        "side_effects": [
+            "FeasibilityScorer.generate_report: crea y renombra archivos temporales en disco.",
+            "main: garantiza directorios de salida y puede generar múltiples archivos CSV/JSON/Markdown.",
+        ],
+        "vectorization_opportunities": [
+            "FeasibilityScorer.detect_components: evalúa expresiones regulares secuencialmente; se puede vectorizar sobre lotes de texto.",
+            "FeasibilityScorer.calculate_feasibility_score: combina operaciones de conteo que admiten paralelización segura por chunks.",
+        ],
+    }
 
 
 if __name__ == "__main__":
