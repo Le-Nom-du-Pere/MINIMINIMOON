@@ -47,7 +47,7 @@ class TestRunner:
             print(f"✗ {test_name}: {str(e)}")
 
     def summary(self):
-        print(f"\nTest Summary:")
+        print("\nTest Summary:")
         print(f"Tests run: {self.tests_run}")
         print(f"Passed: {self.tests_passed}")
         print(f"Failed: {self.tests_failed}")
@@ -398,7 +398,7 @@ def main():
             print(
                 f"  Components detected: {[c.value for c in result.components_detected]}"
             )
-            print(f"  Detailed matches:")
+            print("  Detailed matches:")
             for match in result.detailed_matches:
                 print(
                     f"    {match.component_type.value}: '{match.matched_text}' (conf: {match.confidence:.2f})"

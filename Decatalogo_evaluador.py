@@ -2113,44 +2113,44 @@ def main():
         evidencia_ejemplo, punto_id=1
     )
 
-    print(f"\n✅ EVALUACIÓN COMPLETADA:")
+    print("\n✅ EVALUACIÓN COMPLETADA:")
     print(f"   📍 Punto: {evaluacion.nombre_punto}")
     print(f"   📊 Puntaje: {evaluacion.puntaje_agregado_punto:.1f}/100")
     print(f"   🏆 Clasificación: {evaluacion.clasificacion_cualitativa}")
     print(f"   🔍 Confianza: {analisis.confidence_global * 100:.1f}%")
 
-    print(f"\n📝 EXPLICACIÓN DETALLADA:")
+    print("\n📝 EXPLICACIÓN DETALLADA:")
     print(f"   {evaluacion.explicacion_extensa[:500]}...")
 
     if evaluacion.fortalezas_identificadas:
-        print(f"\n💪 FORTALEZAS IDENTIFICADAS:")
+        print("\n💪 FORTALEZAS IDENTIFICADAS:")
         for i, fortaleza in enumerate(evaluacion.fortalezas_identificadas[:3], 1):
             print(f"   {i}. {fortaleza}")
 
     if evaluacion.brechas_identificadas:
-        print(f"\n⚠️ BRECHAS PRINCIPALES:")
+        print("\n⚠️ BRECHAS PRINCIPALES:")
         for i, brecha in enumerate(evaluacion.brechas_identificadas[:3], 1):
             print(f"   {i}. {brecha}")
 
     if evaluacion.recomendaciones_especificas:
-        print(f"\n💡 RECOMENDACIONES PRIORITARIAS:")
+        print("\n💡 RECOMENDACIONES PRIORITARIAS:")
         for i, rec in enumerate(evaluacion.recomendaciones_especificas[:3], 1):
             print(f"   {i}. {rec}")
 
     if evaluacion.riesgos_detectados:
-        print(f"\n🚨 RIESGOS DETECTADOS:")
+        print("\n🚨 RIESGOS DETECTADOS:")
         for i, riesgo in enumerate(evaluacion.riesgos_detectados[:3], 1):
             print(f"   {i}. {riesgo}")
 
     # Análisis dimensional
-    print(f"\n📈 ANÁLISIS POR DIMENSIÓN:")
+    print("\n📈 ANÁLISIS POR DIMENSIÓN:")
     for dim in evaluacion.evaluaciones_dimensiones:
         print(
             f"   {dim.dimension}: {dim.puntaje_dimension:.1f}/100 - "
             f"{'✅' if dim.puntaje_dimension >= 60 else '⚠️' if dim.puntaje_dimension >= 40 else '❌'}"
         )
         # Mostrar detalle de evidencia analizada
-        print(f"\n🔬 ANÁLISIS DE EVIDENCIA:")
+        print("\n🔬 ANÁLISIS DE EVIDENCIA:")
         print(f"   - Indicadores evaluados: {len(analisis.indicador_scores)}")
         print(
             f"   - Responsables identificados: {len(set(r.text for r in analisis.responsabilidades))}"
@@ -2224,12 +2224,12 @@ def main():
         )
 
         # Mostrar resumen del reporte final
-        print(f"\n📊 RESUMEN EJECUTIVO DEL REPORTE FINAL:")
+        print("\n📊 RESUMEN EJECUTIVO DEL REPORTE FINAL:")
         print("-" * 50)
         for clave, valor in reporte_final.resumen_ejecutivo.items():
             print(f"   {clave}: {valor}")
 
-        print(f"\n📈 ESTADÍSTICAS GLOBALES:")
+        print("\n📈 ESTADÍSTICAS GLOBALES:")
         print("-" * 50)
         if reporte_final.estadisticas_globales:
             dist = reporte_final.estadisticas_globales.get(
@@ -2240,7 +2240,7 @@ def main():
             print(f"   Respuestas 'No': {dist.get('no', 0)}")
             print(f"   Sin Identificar: {dist.get('ni', 0)}")
 
-        print(f"\n🎯 ANÁLISIS POR CLUSTER:")
+        print("\n🎯 ANÁLISIS POR CLUSTER:")
         print("-" * 50)
         for cluster in reporte_final.reporte_meso_por_cluster:
             print(f"   {cluster.cluster_nombre}:")
@@ -2250,7 +2250,7 @@ def main():
                 f"      - Clasificación: {cluster.clasificacion_cualitativa}")
             print(f"      - Coherencia: {cluster.coherencia_cluster:.2%}")
 
-        print(f"\n📋 RECOMENDACIONES GLOBALES TOP 5:")
+        print("\n📋 RECOMENDACIONES GLOBALES TOP 5:")
         print("-" * 50)
         for i, rec in enumerate(
             reporte_final.reporte_macro["recomendaciones_globales"][:5], 1
@@ -2259,9 +2259,9 @@ def main():
 
         # Exportar resultados si es necesario
         if HAS_PANDAS and reporte_final.matriz_trazabilidad_global is not None:
-            print(f"\n💾 EXPORTACIÓN DE RESULTADOS:")
+            print("\n💾 EXPORTACIÓN DE RESULTADOS:")
             print("-" * 50)
-            print(f"   ✅ Matriz de trazabilidad exportada (CSV)")
+            print("   ✅ Matriz de trazabilidad exportada (CSV)")
             print(
                 f"   ✅ {len(reporte_final.reporte_por_pregunta)} preguntas evaluadas"
             )
@@ -2443,7 +2443,7 @@ def main():
             # Footer
             lineas.append("---")
             lineas.append(
-                f"*Reporte generado automáticamente por el Sistema de Evaluación del Decálogo v3.0*"
+                "*Reporte generado automáticamente por el Sistema de Evaluación del Decálogo v3.0*"
             )
             lineas.append(f"*{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*")
 

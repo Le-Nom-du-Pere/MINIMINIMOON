@@ -54,7 +54,7 @@ def test_unicode_normalization():
         print(f'   Changed: {text != normalized}')
         
         # Test regex matching before and after normalization
-        print(f'\n   Pattern Matching Comparison:')
+        print('\n   Pattern Matching Comparison:')
         
         # Score original text (scorer will normalize it internally)
         result_original = scorer.calculate_feasibility_score(text)
@@ -70,13 +70,13 @@ def test_unicode_normalization():
         
         if components_normalized >= components_original:
             total_improvements += 1
-            print(f'   ✓ Normalization maintained or improved detection')
+            print('   ✓ Normalization maintained or improved detection')
         else:
-            print(f'   ✗ Normalization reduced detection')
+            print('   ✗ Normalization reduced detection')
         
         # Show detailed component matches
         if result_original.detailed_matches:
-            print(f'   Detailed matches:')
+            print('   Detailed matches:')
             for match in result_original.detailed_matches:
                 print(f'     - {match.component_type.value}: "{match.matched_text}"')
     

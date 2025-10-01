@@ -50,7 +50,7 @@ def main():
     print(f"   Processed {len(results_seq)} indicators sequentially")
     
     # Test n_jobs configuration
-    print(f"\n5. Configuration test:")
+    print("\n5. Configuration test:")
     scorer_config = FeasibilityScorer(n_jobs=4, backend='threading')
     print(f"   n_jobs: {scorer_config.n_jobs}, backend: {scorer_config.backend}")
     print(f"   enable_parallel: {scorer_config.enable_parallel}")

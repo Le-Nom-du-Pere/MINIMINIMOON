@@ -74,7 +74,7 @@ def main():
             print(f"   Quantitative Target: {result.has_quantitative_target}")
 
             if result.detailed_matches:
-                print(f"   Detected Patterns:")
+                print("   Detected Patterns:")
                 for match in result.detailed_matches:
                     print(
                         f"     - {match.component_type.value}: '{match.matched_text}' (confidence: {match.confidence:.2f})"

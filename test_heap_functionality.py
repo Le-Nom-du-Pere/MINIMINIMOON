@@ -74,7 +74,7 @@ def test_heap_global_selection():
     top_k_esperados = scores_originales[:max_segmentos]
     scores_obtenidos = [s["score_final"] for s in resultados_finales]
     
-    print(f"\n🔍 Verificación:")
+    print("\n🔍 Verificación:")
     print(f"  Top-{max_segmentos} esperados: {top_k_esperados}")
     print(f"  Top-{max_segmentos} obtenidos: {scores_obtenidos}")
     
@@ -119,7 +119,7 @@ if __name__ == "__main__":
     test1_passed = test_heap_global_selection()
     test2_passed = test_batch_processing()
     
-    print(f"\n📊 Resultados de los tests:")
+    print("\n📊 Resultados de los tests:")
     print(f"  Heap global selection: {'✅ PASS' if test1_passed else '❌ FAIL'}")
     print(f"  Batch processing: {'✅ PASS' if test2_passed else '❌ FAIL'}")
     

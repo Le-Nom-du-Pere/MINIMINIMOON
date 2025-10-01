@@ -453,7 +453,7 @@ class ExplanationTracer:
         """Generate overall summary."""
         total = n_contradictions + n_competences + n_agenda
 
-        summary = f"\n📊 RESUMEN EJECUTIVO:\n"
+        summary = "\n📊 RESUMEN EJECUTIVO:\n"
         summary += f"Total de hallazgos: {total}\n"
 
         if total == 0:

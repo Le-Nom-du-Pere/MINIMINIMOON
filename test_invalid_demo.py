@@ -16,4 +16,4 @@ logger.error("This ERROR message should be visible")
 
 print("\nTesting current log level:")
 print(f"Current root logger level: {logging.getLevelName(logging.root.level)}")
-print(f"Should be INFO (fallback for invalid value)")
+print("Should be INFO (fallback for invalid value)")

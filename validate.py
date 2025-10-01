@@ -80,7 +80,7 @@ def main():
             print(f"❌ {name} failed with exception: {e}")
             results.append(False)
 
-    print(f"\n=== Final Results ===")
+    print("\n=== Final Results ===")
     for i, (name, _) in enumerate(checks):
         status = "✅ PASS" if results[i] else "❌ FAIL"
         print(f"{name}: {status}")

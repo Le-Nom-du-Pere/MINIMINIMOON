@@ -1286,7 +1286,7 @@ class IndustrialUnicodeAnalyzer:
 
         # Performance metrics
         perf_stats = self.performance_monitor.get_all_statistics()
-        html += f'''
+        html += '''
                     </tbody>
                 </table>
             </div>
@@ -1314,7 +1314,7 @@ class IndustrialUnicodeAnalyzer:
                             <td>{stats.get('total_ms', 0):.2f}</td>
                         </tr>'''
 
-        html += f'''
+        html += '''
                     </tbody>
                 </table>
             </div>
@@ -1531,7 +1531,7 @@ Ut enim ad minim veniam, quis nostrud exercitation.''' * 100),
         print("🏭 INDUSTRIAL UNICODE NORMALIZATION ANALYSIS FRAMEWORK")
         print("=" * 80)
         print("🔬 COMPREHENSIVE REAL-WORLD TESTING SUITE")
-        print(f"📊 Analysis Engine: v3.0.0")
+        print("📊 Analysis Engine: v3.0.0")
         print(f"🧵 Thread Pool Size: {self.analyzer.config['max_workers']}")
         print(f"💾 Cache Size: {self.analyzer.config['cache_size']:,}")
         print()
@@ -1569,7 +1569,7 @@ Ut enim ad minim veniam, quis nostrud exercitation.''' * 100),
             results = self.analyzer.batch_analyze(test_cases, advanced_progress_callback)
 
             total_time = time.time() - start_time
-            print(f"\n✅ Analysis completed successfully!")
+            print("\n✅ Analysis completed successfully!")
             print(f"⏱️  Total processing time: {total_time:.2f} seconds")
             print(
                 f"🚄 Processing speed: {sum(r.metrics_before.character_count for r in results) / total_time:,.0f} chars/sec")
@@ -1603,7 +1603,7 @@ Ut enim ad minim veniam, quis nostrud exercitation.''' * 100),
         texts_with_changes = sum(1 for r in successful_results if r.differences_detected)
         total_anomalies = sum(len(r.metrics_before.anomalies_detected) for r in successful_results)
 
-        print(f"📈 EXECUTION METRICS")
+        print("📈 EXECUTION METRICS")
         print(f"   ✅ Successful analyses: {len(successful_results):,}")
         print(f"   ❌ Failed analyses: {failed_count:,}")
         print(f"   📊 Success rate: {len(successful_results) / total_texts:.1%}")
@@ -1612,7 +1612,7 @@ Ut enim ad minim veniam, quis nostrud exercitation.''' * 100),
         print(f"   💾 Memory efficiency: {total_chars / (1024 * 1024):.1f} MB processed")
         print()
 
-        print(f"🔍 NORMALIZATION ANALYSIS")
+        print("🔍 NORMALIZATION ANALYSIS")
         print(
             f"   🔄 Texts requiring normalization: {texts_with_changes:,} ({texts_with_changes / len(successful_results):.1%})")
         print(f"   ⚠️  Anomalies detected: {total_anomalies:,}")
@@ -1629,7 +1629,7 @@ Ut enim ad minim veniam, quis nostrud exercitation.''' * 100),
                     significance_scores.append(max_score)
 
             if significance_scores:
-                print(f"📊 SIGNIFICANCE DISTRIBUTION")
+                print("📊 SIGNIFICANCE DISTRIBUTION")
                 high_impact = sum(1 for s in significance_scores if s > 10)
                 medium_impact = sum(1 for s in significance_scores if 5 < s <= 10)
                 low_impact = sum(1 for s in significance_scores if s <= 5)
@@ -1857,7 +1857,7 @@ def main():
         print(f"   • Python Version: {sys.version.split()[0]}")
         print(f"   • Platform: {sys.platform}")
         print(f"   • CPU Cores: {os.cpu_count()}")
-        print(f"   • Analysis Engine: v3.0.0")
+        print("   • Analysis Engine: v3.0.0")
         print()
 
         # Execute comprehensive demonstration
