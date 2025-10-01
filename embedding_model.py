@@ -151,43 +151,71 @@ class NoveltyGuard:
 
         from packaging import version
 
-        dependencies = {
-            "sentence-transformers": "3.0.0",
-            "torch": "2.3.0",
-            "numpy": "2.0.0",
-            "scikit-learn": "1.5.0",
-            "transformers": "4.40.0",
-            "datasets": "2.18.0",
-            "faiss-cpu": "1.8.0",
-            "typer": "0.12.0",
-            "pydantic": "2.7.0",
-            "pyyaml": "6.0.0",
+        dependency_matrix = {
+            # Requisitos mínimos declarados explícitamente en requirements.txt
+            "sentence-transformers": {"min": "2.2.0", "required": True},
+            "torch": {"min": "1.9.0", "required": True},
+            "numpy": {"min": "1.21.0", "required": True},
+            "scikit-learn": {"min": "1.0.0", "required": True},
+            # Dependencias complementarias. Útiles para la CLI o pipelines
+            # avanzados, pero opcionales para la inicialización básica.
+            "transformers": {"min": "4.30.0", "required": False},
+            "datasets": {"min": "2.14.0", "required": False},
+            "faiss-cpu": {"min": "1.7.0", "required": False},
+            "typer": {"min": "0.9.0", "required": False},
+            "pydantic": {"min": "1.10.0", "required": False},
+            "pyyaml": {"min": "5.4.0", "required": False},
         }
 
-        missing = []
-        outdated = []
+        missing_required: List[str] = []
+        outdated_required: List[str] = []
+        missing_optional: List[str] = []
+        outdated_optional: List[str] = []
 
-        for package, min_version in dependencies.items():
+        for package, metadata_cfg in dependency_matrix.items():
+            min_version = metadata_cfg["min"]
+            is_required = metadata_cfg["required"]
             try:
                 installed_version = metadata.version(package)
                 if version.parse(installed_version) < version.parse(min_version):
-                    outdated.append(
-                        f"{package} {installed_version} < {min_version}")
+                    if is_required:
+                        outdated_required.append(
+                            f"{package} {installed_version} < {min_version}"
+                        )
+                    else:
+                        outdated_optional.append(
+                            f"{package} {installed_version} < {min_version}"
+                        )
             except metadata.PackageNotFoundError:
-                missing.append(package)
+                if is_required:
+                    missing_required.append(package)
+                else:
+                    missing_optional.append(package)
 
-        if missing or outdated:
-            error_msg = "Dependencias no cumplen requisitos de novedad 2024+:\n"
-            if missing:
-                error_msg += f"Faltantes: {', '.join(missing)}\n"
-            if outdated:
-                error_msg += f"Desactualizadas: {', '.join(outdated)}\n"
-            error_msg += "Ejecute: pip install --upgrade " + " ".join(
-                dependencies.keys()
+        if missing_optional or outdated_optional:
+            warning_msg = "Dependencias opcionales no cumplen mínimos sugeridos:"
+            details: List[str] = []
+            if missing_optional:
+                details.append(f"faltantes: {', '.join(missing_optional)}")
+            if outdated_optional:
+                details.append(f"desactualizadas: {', '.join(outdated_optional)}")
+            logger.warning("%s %s", warning_msg, "; ".join(details))
+
+        if missing_required or outdated_required:
+            error_msg = "Dependencias mínimas no cumplen requisitos declarados:\n"
+            if missing_required:
+                error_msg += f"Faltantes: {', '.join(missing_required)}\n"
+            if outdated_required:
+                error_msg += f"Desactualizadas: {', '.join(outdated_required)}\n"
+            error_msg += (
+                "Ejecute: pip install --upgrade "
+                + " ".join(sorted(
+                    pkg for pkg, cfg in dependency_matrix.items() if cfg["required"]
+                ))
             )
             raise ImportError(error_msg)
 
-        logger.info("✓ Todas las dependencias cumplen requisitos SOTA 2024+")
+        logger.info("✓ Dependencias críticas cumplen requisitos declarados")
 
 
 # =============================================================================
