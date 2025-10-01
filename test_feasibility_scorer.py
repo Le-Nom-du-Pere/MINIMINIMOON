@@ -436,7 +436,7 @@ class TestFeasibilityScorer:
         try:
             pickle.dumps(scorer)
             main_picklable = True
-        except:
+        except Exception:
             main_picklable = False
 
         # Test that the copy is always picklable

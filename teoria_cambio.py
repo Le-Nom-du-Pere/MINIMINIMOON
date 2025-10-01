@@ -300,7 +300,8 @@ class TeoriaCambio:
                     return CategoriaCausal.PROCESOS
                 elif 'resultado' in grafo.nodes[nodo].get('tipo', ''):
                     return CategoriaCausal.RESULTADOS
-            except:
+            except KeyError:
+                # Nodo no encontrado en el grafo; se aplica heurística por defecto
                 pass
             
             return CategoriaCausal.PRODUCTOS  # Valor por defecto para nodos intermedios

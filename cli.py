@@ -8,10 +8,17 @@ with configurable parameters for parallel processing, device selection, and outp
 """
 
 import argparse
+import json
+import logging
 import os
 import sys
 from pathlib import Path
 from typing import Any, Dict
+
+from log_config import configure_logging
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -127,12 +134,11 @@ Examples:
 def load_config_file(config_path: str) -> Dict[str, Any]:
     """Load configuration from JSON file."""
     try:
-        import json
-        with open(config_path, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except Exception as e:
-        print(f"Error loading config file {config_path}: {e}")
-        sys.exit(1)
+        with open(config_path, 'r', encoding='utf-8') as config_file:
+            return json.load(config_file)
+    except (OSError, json.JSONDecodeError) as exc:
+        LOGGER.exception("Error loading config file %s", config_path)
+        raise ValueError(f"Invalid configuration file: {config_path}") from exc
 
 
 def validate_args(args: argparse.Namespace) -> None:
@@ -141,36 +147,43 @@ def validate_args(args: argparse.Namespace) -> None:
     # Validate input path exists
     input_path = Path(args.input)
     if not input_path.exists():
-        print(f"Error: Input path '{args.input}' does not exist")
-        sys.exit(1)
+        LOGGER.error("Input path '%s' does not exist", args.input)
+        raise ValueError(f"Input path '{args.input}' does not exist")
 
     # Create output directory if it doesn't exist
     output_path = Path(args.outdir)
     try:
         output_path.mkdir(parents=True, exist_ok=True)
-    except Exception as e:
-        print(f"Error creating output directory '{args.outdir}': {e}")
-        sys.exit(1)
+    except OSError as exc:
+        LOGGER.exception(
+            "Error creating output directory '%s'", args.outdir
+        )
+        raise ValueError(
+            f"Unable to create output directory '{args.outdir}'"
+        ) from exc
 
     # Validate workers count
     if args.workers < 1:
-        print("Error: Workers count must be at least 1")
-        sys.exit(1)
+        LOGGER.error("Workers count must be at least 1 (received %s)", args.workers)
+        raise ValueError("Workers count must be at least 1")
 
     # Validate topk value
     if args.topk < 1:
-        print("Error: topk value must be at least 1")
-        sys.exit(1)
+        LOGGER.error("topk value must be at least 1 (received %s)", args.topk)
+        raise ValueError("topk value must be at least 1")
 
     # Validate umbral range
     if not 0.0 <= args.umbral <= 1.0:
-        print("Error: umbral value must be between 0.0 and 1.0")
-        sys.exit(1)
+        LOGGER.error("umbral value must be between 0.0 and 1.0 (received %s)", args.umbral)
+        raise ValueError("umbral value must be between 0.0 and 1.0")
 
     # Validate max_segmentos
     if args.max_segmentos < 1:
-        print("Error: max-segmentos value must be at least 1")
-        sys.exit(1)
+        LOGGER.error(
+            "max-segmentos value must be at least 1 (received %s)",
+            args.max_segmentos,
+        )
+        raise ValueError("max-segmentos value must be at least 1")
 
 
 def get_device_config(device_arg: str) -> str:
@@ -192,153 +205,167 @@ def get_device_config(device_arg: str) -> str:
 
 def setup_logging(verbose: bool = False):
     """Setup logging configuration based on verbosity level."""
-    import logging
+    log_level = "DEBUG" if verbose else None
+    configure_logging(log_level)
 
-    level = logging.DEBUG if verbose else logging.INFO
-    format_str = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-
-    logging.basicConfig(
-        level=level,
-        format=format_str,
-        handlers=[
-            logging.StreamHandler(),
-            logging.FileHandler('policy_analysis.log', encoding='utf-8')
-        ]
+    root_logger = logging.getLogger()
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
+
+    if not any(isinstance(handler, logging.FileHandler) for handler in root_logger.handlers):
+        file_handler = logging.FileHandler('policy_analysis.log', encoding='utf-8')
+        file_handler.setFormatter(formatter)
+        root_logger.addHandler(file_handler)
+
+    for handler in root_logger.handlers:
+        handler.setFormatter(formatter)
+
+    if verbose:
+        LOGGER.debug("Verbose logging enabled")
 
 
 def run_feasibility_mode(args: argparse.Namespace) -> int:
     """Execute feasibility scoring mode."""
     try:
         from feasibility_scorer import FeasibilityScorer
+    except ImportError as exc:
+        LOGGER.exception("Required module not available for feasibility mode")
+        return 1
 
-        print(f"Running feasibility analysis...")
-        print(f"Input directory: {args.input}")
-        print(f"Output directory: {args.outdir}")
-        print(f"Workers: {args.workers}")
-        print(f"Device: {args.device}")
-        print(f"Precision: {args.precision}")
-        print(f"Top-k: {args.topk}")
-        print(f"Umbral: {args.umbral}")
-        print(f"Max segments: {args.max_segmentos}")
+    LOGGER.info("Running feasibility analysis")
+    LOGGER.info(
+        "Configuration: input=%s, outdir=%s, workers=%s, device=%s, precision=%s, topk=%s, umbral=%s, max_segmentos=%s",
+        args.input,
+        args.outdir,
+        args.workers,
+        args.device,
+        args.precision,
+        args.topk,
+        args.umbral,
+        args.max_segmentos,
+    )
 
-        # Initialize scorer with CLI parameters
-        scorer = FeasibilityScorer(
-            enable_parallel=args.workers > 1,
-            n_jobs=args.workers,
-            backend='loky'
-        )
+    scorer = FeasibilityScorer(
+        enable_parallel=args.workers > 1,
+        n_jobs=args.workers,
+        backend='loky'
+    )
 
-        # Process input directory for text files
-        input_path = Path(args.input)
-        text_files = []
+    input_path = Path(args.input)
+    text_files = []
+    for ext in ['*.txt', '*.md', '*.pdf']:
+        text_files.extend(input_path.glob(ext))
 
-        for ext in ['*.txt', '*.md', '*.pdf']:
-            text_files.extend(input_path.glob(ext))
+    if not text_files:
+        LOGGER.warning("No text files found in %s", args.input)
+        return 1
 
-        if not text_files:
-            print(f"No text files found in {args.input}")
-            return 1
+    LOGGER.info("Found %s files to process", len(text_files))
 
-        print(f"Found {len(text_files)} files to process")
+    indicators = []
+    for file_path in text_files:
+        try:
+            with open(file_path, 'r', encoding='utf-8') as input_file:
+                content = input_file.read()
+        except OSError as exc:
+            LOGGER.warning("Could not read %s: %s", file_path, exc)
+            continue
 
-        # Read and process files
-        indicators = []
-        for file_path in text_files:
-            try:
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    content = f.read()
-                    # Split content into segments up to max_segmentos
-                    segments = content.split('\n')
-                    segments = [s.strip() for s in segments if s.strip()]
-                    segments = segments[:args.max_segmentos]
-                    indicators.extend(segments)
-            except Exception as e:
-                print(f"Warning: Could not read {file_path}: {e}")
+        segments = [segment.strip() for segment in content.split('\n') if segment.strip()]
+        indicators.extend(segments[:args.max_segmentos])
 
-        if not indicators:
-            print("No content found to analyze")
-            return 1
+    if not indicators:
+        LOGGER.warning("No content found to analyze")
+        return 1
 
-        print(f"Analyzing {len(indicators)} indicators...")
+    LOGGER.info("Analyzing %s indicators", len(indicators))
 
-        # Score indicators using CLI parameters
+    try:
         if args.workers > 1:
             results = scorer.batch_score(
                 indicators[:args.max_segmentos],
                 compare_backends=args.verbose
             )
         else:
-            results = [scorer.calculate_feasibility_score(ind) for ind in indicators[:args.max_segmentos]]
-
-        # Filter results by umbral threshold
-        filtered_results = [
-            (ind, result) for ind, result in zip(indicators, results)
-            if result.feasibility_score >= args.umbral
-        ]
-
-        # Sort by score and take top-k
-        filtered_results.sort(key=lambda x: x[1].feasibility_score, reverse=True)
-        top_results = filtered_results[:args.topk]
-
-        # Generate report
-        output_file = Path(args.outdir) / 'feasibility_report.json'
-        report_data = {
-            'config': {
-                'input': args.input,
-                'workers': args.workers,
-                'device': args.device,
-                'precision': args.precision,
-                'topk': args.topk,
-                'umbral': args.umbral,
-                'max_segmentos': args.max_segmentos
-            },
-            'summary': {
-                'total_indicators': len(indicators),
-                'processed_indicators': min(len(indicators), args.max_segmentos),
-                'passed_threshold': len(filtered_results),
-                'top_k_results': len(top_results)
-            },
-            'results': [
-                {
-                    'text': text[:200] + ('...' if len(text) > 200 else ''),
-                    'score': result.feasibility_score,
-                    'quality_tier': result.quality_tier,
-                    'components': [c.value for c in result.components_detected],
-                    'quantitative_baseline': result.has_quantitative_baseline,
-                    'quantitative_target': result.has_quantitative_target
-                }
-                for text, result in top_results
+            results = [
+                scorer.calculate_feasibility_score(ind)
+                for ind in indicators[:args.max_segmentos]
             ]
-        }
+    except Exception:
+        LOGGER.exception("Failed to score indicators")
+        return 1
 
-        import json
-        with open(output_file, 'w', encoding='utf-8') as f:
-            json.dump(report_data, f, indent=2, ensure_ascii=False)
+    filtered_results = [
+        (ind, result) for ind, result in zip(indicators, results)
+        if result.feasibility_score >= args.umbral
+    ]
 
-        print(f"Analysis complete. Results saved to {output_file}")
-        print(f"Top {len(top_results)} results (threshold >= {args.umbral}):")
+    filtered_results.sort(key=lambda item: item[1].feasibility_score, reverse=True)
+    top_results = filtered_results[:args.topk]
 
-        for i, (text, result) in enumerate(top_results[:5], 1):
+    output_file = Path(args.outdir) / 'feasibility_report.json'
+    report_data = {
+        'config': {
+            'input': args.input,
+            'workers': args.workers,
+            'device': args.device,
+            'precision': args.precision,
+            'topk': args.topk,
+            'umbral': args.umbral,
+            'max_segmentos': args.max_segmentos
+        },
+        'summary': {
+            'total_indicators': len(indicators),
+            'processed_indicators': min(len(indicators), args.max_segmentos),
+            'passed_threshold': len(filtered_results),
+            'top_k_results': len(top_results)
+        },
+        'results': [
+            {
+                'text': text[:200] + ('...' if len(text) > 200 else ''),
+                'score': result.feasibility_score,
+                'quality_tier': result.quality_tier,
+                'components': [c.value for c in result.components_detected],
+                'quantitative_baseline': result.has_quantitative_baseline,
+                'quantitative_target': result.has_quantitative_target
+            }
+            for text, result in top_results
+        ]
+    }
+
+    try:
+        with open(output_file, 'w', encoding='utf-8') as report_file:
+            json.dump(report_data, report_file, indent=2, ensure_ascii=False)
+    except OSError:
+        LOGGER.exception("Failed to write feasibility report to %s", output_file)
+        return 1
+
+    LOGGER.info("Analysis complete. Results saved to %s", output_file)
+    if top_results:
+        LOGGER.info(
+            "Top %s results (threshold >= %s)",
+            len(top_results),
+            args.umbral,
+        )
+        for index, (text, result) in enumerate(top_results, start=1):
             display_text = text[:100] + ('...' if len(text) > 100 else '')
-            print(f"{i}. Score: {result.feasibility_score:.3f} | {result.quality_tier} | {display_text}")
+            LOGGER.info(
+                "%s. Score: %.3f | %s | %s",
+                index,
+                result.feasibility_score,
+                result.quality_tier,
+                display_text,
+            )
 
-        return 0
-
-    except ImportError as e:
-        print(f"Error: Required module not available: {e}")
-        return 1
-    except Exception as e:
-        print(f"Error in feasibility mode: {e}")
-        return 1
-
+    return 0
 
 def run_embedding_mode(args: argparse.Namespace) -> int:
     """Execute embedding model mode."""
     try:
         from embedding_model import create_embedding_model
 
-        print(f"Running embedding analysis...")
+        LOGGER.info("Running embedding analysis")
 
         # Get device configuration
         device = get_device_config(args.device)
@@ -356,34 +383,33 @@ def run_embedding_mode(args: argparse.Namespace) -> int:
 
         for file_path in input_path.glob('*.txt'):
             try:
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    content = f.read().strip()
+                with open(file_path, 'r', encoding='utf-8') as source_file:
+                    content = source_file.read().strip()
                     if content:
                         documents.append({
                             'file': file_path.name,
                             'content': content[:args.max_segmentos]  # Limit content length
                         })
-            except Exception as e:
-                print(f"Warning: Could not read {file_path}: {e}")
+            except OSError as exc:
+                LOGGER.warning("Could not read %s: %s", file_path, exc)
 
         if not documents:
-            print("No documents found to process")
+            LOGGER.warning("No documents found to process")
             return 1
 
-        print(f"Processing {len(documents)} documents...")
+        LOGGER.info("Processing %s documents", len(documents))
 
         # Generate embeddings
         texts = [doc['content'] for doc in documents]
         embeddings = model.encode(texts)
 
-        print(f"Generated embeddings: {embeddings.shape}")
+        LOGGER.info("Generated embeddings with shape %s", embeddings.shape)
 
         # Save results
         output_file = Path(args.outdir) / 'embeddings.npy'
         metadata_file = Path(args.outdir) / 'embeddings_metadata.json'
 
         import numpy as np
-        import json
 
         np.save(output_file, embeddings)
 
@@ -398,19 +424,19 @@ def run_embedding_mode(args: argparse.Namespace) -> int:
             'dtype': str(embeddings.dtype)
         }
 
-        with open(metadata_file, 'w', encoding='utf-8') as f:
-            json.dump(metadata, f, indent=2)
+        with open(metadata_file, 'w', encoding='utf-8') as metadata_handle:
+            json.dump(metadata, metadata_handle, indent=2)
 
-        print(f"Embeddings saved to {output_file}")
-        print(f"Metadata saved to {metadata_file}")
+        LOGGER.info("Embeddings saved to %s", output_file)
+        LOGGER.info("Metadata saved to %s", metadata_file)
 
         return 0
 
-    except ImportError as e:
-        print(f"Error: Required module not available: {e}")
+    except ImportError:
+        LOGGER.exception("Required module not available for embedding mode")
         return 1
-    except Exception as e:
-        print(f"Error in embedding mode: {e}")
+    except Exception:
+        LOGGER.exception("Error in embedding mode")
         return 1
 
 
@@ -422,10 +448,12 @@ def run_demo_mode(args: argparse.Namespace) -> int:
         os.environ['CLI_DEVICE'] = args.device
         os.environ['CLI_OUTPUT_DIR'] = args.outdir
 
-        print(f"Running demo mode with CLI configuration...")
-        print(f"Workers: {args.workers}")
-        print(f"Device: {args.device}")
-        print(f"Output directory: {args.outdir}")
+        LOGGER.info(
+            "Running demo mode with workers=%s, device=%s, output=%s",
+            args.workers,
+            args.device,
+            args.outdir,
+        )
 
         # Import and run demo with environment configuration
         import demo
@@ -433,90 +461,79 @@ def run_demo_mode(args: argparse.Namespace) -> int:
 
         return 0
 
-    except ImportError as e:
-        print(f"Error: Demo module not available: {e}")
+    except ImportError:
+        LOGGER.exception("Demo module not available")
         return 1
-    except Exception as e:
-        print(f"Error in demo mode: {e}")
+    except Exception:
+        LOGGER.exception("Error in demo mode")
         return 1
 
 
 def run_decatalogo_mode(args: argparse.Namespace) -> int:
     """Execute Decatalogo evaluation mode."""
+    os.environ['CLI_WORKERS'] = str(args.workers)
+    os.environ['CLI_DEVICE'] = args.device
+    os.environ['CLI_PRECISION'] = args.precision
+    os.environ['CLI_TOPK'] = str(args.topk)
+    os.environ['CLI_UMBRAL'] = str(args.umbral)
+    os.environ['CLI_MAX_SEGMENTOS'] = str(args.max_segmentos)
+    os.environ['CLI_INPUT_DIR'] = args.input
+    os.environ['CLI_OUTPUT_DIR'] = args.outdir
+
     try:
-        # Import with the CLI parameters passed as environment variables
-        # This maintains backward compatibility with existing hardcoded values
-        os.environ['CLI_WORKERS'] = str(args.workers)
-        os.environ['CLI_DEVICE'] = args.device
-        os.environ['CLI_PRECISION'] = args.precision
-        os.environ['CLI_TOPK'] = str(args.topk)
-        os.environ['CLI_UMBRAL'] = str(args.umbral)
-        os.environ['CLI_MAX_SEGMENTOS'] = str(args.max_segmentos)
-        os.environ['CLI_INPUT_DIR'] = args.input
-        os.environ['CLI_OUTPUT_DIR'] = args.outdir
-
-        print(f"Running Decatalogo evaluation...")
-        print(f"Configuration passed via environment variables")
-
-        # Import and run the evaluator
         from Decatalogo_evaluador import IndustrialDecatalogoEvaluatorFull
-
-        evaluator = IndustrialDecatalogoEvaluatorFull()
-
-        # Process input files
-        input_path = Path(args.input)
-        text_files = list(input_path.glob('*.txt'))
-
-        if not text_files:
-            print(f"No text files found in {args.input}")
-            return 1
-
-        print(f"Found {len(text_files)} files to evaluate")
-
-        # Process each file
-        for file_path in text_files:
-            try:
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    content = f.read()
-
-                # Evaluate each of the 10 Decatalogo points
-                for punto_id in range(1, 11):
-                    result = evaluator.evaluar_punto_completo(content, punto_id)
-
-                    # Save individual results
-                    output_file = Path(args.outdir) / f'decatalogo_punto_{punto_id}_{file_path.stem}.json'
-
-                    import json
-                    with open(output_file, 'w', encoding='utf-8') as f:
-                        json.dump({
-                            'punto_id': result.punto_id,
-                            'nombre_punto': result.nombre_punto,
-                            'puntaje_agregado': result.puntaje_agregado_punto,
-                            'evaluaciones_dimensiones': [
-                                {
-                                    'dimension': ed.dimension,
-                                    'puntaje': ed.puntaje_dimension,
-                                    'preguntas_evaluadas': len(ed.evaluaciones_preguntas)
-                                }
-                                for ed in result.evaluaciones_dimensiones
-                            ]
-                        }, f, indent=2, ensure_ascii=False)
-
-                print(f"Processed {file_path.name}")
-
-            except Exception as e:
-                print(f"Error processing {file_path}: {e}")
-
-        print(f"Decatalogo evaluation complete. Results in {args.outdir}")
-        return 0
-
-    except ImportError as e:
-        print(f"Error: Decatalogo module not available: {e}")
-        return 1
-    except Exception as e:
-        print(f"Error in decatalogo mode: {e}")
+    except ImportError:
+        LOGGER.exception("Decatalogo evaluator module not available")
         return 1
 
+    LOGGER.info(
+        "Running Decatalogo evaluation with input=%s output=%s", args.input, args.outdir
+    )
+
+    evaluator = IndustrialDecatalogoEvaluatorFull()
+
+    input_path = Path(args.input)
+    text_files = list(input_path.glob('*.txt'))
+
+    if not text_files:
+        LOGGER.warning("No text files found in %s", args.input)
+        return 1
+
+    LOGGER.info("Found %s files to evaluate", len(text_files))
+
+    for file_path in text_files:
+        try:
+            with open(file_path, 'r', encoding='utf-8') as source_file:
+                content = source_file.read()
+
+            for punto_id in range(1, 11):
+                result = evaluator.evaluar_punto_completo(content, punto_id)
+                output_file = (
+                    Path(args.outdir) / f'decatalogo_punto_{punto_id}_{file_path.stem}.json'
+                )
+                with open(output_file, 'w', encoding='utf-8') as output_handle:
+                    json.dump({
+                        'punto_id': result.punto_id,
+                        'nombre_punto': result.nombre_punto,
+                        'puntaje_agregado': result.puntaje_agregado_punto,
+                        'evaluaciones_dimensiones': [
+                            {
+                                'dimension': ed.dimension,
+                                'puntaje': ed.puntaje_dimension,
+                                'preguntas_evaluadas': len(ed.evaluaciones_preguntas)
+                            }
+                            for ed in result.evaluaciones_dimensiones
+                        ]
+                    }, output_handle, indent=2, ensure_ascii=False)
+
+            LOGGER.info("Processed %s", file_path.name)
+        except OSError as exc:
+            LOGGER.warning("Error processing %s: %s", file_path, exc)
+        except Exception:
+            LOGGER.exception("Unexpected error processing %s", file_path)
+
+    LOGGER.info("Decatalogo evaluation complete. Results in %s", args.outdir)
+    return 0
 
 def main():
     """Main entry point for the CLI application."""
@@ -527,7 +544,11 @@ def main():
 
     # Load configuration file if provided
     if args.config:
-        config = load_config_file(args.config)
+        try:
+            config = load_config_file(args.config)
+        except ValueError as exc:
+            LOGGER.error("Failed to load configuration file: %s", exc)
+            return 1
         # Override command line args with config file values
         for key, value in config.items():
             if hasattr(args, key):
@@ -537,21 +558,25 @@ def main():
     setup_logging(args.verbose)
 
     # Validate arguments
-    validate_args(args)
+    try:
+        validate_args(args)
+    except ValueError as exc:
+        LOGGER.error("Invalid CLI configuration: %s", exc)
+        return 1
 
     # Show configuration and exit if dry-run
     if args.dry_run:
-        print("Configuration (dry-run mode):")
-        print(f"  Input directory: {args.input}")
-        print(f"  Output directory: {args.outdir}")
-        print(f"  Workers: {args.workers}")
-        print(f"  Device: {get_device_config(args.device)}")
-        print(f"  Precision: {args.precision}")
-        print(f"  Top-k: {args.topk}")
-        print(f"  Umbral: {args.umbral}")
-        print(f"  Max segments: {args.max_segmentos}")
-        print(f"  Mode: {args.mode}")
-        print(f"  Verbose: {args.verbose}")
+        LOGGER.info("Configuration (dry-run mode):")
+        LOGGER.info("  Input directory: %s", args.input)
+        LOGGER.info("  Output directory: %s", args.outdir)
+        LOGGER.info("  Workers: %s", args.workers)
+        LOGGER.info("  Device: %s", get_device_config(args.device))
+        LOGGER.info("  Precision: %s", args.precision)
+        LOGGER.info("  Top-k: %s", args.topk)
+        LOGGER.info("  Umbral: %s", args.umbral)
+        LOGGER.info("  Max segments: %s", args.max_segmentos)
+        LOGGER.info("  Mode: %s", args.mode)
+        LOGGER.info("  Verbose: %s", args.verbose)
         return 0
 
     # Execute the selected mode
@@ -564,7 +589,7 @@ def main():
     elif args.mode == 'decatalogo':
         return run_decatalogo_mode(args)
     else:
-        print(f"Unknown mode: {args.mode}")
+        LOGGER.error("Unknown mode: %s", args.mode)
         return 1
 
 
