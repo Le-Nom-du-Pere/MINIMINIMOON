@@ -285,7 +285,7 @@ def run_evaluation_with_seed(pdf_path: Path, seed: int) -> Dict[str, Any]:
         str(seed),
         str(pdf_path),
     ]
-    result = subprocess.run(cmd, capture_output=True, text=True, cwd=Path.cwd())
+    result = subprocess.run(cmd, capture_output=True, text=True, cwd=Path.cwd(), check=True)
 
     if result.returncode != 0:
         logger.error(f"❌ Error ejecutando evaluación: {result.stderr}")

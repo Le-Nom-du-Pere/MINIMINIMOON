@@ -44,8 +44,8 @@ class TeamCitySetupTester:
         """Test Python 3 availability."""
         try:
             result = subprocess.run(
-                ["python3", "--version"], capture_output=True, text=True, timeout=10
-            )
+                ["python3", "--version"], capture_output=True, text=True, timeout=10, 
+            check=True)
             if result.returncode == 0:
                 version = result.stdout.strip()
                 self.log_test("Python3 Available", True, version)
@@ -64,7 +64,7 @@ class TeamCitySetupTester:
             # Create virtual environment
             cmd = ["python3", "-m", "venv", self.venv_path]
             result = subprocess.run(
-                cmd, capture_output=True, text=True, timeout=30)
+                cmd, capture_output=True, text=True, timeout=30, check=True)
 
             if result.returncode == 0 and os.path.exists(self.venv_path):
                 # Check if python executable exists
@@ -112,8 +112,8 @@ class TeamCitySetupTester:
             ]
 
             result = subprocess.run(
-                cmd, capture_output=True, text=True, env=env, timeout=10
-            )
+                cmd, capture_output=True, text=True, env=env, timeout=10, 
+            check=True)
 
             if result.returncode == 0:
                 output = result.stdout.strip()
@@ -162,8 +162,8 @@ class TeamCitySetupTester:
                 "setuptools",
             ]
             result = subprocess.run(
-                cmd, capture_output=True, text=True, env=env, timeout=30
-            )
+                cmd, capture_output=True, text=True, env=env, timeout=30, 
+            check=True)
 
             if result.returncode == 0:
                 self.log_test("Pip Caching", True,
@@ -205,7 +205,7 @@ class TeamCitySetupTester:
                 test_requirements,
             ]
             result = subprocess.run(
-                cmd, capture_output=True, text=True, timeout=60)
+                cmd, capture_output=True, text=True, timeout=60, check=True)
 
             if result.returncode == 0:
                 self.log_test(
@@ -251,7 +251,7 @@ class TeamCitySetupTester:
                 env=env,
                 timeout=10,
                 cwd=self.temp_dir,
-            )
+            check=True)
 
             if result.returncode == 0 and "Import successful" in result.stdout:
                 self.log_test(
@@ -294,7 +294,7 @@ print(f'Build validation passed: score={result.feasibility_score}')
                 env=env,
                 timeout=10,
                 cwd=self.temp_dir,
-            )
+            check=True)
 
             if result.returncode == 0 and "Build validation passed" in result.stdout:
                 self.log_test("Build Validation", True,
@@ -335,7 +335,7 @@ print('Lint successful')
                 env=env,
                 timeout=10,
                 cwd=self.temp_dir,
-            )
+            check=True)
 
             if result.returncode == 0 and "Lint successful" in result.stdout:
                 self.log_test("Lint Check", True, "No syntax errors found")

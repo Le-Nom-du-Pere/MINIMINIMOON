@@ -220,8 +220,8 @@ sys.exit(0)
     try:
         # Ejecutar script
         result = subprocess.run(
-            [sys.executable, script_path], capture_output=True, text=True, timeout=30
-        )
+            [sys.executable, script_path], capture_output=True, text=True, timeout=30, 
+        check=True)
 
         print(f"📤 Output del test atexit: {result.stdout}")
         print(f"📤 Errors del test atexit: {result.stderr}")
