@@ -6,10 +6,17 @@ Validador industrial de última generación para implementación de Teoría de C
 Nivel de sofisticación: Estado del arte industrial - Nivel máximo
 """
 
+import logging
+import sys
 import time
 from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Optional, Tuple
+
+from log_config import configure_logging
+
+configure_logging()
+LOGGER = logging.getLogger(__name__)
 
 
 class ValidationTier(Enum):
@@ -37,6 +44,7 @@ class IndustrialGradeValidator:
     """Validador de grado industrial con capacidades de última generación"""
 
     def __init__(self):
+        self.logger = LOGGER
         self.metrics: List[ValidationMetric] = []
         self.validation_start_time: float = 0
         self.performance_benchmarks: Dict[str, float] = {
@@ -50,8 +58,8 @@ class IndustrialGradeValidator:
     def start_validation(self):
         """Inicia el proceso de validación industrial"""
         self.validation_start_time = time.time()
-        print("🚀 INICIANDO VALIDACIÓN INDUSTRIAL DE ÚLTIMA GENERACIÓN")
-        print("=" * 80)
+        self.logger.info("🚀 INICIANDO VALIDACIÓN INDUSTRIAL DE ÚLTIMA GENERACIÓN")
+        self.logger.info("%s", "=" * 80)
 
     def log_metric(self, name: str, value: float, unit: str, threshold: float):
         """Registra métrica con evaluación automática de estado"""
@@ -76,14 +84,17 @@ class IndustrialGradeValidator:
                 self.performance_benchmarks["import_time"],
             )
 
-            print(f"📦 IMPORTACIÓN INDUSTRIAL: {metric.status}")
-            print(
-                f"   ⏱️  Tiempo: {import_time:.4f}s (Límite: {metric.threshold}s)")
+            self.logger.info("📦 IMPORTACIÓN INDUSTRIAL: %s", metric.status)
+            self.logger.info(
+                "   ⏱️  Tiempo: %.4fs (Límite: %ss)",
+                import_time,
+                metric.threshold,
+            )
 
             return metric.status == "✅ PASÓ"
 
-        except ImportError as e:
-            print(f"❌ FALLA CRÍTICA EN IMPORTACIÓN: {e}")
+        except ImportError:
+            self.logger.exception("❌ FALLA CRÍTICA EN IMPORTACIÓN")
             return False
 
     def validate_causal_categories(self) -> Tuple[bool, List[str]]:
@@ -106,11 +117,11 @@ class IndustrialGradeValidator:
         for expected in expected_categories:
             if expected in category_names:
                 validation_results.append(True)
-                print(f"   ✅ {expected}: Definición óptima")
+                self.logger.info("   ✅ %s: Definición óptima", expected)
             else:
                 validation_results.append(False)
                 missing_categories.append(expected)
-                print(f"   ❌ {expected}: Categoría faltante")
+                self.logger.error("   ❌ %s: Categoría faltante", expected)
 
         # Validación de orden lógico
         try:
@@ -118,20 +129,21 @@ class IndustrialGradeValidator:
             validation_results.append(order_valid)
 
             if order_valid:
-                print("   🔗 Orden causal: Secuencia lógica validada")
+                self.logger.info("   🔗 Orden causal: Secuencia lógica validada")
             else:
-                print("   ⚠️  Orden causal: Posible inconsistencia detectada")
+                self.logger.warning(
+                    "   ⚠️  Orden causal: Posible inconsistencia detectada"
+                )
 
-        except Exception as e:
-            print(f"   ⚠️  Orden causal: Error en validación - {e}")
+        except Exception:
+            self.logger.exception("   ⚠️  Orden causal: Error en validación")
             validation_results.append(False)
 
         return all(validation_results), missing_categories
 
     def _validate_causal_order(self, categories: List[CategoriaCausal]) -> bool:
         """Valida el orden lógico de las categorías causales"""
-        expected_order = ["INSUMOS", "PROCESOS",
-                          "PRODUCTOS", "RESULTADOS", "IMPACTOS"]
+        expected_order = ["INSUMOS", "PROCESOS", "PRODUCTOS", "RESULTADOS", "IMPACTOS"]
         actual_order = [cat.name for cat in categories]
 
         # Verifica que el orden esperado esté preservado
@@ -149,7 +161,7 @@ class IndustrialGradeValidator:
         categories = list(CategoriaCausal)
         connection_matrix = {}
 
-        print("   🔬 ANALIZANDO MATRIZ DE CONEXIONES:")
+        self.logger.info("   🔬 ANALIZANDO MATRIZ DE CONEXIONES:")
 
         for i, origen in enumerate(categories):
             for j, destino in enumerate(categories):
@@ -157,8 +169,12 @@ class IndustrialGradeValidator:
                 connection_matrix[(origen.name, destino.name)] = is_valid
 
                 status_icon = "✅" if is_valid else "❌"
-                print(
-                    f"      {status_icon} {origen.name:>10} → {destino.name:<10} | Válido: {is_valid}"
+                self.logger.info(
+                    "      %s %10s → %-10s | Válido: %s",
+                    status_icon,
+                    origen.name,
+                    destino.name,
+                    is_valid,
                 )
 
         return connection_matrix
@@ -215,37 +231,46 @@ class IndustrialGradeValidator:
         """Genera reporte industrial completo"""
         total_time = time.time() - self.validation_start_time
 
-        print("\n" + "=" * 80)
-        print("📊 INFORME INDUSTRIAL DE VALIDACIÓN - ESTADO DEL ARTE")
-        print("=" * 80)
+        self.logger.info("%s", "\n" + "=" * 80)
+        self.logger.info("📊 INFORME INDUSTRIAL DE VALIDACIÓN - ESTADO DEL ARTE")
+        self.logger.info("%s", "=" * 80)
 
         # Resumen ejecutivo
         passed_metrics = sum(1 for m in self.metrics if m.status == "✅ PASÓ")
         total_metrics = len(self.metrics)
         success_rate = (passed_metrics / total_metrics) * 100
 
-        print(f"\n🎯 RESUMEN EJECUTIVO:")
-        print(f"   • Tiempo total de validación: {total_time:.3f} segundos")
-        print(f"   • Métricas evaluadas: {total_metrics}")
-        print(f"   • Tasa de éxito: {success_rate:.1f}%")
-        print(
-            f"   • Nivel de calidad: {self._determine_quality_level(success_rate)}")
+        self.logger.info("\n🎯 RESUMEN EJECUTIVO:")
+        self.logger.info("   • Tiempo total de validación: %.3f segundos", total_time)
+        self.logger.info("   • Métricas evaluadas: %s", total_metrics)
+        self.logger.info("   • Tasa de éxito: %.1f%%", success_rate)
+        self.logger.info(
+            "   • Nivel de calidad: %s",
+            self._determine_quality_level(success_rate),
+        )
 
         # Métricas detalladas
-        print(f"\n📈 MÉTRICAS DE RENDIMIENTO:")
+        self.logger.info("\n📈 MÉTRICAS DE RENDIMIENTO:")
         for metric in self.metrics:
             color_icon = "🟢" if metric.status == "✅ PASÓ" else "🔴"
-            print(
-                f"   {color_icon} {metric.name}: {metric.value:.4f}{metric.unit} "
-                f"(Límite: {metric.threshold}{metric.unit}) - {metric.status}"
+            self.logger.info(
+                "   %s %s: %.4f%s (Límite: %s%s) - %s",
+                color_icon,
+                metric.name,
+                metric.value,
+                metric.unit,
+                metric.threshold,
+                metric.unit,
+                metric.status,
             )
 
         # Recomendaciones industriales
-        print(f"\n💡 RECOMENDACIONES DE GRADO INDUSTRIAL:")
+        self.logger.info("\n💡 RECOMENDACIONES DE GRADO INDUSTRIAL:")
         self._generate_industrial_recommendations()
 
-        print(
-            f"\n🏆 VALIDACIÓN {'EXITOSA' if success_rate >= 90 else 'CON OBSERVACIONES'}"
+        self.logger.info(
+            "\n🏆 VALIDACIÓN %s",
+            "EXITOSA" if success_rate >= 90 else "CON OBSERVACIONES",
         )
         return success_rate >= 90
 
@@ -265,21 +290,26 @@ class IndustrialGradeValidator:
         failed_metrics = [m for m in self.metrics if m.status != "✅ PASÓ"]
 
         if not failed_metrics:
-            print("   ✅ Implementación cumple con todos los estándares industriales")
+            self.logger.info(
+                "   ✅ Implementación cumple con todos los estándares industriales"
+            )
             return
 
         for metric in failed_metrics:
             if "Tiempo" in metric.name:
-                print(
-                    f"   ⚡ Optimizar {metric.name}: Considerar caching o optimización de algoritmos"
+                self.logger.info(
+                    "   ⚡ Optimizar %s: Considerar caching o optimización de algoritmos",
+                    metric.name,
                 )
             elif "Construcción" in metric.name:
-                print(
-                    f"   🏗️  Revisar arquitectura de {metric.name}: Evaluar patrones de diseño industrial"
+                self.logger.info(
+                    "   🏗️  Revisar arquitectura de %s: Evaluar patrones de diseño industrial",
+                    metric.name,
                 )
             elif "Detección" in metric.name:
-                print(
-                    f"   🔍 Mejorar algoritmos de {metric.name}: Implementar técnicas de búsqueda eficiente"
+                self.logger.info(
+                    "   🔍 Mejorar algoritmos de %s: Implementar técnicas de búsqueda eficiente",
+                    metric.name,
                 )
 
 
@@ -290,30 +320,30 @@ def validate_teoria_cambio_industrial():
 
     try:
         # 1. Validación de rendimiento de importación
-        print("\n1. 🔧 VALIDACIÓN DE INFRAESTRUCTURA")
+        LOGGER.info("\n1. 🔧 VALIDACIÓN DE INFRAESTRUCTURA")
         if not validator.validate_import_performance():
             return False
 
         # 2. Validación de categorías causales
-        print("\n2. 🏷️  VALIDACIÓN DE CATEGORÍAS CAUSALES")
+        LOGGER.info("\n2. 🏷️  VALIDACIÓN DE CATEGORÍAS CAUSALES")
         from teoria_cambio import CategoriaCausal
 
         categories_valid, missing = validator.validate_causal_categories()
 
         if not categories_valid:
-            print(f"   ❌ Faltan categorías: {missing}")
+            LOGGER.error("   ❌ Faltan categorías: %s", missing)
             return False
 
         # 3. Validación de matriz de conexiones
-        print("\n3. 🔗 VALIDACIÓN DE MATRIZ DE CONEXIONES")
+        LOGGER.info("\n3. 🔗 VALIDACIÓN DE MATRIZ DE CONEXIONES")
         connection_matrix = validator.validate_connection_matrix()
 
         # 4. Benchmark de rendimiento industrial
-        print("\n4. ⚡ BENCHMARKS DE RENDIMIENTO INDUSTRIAL")
+        LOGGER.info("\n4. ⚡ BENCHMARKS DE RENDIMIENTO INDUSTRIAL")
         performance_metrics = validator.validate_performance_benchmarks()
 
         # 5. Validación funcional avanzada
-        print("\n5. 🧪 VALIDACIÓN FUNCIONAL AVANZADA")
+        LOGGER.info("\n5. 🧪 VALIDACIÓN FUNCIONAL AVANZADA")
         from teoria_cambio import TeoriaCambio
 
         tc = TeoriaCambio()
@@ -324,42 +354,49 @@ def validate_teoria_cambio_industrial():
         caminos = tc.detectar_caminos_completos(grafo)
         sugerencias = tc.generar_sugerencias(grafo)
 
-        print(
-            f"   ✅ Grafo causal: {len(grafo.nodes)} nodos, {len(grafo.edges)} conexiones"
+        LOGGER.info(
+            "   ✅ Grafo causal: %s nodos, %s conexiones",
+            len(grafo.nodes),
+            len(grafo.edges),
         )
-        print(
-            f"   ✅ Validación completa: {'VÁLIDO' if validacion.es_valida else 'INVÁLIDO'}"
+        LOGGER.info(
+            "   ✅ Validación completa: %s",
+            "VÁLIDO" if validacion.es_valida else "INVÁLIDO",
         )
-        print(f"   ✅ Caminos detectados: {len(caminos.caminos_completos)}")
-        print(f"   ✅ Sugerencias generadas: {len(sugerencias.sugerencias)}")
+        LOGGER.info("   ✅ Caminos detectados: %s", len(caminos.caminos_completos))
+        LOGGER.info("   ✅ Sugerencias generadas: %s", len(sugerencias.sugerencias))
 
         # 6. Generación de reporte industrial
         success = validator.generate_industrial_report()
 
         if success:
-            print("\n🎉 IMPLEMENTACIÓN CERTIFICADA PARA ENTORNOS INDUSTRIALES CRÍTICOS")
-            print("   • Nivel: Estado del Arte en Teorías de Cambio")
-            print("   • Capacidad: Validación en tiempo real de sistemas complejos")
-            print("   • Robustez: Tolerancia a fallos y alto rendimiento")
+            LOGGER.info(
+                "\n🎉 IMPLEMENTACIÓN CERTIFICADA PARA ENTORNOS INDUSTRIALES CRÍTICOS"
+            )
+            LOGGER.info("   • Nivel: Estado del Arte en Teorías de Cambio")
+            LOGGER.info(
+                "   • Capacidad: Validación en tiempo real de sistemas complejos"
+            )
+            LOGGER.info("   • Robustez: Tolerancia a fallos y alto rendimiento")
 
         return success
 
-    except Exception as e:
-        print(f"\n💥 FALLA CATASTRÓFICA EN VALIDACIÓN INDUSTRIAL: {e}")
-        import traceback
-
-        traceback.print_exc()
+    except Exception:
+        LOGGER.exception("\n💥 FALLA CATASTRÓFICA EN VALIDACIÓN INDUSTRIAL")
         return False
 
 
 if __name__ == "__main__":
-    print("🏭 VALIDADOR INDUSTRIAL DE TEORÍA DE CAMBIO - NIVEL MÁXIMO")
-    print("🔬 Tecnología: Estado del Arte en Validación de Sistemas Complejos")
-    print("💼 Aplicación: Entornos Industriales Críticos\n")
+    LOGGER.info("🏭 VALIDADOR INDUSTRIAL DE TEORÍA DE CAMBIO - NIVEL MÁXIMO")
+    LOGGER.info("🔬 Tecnología: Estado del Arte en Validación de Sistemas Complejos")
+    LOGGER.info("💼 Aplicación: Entornos Industriales Críticos\n")
 
     success = validate_teoria_cambio_industrial()
 
     exit_code = 0 if success else 1
-    print(
-        f"\n📤 Código de salida: {exit_code} - {'ÉXITO' if success else 'FALLA'}")
-    exit(exit_code)
+    LOGGER.info(
+        "\n📤 Código de salida: %s - %s",
+        exit_code,
+        "ÉXITO" if success else "FALLA",
+    )
+    sys.exit(exit_code)
