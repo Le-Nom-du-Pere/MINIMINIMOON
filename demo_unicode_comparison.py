@@ -262,7 +262,8 @@ class PatternRegistry:
     def __init__(self):
         self._patterns = self._build_complete_patterns()
 
-    def _build_complete_patterns(self) -> Dict[PatternCategory, Dict[str, Tuple[re.Pattern, str]]]:
+    @staticmethod
+    def _build_complete_patterns() -> Dict[PatternCategory, Dict[str, Tuple[re.Pattern, str]]]:
         """Build comprehensive pattern dictionary."""
         return {
             PatternCategory.QUOTES: {
@@ -384,7 +385,8 @@ class PerformanceMonitor:
                 self.metrics[operation].append(duration_ms)
                 self.memory_samples[operation].append(memory_delta)
 
-    def _get_memory_usage(self) -> int:
+    @staticmethod
+    def _get_memory_usage() -> int:
         """Get current memory usage in bytes."""
         try:
             import psutil
@@ -457,7 +459,8 @@ class IndustrialUnicodeAnalyzer:
 
         self.logger.info(f"Analyzer initialized with config: {self.config}")
 
-    def _validate_and_load_config(self, user_config: Dict[str, Any]) -> Dict[str, Any]:
+    @staticmethod
+    def _validate_and_load_config(user_config: Dict[str, Any]) -> Dict[str, Any]:
         """Validate and merge configuration."""
         default_config = {
             'analysis_level': AnalysisLevel.STANDARD,
@@ -526,7 +529,8 @@ class IndustrialUnicodeAnalyzer:
         """Cached normalization with hash-based key."""
         return normalize_unicode(text, form)
 
-    def _get_text_hash(self, text: str) -> str:
+    @staticmethod
+    def _get_text_hash(text: str) -> str:
         """Get text hash for caching."""
         return hashlib.sha256(text.encode('utf-8')).hexdigest()[:16]
 
@@ -545,7 +549,8 @@ class IndustrialUnicodeAnalyzer:
 
         return results
 
-    def _get_unicode_categories(self, text: str) -> Dict[str, int]:
+    @staticmethod
+    def _get_unicode_categories(text: str) -> Dict[str, int]:
         """Get Unicode category distribution."""
         categories = defaultdict(int)
 
@@ -558,7 +563,8 @@ class IndustrialUnicodeAnalyzer:
 
         return dict(categories)
 
-    def _detect_anomalies(self, text: str, metrics: AnalysisMetrics) -> List[str]:
+    @staticmethod
+    def _detect_anomalies(text: str, metrics: AnalysisMetrics) -> List[str]:
         """Detect anomalies in text."""
         anomalies = []
 
@@ -607,7 +613,8 @@ class IndustrialUnicodeAnalyzer:
 
         return anomalies
 
-    def _calculate_confidence_score(self, metrics: AnalysisMetrics) -> float:
+    @staticmethod
+    def _calculate_confidence_score(metrics: AnalysisMetrics) -> float:
         """Calculate confidence score for analysis."""
         base_score = 1.0
 
@@ -699,7 +706,8 @@ class IndustrialUnicodeAnalyzer:
             self.logger.error(f"Analysis failed for text {text_id}: {e}")
             raise ProcessingError(f"Text analysis failed: {e}")
 
-    def _detect_character_differences(self, original: str, normalized: str) -> List[CharacterDifference]:
+    @staticmethod
+    def _detect_character_differences(original: str, normalized: str) -> List[CharacterDifference]:
         """Detect character-level differences."""
         differences = []
 
@@ -745,7 +753,8 @@ class IndustrialUnicodeAnalyzer:
 
         return differences[:1000]  # Limit to prevent memory issues
 
-    def _calculate_significance_score(self, char_diffs: List[CharacterDifference],
+    @staticmethod
+    def _calculate_significance_score(char_diffs: List[CharacterDifference],
                                       pattern_diffs: Dict[str, Dict[str, int]]) -> float:
         """Calculate significance score for differences."""
         score = 0.0
@@ -852,7 +861,8 @@ class IndustrialUnicodeAnalyzer:
                 self.logger.error(f"Comparison failed for text {text_id}: {e}")
                 raise ProcessingError(f"Normalization comparison failed: {e}")
 
-    def _generate_recommendations(self, differences: List[Dict[str, Any]],
+    @staticmethod
+    def _generate_recommendations(differences: List[Dict[str, Any]],
                                   original_metrics: AnalysisMetrics) -> List[str]:
         """Generate actionable recommendations."""
         recommendations = []
@@ -981,7 +991,8 @@ class IndustrialUnicodeAnalyzer:
         self.logger.info(f"Batch analysis completed: {len(results) - len(failed_results)}/{total} successful")
         return results
 
-    def _create_error_result(self, text: str, text_id: str, error_msg: str) -> ComparisonResult:
+    @staticmethod
+    def _create_error_result(text: str, text_id: str, error_msg: str) -> ComparisonResult:
         """Create error result for failed analysis."""
         return ComparisonResult(
             text_id=text_id,
@@ -1038,7 +1049,8 @@ class IndustrialUnicodeAnalyzer:
             with open(output_path, 'w', encoding='utf-8') as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
 
-    def _export_csv(self, results: List[ComparisonResult], output_path: Path) -> None:
+    @staticmethod
+    def _export_csv(results: List[ComparisonResult], output_path: Path) -> None:
         """Export as CSV summary."""
         fieldnames = [
             'text_id', 'character_count', 'byte_size', 'processing_time_ms',
@@ -1397,7 +1409,8 @@ class IndustrialDemoRunner:
         })
         self.test_results = []
 
-    def create_industrial_test_suite(self) -> List[Tuple[str, str]]:
+    @staticmethod
+    def create_industrial_test_suite() -> List[Tuple[str, str]]:
         """Create comprehensive industrial-grade test suite."""
         return [
             # Basic normalization scenarios

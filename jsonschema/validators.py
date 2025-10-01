@@ -14,7 +14,8 @@ class _DummyValidator:
     def check_schema(schema):
         return True
 
-    def validate(self, payload):
+    @staticmethod
+    def validate(payload):
         return True
 
 

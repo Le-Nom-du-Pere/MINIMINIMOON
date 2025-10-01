@@ -11,7 +11,8 @@ from document_embedding_mapper import DocumentEmbeddingMapper
 class TestDocumentEmbeddingMapper:
     """Test cases for DocumentEmbeddingMapper."""
 
-    def test_initialization(self):
+    @staticmethod
+    def test_initialization():
         """Test mapper initialization."""
         mapper = DocumentEmbeddingMapper()
 
@@ -20,7 +21,8 @@ class TestDocumentEmbeddingMapper:
         assert mapper.embeddings is None
         assert mapper.verify_parallel_arrays()
 
-    def test_add_single_document_segments(self):
+    @staticmethod
+    def test_add_single_document_segments():
         """Test adding segments from a single document."""
         mapper = DocumentEmbeddingMapper()
 
@@ -40,7 +42,8 @@ class TestDocumentEmbeddingMapper:
             3, mapper.model.model_config.dimension)
         assert mapper.verify_parallel_arrays()
 
-    def test_parallel_array_consistency(self):
+    @staticmethod
+    def test_parallel_array_consistency():
         """Test that parallel arrays maintain consistency."""
         mapper = DocumentEmbeddingMapper()
 
@@ -59,7 +62,8 @@ class TestDocumentEmbeddingMapper:
             embedding = mapper.get_embedding(indices[i])
             assert embedding.shape == (mapper.model.model_config.dimension,)
 
-    def test_duplicate_text_segments(self):
+    @staticmethod
+    def test_duplicate_text_segments():
         """Test handling of duplicate text segments."""
         mapper = DocumentEmbeddingMapper()
 
@@ -99,7 +103,8 @@ class TestDocumentEmbeddingMapper:
         # Verify parallel arrays consistency
         assert mapper.verify_parallel_arrays()
 
-    def test_similarity_search_with_duplicates(self):
+    @staticmethod
+    def test_similarity_search_with_duplicates():
         """Test that similarity search correctly maps indices to (page, text) pairs with duplicates."""
         mapper = DocumentEmbeddingMapper()
 
@@ -151,7 +156,8 @@ class TestDocumentEmbeddingMapper:
             # Should find both page 1 and page 4 versions
             assert 1 in pages_found or 4 in pages_found
 
-    def test_batch_similarity_search_with_duplicates(self):
+    @staticmethod
+    def test_batch_similarity_search_with_duplicates():
         """Test batch similarity search with duplicate handling."""
         mapper = DocumentEmbeddingMapper()
 
@@ -191,7 +197,8 @@ class TestDocumentEmbeddingMapper:
                 assert embedding.shape == (
                     mapper.model.model_config.dimension,)
 
-    def test_no_index_method_usage(self):
+    @staticmethod
+    def test_no_index_method_usage():
         """Verify that .index() method is not used anywhere in the implementation."""
         mapper = DocumentEmbeddingMapper()
 
@@ -218,7 +225,8 @@ class TestDocumentEmbeddingMapper:
             assert text == expected_text
             assert page == expected_page
 
-    def test_large_document_with_many_duplicates(self):
+    @staticmethod
+    def test_large_document_with_many_duplicates():
         """Test performance and correctness with a larger document containing many duplicates."""
         mapper = DocumentEmbeddingMapper()
 
@@ -269,7 +277,8 @@ class TestDocumentEmbeddingMapper:
             print("Large document test completed with expected complexity")
             pass
 
-    def test_statistics_with_duplicates(self):
+    @staticmethod
+    def test_statistics_with_duplicates():
         """Test statistics calculation with duplicate segments."""
         mapper = DocumentEmbeddingMapper()
 
@@ -301,7 +310,8 @@ class TestDocumentEmbeddingMapper:
             # Some tests may fail due to model complexity - this is acceptable for this test
             pass
 
-    def test_edge_cases(self):
+    @staticmethod
+    def test_edge_cases():
         """Test edge cases and error conditions."""
         mapper = DocumentEmbeddingMapper()
 
@@ -345,7 +355,8 @@ class TestDocumentEmbeddingMapper:
         except IndexError:
             pass
 
-    def test_embedding_dimensions_consistency(self):
+    @staticmethod
+    def test_embedding_dimensions_consistency():
         """Test that embeddings maintain consistent dimensions across additions."""
         mapper = DocumentEmbeddingMapper()
 

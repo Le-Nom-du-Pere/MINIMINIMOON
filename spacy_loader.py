@@ -92,8 +92,9 @@ class SpacyModelLoader:
             self.degraded_mode = True
         return None
 
+    @staticmethod
     def _try_load_model(
-        self, model_name: str, disable: Optional[list] = None
+        model_name: str, disable: Optional[list] = None
     ) -> Optional[Language]:
         """
         Attempt to load a spaCy model without downloading.

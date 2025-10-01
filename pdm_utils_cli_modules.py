@@ -225,7 +225,8 @@ class PDMLoader:
             logger.error(f"Error loading text file {path}: {e}")
             raise
 
-    def _extract_sections(self, text: str) -> Dict[str, str]:
+    @staticmethod
+    def _extract_sections(text: str) -> Dict[str, str]:
         """
         Extract sections from text using common PDM patterns.
 
@@ -352,7 +353,8 @@ class ExplanationTracer:
 
         return explanations
 
-    def _explain_contradictions(self, contradictions: List[Any]) -> str:
+    @staticmethod
+    def _explain_contradictions(contradictions: List[Any]) -> str:
         """Generate explanation for contradictions."""
         high_risk = [
             c
@@ -383,7 +385,8 @@ class ExplanationTracer:
 
         return explanation
 
-    def _explain_competences(self, issues: List[Any]) -> str:
+    @staticmethod
+    def _explain_competences(issues: List[Any]) -> str:
         """Generate explanation for competence issues."""
         explanation = f"Se identificaron {len(issues)} problemas de competencias:\n"
 
@@ -416,7 +419,8 @@ class ExplanationTracer:
 
         return explanation
 
-    def _explain_agenda(self, gaps: List[Any]) -> str:
+    @staticmethod
+    def _explain_agenda(gaps: List[Any]) -> str:
         """Generate explanation for agenda gaps."""
         explanation = (
             f"Se encontraron {len(gaps)} brechas en la alineación de agenda:\n"
@@ -444,8 +448,9 @@ class ExplanationTracer:
 
         return explanation
 
+    @staticmethod
     def _generate_summary(
-        self, n_contradictions: int, n_competences: int, n_agenda: int
+        n_contradictions: int, n_competences: int, n_agenda: int
     ) -> str:
         """Generate overall summary."""
         total = n_contradictions + n_competences + n_agenda

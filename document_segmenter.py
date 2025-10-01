@@ -373,8 +373,9 @@ class IndustrialSemanticAnalyzer:
 
         return min(1.0, repeated_entities / max(len(entities), 1) * 2)
 
+    @staticmethod
     def _compute_adaptive_weights(
-        self, coherence_components: Dict[str, float], text: str
+        coherence_components: Dict[str, float], text: str
     ) -> Dict[str, float]:
         """Compute adaptive weights based on text characteristics"""
 
@@ -404,7 +405,8 @@ class IndustrialSemanticAnalyzer:
         total_weight = sum(weights.values())
         return {k: v / total_weight for k, v in weights.items()}
 
-    def _advanced_sentence_segmentation(self, text: str) -> List[str]:
+    @staticmethod
+    def _advanced_sentence_segmentation(text: str) -> List[str]:
         """Advanced sentence segmentation with multiple algorithms"""
 
         sentences = []
@@ -472,7 +474,8 @@ class IndustrialSemanticAnalyzer:
         words = re.findall(r"\b[a-zA-Z]{3,}\b", text.lower())
         return [word for word in words if word not in self._stop_words]
 
-    def _extract_entities_simple(self, text: str) -> List[str]:
+    @staticmethod
+    def _extract_entities_simple(text: str) -> List[str]:
         """Simple entity extraction using patterns"""
         entities = []
 
@@ -486,7 +489,8 @@ class IndustrialSemanticAnalyzer:
 
         return [entity.lower() for entity in entities]
 
-    def _generate_cache_key(self, text: str) -> str:
+    @staticmethod
+    def _generate_cache_key(text: str) -> str:
         """Generate cache key for text"""
         return hashlib.md5(text.encode()).hexdigest()[:16]
 

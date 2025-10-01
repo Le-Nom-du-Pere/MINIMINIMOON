@@ -141,7 +141,8 @@ class IndustrialGradeValidator:
 
         return all(validation_results), missing_categories
 
-    def _validate_causal_order(self, categories: List[CategoriaCausal]) -> bool:
+    @staticmethod
+    def _validate_causal_order(categories: List[CategoriaCausal]) -> bool:
         """Valida el orden lógico de las categorías causales"""
         expected_order = ["INSUMOS", "PROCESOS", "PRODUCTOS", "RESULTADOS", "IMPACTOS"]
         actual_order = [cat.name for cat in categories]
@@ -274,7 +275,8 @@ class IndustrialGradeValidator:
         )
         return success_rate >= 90
 
-    def _determine_quality_level(self, success_rate: float) -> str:
+    @staticmethod
+    def _determine_quality_level(success_rate: float) -> str:
         """Determina el nivel de calidad industrial"""
         if success_rate >= 95:
             return "🏭 CALIDAD INDUSTRIAL PREMIUM"

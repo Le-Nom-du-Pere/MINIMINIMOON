@@ -11,7 +11,8 @@ class CausalForestDML:
     def fit(self, Y, T, X=None, W=None):
         self._fitted = True
 
-    def effect(self, X):
+    @staticmethod
+    def effect(X):
         try:
             import numpy as _np
             if hasattr(X, 'shape'):

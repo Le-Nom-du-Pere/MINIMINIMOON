@@ -257,7 +257,8 @@ class CompetenceValidator:
             # Use default Colombian competence matrix
             return self._get_default_matrix()
 
-    def _get_default_matrix(self) -> CompetenceMatrix:
+    @staticmethod
+    def _get_default_matrix() -> CompetenceMatrix:
         """Get default competence matrix based on Colombian law."""
         return CompetenceMatrix(
             municipal={
@@ -558,7 +559,8 @@ class CompetenceValidator:
 
         return "municipal"  # Default
 
-    def _get_legal_basis(self, sector: str) -> List[str]:
+    @staticmethod
+    def _get_legal_basis(sector: str) -> List[str]:
         """Get legal basis for sector competences."""
         basis = []
 
@@ -587,7 +589,8 @@ class CompetenceValidator:
 
         return basis
 
-    def _explain_overreach(self, action: str, sector: str, level: str) -> str:
+    @staticmethod
+    def _explain_overreach(action: str, sector: str, level: str) -> str:
         """Generate explanation for competence overreach."""
         explanations = {
             "salud": f"La acción '{action}' excede las competencias municipales en salud. "
@@ -607,7 +610,8 @@ class CompetenceValidator:
             f"La acción '{action}' podría exceder las competencias del nivel {level}.",
         )
 
-    def _suggest_fix(self, action: str, sector: str) -> str:
+    @staticmethod
+    def _suggest_fix(action: str, sector: str) -> str:
         """Suggest alternative wording that respects competences."""
         suggestions = {
             "salud": "Considere usar: 'gestionar convenios para', 'cofinanciar', "
@@ -624,8 +628,9 @@ class CompetenceValidator:
             sector, "Considere reformular usando verbos de coordinación y apoyo."
         )
 
+    @staticmethod
     def _check_missing_competences(
-        self, text: str, sectors: List[str], level: str
+        text: str, sectors: List[str], level: str
     ) -> List[Dict[str, any]]:
         """Check for missing essential competences in text."""
         issues = []
@@ -742,7 +747,8 @@ class RiskScorer:
             "calibration_samples": len(self.calibration_data),
         }
 
-    def _score_contradictions(self, contradictions: List[Any]) -> float:
+    @staticmethod
+    def _score_contradictions(contradictions: List[Any]) -> float:
         """Score contradiction severity."""
         if not contradictions:
             return 0.0
@@ -784,7 +790,8 @@ class RiskScorer:
 
         return 0.0
 
-    def _score_competences(self, issues: List[Any]) -> float:
+    @staticmethod
+    def _score_competences(issues: List[Any]) -> float:
         """Score competence issues severity."""
         if not issues:
             return 0.0
@@ -815,7 +822,8 @@ class RiskScorer:
 
         return 0.0
 
-    def _score_agenda(self, gaps: List[Any]) -> float:
+    @staticmethod
+    def _score_agenda(gaps: List[Any]) -> float:
         """Score agenda alignment gaps."""
         if not gaps:
             return 0.0
@@ -995,7 +1003,8 @@ class RiskScorer:
             return in_interval_count / min(100, len(self.calibration_data))
         return 0.9
 
-    def _score_to_level(self, score: float) -> str:
+    @staticmethod
+    def _score_to_level(score: float) -> str:
         """Convert numerical score to risk level."""
         if score >= 0.8:
             return "CRITICAL"
