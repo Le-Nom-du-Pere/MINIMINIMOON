@@ -36,7 +36,6 @@ class SpacyModelLoader:
         self._max_cache_size = max(1, max_cache_size)
         self.loaded_models: "OrderedDict[str, Language]" = OrderedDict()
         self._lock = threading.RLock()
-        return None
 
     def load_model(
         self, model_name: str, disable: Optional[list] = None
@@ -179,7 +178,6 @@ class SafeSpacyProcessor:
         self.loader = loader or get_spacy_model_loader()
         self.model = self.loader.load_model(preferred_model)
         self.preferred_model = preferred_model
-        return None
     def process_text(self, text: str) -> dict:
         """
         Process text with available spaCy functionality or fallback methods.
@@ -339,8 +337,6 @@ def example_usage():
     if not processor.is_fully_functional():
         logger.warning(
             "Application running in degraded mode due to spaCy model issues")
-    
-    return None
 
 
 if __name__ == "__main__":
