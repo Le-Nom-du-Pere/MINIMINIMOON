@@ -131,7 +131,9 @@ class IndustrialGradeValidator:
             if order_valid:
                 self.logger.info("   🔗 Orden causal: Secuencia lógica validada")
             else:
-                self.logger.warning("   ⚠️  Orden causal: Posible inconsistencia detectada")
+                self.logger.warning(
+                    "   ⚠️  Orden causal: Posible inconsistencia detectada"
+                )
 
         except Exception:
             self.logger.exception("   ⚠️  Orden causal: Error en validación")
@@ -141,8 +143,7 @@ class IndustrialGradeValidator:
 
     def _validate_causal_order(self, categories: List[CategoriaCausal]) -> bool:
         """Valida el orden lógico de las categorías causales"""
-        expected_order = ["INSUMOS", "PROCESOS",
-                          "PRODUCTOS", "RESULTADOS", "IMPACTOS"]
+        expected_order = ["INSUMOS", "PROCESOS", "PRODUCTOS", "RESULTADOS", "IMPACTOS"]
         actual_order = [cat.name for cat in categories]
 
         # Verifica que el orden esperado esté preservado
@@ -240,9 +241,7 @@ class IndustrialGradeValidator:
         success_rate = (passed_metrics / total_metrics) * 100
 
         self.logger.info("\n🎯 RESUMEN EJECUTIVO:")
-        self.logger.info(
-            "   • Tiempo total de validación: %.3f segundos", total_time
-        )
+        self.logger.info("   • Tiempo total de validación: %.3f segundos", total_time)
         self.logger.info("   • Métricas evaluadas: %s", total_metrics)
         self.logger.info("   • Tasa de éxito: %.1f%%", success_rate)
         self.logger.info(
@@ -364,12 +363,8 @@ def validate_teoria_cambio_industrial():
             "   ✅ Validación completa: %s",
             "VÁLIDO" if validacion.es_valida else "INVÁLIDO",
         )
-        LOGGER.info(
-            "   ✅ Caminos detectados: %s", len(caminos.caminos_completos)
-        )
-        LOGGER.info(
-            "   ✅ Sugerencias generadas: %s", len(sugerencias.sugerencias)
-        )
+        LOGGER.info("   ✅ Caminos detectados: %s", len(caminos.caminos_completos))
+        LOGGER.info("   ✅ Sugerencias generadas: %s", len(sugerencias.sugerencias))
 
         # 6. Generación de reporte industrial
         success = validator.generate_industrial_report()
@@ -382,9 +377,7 @@ def validate_teoria_cambio_industrial():
             LOGGER.info(
                 "   • Capacidad: Validación en tiempo real de sistemas complejos"
             )
-            LOGGER.info(
-                "   • Robustez: Tolerancia a fallos y alto rendimiento"
-            )
+            LOGGER.info("   • Robustez: Tolerancia a fallos y alto rendimiento")
 
         return success
 

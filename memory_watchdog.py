@@ -83,8 +83,7 @@ class MemoryWatchdog:
         self._lock = threading.RLock()
 
         # Callbacks
-        self._termination_callback: Optional[Callable[[
-            WatchdogEvent], None]] = None
+        self._termination_callback: Optional[Callable[[WatchdogEvent], None]] = None
 
         self.logger = LOGGER
 
@@ -149,8 +148,7 @@ class MemoryWatchdog:
         with self._lock:
             if pid in self._monitored_processes:
                 del self._monitored_processes[pid]
-                self.logger.info(
-                    f"Unregistered process {pid} from memory monitoring")
+                self.logger.info(f"Unregistered process {pid} from memory monitoring")
 
     def start_monitoring(self) -> bool:
         """
@@ -250,8 +248,7 @@ class MemoryWatchdog:
                 memory_percent = process.memory_percent()
 
                 memory_usage = MemoryUsage(
-                    rss_mb=memory_info.rss /
-                    (1024 * 1024),  # Convert bytes to MB
+                    rss_mb=memory_info.rss / (1024 * 1024),  # Convert bytes to MB
                     vms_mb=memory_info.vms / (1024 * 1024),
                     percent=memory_percent,
                     timestamp=time.time(),
@@ -259,8 +256,7 @@ class MemoryWatchdog:
 
                 # Check if memory limit exceeded
                 if memory_usage.rss_mb > self.memory_limit_mb:
-                    self._terminate_process_for_memory(
-                        pid, process, memory_usage)
+                    self._terminate_process_for_memory(pid, process, memory_usage)
                     processes_to_remove.append(pid)
                 else:
                     # Log high memory usage as warning
@@ -532,9 +528,7 @@ def demo_memory_watchdog():
 
         status = watchdog.get_monitored_processes()
         if current_pid in status:
-            LOGGER.info(
-                "Current memory usage: %.1fMB", status[current_pid]["rss_mb"]
-            )
+            LOGGER.info("Current memory usage: %.1fMB", status[current_pid]["rss_mb"])
 
         events = watchdog.get_termination_events()
         LOGGER.info("Termination events: %s", len(events))

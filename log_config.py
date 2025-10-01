@@ -7,7 +7,6 @@ import logging
 import os
 from typing import Any, Dict, Optional
 
-
 LOGGER = logging.getLogger(__name__)
 
 
