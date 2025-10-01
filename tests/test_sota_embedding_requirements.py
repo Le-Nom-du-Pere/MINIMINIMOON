@@ -1,12 +1,12 @@
 """Unit tests for SotaEmbedding dependency handling."""
 
+import importlib.metadata
 import os
 import tempfile
 from contextlib import nullcontext
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
-import importlib.metadata
 import numpy as np
 
 from embedding_model import EmbeddingConfig, SotaEmbedding
@@ -29,7 +29,9 @@ def test_sota_embedding_instantiates_with_declared_requirements():
 
     with patch("importlib.metadata.version", side_effect=fake_version):
         with patch("embedding_model.torch") as mock_torch:
-            with patch("embedding_model.SentenceTransformer") as mock_sentence_transformer:
+            with patch(
+                "embedding_model.SentenceTransformer"
+            ) as mock_sentence_transformer:
                 mock_torch.cuda.is_available.return_value = False
                 mock_torch.device.side_effect = lambda dev: SimpleNamespace(type=dev)
                 mock_torch.inference_mode.return_value = nullcontext()
