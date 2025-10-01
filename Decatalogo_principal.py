@@ -95,7 +95,8 @@ class AdvancedDeviceConfig:
             "memory_info": self._get_memory_info(),
         }
 
-    def _get_memory_info(self):
+    @staticmethod
+    def _get_memory_info():
         if torch.cuda.is_available():
             return {
                 "allocated": torch.cuda.memory_allocated() / 1024**3,
@@ -432,7 +433,8 @@ class TeoriaCambioAvanzada:
             ),
         }
 
-    def _clasificar_identificabilidad(self, puntaje: float) -> str:
+    @staticmethod
+    def _clasificar_identificabilidad(puntaje: float) -> str:
         if puntaje >= 0.9:
             return "EXCELENTE"
         if puntaje >= 0.75:
@@ -560,8 +562,9 @@ class TeoriaCambioAvanzada:
                 "complejidad_causal": 0.3,
             }
 
+    @staticmethod
     def _calcular_robustez_estructural(
-        self, G: nx.DiGraph, mediadores: List[str], resultados: List[str]
+        G: nx.DiGraph, mediadores: List[str], resultados: List[str]
     ) -> float:
         """Cálculo de robustez estructural del grafo causal."""
         try:
@@ -1132,7 +1135,8 @@ class OntologiaPoliticasAvanzada:
 
         return sorted(resultados, key=lambda x: x["confianza"], reverse=True)
 
-    def _calcular_confianza_patron(self, texto_match: str, patron: str) -> float:
+    @staticmethod
+    def _calcular_confianza_patron(texto_match: str, patron: str) -> float:
         """Calcula confianza del patrón encontrado."""
         try:
             # Factores de confianza
@@ -1276,7 +1280,8 @@ class DimensionDecalogoAvanzada:
                 "nivel_coherencia": "BAJA",
             }
 
-    def _evaluar_coherencia_temporal(self, ventanas: List[Tuple[int, int]]) -> float:
+    @staticmethod
+    def _evaluar_coherencia_temporal(ventanas: List[Tuple[int, int]]) -> float:
         """Evalúa coherencia temporal entre eslabones."""
         if not ventanas:
             return 0.5
@@ -1344,7 +1349,8 @@ class DimensionDecalogoAvanzada:
         except Exception:
             return 0.6
 
-    def _clasificar_coherencia(self, coherencia: float) -> str:
+    @staticmethod
+    def _clasificar_coherencia(coherencia: float) -> str:
         """Clasifica nivel de coherencia."""
         if coherencia >= 0.9:
             return "EXCELENTE"
@@ -1540,8 +1546,9 @@ class DimensionDecalogoAvanzada:
                 for e in self.eslabones
             }
 
+    @staticmethod
     def _generar_medidas_mitigacion(
-        self, eslabon: EslabonCadenaAvanzado, riesgos: List[str]
+        eslabon: EslabonCadenaAvanzado, riesgos: List[str]
     ) -> List[str]:
         """Genera medidas de mitigación específicas por tipo de riesgo."""
         medidas = []
@@ -1580,8 +1587,9 @@ class DimensionDecalogoAvanzada:
 
         return list(set(medidas))  # Eliminar duplicados
 
+    @staticmethod
     def _generar_indicadores_monitoreo(
-        self, eslabon: EslabonCadenaAvanzado
+        eslabon: EslabonCadenaAvanzado
     ) -> List[str]:
         """Genera indicadores de monitoreo específicos."""
         indicadores = []
@@ -2045,8 +2053,9 @@ class DecalogoContextoAvanzado:
                 f"Error calculando interdependencias avanzadas: {e}")
             return {"error": str(e)}
 
+    @staticmethod
     def _calcular_modularidad(
-        self, matriz_adj: np.ndarray, clusters: np.ndarray
+        matriz_adj: np.ndarray, clusters: np.ndarray
     ) -> float:
         """Calcula modularidad de la red de interdependencias."""
         try:

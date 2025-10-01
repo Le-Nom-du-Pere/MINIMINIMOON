@@ -6,7 +6,8 @@ class DeepIV:
     def fit(self, *args, **kwargs):
         return self
 
-    def predict(self, X):
+    @staticmethod
+    def predict(X):
         try:
             import numpy as _np
             if hasattr(X, 'shape'):

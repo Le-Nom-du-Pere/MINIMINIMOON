@@ -355,7 +355,8 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
 
         LOGGER.info("✅ Evaluador Industrial v3.0 inicializado correctamente")
 
-    def _construir_mapeo_punto_cluster(self) -> Dict[int, int]:
+    @staticmethod
+    def _construir_mapeo_punto_cluster() -> Dict[int, int]:
         """Construye mapeo de puntos del decálogo a clusters."""
         # Basado en el agrupamiento del metodología
         return {
@@ -439,7 +440,8 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
             "¿Estrategia de sostenibilidad post-periodo de gobierno?",
         ]
 
-    def _extraer_texto_entry(self, entry: Any) -> str:
+    @staticmethod
+    def _extraer_texto_entry(entry: Any) -> str:
         """Extrae texto de diferentes formatos de entrada."""
         if isinstance(entry, str):
             return entry
@@ -1508,8 +1510,9 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
             resultados_industriales,
         )
 
+    @staticmethod
     def _crear_cluster_vacio(
-        self, cluster: ClusterMetadata
+        cluster: ClusterMetadata
     ) -> EvaluacionClusterCompleto:
         """Crea evaluación vacía para cluster sin evidencia."""
         return EvaluacionClusterCompleto(
@@ -1944,7 +1947,8 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
 
         return reporte_final
 
-    def _generar_analisis_dimensional(self, analisis_dimensional: Dict) -> str:
+    @staticmethod
+    def _generar_analisis_dimensional(analisis_dimensional: Dict) -> str:
         """Genera texto de análisis dimensional."""
         if not analisis_dimensional:
             return "Sin datos dimensionales disponibles."
@@ -2794,8 +2798,9 @@ def main():
 
             return estadisticas
 
+        @staticmethod
         def _exportar_reporte_individual(
-            self, reporte: ReporteFinalDecatalogo, nombre_municipio: str
+            reporte: ReporteFinalDecatalogo, nombre_municipio: str
         ):
             """Exporta reporte individual de un municipio."""
             try:
@@ -2833,7 +2838,8 @@ def main():
             print(
                 f"   Tiempo restante estimado: {tiempo_restante / 60:.1f} minutos")
 
-        def _mostrar_resumen_final(self, estadisticas: Dict[str, Any]):
+        @staticmethod
+        def _mostrar_resumen_final(estadisticas: Dict[str, Any]):
             """Muestra resumen final del procesamiento."""
             print("\n" + "=" * 80)
             print("📊 RESUMEN FINAL DE PROCESAMIENTO")
@@ -2885,7 +2891,8 @@ def main():
             except Exception as e:
                 LOGGER.error(f"Error generando reporte consolidado: {e}")
 
-        def _generar_dashboard_html(self, df: pd.DataFrame, directorio: Path):
+        @staticmethod
+        def _generar_dashboard_html(df: pd.DataFrame, directorio: Path):
             """Genera un dashboard HTML básico con los resultados."""
             html = f"""
                 <!DOCTYPE html>

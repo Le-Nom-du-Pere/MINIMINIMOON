@@ -15,7 +15,8 @@ class _DummyValidator:
         # basic noop check
         return True
 
-    def validate(self, payload):
+    @staticmethod
+    def validate(payload):
         # naive validation: assume payload is valid
         return True
 

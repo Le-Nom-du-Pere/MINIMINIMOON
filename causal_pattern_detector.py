@@ -43,7 +43,8 @@ class IndustrialCausalPatternDetector:
 
         return data
 
-    def detect_correlation_patterns(self, data):
+    @staticmethod
+    def detect_correlation_patterns(data):
         """
         基于多种相关性度量的模式检测
         """
@@ -91,7 +92,8 @@ class IndustrialCausalPatternDetector:
         else:
             raise ValueError("Unsupported method")
 
-    def _pc_algorithm(self, data):
+    @staticmethod
+    def _pc_algorithm(data):
         """
         PC算法实现因果发现
         """
@@ -134,7 +136,8 @@ class IndustrialCausalPatternDetector:
 
         return dag
 
-    def causal_inference_dml(self, data, treatment, outcome, confounders):
+    @staticmethod
+    def causal_inference_dml(data, treatment, outcome, confounders):
         """
         使用Double Machine Learning进行因果推断
         """
@@ -225,7 +228,8 @@ class IndustrialCausalPatternDetector:
 
         return {"causal_effect": causal_effect, "model": model}
 
-    def gam_causal_analysis(self, data, treatment, outcome, confounders):
+    @staticmethod
+    def gam_causal_analysis(data, treatment, outcome, confounders):
         """
         使用广义可加模型(GAM)进行因果分析
         """
