@@ -6,7 +6,6 @@ import logging
 import os
 from typing import Optional
 
-
 LOGGER = logging.getLogger(__name__)
 
 
@@ -54,27 +53,27 @@ def configure_logging(log_level: Optional[str] = None) -> None:
 def get_log_level(level_string: str) -> int:
     """
     Convert log level string to logging constant with validation.
-    
+
     Args:
         level_string: Log level as string (e.g., 'DEBUG', 'INFO', 'WARNING')
-        
+
     Returns:
         Logging level constant (int)
     """
     # Normalize to uppercase
     level_string = level_string.upper()
-    
+
     # Valid log levels
     valid_levels = {
-        'DEBUG': logging.DEBUG,
-        'INFO': logging.INFO,
-        'WARNING': logging.WARNING,
-        'WARN': logging.WARNING,  # Common alias
-        'ERROR': logging.ERROR,
-        'CRITICAL': logging.CRITICAL,
-        'FATAL': logging.CRITICAL  # Common alias
+        "DEBUG": logging.DEBUG,
+        "INFO": logging.INFO,
+        "WARNING": logging.WARNING,
+        "WARN": logging.WARNING,  # Common alias
+        "ERROR": logging.ERROR,
+        "CRITICAL": logging.CRITICAL,
+        "FATAL": logging.CRITICAL,  # Common alias
     }
-    
+
     return valid_levels.get(level_string, logging.INFO)
 
 
