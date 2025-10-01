@@ -1,5 +1,3 @@
-# coding=utf-8
-# pdm_contra/nlp/nli.py
 """
 Natural Language Inference for Spanish contradiction detection.
 Uses state-of-the-art multilingual models.

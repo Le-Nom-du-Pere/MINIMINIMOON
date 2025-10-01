@@ -1,5 +1,3 @@
-# coding=utf-8
-# pdm_contra/ingest/loader.py
 """
 Document ingestion module for PDM files.
 Supports PDF, DOCX, HTML, and plain text.

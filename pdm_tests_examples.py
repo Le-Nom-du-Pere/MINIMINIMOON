@@ -1,5 +1,3 @@
-# coding=utf-8
-# tests/test_core.py
 """
 Tests for core contradiction detection functionality.
 """

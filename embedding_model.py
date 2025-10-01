@@ -1,4 +1,3 @@
-# coding=utf-8
 """
 Embedding Model SOTA para Planes de Desarrollo Municipal (PDM) Colombia
 =======================================================================
