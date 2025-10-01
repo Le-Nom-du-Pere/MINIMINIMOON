@@ -20,6 +20,11 @@ try:
 except ImportError:
     PSUTIL_AVAILABLE = False
 
+from log_config import configure_logging
+
+configure_logging()
+LOGGER = logging.getLogger(__name__)
+
 
 class TerminationReason(Enum):
     MEMORY_EXCEEDED = "memory_exceeded"
@@ -81,9 +86,7 @@ class MemoryWatchdog:
         self._termination_callback: Optional[Callable[[
             WatchdogEvent], None]] = None
 
-        # Setup logging
-        self.logger = logging.getLogger(__name__)
-        self._setup_logging()
+        self.logger = LOGGER
 
     @staticmethod
     def _get_memory_limit(memory_limit_mb: Optional[int]) -> int:
@@ -97,25 +100,12 @@ class MemoryWatchdog:
             try:
                 return int(env_limit)
             except ValueError:
-                # Create a temporary logger for this specific case since self.logger isn't set up yet
-                temp_logger = logging.getLogger(__name__)
-                temp_logger.warning(
-                    f"Invalid MEMORY_LIMIT_MB value: {env_limit}, using default"
+                LOGGER.warning(
+                    "Invalid MEMORY_LIMIT_MB value: %s, using default", env_limit
                 )
 
         # Conservative default: 2GB per worker process
         return 2048
-
-    def _setup_logging(self):
-        """Setup logging for memory watchdog events."""
-        if not self.logger.handlers:
-            handler = logging.StreamHandler()
-            formatter = logging.Formatter(
-                "%(asctime)s - MemoryWatchdog - %(levelname)s - %(message)s"
-            )
-            handler.setFormatter(formatter)
-            self.logger.addHandler(handler)
-            self.logger.setLevel(logging.INFO)
 
     def set_termination_callback(self, callback: Callable[[WatchdogEvent], None]):
         """Set callback function to be called when a process is terminated."""
@@ -138,16 +128,20 @@ class MemoryWatchdog:
                 self._monitored_processes[pid] = process
 
             self.logger.info(
-                f"Registered process {pid} for memory monitoring (limit: {self.memory_limit_mb}MB)"
+                "Registered process %s for memory monitoring (limit: %sMB)",
+                pid,
+                self.memory_limit_mb,
             )
             return True
 
         except psutil.NoSuchProcess:
-            self.logger.warning(
-                f"Cannot register process {pid}: process not found")
+            self.logger.warning("Cannot register process %s: process not found", pid)
             return False
-        except Exception as e:
-            self.logger.error(f"Failed to register process {pid}: {e}")
+        except psutil.AccessDenied:
+            self.logger.warning("Cannot register process %s: access denied", pid)
+            return False
+        except psutil.Error:
+            self.logger.exception("Failed to register process %s", pid)
             return False
 
     def unregister_process(self, pid: int):
@@ -177,12 +171,13 @@ class MemoryWatchdog:
         try:
             self._monitoring_thread.start()
             self.logger.info(
-                f"Started memory monitoring (limit: {self.memory_limit_mb}MB, "
-                f"check interval: {self.check_interval}s)"
+                "Started memory monitoring (limit: %sMB, check interval: %ss)",
+                self.memory_limit_mb,
+                self.check_interval,
             )
             return True
-        except Exception as e:
-            self.logger.error(f"Failed to start memory monitoring: {e}")
+        except RuntimeError:
+            self.logger.exception("Failed to start memory monitoring")
             return False
 
     def stop_monitoring(self, timeout: float = 5.0) -> bool:
@@ -204,14 +199,15 @@ class MemoryWatchdog:
             self._monitoring_thread.join(timeout=timeout)
             if self._monitoring_thread.is_alive():
                 self.logger.warning(
-                    f"Memory monitoring thread did not stop within {timeout}s timeout"
+                    "Memory monitoring thread did not stop within %ss timeout",
+                    timeout,
                 )
                 return False
             else:
                 self.logger.info("Memory monitoring stopped")
                 return True
-        except Exception as e:
-            self.logger.error(f"Error stopping memory monitoring: {e}")
+        except RuntimeError:
+            self.logger.exception("Error stopping memory monitoring")
             return False
 
     def _monitoring_loop(self):
@@ -226,8 +222,8 @@ class MemoryWatchdog:
                 if self._stop_event.wait(timeout=self.check_interval):
                     break  # Stop event was set
 
-            except Exception as e:
-                self.logger.error(f"Error in memory monitoring loop: {e}")
+            except Exception:  # pragma: no cover - defensive logging
+                self.logger.exception("Error in memory monitoring loop")
                 # Continue monitoring despite errors
                 time.sleep(self.check_interval)
 
@@ -246,7 +242,7 @@ class MemoryWatchdog:
                 # Check if process is still running
                 if not process.is_running():
                     processes_to_remove.append(pid)
-                    self.logger.debug(f"Process {pid} is no longer running")
+                    self.logger.debug("Process %s is no longer running", pid)
                     continue
 
                 # Get memory info
@@ -270,23 +266,29 @@ class MemoryWatchdog:
                     # Log high memory usage as warning
                     if memory_usage.rss_mb > self.memory_limit_mb * 0.8:
                         self.logger.warning(
-                            f"Process {pid} high memory usage: "
-                            f"{memory_usage.rss_mb:.1f}MB (limit: {self.memory_limit_mb}MB)"
+                            "Process %s high memory usage: %.1fMB (limit: %sMB)",
+                            pid,
+                            memory_usage.rss_mb,
+                            self.memory_limit_mb,
                         )
                     else:
                         self.logger.debug(
-                            f"Process {pid} memory usage: {memory_usage.rss_mb:.1f}MB"
+                            "Process %s memory usage: %.1fMB",
+                            pid,
+                            memory_usage.rss_mb,
                         )
 
             except psutil.NoSuchProcess:
                 processes_to_remove.append(pid)
-                self.logger.debug(f"Process {pid} no longer exists")
+                self.logger.debug("Process %s no longer exists", pid)
             except psutil.AccessDenied:
-                self.logger.warning(f"Access denied to process {pid}")
+                self.logger.warning("Access denied to process %s", pid)
                 processes_to_remove.append(pid)
-            except Exception as e:
-                self.logger.error(
-                    f"Error checking memory for process {pid}: {e}")
+            except psutil.ZombieProcess:
+                processes_to_remove.append(pid)
+                self.logger.warning("Process %s became a zombie", pid)
+            except psutil.Error:
+                self.logger.exception("Error checking memory for process %s", pid)
 
         # Remove dead or inaccessible processes
         if processes_to_remove:
@@ -307,8 +309,10 @@ class MemoryWatchdog:
         )
 
         self.logger.warning(
-            f"Process {pid} exceeded memory limit: "
-            f"{memory_usage.rss_mb:.1f}MB > {self.memory_limit_mb}MB, terminating"
+            "Process %s exceeded memory limit: %.1fMB > %sMB, terminating",
+            pid,
+            memory_usage.rss_mb,
+            self.memory_limit_mb,
         )
 
         try:
@@ -318,19 +322,20 @@ class MemoryWatchdog:
             # Wait briefly for graceful shutdown
             try:
                 process.wait(timeout=3.0)
-                self.logger.info(f"Process {pid} terminated gracefully")
+                self.logger.info("Process %s terminated gracefully", pid)
             except psutil.TimeoutExpired:
                 # Force kill if graceful termination failed
                 process.kill()
                 process.wait(timeout=1.0)
                 self.logger.warning(
-                    f"Process {pid} force killed after graceful termination timeout"
+                    "Process %s force killed after graceful termination timeout",
+                    pid,
                 )
 
         except psutil.NoSuchProcess:
-            self.logger.info(f"Process {pid} already terminated")
-        except Exception as e:
-            self.logger.error(f"Failed to terminate process {pid}: {e}")
+            self.logger.info("Process %s already terminated", pid)
+        except psutil.Error:
+            self.logger.exception("Failed to terminate process %s", pid)
 
         # Record termination event
         with self._lock:
@@ -340,8 +345,8 @@ class MemoryWatchdog:
         if self._termination_callback:
             try:
                 self._termination_callback(event)
-            except Exception as e:
-                self.logger.error(f"Error in termination callback: {e}")
+            except Exception:  # pragma: no cover - callback is user supplied
+                self.logger.exception("Error in termination callback")
 
     def get_monitored_processes(self) -> Dict[int, Dict[str, Any]]:
         """Get information about currently monitored processes."""
@@ -359,8 +364,8 @@ class MemoryWatchdog:
                             "status": process.status(),
                             "create_time": process.create_time(),
                         }
-                except Exception as e:
-                    result[pid] = {"error": str(e)}
+                except psutil.Error as error:
+                    result[pid] = {"error": str(error)}
 
         return result
 
@@ -406,7 +411,7 @@ class PlanProcessingWatchdog:
             )
 
         self.watchdog = MemoryWatchdog(memory_limit_mb=memory_limit_mb)
-        self.logger = logging.getLogger(__name__)
+        self.logger = LOGGER
 
         # Track failed plans for retry
         self.failed_plans: list[Dict[str, Any]] = []
@@ -415,8 +420,10 @@ class PlanProcessingWatchdog:
         """Handle worker process termination due to memory limit."""
         if event.termination_reason == TerminationReason.MEMORY_EXCEEDED:
             self.logger.error(
-                f"Worker process {event.pid} terminated for exceeding memory limit "
-                f"({event.memory_usage.rss_mb:.1f}MB > {event.memory_limit_mb}MB)"
+                "Worker process %s terminated for exceeding memory limit (%.1fMB > %sMB)",
+                event.pid,
+                event.memory_usage.rss_mb,
+                event.memory_limit_mb,
             )
 
             # Record failed plan for retry
@@ -459,7 +466,7 @@ class PlanProcessingWatchdog:
         """
         self.watchdog.unregister_process(worker_pid)
         self.logger.info(
-            f"Plan processing completed successfully for worker {worker_pid}"
+            "Plan processing completed successfully for worker %s", worker_pid
         )
 
     def stop_all_monitoring(self, timeout: float = 5.0) -> bool:
@@ -505,17 +512,18 @@ class PlanProcessingWatchdog:
 def demo_memory_watchdog():
     """Demonstrate memory watchdog functionality."""
     if not PSUTIL_AVAILABLE:
-        print("psutil not available - cannot run memory watchdog demo")
+        LOGGER.error("psutil not available - cannot run memory watchdog demo")
         return
 
-    print("Memory Watchdog Demo")
-    print("=" * 40)
+    LOGGER.info("Memory Watchdog Demo")
+    LOGGER.info("%s", "=" * 40)
 
     # Test basic watchdog functionality
     with MemoryWatchdog(memory_limit_mb=100) as watchdog:  # Very low limit for demo
         current_pid = os.getpid()
-        print(
-            f"Monitoring current process (PID: {current_pid}) with 100MB limit")
+        LOGGER.info(
+            "Monitoring current process (PID: %s) with 100MB limit", current_pid
+        )
 
         watchdog.register_process(current_pid)
 
@@ -524,13 +532,14 @@ def demo_memory_watchdog():
 
         status = watchdog.get_monitored_processes()
         if current_pid in status:
-            print(
-                f"Current memory usage: {status[current_pid]['rss_mb']:.1f}MB")
+            LOGGER.info(
+                "Current memory usage: %.1fMB", status[current_pid]["rss_mb"]
+            )
 
         events = watchdog.get_termination_events()
-        print(f"Termination events: {len(events)}")
+        LOGGER.info("Termination events: %s", len(events))
 
-    print("\nMemory watchdog demo completed")
+    LOGGER.info("Memory watchdog demo completed")
 
 
 if __name__ == "__main__":
