@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import json
 import pickle
-import threading
 import tempfile
+import threading
 import unittest
 from pathlib import Path
 from typing import Iterable, List
@@ -225,9 +225,10 @@ class TestEmbeddingSingleton(unittest.TestCase):
             backend = _StubBackend(cfg)
             return backend
 
-        with patch("embedding_model.load_embedding_config", return_value=config), patch(
-            "embedding_model.SotaEmbedding", side_effect=build_stub
-        ) as factory:
+        with (
+            patch("embedding_model.load_embedding_config", return_value=config),
+            patch("embedding_model.SotaEmbedding", side_effect=build_stub) as factory,
+        ):
             results: List[_StubBackend] = []
             errors: List[BaseException] = []
             barrier = threading.Barrier(4)

@@ -177,8 +177,7 @@ class TestFeasibilityScorer:
 
             # Check score within reasonable range (±0.1)
             assert (
-                abs(result.feasibility_score -
-                    indicator_data["expected_score"]) <= 0.15
+                abs(result.feasibility_score - indicator_data["expected_score"]) <= 0.15
             ), (
                 f"Score mismatch for '{indicator_data['text']}': expected {indicator_data['expected_score']}, got {result.feasibility_score}"
             )
@@ -214,8 +213,7 @@ class TestFeasibilityScorer:
             result = scorer.calculate_feasibility_score(indicator_data["text"])
 
             assert (
-                abs(result.feasibility_score -
-                    indicator_data["expected_score"]) <= 0.15
+                abs(result.feasibility_score - indicator_data["expected_score"]) <= 0.15
             )
             assert result.quality_tier == indicator_data["expected_tier"]
             assert (
@@ -236,8 +234,7 @@ class TestFeasibilityScorer:
             result = scorer.calculate_feasibility_score(indicator_data["text"])
 
             assert (
-                abs(result.feasibility_score -
-                    indicator_data["expected_score"]) <= 0.15
+                abs(result.feasibility_score - indicator_data["expected_score"]) <= 0.15
             )
             assert result.quality_tier == indicator_data["expected_tier"]
             assert (
@@ -274,8 +271,7 @@ class TestFeasibilityScorer:
         assert result.feasibility_score == 0.0
 
         # Only target
-        result = scorer.calculate_feasibility_score(
-            "El objetivo es llegar al 80%")
+        result = scorer.calculate_feasibility_score("El objetivo es llegar al 80%")
         assert result.feasibility_score == 0.0
 
         # Both present
@@ -569,8 +565,7 @@ class TestFeasibilityScorer:
 
         for normalized_text, variant_text in unicode_variants:
             # Score both versions
-            normalized_score = scorer.calculate_feasibility_score(
-                normalized_text)
+            normalized_score = scorer.calculate_feasibility_score(normalized_text)
             variant_score = scorer.calculate_feasibility_score(variant_text)
 
             # Count components detected
@@ -869,8 +864,7 @@ class TestCalcularCalidadEvidencia:
             "Inversión: $2.５ millones",  # Full-width characters
         ]
 
-        scores = [scorer.calcular_calidad_evidencia(
-            text) for text in unicode_variants]
+        scores = [scorer.calcular_calidad_evidencia(text) for text in unicode_variants]
 
         # Scores should be similar after normalization
         for i in range(1, len(scores)):
@@ -976,8 +970,7 @@ class TestAtomicReportGeneration:
 
                 # Verify no temporary files remain
                 temp_files = list(Path(temp_dir).glob("*.tmp.*"))
-                assert len(
-                    temp_files) == 0, "Temporary files were not cleaned up"
+                assert len(temp_files) == 0, "Temporary files were not cleaned up"
 
                 # Verify final file exists
                 assert report_path.exists()
@@ -1134,8 +1127,7 @@ class TestAtomicReportGeneration:
         ]
         evidencia_list = [0, 1, 2]  # First one has zero evidence
 
-        results = scorer.batch_score(
-            indicators, evidencia_soporte_list=evidencia_list)
+        results = scorer.batch_score(indicators, evidencia_soporte_list=evidencia_list)
 
         # First result should be overridden due to zero evidence
         assert results[0].feasibility_score == 0.0
@@ -1159,7 +1151,10 @@ def test_feasibility_scorer_picklable_roundtrip():
     original_score = scorer.calculate_feasibility_score(sample_text)
     restored_score = restored.calculate_feasibility_score(sample_text)
 
-    assert pytest.approx(original_score.feasibility_score) == restored_score.feasibility_score
+    assert (
+        pytest.approx(original_score.feasibility_score)
+        == restored_score.feasibility_score
+    )
     assert original_score.components_detected == restored_score.components_detected
 
 

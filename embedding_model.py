@@ -627,9 +627,7 @@ class SotaEmbedding:
             return
 
         card_path = Path(path)
-        payload = json.dumps(
-            self.calibration_card.dict(), indent=2, ensure_ascii=False
-        )
+        payload = json.dumps(self.calibration_card.dict(), indent=2, ensure_ascii=False)
         _atomic_write_text(card_path, payload)
 
         logger.info(f"✓ Tarjeta de calibración guardada: {card_path}")

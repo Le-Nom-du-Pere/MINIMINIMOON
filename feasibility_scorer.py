@@ -226,8 +226,7 @@ class FeasibilityScorer:
 
         # Parallel processing configuration
         self.enable_parallel = enable_parallel and JOBLIB_AVAILABLE
-        self.n_jobs = n_jobs if n_jobs is not None else min(
-            os.cpu_count() or 1, 8)
+        self.n_jobs = n_jobs if n_jobs is not None else min(os.cpu_count() or 1, 8)
         self.backend = backend
 
         # Performance logging setup
@@ -525,8 +524,7 @@ class FeasibilityScorer:
         # Apply Unicode normalization at entry point
         normalized_text = FeasibilityScorer._normalize_text(text)
         detected_components = self.detect_components(normalized_text)
-        component_types = set(
-            result.component_type for result in detected_components)
+        component_types = set(result.component_type for result in detected_components)
 
         # Check mandatory requirements
         has_baseline = ComponentType.BASELINE in component_types
@@ -544,8 +542,7 @@ class FeasibilityScorer:
 
         # Calculate base score from mandatory components
         base_score = (
-            self.weights[ComponentType.BASELINE] +
-            self.weights[ComponentType.TARGET]
+            self.weights[ComponentType.BASELINE] + self.weights[ComponentType.TARGET]
         )
 
         # Check for quantitative components (use normalized text)
@@ -934,12 +931,10 @@ The feasibility scorer evaluates indicator quality by detecting three core compo
         scores["dates"] = self._detect_temporal_indicators(text_lower)
 
         # 3. Measurement terminology detection
-        scores["terminology"] = self._detect_measurement_terminology(
-            text_lower)
+        scores["terminology"] = self._detect_measurement_terminology(text_lower)
 
         # 4. Structure penalty for title-only indicators
-        scores["structure_penalty"] = self._calculate_structure_penalty(
-            normalized_text)
+        scores["structure_penalty"] = self._calculate_structure_penalty(normalized_text)
 
         # Calculate weighted final score
         final_score = sum(
@@ -1156,8 +1151,7 @@ The feasibility scorer evaluates indicator quality by detecting three core compo
 
         # Create a unique temporary file in the same directory as the target
         temp_file = (
-            output_file.parent /
-            f"{output_file.name}.tmp.{uuid.uuid4().hex[:8]}"
+            output_file.parent / f"{output_file.name}.tmp.{uuid.uuid4().hex[:8]}"
         )
 
         try:
@@ -1256,10 +1250,8 @@ The feasibility scorer evaluates indicator quality by detecting three core compo
             content_parts.append(
                 f"- {low_quality_count} indicators have scores below 0.5 and need improvement"
             )
-            content_parts.append(
-                "- Focus on adding quantitative baselines and targets")
-            content_parts.append(
-                "- Include specific time horizons where missing")
+            content_parts.append("- Focus on adding quantitative baselines and targets")
+            content_parts.append("- Include specific time horizons where missing")
 
         insufficient_count = sum(
             1 for result in results if result.quality_tier == "insufficient"
@@ -1405,8 +1397,7 @@ The feasibility scorer evaluates indicator quality by detecting three core compo
         else:
             with open(output_path, "w", encoding="utf-8-sig", newline="") as f:
                 f.write(csv_content)
-            print(
-                f"CSV exportado: {output_path} (tamaño: {file_size_mb:.1f}MB)")
+            print(f"CSV exportado: {output_path} (tamaño: {file_size_mb:.1f}MB)")
 
         return str(output_path)
 
@@ -1523,8 +1514,7 @@ The feasibility scorer evaluates indicator quality by detecting three core compo
             row = [
                 plan_filename,
                 f"{score.feasibility_score:.3f}",
-                FeasibilityScorer._translate_quality_tier_spanish(
-                    score.quality_tier),
+                FeasibilityScorer._translate_quality_tier_spanish(score.quality_tier),
                 "Sí" if score.has_quantitative_baseline else "No",
                 "Sí" if score.has_quantitative_target else "No",
                 components_str,
@@ -1569,8 +1559,7 @@ The feasibility scorer evaluates indicator quality by detecting three core compo
             )
             return str(compressed_path)
         else:
-            print(
-                f"CSV exportado: {output_path} (tamaño: {file_size_mb:.1f}MB)")
+            print(f"CSV exportado: {output_path} (tamaño: {file_size_mb:.1f}MB)")
             return str(output_path)
 
 
@@ -1658,15 +1647,13 @@ Examples:
             print(f"\nArchivo: {filename}")
             print(f"Texto: {text}")
             print(f"Puntuación: {score.feasibility_score:.3f}")
-            print(
-                f"Nivel: {scorer.translate_quality_tier_spanish(score.quality_tier)}")
+            print(f"Nivel: {scorer.translate_quality_tier_spanish(score.quality_tier)}")
             print(
                 f"Recomendación: {scorer.get_recommendation_spanish(score.quality_tier)}"
             )
 
             if args.verbose:
-                print(
-                    f"Componentes: {[c.value for c in score.components_detected]}")
+                print(f"Componentes: {[c.value for c in score.components_detected]}")
                 if score.detailed_matches:
                     print("Coincidencias detalladas:")
                     for match in score.detailed_matches:
@@ -1688,10 +1675,8 @@ Examples:
         print(
             f"Línea base cuantitativa: {'Sí' if score.has_quantitative_baseline else 'No'}"
         )
-        print(
-            f"Meta cuantitativa: {'Sí' if score.has_quantitative_target else 'No'}")
-        print(
-            f"Recomendación: {scorer.get_recommendation_spanish(score.quality_tier)}")
+        print(f"Meta cuantitativa: {'Sí' if score.has_quantitative_target else 'No'}")
+        print(f"Recomendación: {scorer.get_recommendation_spanish(score.quality_tier)}")
 
         if args.verbose and score.detailed_matches:
             print("\nCoincidencias detalladas:")
@@ -1710,8 +1695,7 @@ Examples:
         with open(batch_path, "r", encoding="utf-8") as f:
             indicators = [line.strip() for line in f if line.strip()]
 
-        print(
-            f"Procesando {len(indicators)} indicadores desde {args.batch_file}...")
+        print(f"Procesando {len(indicators)} indicadores desde {args.batch_file}...")
 
         for i, indicator in enumerate(indicators, 1):
             filename = f"indicador_{i:03d}.txt"
@@ -1728,8 +1712,7 @@ Examples:
     # Export results in requested formats
     if args.export_csv:
         try:
-            csv_path = scorer.generate_traceability_matrix_csv(
-                results, str(output_dir))
+            csv_path = scorer.generate_traceability_matrix_csv(results, str(output_dir))
             print(f"✓ Matriz de trazabilidad CSV generada: {csv_path}")
         except ImportError as e:
             print(f"Error: {e}")
@@ -1768,8 +1751,7 @@ Examples:
             f.write(
                 f"**Fecha de generación:** {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
             )
-            f.write(
-                f"**Número total de indicadores evaluados:** {len(results)}\n\n")
+            f.write(f"**Número total de indicadores evaluados:** {len(results)}\n\n")
 
             # Summary statistics
             scores = [score.feasibility_score for score in results.values()]
@@ -1777,8 +1759,7 @@ Examples:
 
             f.write("## Resumen Estadístico\n\n")
             if scores:
-                f.write(
-                    f"- **Puntuación promedio:** {sum(scores) / len(scores):.3f}\n")
+                f.write(f"- **Puntuación promedio:** {sum(scores) / len(scores):.3f}\n")
                 f.write(f"- **Puntuación máxima:** {max(scores):.3f}\n")
                 f.write(f"- **Puntuación mínima:** {min(scores):.3f}\n")
 
