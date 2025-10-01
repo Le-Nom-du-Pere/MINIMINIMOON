@@ -18,7 +18,6 @@ class JsonFormatter(logging.Formatter):
 
     def format(self, record: logging.LogRecord) -> str:  # noqa: D401
         """Return the record as a JSON string."""
-
         log_record: Dict[str, Any] = {
             "timestamp": self.formatTime(record, self.datefmt),
             "level": record.levelname,
@@ -41,18 +40,9 @@ def configure_logging(
 ) -> None:
     """Configure logging once for the entire application.
 
-    The configuration honours the ``LOG_LEVEL`` and ``LOG_FORMAT`` environment
-    variables unless explicit arguments are provided. Subsequent calls simply
-    update the log level and formatter instead of installing duplicate handlers,
-    keeping test output tidy while allowing scripts to opt-in to more verbose
-    logging.
-
-    Args:
-        log_level: Optional override for the desired log level.
-        json_format: When provided, forces JSON logging. If ``None`` the
-            ``LOG_FORMAT`` environment variable is inspected.
+    Respects LOG_LEVEL and LOG_FORMAT env vars unless explicit args are given.
+    Subsequent calls update handler levels/formatters without duplicating handlers.
     """
-
     level_string = log_level or os.getenv("LOG_LEVEL", "INFO")
     level = get_log_level(level_string)
 
@@ -62,14 +52,14 @@ def configure_logging(
         else os.getenv("LOG_FORMAT", "").strip().lower() == "json"
     )
 
-    formatter: logging.Formatter
-    if json_requested:
-        formatter = JsonFormatter()
-    else:
-        formatter = logging.Formatter(
+    formatter: logging.Formatter = (
+        JsonFormatter()
+        if json_requested
+        else logging.Formatter(
             "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
             datefmt="%Y-%m-%d %H:%M:%S",
         )
+    )
 
     root_logger = logging.getLogger()
     if not root_logger.handlers:
@@ -100,21 +90,18 @@ def configure_logging(
 
 
 def get_log_level(level_string: str) -> int:
-    """Convert log level string to logging constant with validation."""
-
-    normalized_level = level_string.upper()
-
+    """Map a log-level string to a logging module constant, defaulting to INFO."""
+    level_string = level_string.upper()
     valid_levels = {
         "DEBUG": logging.DEBUG,
         "INFO": logging.INFO,
         "WARNING": logging.WARNING,
-        "WARN": logging.WARNING,  # Common alias
+        "WARN": logging.WARNING,  # alias
         "ERROR": logging.ERROR,
         "CRITICAL": logging.CRITICAL,
-        "FATAL": logging.CRITICAL,  # Common alias
+        "FATAL": logging.CRITICAL,  # alias
     }
-
-    return valid_levels.get(normalized_level, logging.INFO)
+    return valid_levels.get(level_string, logging.INFO)
 
 
 # Configure logging on module import
