@@ -45,6 +45,9 @@ warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=FutureWarning)
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
+# Estado de configuración post-instalación
+_POST_INSTALL_SETUP_DONE = False
+
 # =============================================================================
 # AUDIT TRAIL
 # =============================================================================
@@ -631,6 +634,12 @@ def provide_embeddings() -> EmbeddingBackend:
 app = typer.Typer(name="pdm-embed", help="CLI para gestión de embeddings PDM")
 
 
+@app.callback()
+def main(_ctx: typer.Context):
+    """Callback principal que asegura la configuración post-instalación."""
+    post_install_setup()
+
+
 @app.command()
 def build_card(
     corpus_path: str = typer.Argument(..., help="Ruta al corpus de calibración"),
@@ -758,8 +767,23 @@ def _load_corpus_stats(corpus_path: str) -> CalibrationCorpusStats:
 # =============================================================================
 
 
-def post_install_setup():
-    """Configuración post-instalación para generar calibración base."""
+def post_install_setup(force: bool = False) -> bool:
+    """Configuración post-instalación para generar calibración base.
+
+    Args:
+        force: Si es ``True`` intenta ejecutar la configuración incluso si ya
+            fue realizada previamente.
+
+    Returns:
+        ``True`` si la configuración se ejecutó exitosamente, ``False`` en caso
+        contrario.
+    """
+
+    global _POST_INSTALL_SETUP_DONE
+
+    if _POST_INSTALL_SETUP_DONE and not force:
+        return False
+
     try:
         embedding_backend = get_default_embedding()
 
@@ -775,16 +799,15 @@ def post_install_setup():
         else:
             logger.info("✓ Calibración existente encontrada")
 
+        _POST_INSTALL_SETUP_DONE = True
+        return True
+
     except Exception as e:
         logger.warning(f"Configuración post-instalación falló: {e}")
+        if force:
+            raise
+        return False
 
-
-# =============================================================================
-# INICIALIZACIÓN AUTOMÁTICA
-# =============================================================================
-
-# Ejecutar setup post-instalación al importar
-post_install_setup()
 
 # =============================================================================
 # IMPLEMENTATION REPORT
