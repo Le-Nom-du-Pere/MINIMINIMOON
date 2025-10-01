@@ -91,24 +91,17 @@ CALIBRACIONES IMPLEMENTADAS:
 class EmbeddingConfig(BaseModel):
     """Configuración para el backend de embeddings."""
 
-    model: str = Field(default="BAAI/bge-m3",
-                       description="Modelo SOTA para embeddings")
-    precision: str = Field(
-        default="fp16", description="Precisión: fp16, fp32, int8")
-    batch_size: int = Field(
-        default=64, description="Tamaño de lote para encoding")
-    normalize_l2: bool = Field(
-        default=True, description="Normalización L2 automática")
-    similarity: str = Field(
-        default="cosine", description="Métrica: cosine, dot")
+    model: str = Field(default="BAAI/bge-m3", description="Modelo SOTA para embeddings")
+    precision: str = Field(default="fp16", description="Precisión: fp16, fp32, int8")
+    batch_size: int = Field(default=64, description="Tamaño de lote para encoding")
+    normalize_l2: bool = Field(default=True, description="Normalización L2 automática")
+    similarity: str = Field(default="cosine", description="Métrica: cosine, dot")
     calibration_card: str = Field(
         default="data/calibration/embedding_pdm.card.json",
         description="Ruta calibración",
     )
-    domain_hint_default: str = Field(
-        default="PDM", description="Dominio por defecto")
-    device: str = Field(
-        default="auto", description="Dispositivo: auto, cuda, cpu")
+    domain_hint_default: str = Field(default="PDM", description="Dominio por defecto")
+    device: str = Field(default="auto", description="Dispositivo: auto, cuda, cpu")
 
 
 class CalibrationCorpusStats(BaseModel):
@@ -151,43 +144,68 @@ class NoveltyGuard:
 
         from packaging import version
 
-        dependencies = {
-            "sentence-transformers": "3.0.0",
-            "torch": "2.3.0",
-            "numpy": "2.0.0",
-            "scikit-learn": "1.5.0",
-            "transformers": "4.40.0",
-            "datasets": "2.18.0",
-            "faiss-cpu": "1.8.0",
-            "typer": "0.12.0",
-            "pydantic": "2.7.0",
-            "pyyaml": "6.0.0",
+        dependency_matrix = {
+            # Requisitos mínimos declarados explícitamente en requirements.txt
+            "sentence-transformers": {"min": "2.2.0", "required": True},
+            "torch": {"min": "1.9.0", "required": True},
+            "numpy": {"min": "1.21.0", "required": True},
+            "scikit-learn": {"min": "1.0.0", "required": True},
+            # Dependencias complementarias. Útiles para la CLI o pipelines
+            # avanzados, pero opcionales para la inicialización básica.
+            "transformers": {"min": "4.30.0", "required": False},
+            "datasets": {"min": "2.14.0", "required": False},
+            "faiss-cpu": {"min": "1.7.0", "required": False},
+            "typer": {"min": "0.9.0", "required": False},
+            "pydantic": {"min": "1.10.0", "required": False},
+            "pyyaml": {"min": "5.4.0", "required": False},
         }
 
-        missing = []
-        outdated = []
+        missing_required: List[str] = []
+        outdated_required: List[str] = []
+        missing_optional: List[str] = []
+        outdated_optional: List[str] = []
 
-        for package, min_version in dependencies.items():
+        for package, metadata_cfg in dependency_matrix.items():
+            min_version = metadata_cfg["min"]
+            is_required = metadata_cfg["required"]
             try:
                 installed_version = metadata.version(package)
                 if version.parse(installed_version) < version.parse(min_version):
-                    outdated.append(
-                        f"{package} {installed_version} < {min_version}")
+                    if is_required:
+                        outdated_required.append(
+                            f"{package} {installed_version} < {min_version}"
+                        )
+                    else:
+                        outdated_optional.append(
+                            f"{package} {installed_version} < {min_version}"
+                        )
             except metadata.PackageNotFoundError:
-                missing.append(package)
+                if is_required:
+                    missing_required.append(package)
+                else:
+                    missing_optional.append(package)
 
-        if missing or outdated:
-            error_msg = "Dependencias no cumplen requisitos de novedad 2024+:\n"
-            if missing:
-                error_msg += f"Faltantes: {', '.join(missing)}\n"
-            if outdated:
-                error_msg += f"Desactualizadas: {', '.join(outdated)}\n"
+        if missing_optional or outdated_optional:
+            warning_msg = "Dependencias opcionales no cumplen mínimos sugeridos:"
+            details: List[str] = []
+            if missing_optional:
+                details.append(f"faltantes: {', '.join(missing_optional)}")
+            if outdated_optional:
+                details.append(f"desactualizadas: {', '.join(outdated_optional)}")
+            logger.warning("%s %s", warning_msg, "; ".join(details))
+
+        if missing_required or outdated_required:
+            error_msg = "Dependencias mínimas no cumplen requisitos declarados:\n"
+            if missing_required:
+                error_msg += f"Faltantes: {', '.join(missing_required)}\n"
+            if outdated_required:
+                error_msg += f"Desactualizadas: {', '.join(outdated_required)}\n"
             error_msg += "Ejecute: pip install --upgrade " + " ".join(
-                dependencies.keys()
+                sorted(pkg for pkg, cfg in dependency_matrix.items() if cfg["required"])
             )
             raise ImportError(error_msg)
 
-        logger.info("✓ Todas las dependencias cumplen requisitos SOTA 2024+")
+        logger.info("✓ Dependencias críticas cumplen requisitos declarados")
 
 
 # =============================================================================
@@ -269,8 +287,7 @@ class SotaEmbedding:
         logger.info(f"Cargando modelo {self.config.model} en {self._device}")
 
         try:
-            self.model = SentenceTransformer(
-                self.config.model, device=self._device)
+            self.model = SentenceTransformer(self.config.model, device=self._device)
 
             # Configurar precisión
             if self.config.precision == "fp16" and self._device.type == "cuda":
@@ -304,8 +321,7 @@ class SotaEmbedding:
                 self.calibration_card = CalibrationCard(**card_data)
                 logger.info(f"✓ Tarjeta de calibración cargada: {card_path}")
             except Exception as e:
-                logger.warning(
-                    f"No se pudo cargar tarjeta de calibración: {e}")
+                logger.warning(f"No se pudo cargar tarjeta de calibración: {e}")
                 self._create_default_calibration_card()
         else:
             self._create_default_calibration_card()
@@ -406,8 +422,7 @@ class SotaEmbedding:
 
             # Aplicar suavizado de dominio si se especifica
             if domain_hint:
-                embeddings = self._apply_domain_smoothing(
-                    embeddings, domain_hint)
+                embeddings = self._apply_domain_smoothing(embeddings, domain_hint)
 
             # Cachear resultados
             self._cache[cache_key] = embeddings
@@ -461,8 +476,7 @@ class SotaEmbedding:
         )
 
         # 3. Actualizar priors de dominio
-        domain_priors = self._compute_domain_priors(
-            corpus_stats.domain_distribution)
+        domain_priors = self._compute_domain_priors(corpus_stats.domain_distribution)
 
         # 4. Crear tarjeta de calibración
         self.calibration_card = CalibrationCard(
@@ -529,8 +543,7 @@ class SotaEmbedding:
             return {"PDM": 0.9, "general": 0.1}
 
         # Suavizado additivo para evitar ceros
-        total = sum(domain_distribution.values()) + \
-            len(domain_distribution) * 0.1
+        total = sum(domain_distribution.values()) + len(domain_distribution) * 0.1
         priors = {}
         for domain, count in domain_distribution.items():
             priors[domain] = (count + 0.1) / total
@@ -547,8 +560,7 @@ class SotaEmbedding:
         card_path.parent.mkdir(parents=True, exist_ok=True)
 
         with open(card_path, "w", encoding="utf-8") as f:
-            json.dump(self.calibration_card.dict(),
-                      f, indent=2, ensure_ascii=False)
+            json.dump(self.calibration_card.dict(), f, indent=2, ensure_ascii=False)
 
         logger.info(f"✓ Tarjeta de calibración guardada: {card_path}")
 
@@ -621,13 +633,11 @@ app = typer.Typer(name="pdm-embed", help="CLI para gestión de embeddings PDM")
 
 @app.command()
 def build_card(
-    corpus_path: str = typer.Argument(...,
-                                      help="Ruta al corpus de calibración"),
+    corpus_path: str = typer.Argument(..., help="Ruta al corpus de calibración"),
     alpha: float = typer.Option(
         0.10, help="Nivel de significancia para conformal prediction"
     ),
-    output: str = typer.Option(
-        None, help="Ruta de salida para tarjeta de calibración"),
+    output: str = typer.Option(None, help="Ruta de salida para tarjeta de calibración"),
 ):
     """Construye tarjeta de calibración desde corpus."""
     try:
@@ -644,8 +654,7 @@ def build_card(
         embedding_backend.save_card(output_path)
 
         typer.echo(f"✓ Tarjeta de calibración generada: {output_path}")
-        typer.echo(
-            f"  Umbrales conformales: {calibration_card.conformal_thresholds}")
+        typer.echo(f"  Umbrales conformales: {calibration_card.conformal_thresholds}")
 
     except Exception as e:
         typer.echo(f"❌ Error construyendo tarjeta: {e}", err=True)
@@ -654,10 +663,8 @@ def build_card(
 
 @app.command()
 def encode(
-    input_file: str = typer.Argument(...,
-                                     help="Archivo de texto con documentos"),
-    output_file: str = typer.Argument(...,
-                                      help="Archivo de salida para embeddings"),
+    input_file: str = typer.Argument(..., help="Archivo de texto con documentos"),
+    output_file: str = typer.Argument(..., help="Archivo de salida para embeddings"),
     batch_size: int = typer.Option(64, help="Tamaño de lote para encoding"),
     domain: str = typer.Option("PDM", help="Dominio para suavizado"),
 ):
@@ -700,8 +707,7 @@ def doctor():
 
         # Verificar modelo
         embedding_backend = get_default_embedding()
-        typer.echo(
-            f"✓ Backend operacional: {type(embedding_backend).__name__}")
+        typer.echo(f"✓ Backend operacional: {type(embedding_backend).__name__}")
 
         # Verificar calibración
         if embedding_backend.calibration_card:
