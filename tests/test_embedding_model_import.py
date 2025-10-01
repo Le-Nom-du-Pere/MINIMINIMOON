@@ -18,10 +18,14 @@ def test_import_does_not_trigger_post_install_setup(monkeypatch):
     class _SentinelTransformer:
         def __init__(self, *args, **kwargs):
             instantiation_counter["count"] += 1
-            raise RuntimeError("SentenceTransformer should not be instantiated on import")
+            raise RuntimeError(
+                "SentenceTransformer should not be instantiated on import"
+            )
 
     fake_sentence_transformers.SentenceTransformer = _SentinelTransformer
-    monkeypatch.setitem(sys.modules, "sentence_transformers", fake_sentence_transformers)
+    monkeypatch.setitem(
+        sys.modules, "sentence_transformers", fake_sentence_transformers
+    )
 
     try:
         module = importlib.import_module("embedding_model")
