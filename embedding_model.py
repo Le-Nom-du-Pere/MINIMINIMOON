@@ -22,7 +22,10 @@ import hashlib
 import json
 import logging
 import os
+import tempfile
+import threading
 import warnings
+from collections import OrderedDict
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Protocol
 
@@ -39,6 +42,10 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
+
+_DEFAULT_EMBEDDING_INSTANCES: Dict[int, "SotaEmbedding"] = {}
+_DEFAULT_EMBEDDING_LOCK = threading.RLock()
+_POST_INSTALL_SETUP_LOCK = threading.RLock()
 
 # Suprimir warnings no críticos
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -105,6 +112,11 @@ class EmbeddingConfig(BaseModel):
     )
     domain_hint_default: str = Field(default="PDM", description="Dominio por defecto")
     device: str = Field(default="auto", description="Dispositivo: auto, cuda, cpu")
+    cache_size: int = Field(
+        default=128,
+        ge=0,
+        description="Número máximo de lotes cacheados en memoria",
+    )
 
 
 class CalibrationCorpusStats(BaseModel):
@@ -130,6 +142,34 @@ class CalibrationCard(BaseModel):
     conformal_thresholds: Dict[str, float] = Field(default_factory=dict)
     domain_priors: Dict[str, float] = Field(default_factory=dict)
     performance_metrics: Dict[str, float] = Field(default_factory=dict)
+
+
+def _atomic_write_text(target: Path, payload: str, *, encoding: str = "utf-8") -> None:
+    """Write text atomically using a temporary file + os.replace."""
+
+    target.parent.mkdir(parents=True, exist_ok=True)
+    temp_path: Optional[Path] = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            dir=target.parent,
+            prefix=f".{target.name}_tmp_",
+            suffix=".tmp",
+            delete=False,
+            encoding=encoding,
+        ) as handle:
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+            temp_path = Path(handle.name)
+
+        os.replace(temp_path, target)
+    finally:
+        if temp_path and temp_path.exists():
+            try:
+                temp_path.unlink()
+            except OSError:
+                pass
 
 
 # =============================================================================
@@ -274,10 +314,31 @@ class SotaEmbedding:
         self.config = config
         self.model = None
         self.calibration_card = None
-        self._cache = {}
+        self._cache_lock = threading.RLock()
+        self._cache: "OrderedDict[str, np.ndarray]" = OrderedDict()
+        self._cache_enabled = self.config.cache_size > 0
+        self._cache_max_size = (
+            max(1, self.config.cache_size) if self._cache_enabled else 0
+        )
         self._device = self._setup_device()
         self._load_model()
         self._load_calibration_card()
+
+    def __getstate__(self) -> Dict[str, Any]:
+        """Custom pickle support excluding runtime locks."""
+
+        state = self.__dict__.copy()
+        state["_cache_lock"] = None
+        state["_cache"] = list(self._cache.items())
+        return state
+
+    def __setstate__(self, state: Dict[str, Any]) -> None:
+        """Restore state ensuring locks are recreated."""
+
+        cache_items = state.get("_cache", [])
+        state["_cache_lock"] = threading.RLock()
+        state["_cache"] = OrderedDict(cache_items)
+        self.__dict__.update(state)
 
     def _setup_device(self) -> torch.device:
         """Configura dispositivo óptimo automáticamente."""
@@ -394,11 +455,13 @@ class SotaEmbedding:
                 0, self.model.get_sentence_embedding_dimension()
             )
 
-        # Verificar cache
         cache_key = self._get_cache_key(texts, domain_hint)
-        if cache_key in self._cache:
-            logger.debug("Cache hit para lote de textos")
-            return self._cache[cache_key]
+        if self._cache_enabled:
+            with self._cache_lock:
+                cached = self._cache.get(cache_key)
+                if cached is not None:
+                    logger.debug("Cache hit para lote de textos")
+                    return cached.copy()
 
         # Configurar batch size
         effective_batch_size = batch_size or self.config.batch_size
@@ -427,8 +490,12 @@ class SotaEmbedding:
             if domain_hint:
                 embeddings = self._apply_domain_smoothing(embeddings, domain_hint)
 
-            # Cachear resultados
-            self._cache[cache_key] = embeddings
+            if self._cache_enabled:
+                with self._cache_lock:
+                    self._cache[cache_key] = embeddings.copy()
+                    self._cache.move_to_end(cache_key)
+                    while len(self._cache) > self._cache_max_size:
+                        self._cache.popitem(last=False)
 
             logger.debug(f"Embeddings generados para {len(texts)} textos")
             return embeddings
@@ -560,10 +627,10 @@ class SotaEmbedding:
             return
 
         card_path = Path(path)
-        card_path.parent.mkdir(parents=True, exist_ok=True)
-
-        with open(card_path, "w", encoding="utf-8") as f:
-            json.dump(self.calibration_card.dict(), f, indent=2, ensure_ascii=False)
+        payload = json.dumps(
+            self.calibration_card.dict(), indent=2, ensure_ascii=False
+        )
+        _atomic_write_text(card_path, payload)
 
         logger.info(f"✓ Tarjeta de calibración guardada: {card_path}")
 
@@ -597,9 +664,10 @@ def load_embedding_config() -> EmbeddingConfig:
         default_config = EmbeddingConfig()
 
         # Crear directorio y guardar configuración por defecto
-        config_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(config_path, "w", encoding="utf-8") as f:
-            yaml.dump(default_config.dict(), f, default_flow_style=False)
+        payload = yaml.dump(
+            default_config.dict(), default_flow_style=False, allow_unicode=True
+        )
+        _atomic_write_text(config_path, payload)
 
         logger.info(f"✓ Configuración por defecto creada: {config_path}")
         return default_config
@@ -607,8 +675,22 @@ def load_embedding_config() -> EmbeddingConfig:
 
 def get_default_embedding() -> EmbeddingBackend:
     """Factory para obtener backend de embedding por defecto."""
-    config = load_embedding_config()
-    return SotaEmbedding(config)
+
+    pid = os.getpid()
+    with _DEFAULT_EMBEDDING_LOCK:
+        backend = _DEFAULT_EMBEDDING_INSTANCES.get(pid)
+        if backend is None:
+            config = load_embedding_config()
+            backend = SotaEmbedding(config)
+            _DEFAULT_EMBEDDING_INSTANCES[pid] = backend
+        return backend
+
+
+def _reset_embedding_singleton_for_testing() -> None:
+    """Reset singleton cache – util en suites de pruebas."""
+
+    with _DEFAULT_EMBEDDING_LOCK:
+        _DEFAULT_EMBEDDING_INSTANCES.pop(os.getpid(), None)
 
 
 # =============================================================================
@@ -781,32 +863,31 @@ def post_install_setup(force: bool = False) -> bool:
 
     global _POST_INSTALL_SETUP_DONE
 
-    if _POST_INSTALL_SETUP_DONE and not force:
-        return False
+    with _POST_INSTALL_SETUP_LOCK:
+        if _POST_INSTALL_SETUP_DONE and not force:
+            return False
 
-    try:
-        embedding_backend = get_default_embedding()
+        try:
+            embedding_backend = get_default_embedding()
 
-        # Verificar si ya existe calibración
-        card_path = Path(embedding_backend.config.calibration_card)
-        if not card_path.exists():
-            logger.info("Generando calibración base post-instalación...")
+            card_path = Path(embedding_backend.config.calibration_card)
+            if not card_path.exists():
+                logger.info("Generando calibración base post-instalación...")
 
-            # Crear calibración por defecto
-            embedding_backend._create_default_calibration_card()
+                embedding_backend._create_default_calibration_card()
 
-            logger.info("✓ Calibración base generada exitosamente")
-        else:
-            logger.info("✓ Calibración existente encontrada")
+                logger.info("✓ Calibración base generada exitosamente")
+            else:
+                logger.info("✓ Calibración existente encontrada")
 
-        _POST_INSTALL_SETUP_DONE = True
-        return True
+            _POST_INSTALL_SETUP_DONE = True
+            return True
 
-    except Exception as e:
-        logger.warning(f"Configuración post-instalación falló: {e}")
-        if force:
-            raise
-        return False
+        except Exception as e:
+            logger.warning(f"Configuración post-instalación falló: {e}")
+            if force:
+                raise
+            return False
 
 
 # =============================================================================

@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import pickle
+import threading
 import tempfile
 import unittest
 from pathlib import Path
@@ -15,6 +17,7 @@ from embedding_model import (
     CalibrationCorpusStats,
     EmbeddingConfig,
     SotaEmbedding,
+    _reset_embedding_singleton_for_testing,
     get_default_embedding,
 )
 
@@ -160,6 +163,9 @@ class TestSotaEmbedding(unittest.TestCase):
     def test_get_default_embedding_uses_configuration_factory(self) -> None:
         """The factory returns a SotaEmbedding wired with the supplied config."""
 
+        _reset_embedding_singleton_for_testing()
+        self.addCleanup(_reset_embedding_singleton_for_testing)
+
         config = self.config.model_copy(
             update={
                 "calibration_card": str(Path(self.temp_dir.name) / "default_card.json")
@@ -173,6 +179,22 @@ class TestSotaEmbedding(unittest.TestCase):
         self.assertEqual(backend.config.model, config.model)
         self.assertTrue(Path(config.calibration_card).exists())
 
+    def test_backend_picklable_roundtrip(self) -> None:
+        """SotaEmbedding instances can be pickled/unpickled safely."""
+
+        self.backend.calibration_card.domain_priors["PDM"] = 0.4
+        original = self.backend.embed_texts(["uno", "dos"], domain_hint="PDM")
+        encode_calls = self.backend.model.encode_invocations
+
+        payload = pickle.dumps(self.backend)
+        restored: SotaEmbedding = pickle.loads(payload)
+
+        # Cached result survives roundtrip and does not trigger extra encodes
+        cached = restored.embed_texts(["uno", "dos"], domain_hint="PDM")
+
+        np.testing.assert_allclose(cached, original)
+        self.assertEqual(restored.model.encode_invocations, encode_calls)
+
     def tearDown(self) -> None:  # noqa: D401 - unittest hook
         # Ensure patches from setUp are correctly removed even if assertions fail
         for patcher in [self.model_patch, self.guard_patch]:
@@ -181,6 +203,54 @@ class TestSotaEmbedding(unittest.TestCase):
             except RuntimeError:
                 # Already stopped by addCleanup
                 pass
+
+
+class TestEmbeddingSingleton(unittest.TestCase):
+    """Validate lazy singleton behaviour and thread-safety."""
+
+    def setUp(self) -> None:  # noqa: D401 - unittest hook
+        _reset_embedding_singleton_for_testing()
+        self.addCleanup(_reset_embedding_singleton_for_testing)
+
+    def test_thread_safe_singleton_initialization(self) -> None:
+        """Concurrent access returns the same backend instance."""
+
+        config = EmbeddingConfig()
+
+        class _StubBackend:
+            def __init__(self, cfg: EmbeddingConfig) -> None:
+                self.config = cfg
+
+        def build_stub(cfg: EmbeddingConfig) -> _StubBackend:
+            backend = _StubBackend(cfg)
+            return backend
+
+        with patch("embedding_model.load_embedding_config", return_value=config), patch(
+            "embedding_model.SotaEmbedding", side_effect=build_stub
+        ) as factory:
+            results: List[_StubBackend] = []
+            errors: List[BaseException] = []
+            barrier = threading.Barrier(4)
+
+            def worker() -> None:
+                try:
+                    barrier.wait()
+                    results.append(get_default_embedding())
+                except BaseException as exc:  # pragma: no cover - diagnostic aid
+                    errors.append(exc)
+
+            threads = [threading.Thread(target=worker) for _ in range(4)]
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join()
+
+        self.assertFalse(errors)
+        self.assertEqual(factory.call_count, 1)
+        self.assertGreater(len(results), 0)
+        first = results[0]
+        for backend in results:
+            self.assertIs(backend, first)
 
 
 if __name__ == "__main__":

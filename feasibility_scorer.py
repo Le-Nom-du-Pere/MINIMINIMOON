@@ -466,7 +466,9 @@ class FeasibilityScorer:
 
         return False
 
-    def calculate_feasibility_score(self, text: str) -> IndicatorScore:
+    def calculate_feasibility_score(
+        self, text: str, evidencia_soporte: Optional[int] = None
+    ) -> IndicatorScore:
         """
         Calculate comprehensive feasibility score based on detected components and quality.
 
@@ -475,6 +477,7 @@ class FeasibilityScorer:
 
         Args:
             text (str): Indicator text to evaluate
+            evidencia_soporte: Optional evidence support override (0 forces failure)
 
         Returns:
             IndicatorScore: Comprehensive score with detailed analysis
@@ -596,7 +599,9 @@ class FeasibilityScorer:
             quality_tier=quality_tier,
         )
 
-    def _score_single_indicator(self, indicator: str) -> IndicatorScore:
+    def _score_single_indicator(
+        self, indicator: str, evidencia_soporte: Optional[int] = None
+    ) -> IndicatorScore:
         """Score a single indicator - helper function for parallel processing.
 
         Args:
@@ -605,10 +610,14 @@ class FeasibilityScorer:
         Returns:
             IndicatorScore for the given indicator.
         """
-        return self.calculate_feasibility_score(indicator)
+        return self.calculate_feasibility_score(indicator, evidencia_soporte)
 
     def batch_score(
-        self, indicators: List[str], compare_backends=False, use_parallel: bool = False
+        self,
+        indicators: List[str],
+        compare_backends=False,
+        use_parallel: bool = False,
+        evidencia_soporte_list: Optional[List[Optional[int]]] = None,
     ) -> List[IndicatorScore]:
         """Score multiple indicators with optional parallel processing.
 
@@ -619,6 +628,7 @@ class FeasibilityScorer:
             indicators: List of indicator strings to score.
             compare_backends: If True, compare performance between threading and loky backends.
             use_parallel: Legacy parameter for backward compatibility.
+            evidencia_soporte_list: Optional list with per-indicator evidence overrides.
 
         Returns:
             List of IndicatorScore results in the same order as input indicators.
