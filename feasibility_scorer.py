@@ -71,7 +71,7 @@ except ImportError:
 try:
     from joblib import Parallel, delayed
 
-JOBLIB_AVAILABLE = True
+    JOBLIB_AVAILABLE = True
 except ImportError:
     JOBLIB_AVAILABLE = False
 
