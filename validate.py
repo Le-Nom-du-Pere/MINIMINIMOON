@@ -11,7 +11,7 @@ def run_tests():
     """Run the test suite."""
     print("Running tests...")
     result = subprocess.run([sys.executable, 'test_dag_validation.py'],
-                            capture_output=True, text=True)
+                            capture_output=True, text=True, check=True)
 
     if result.returncode == 0:
         print("✅ All tests passed")
@@ -32,7 +32,7 @@ def run_lint():
 
     for file in files:
         result = subprocess.run([sys.executable, '-m', 'py_compile', file],
-                                capture_output=True, text=True)
+                                capture_output=True, text=True, check=True)
         if result.returncode != 0:
             print(f"❌ Syntax error in {file}")
             print(result.stderr)
@@ -47,7 +47,7 @@ def run_reproducibility_test():
     print("Testing reproducibility...")
 
     result = subprocess.run([sys.executable, 'verify_reproducibility.py'],
-                            capture_output=True, text=True)
+                            capture_output=True, text=True, check=True)
 
     if result.returncode == 0 and "PASSED" in result.stdout:
         print("✅ Reproducibility test passed")
