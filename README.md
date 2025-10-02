@@ -1,339 +1,121 @@
 # Multi-Component Python Suite
 
-This project combines multiple complementary components for text processing, graph validation, embedding models,
-responsibility detection, and Spanish pattern detection:
+Esta suite reúne módulos para análisis documental, detección de contradicciones, embeddings, validación de grafos y detección de responsabilidades en textos en español. El objetivo es ofrecer cimientos reutilizables para proyectos de planeación territorial y analítica de políticas públicas.
 
-1. **Embedding Model with Fallback Mechanism** - Robust embedding model with automatic MPNet->MiniLM fallback
-2. **Responsibility Detection Module** - spaCy NER + lexical pattern matching for government entity responsibility
-   detection
-3. **Factibilidad Scoring Module** - Spanish pattern detection for baseline, target, and timeframe indicators
-4. **Unicode Normalization for Regex Matching** - Text processing with Unicode normalization (if available)
-5. **Deterministic Monte Carlo DAG Validation** - Statistical validation of causal graphs (if available)
+## Panorama general del sistema
+- **Motor de contradicciones (`pdm_contra/core.py`)**: orquesta coincidencias léxicas, inferencia NLI española, validación de competencias y análisis de riesgo en un flujo híbrido, complementado con generación de explicaciones trazables.
+- **Proveedor de decálogos (`pdm_contra/bridges/decatalogo_provider.py`)**: encapsula la carga de plantillas normalizadas a partir de un paquete YAML autocontenible, asegurando rutas relativas y validaciones estrictas.
+- **Módulo de detección de responsabilidades (`responsibility_detector.py`)**: combina NER de spaCy con patrones jerárquicos para priorizar entidades gubernamentales y roles institucionales.
+- **Modelo de embeddings con fallback (`embedding_model.py`)**: inicia SentenceTransformer multilingüe con retroceso automático y ajustes específicos por modelo.
+- **Patrones de factibilidad (`factibilidad/`)**: evalúa la presencia y proximidad de indicadores de línea base, metas y plazos.
+- **Validación de DAG (`dag_validation.py`)**: ejecuta muestreos deterministas para verificar aciclicidad en grafos causales.
 
-## Responsibility Detection Component
+## Investigación de cambios recientes
+Una revisión de las últimas integraciones resalta tres transformaciones estructurales:
+1. **Replanteamiento del motor `ContradictionDetector`**: la clase central ahora inicializa selectores de patrones adversativos, detectores NLI ligeros/pesados, validadores de competencia sectorial y un `RiskScorer`, con opción de codificador SentenceTransformer dependiendo del modo de operación.
+2. **Capa de puentes configurables**: el nuevo proveedor de decálogos permite declarar bundles completos vía YAML, validando rutas absolutas/relativas y habilitando `autoload` para despliegues reproducibles.
+3. **Narrativas explicativas centralizadas**: `ExplanationTracer` consolida hallazgos en reportes humanamente legibles, registrando trazas temporales para auditoría y comunicación ejecutiva.
 
-A Python module for detecting responsibility entities in Spanish text using spaCy's Named Entity Recognition (NER)
-combined with lexical pattern matching.
+Estos cambios sientan las bases para análisis más auditables y facilitan la integración de catálogos externos sin manipulación manual.
 
-### Files
+## Componentes destacados
+### Detección de responsabilidades
+- **Integración spaCy**: usa el modelo `es_core_news_sm` para entidades PERSON y ORG.
+- **Jerarquía de confianza**: prioriza instituciones gubernamentales y cargos oficiales para puntajes de factibilidad más robustos.
+- **Uso básico**:
+  ```python
+  from responsibility_detector import ResponsibilityDetector
 
-- **responsibility_detector.py** - Core responsibility detection with spaCy NER and pattern matching
-- **test_responsibility_detector.py** - Comprehensive test suite for responsibility detection
+  detector = ResponsibilityDetector()
+  texto = "La Alcaldía Municipal coordinará con la Secretaría de Salud el programa de vacunación."
+  resultado = detector.calculate_responsibility_score(texto)
+  ```
 
-### Features
+### Embeddings resilientes
+- **Fallback automático**: intenta `multilingual-e5-base` y retrocede a `all-MiniLM-L6-v2` cuando se activa el modo liviano o ante fallos de red.
+- **Cómputo de similitud**: expone utilidades para codificar lotes y evaluar similitud coseno.
 
-- **SpaCy NER Integration**: Uses spaCy's pre-trained Spanish models for PERSON and ORGANIZATION entity recognition
-- **Government Entity Priority**: Higher confidence scores for government institutions like "alcaldía", "secretaría", "
-  programa"
-- **Official Position Detection**: Recognizes institutional roles and positions with pattern matching
-- **Lexical Fallbacks**: Comprehensive pattern matching for cases where NER misses institutional language
-- **Confidence Scoring**: Combines NER confidence with lexical pattern strength for final factibility assessment
-- **Overlap Handling**: Merges overlapping entities intelligently, preferring higher confidence and government entities
+### Factibilidad y planeación
+- **Detección de patrones**: reconoce vocabulario de línea base, metas y plazos con ventanas de proximidad configurables.
+- **Puntaje compuesto**: combina densidad, clusters y cobertura de patrones para priorizar textos accionables.
 
-### Usage
+### Validación de grafos causales
+- **Monte Carlo determinista**: usa semillas reproducibles para evaluar aciclicidad en estructuras PDM.
+- **Interpretación estadística**: reporta `p-values` y cobertura empírica para contextualizar resultados.
 
-```python
-from responsibility_detector import ResponsibilityDetector
+## Decálogos y decatalogos
+El repositorio incluye un bundle curado de decálogos normativos y técnicos que alimenta tanto a los evaluadores industriales
+como al motor de contradicciones:
 
-# Initialize detector
-detector = ResponsibilityDetector()
+- **Proveedor central (`pdm_contra/bridges/decatalogo_provider.py`)**: lee `pdm_contra/config/decalogo.yaml`, resuelve rutas
+  relativas y valida que existan las versiones limpias empaquetadas en `out/` (`decalogo-full.latest.clean.json`,
+  `decalogo-industrial.latest.clean.json`, `dnp-standards.latest.clean.json`, además del `crosswalk.latest.json`).
+- **Contratos y validación**: `pdm_contra/bridges/decalogo_loader_adapter.py` aplica los esquemas JSON incluidos en `schemas/`
+  para asegurar integridad de dominios, clusters y crosswalks antes de exponer el bundle como diccionario Python.
+- **Consumidores principales**: `Decatalogo_principal.py` construye el contexto industrial completo y `Decatalogo_evaluador.py`
+  orquesta la evaluación de evidencias integrando contradicciones, responsabilidades, patrones de factibilidad y señales
+  monetarias.
+- **Uso rápido**:
+  ```python
+  from pdm_contra.bridges.decatalogo_provider import provide_decalogos
 
-# Analyze text
-text = "La Alcaldía Municipal coordinará con la Secretaría de Salud el programa de vacunación."
-result = detector.calculate_responsibility_score(text)
+  bundle = provide_decalogos()
+  print(bundle["version"], bundle["domains"])  # Versionado coherente en los tres catálogos
+  ```
 
-print(f"Factibility Score: {result['factibility_score']:.3f}")
-print(f"Government entities detected: {result['has_government_entities']}")
+Los archivos fuente originales (`DECALOGO_FULL.json`, `decalogo_industrial.json`, `DNP_STANDARDS.json`) se conservan en la
+raíz para trazabilidad y pueden regenerarse a los formatos limpios siguiendo los pipelines del directorio `out/` cuando se
+actualicen las matrices normativas.
 
-for entity in result['entities']:
-    print(f"- {entity.text} ({entity.entity_type.value}, confidence: {entity.confidence:.3f})")
-```
-
-## Embedding Model Component
-
-A robust embedding model implementation that automatically falls back from MPNet to MiniLM if the primary model fails to
-load, ensuring uninterrupted operation.
-
-### Files
-
-- **embedding_model.py** - Core embedding model with fallback mechanism
-- **test_embedding_model.py** - Comprehensive test suite for embedding model
-- **example_usage.py** - Demo and usage examples
-
-### Features
-
-- **Automatic Fallback**: Tries MPNet (768-dim) first, falls back to MiniLM (384-dim) if loading fails
-- **Exception Handling**: Comprehensive error handling around model initialization
-- **Model-Dependent Configuration**: Automatically adjusts batch sizes and parameters based on the loaded model
-- **Similarity Calculations**: Built-in cosine similarity computation
-- **Factory Pattern**: Easy model instantiation with `create_embedding_model()`
-
-### Usage
-
-```python
-from embedding_model import create_embedding_model
-
-# Create model (tries MPNet first, falls back to MiniLM if needed)
-model = create_embedding_model()
-
-# Check which model was loaded
-info = model.get_model_info()
-print(f"Model: {info['model_name']}")
-print(f"Using fallback: {info['is_fallback']}")
-
-# Encode sentences
-embeddings = model.encode(["Hello world", "Embedding test"])
-```
-
-## Factibilidad Scoring Component
-
-A Python module for detecting and scoring text segments based on the presence of baseline, target, and timeframe
-patterns in Spanish text.
-
-### Files
-
-- **factibilidad/pattern_detector.py** - Core pattern detection logic
-- **factibilidad/scoring.py** - Scoring algorithms and analysis
-- **test_factibilidad.py** - Test cases and examples
-
-### Features
-
-- **Pattern Detection**: Identifies three types of patterns in Spanish text:
-    - Baseline indicators (línea base, situación inicial, punto de partida, etc.)
-    - Target indicators (meta, objetivo, alcanzar, lograr, etc.)
-    - Timeframe indicators (dates, quarters, relative time expressions)
-- **Proximity-Based Clustering**: Groups patterns that appear within a configurable distance window
-- **Factibilidad Scoring**: Calculates scores based on individual pattern presence, complete pattern clusters, proximity
-  bonuses, and pattern density bonuses
-
-### Usage
-
-```python
-from factibilidad import PatternDetector, FactibilidadScorer
-
-# Basic pattern detection
-detector = PatternDetector()
-matches = detector.detect_patterns(text)
-
-# Calculate factibilidad scores
-scorer = FactibilidadScorer(proximity_window=500)
-result = scorer.score_text(text)
-
-print(f"Score: {result['total_score']}")
-print(f"Clusters found: {result['cluster_scores']['count']}")
-```
-
-## Text Processing Component (if available)
-
-Implements Unicode normalization using `unicodedata.normalize("NFKC", text)` before applying regex patterns to ensure
-consistent character representation.
-
-### Usage
-
-```python
-from text_processor import normalize_unicode, count_words
-from utils import TextAnalyzer
-
-# Basic normalization
-normalized = normalize_unicode("café résumé")
-count = count_words("Text with—em dashes")
-```
-
-## DAG Validation Component (if available)
-
-A Python implementation for validating Directed Acyclic Graphs (DAGs) using deterministic Monte Carlo sampling,
-specifically designed for causal graph analysis.
-
-### Usage
-
-```python
-from dag_validation import DAGValidator, create_sample_causal_graph
-
-# Create validator and test acyclicity
-validator = create_sample_causal_graph()
-result = validator.calculate_acyclicity_pvalue("plan_name", iterations=1000)
-```
-
-## Installation
-
+## Flujo de instalación
 ```bash
-<<<<<<< HEAD
-# Create virtual environment
+# Crear entorno virtual
 python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate  # En Windows: venv\Scripts\activate
 
-# Install dependencies
+# Instalar dependencias principales
 pip install -r requirements.txt
+
+# Descargar el modelo en español requerido por spaCy
+python3 -m spacy download es_core_news_sm
 ```
 
-## Testing
-
-Run individual test suites:
-
+## Pruebas
 ```bash
-python3 -m pytest test_embedding_model.py -v  # Embedding model tests
-python3 test_factibilidad.py                  # Factibilidad pattern tests
-python3 test_unicode_normalization.py 2>/dev/null || echo "Text processing tests not available"
-python3 test_dag_validation.py 2>/dev/null || echo "DAG validation tests not available"
+python3 -m pytest test_embedding_model.py -v         # Embeddings
+python3 -m pytest test_responsibility_detector.py -v  # Responsabilidad
+python3 test_factibilidad.py                          # Patrones de factibilidad
+python3 test_dag_validation.py 2>/dev/null || echo "DAG validation opcional"
+python3 validate.py 2>/dev/null || echo "Suite integral opcional"
 ```
 
-Run complete validation:
-
-```bash
-python3 validate.py 2>/dev/null || echo "Full validation suite not available"
-```
-
-## Quick Start Examples
-
-### Embedding Model
-
+## Ejemplos rápidos
 ```python
 from embedding_model import create_embedding_model
 
-# Create model (tries MPNet first, falls back to MiniLM if needed)
-model = create_embedding_model()
+modelo = create_embedding_model()
+info = modelo.get_model_info()
+print(info["model_name"], info["embedding_dimension"], info["is_fallback"])
 
-# Check which model was loaded
-info = model.get_model_info()
-print(f"Model: {info['model_name']}")
-print(f"Dimension: {info['embedding_dimension']}")
-print(f"Using fallback: {info['is_fallback']}")
-
-# Encode sentences
-sentences = ["Hello world", "Embedding test"]
-embeddings = model.encode(sentences)
-print(f"Embeddings shape: {embeddings.shape}")
+sentencias = ["Hola mundo", "Embeddings resilientes"]
+embeddings = modelo.encode(sentencias)
 ```
-
-### Factibilidad Scoring
 
 ```python
 from factibilidad import FactibilidadScorer
 
-scorer = FactibilidadScorer()
-text = "La línea base actual muestra 100 usuarios. Nuestro objetivo es alcanzar 500 usuarios para diciembre de 2024."
-result = scorer.score_text(text)
-print(f"Factibilidad Score: {result['total_score']:.1f}")
+scorer = FactibilidadScorer(proximity_window=500)
+texto = "La línea base actual es 100 hogares. Buscamos 250 hogares a diciembre de 2024."
+print(scorer.score_text(texto))
 ```
 
-## Statistical Interpretation (DAG Validation)
+## Stack de visualizaciones minimalistas (inspirado en Omar Rayo)
+Para reportar hallazgos con una estética geométrica y contrastada reminiscentes de Omar Rayo se propone el siguiente stack avanzado:
 
-⚠️ **Important**: DAG validation tests structural acyclicity, not causal validity.
+1. **Modelado declarativo con Vega-Lite/Altair**: define gramáticas de gráficos utilizando combinaciones de blanco, negro y acentos cromáticos puntuales para enfatizar patrones y contradicciones.
+2. **Renderizado interactivo con Plotly Dash o Panel**: integra gráficos responsivos alimentados por los análisis de `pdm_contra`, permitiendo resaltar segmentos críticos con trazos ortogonales y sombras suaves.
+3. **Diseño tipográfico y espacial**: aplicar grids modulares y tipografías sans-serif sobrias (p. ej. Inter, Work Sans) con amplio espaciado negativo para reforzar la abstracción geométrica.
+4. **Sistema de anotaciones**: superponer overlays discretos que conecten hallazgos de riesgo con trazos lineales inspirados en grabados de Rayo, facilitando narrativas ejecutivas.
+5. **Automatización de paletas**: centralizar la paleta en utilidades reutilizables (hex #000000, #FFFFFF, acentos carmín/amarillo) y exponer toggles de accesibilidad (alto contraste, modos daltónicos).
 
-- **P-value**: Probability of observing acyclic structure in random subgraphs under the null hypothesis
-- **Lower p-values**: Suggest the observed acyclicity is unlikely to occur by chance alone
-- **Higher p-values**: Indicate the structure could reasonably arise from random processes
-
-### Limitations
-
-1. **Not a causal test**: Validates graph structure, not causal relationships
-2. **Domain expertise required**: Statistical significance ≠ causal validity
-3. **Interpretation context**: Results must be interpreted within domain knowledge
-4. **Subgraph sampling**: Tests random subsets, not the full graph structure
-
-## Architecture
-
-The suite combines multiple components with minimal dependencies. The embedding model requires sentence-transformers and scikit-learn, while the factibilidad scoring module uses only Python standard library. Text processing and DAG validation components (if available) also use standard library only, ensuring maximum compatibility.
-=======
-
-# Install dependencies
-
-pip install spacy>=3.4.0
-
-# Download Spanish language model
-
-python -m spacy download es_core_news_sm
-
-```
-
-## Usage
-
-```python
-from responsibility_detector import ResponsibilityDetector
-
-# Initialize detector
-detector = ResponsibilityDetector()
-
-# Analyze text
-text = "La Alcaldía Municipal coordinará con la Secretaría de Salud el programa de vacunación."
-result = detector.calculate_responsibility_score(text)
-
-print(f"Factibility Score: {result['factibility_score']:.3f}")
-print(f"Government entities detected: {result['has_government_entities']}")
-
-for entity in result['entities']:
-    print(f"- {entity.text} ({entity.entity_type.value}, confidence: {entity.confidence:.3f})")
-```
-
-## Key Components
-
-### Entity Types
-
-- `PERSON`: Individual names detected by NER
-- `ORGANIZATION`: Generic organizations
-- `GOVERNMENT`: Government institutions (higher priority)
-- `POSITION`: Official roles and positions
-
-### Confidence Scoring Hierarchy
-
-1. **Government institutions** (highest priority): 0.8-1.0 confidence
-2. **Official positions**: 0.7-0.9 confidence
-3. **Persons via NER**: 0.6-0.8 confidence
-4. **Generic organizations**: 0.5-0.7 confidence
-
-### Pattern Categories
-
-#### Government Institutions (High Priority)
-
-- alcaldía, secretaría, programa, ministerio
-- gobernación, municipalidad, ayuntamiento
-- instituto nacional/municipal/departamental
-- dirección, departamento administrativo
-
-#### Official Positions
-
-- alcalde/alcaldesa, secretario/secretaria
-- ministro/ministra, director/directora
-- coordinador/coordinadora, jefe/jefa
-- responsable, encargado/encargada
-
-#### Fallback Institutional Terms
-
-- entidad, organización, institución
-- dependencia, oficina, unidad
-
-## Testing
-
-```bash
-python -m pytest test_responsibility_detector.py -v
-```
-
-## Architecture
-
-The module uses a multi-stage approach:
-
-1. **NER Processing**: Extract PERSON and ORG entities using spaCy
-2. **Pattern Matching**: Apply lexical rules for institutional terms
-3. **Entity Merging**: Handle overlaps and duplicates
-4. **Confidence Calculation**: Apply hierarchical scoring based on entity types
-5. **Final Assessment**: Calculate overall factibility score
-
-## Output Format
-
-The `calculate_responsibility_score` method returns:
-
-```python
-{
-    'factibility_score': float,  # 0.0 to 1.0
-    'entities': List[ResponsibilityEntity],
-    'breakdown': {
-        'government_score': float,
-        'position_score': float, 
-        'person_score': float,
-        'organization_score': float,
-        'total_entities': int
-    },
-    'has_government_entities': bool,
-    'has_official_positions': bool
-}
->>>>>>> c05b231 (Implement spaCy NER and lexical pattern matching for government entity responsibility detection with confidence scoring)
+Este enfoque convierte los análisis numéricos en tableros interpretables sin sacrificar rigor, alineando la identidad visual con el minimalismo geométrico característico.
