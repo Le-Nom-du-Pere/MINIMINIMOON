@@ -27,7 +27,11 @@ import threading
 import warnings
 from collections import Counter, OrderedDict
 from pathlib import Path
-from typing import Any, Dict, Iterable, Iterator, List, Optional, Protocol
+from typing import Any, Dict, Iterable, Iterator, List, Optional, Protocol, Union
+
+import numpy as np
+import torch
+import typer
 
 import numpy as np
 import torch
@@ -389,11 +393,21 @@ class SotaEmbedding:
         )
         self.save_card(self.config.calibration_card)
 
-    def _get_cache_key(self, texts: List[str], domain_hint: Optional[str]) -> str:
+    def _get_cache_key(
+        self,
+        texts: List[str],
+        domain_hint: Optional[str],
+        normalize_embeddings: Optional[bool],
+    ) -> str:
         """Genera clave de cache determinista."""
         text_hash = hashlib.sha256("|".join(texts).encode()).hexdigest()[:16]
         domain = domain_hint or self.config.domain_hint_default
-        return f"{domain}_{text_hash}"
+        norm_flag = (
+            "norm_default"
+            if normalize_embeddings is None
+            else f"norm_{int(bool(normalize_embeddings))}"
+        )
+        return f"{domain}_{norm_flag}_{text_hash}"
 
     def _apply_domain_smoothing(
         self, embeddings: np.ndarray, domain_hint: str
@@ -421,14 +435,15 @@ class SotaEmbedding:
         *,
         domain_hint: Optional[str] = None,
         batch_size: Optional[int] = None,
+        normalize_embeddings: Optional[bool] = None,
     ) -> np.ndarray:
-        """Genera embeddings para lista de textos."""
+        """Genera embeddings para lista de textos con control de normalización."""
         if not texts:
             return np.array([]).reshape(
                 0, self.model.get_sentence_embedding_dimension()
             )
 
-        cache_key = self._get_cache_key(texts, domain_hint)
+        cache_key = self._get_cache_key(texts, domain_hint, normalize_embeddings)
         if self._cache_enabled:
             with self._cache_lock:
                 cached = self._cache.get(cache_key)
@@ -437,6 +452,11 @@ class SotaEmbedding:
                     return cached.copy()
 
         effective_batch_size = batch_size or self.config.batch_size
+        normalize = (
+            self.config.normalize_l2
+            if normalize_embeddings is None
+            else normalize_embeddings
+        )
 
         try:
             with torch.inference_mode():
@@ -445,7 +465,7 @@ class SotaEmbedding:
                         embeddings = self.model.encode(
                             texts,
                             batch_size=effective_batch_size,
-                            normalize_embeddings=self.config.normalize_l2,
+                            normalize_embeddings=normalize,
                             show_progress_bar=False,
                             convert_to_numpy=True,
                         )
@@ -453,7 +473,7 @@ class SotaEmbedding:
                     embeddings = self.model.encode(
                         texts,
                         batch_size=effective_batch_size,
-                        normalize_embeddings=self.config.normalize_l2,
+                        normalize_embeddings=normalize,
                         show_progress_bar=False,
                         convert_to_numpy=True,
                     )
@@ -478,6 +498,45 @@ class SotaEmbedding:
     def embed_query(self, text: str, *, domain_hint: Optional[str] = None) -> np.ndarray:
         """Genera embedding para consulta individual."""
         return self.embed_texts([text], domain_hint=domain_hint)[0]
+
+    def encode(
+        self,
+        sentences: Union[str, Iterable[str]],
+        *,
+        batch_size: Optional[int] = None,
+        domain_hint: Optional[str] = None,
+        convert_to_numpy: bool = True,
+        normalize_embeddings: Optional[bool] = None,
+        show_progress_bar: bool = False,
+        **_: Any,
+    ) -> Union[np.ndarray, torch.Tensor]:
+        """Compatibilidad con la API SentenceTransformer.encode."""
+
+        _ = show_progress_bar  # Compatibilidad de firma, sin barra de progreso interna
+
+        if isinstance(sentences, str):
+            items = [sentences]
+            single_input = True
+        else:
+            items = list(sentences)
+            single_input = False
+
+        embeddings = self.embed_texts(
+            items,
+            domain_hint=domain_hint,
+            batch_size=batch_size,
+            normalize_embeddings=normalize_embeddings,
+        )
+
+        if convert_to_numpy:
+            result = embeddings
+        else:
+            result = torch.from_numpy(embeddings)
+
+        if single_input:
+            return result[0]
+
+        return result
 
     def similarity(self, A: np.ndarray, B: np.ndarray) -> np.ndarray:
         """Calcula similitud cosine entre matrices de embeddings."""
@@ -575,7 +634,9 @@ class SotaEmbedding:
             return
 
         card_path = Path(path)
-        payload = json.dumps(self.calibration_card.dict(), indent=2, ensure_ascii=False)
+        payload = json.dumps(
+            self.calibration_card.model_dump(), indent=2, ensure_ascii=False
+        )
         _atomic_write_text(card_path, payload)
         logger.info("✓ Tarjeta de calibración guardada: %s", card_path)
 
@@ -589,6 +650,23 @@ class SotaEmbedding:
         except Exception as e:
             logger.error(f"Error cargando tarjeta de calibración: {e}")
             raise
+
+    def get_model_info(self) -> Dict[str, Any]:
+        """Devuelve metadatos resumidos del backend para CLI/documentación."""
+
+        embedding_dim = self.model.get_sentence_embedding_dimension()
+        return {
+            "model_name": self.config.model,
+            "embedding_dimension": embedding_dim,
+            "device": str(self._device),
+            "precision": self.config.precision,
+            "normalize_l2": self.config.normalize_l2,
+            "cache_enabled": self._cache_enabled,
+            "cache_size": self._cache_max_size,
+            "calibration_card": self.config.calibration_card,
+            "calibrated": self.calibration_card is not None,
+            "is_fallback": False,
+        }
 
 
 # =============================================================================
@@ -606,7 +684,11 @@ def load_embedding_config() -> EmbeddingConfig:
         return EmbeddingConfig(**config_data)
 
     default_config = EmbeddingConfig()
-    payload = yaml.dump(default_config.dict(), default_flow_style=False, allow_unicode=True)
+    payload = yaml.dump(
+        default_config.model_dump(),
+        default_flow_style=False,
+        allow_unicode=True,
+    )
     _atomic_write_text(config_path, payload)
     logger.info("✓ Configuración por defecto creada: %s", config_path)
     return default_config

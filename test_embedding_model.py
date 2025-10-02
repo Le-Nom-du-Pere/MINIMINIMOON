@@ -12,6 +12,7 @@ from typing import Iterable, List
 from unittest.mock import patch
 
 import numpy as np
+import torch
 
 from embedding_model import (
     CalibrationCorpusStats,
@@ -135,6 +136,24 @@ class TestSotaEmbedding(unittest.TestCase):
         np.testing.assert_allclose(cached, first)
         self.assertEqual(self.backend.model.encode_invocations, 1)
 
+    def test_embed_texts_respects_normalization_override(self) -> None:
+        """Changing normalization bypasses cache and override caches independently."""
+
+        baseline = self.backend.embed_texts(["uno"], domain_hint="PDM")
+        override = self.backend.embed_texts(
+            ["uno"], domain_hint="PDM", normalize_embeddings=False
+        )
+
+        self.assertEqual(self.backend.model.encode_invocations, 2)
+        np.testing.assert_allclose(baseline, np.array([[1.0, 0.0]], dtype=np.float32))
+        np.testing.assert_allclose(override, np.array([[1.0, 0.0]], dtype=np.float32))
+
+        cached_override = self.backend.embed_texts(
+            ["uno"], domain_hint="PDM", normalize_embeddings=False
+        )
+        np.testing.assert_allclose(cached_override, override)
+        self.assertEqual(self.backend.model.encode_invocations, 2)
+
     def test_calibrate_updates_card_with_corpus_statistics(self) -> None:
         """Running calibration produces updated priors and thresholds."""
 
@@ -194,6 +213,37 @@ class TestSotaEmbedding(unittest.TestCase):
 
         np.testing.assert_allclose(cached, original)
         self.assertEqual(restored.model.encode_invocations, encode_calls)
+
+    def test_encode_matches_sentence_transformer_contract(self) -> None:
+        """The thin adapter mirrors the high-level SentenceTransformer API."""
+
+        vector = self.backend.encode("single")
+        self.assertIsInstance(vector, np.ndarray)
+        self.assertEqual(vector.shape, (2,))
+
+        batch = self.backend.encode(["uno", "dos"])
+        self.assertEqual(batch.shape, (2, 2))
+
+        tensor_batch = self.backend.encode(
+            ["tres", "cuatro"], convert_to_numpy=False
+        )
+        self.assertIsInstance(tensor_batch, torch.Tensor)
+        self.assertEqual(tuple(tensor_batch.shape), (2, 2))
+
+        vector_tensor = self.backend.encode("cinco", convert_to_numpy=False)
+        self.assertIsInstance(vector_tensor, torch.Tensor)
+        self.assertEqual(tuple(vector_tensor.shape), (2,))
+
+    def test_get_model_info_exposes_metadata(self) -> None:
+        """The metadata helper surfaces essential fields for CLI/documentation."""
+
+        info = self.backend.get_model_info()
+
+        self.assertEqual(info["model_name"], self.config.model)
+        self.assertEqual(info["embedding_dimension"], 2)
+        self.assertIn("device", info)
+        self.assertFalse(info["is_fallback"])
+        self.assertTrue(info["calibrated"])
 
     def tearDown(self) -> None:  # noqa: D401 - unittest hook
         # Ensure patches from setUp are correctly removed even if assertions fail
