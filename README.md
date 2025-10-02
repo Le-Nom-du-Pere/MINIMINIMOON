@@ -67,18 +67,55 @@ Los archivos fuente originales (`DECALOGO_FULL.json`, `decalogo_industrial.json`
 raíz para trazabilidad y pueden regenerarse a los formatos limpios siguiendo los pipelines del directorio `out/` cuando se
 actualicen las matrices normativas.
 
-## Flujo de instalación
-```bash
-# Crear entorno virtual
-python3 -m venv venv
-source venv/bin/activate  # En Windows: venv\Scripts\activate
+## Guía de inicio paso a paso
 
-# Instalar dependencias principales
-pip install -r requirements.txt
+1. **Verifica los prerrequisitos del sistema**
+   - Asegúrate de contar con **Python 3.8 o superior** instalado. Compruébalo ejecutando `python3 --version` en tu terminal.
+   - Confirma que tienes disponible `pip` (normalmente se instala junto con Python) mediante `python3 -m pip --version`.
+   - Si necesitas clonar el repositorio, valida que `git` esté disponible con `git --version`.
 
-# Descargar el modelo en español requerido por spaCy
-python3 -m spacy download es_core_news_sm
-```
+2. **Clona el repositorio (opcional si ya lo tienes localmente)**
+   ```bash
+   git clone https://github.com/<tu-organizacion>/MINIMINIMOON.git
+   cd MINIMINIMOON
+   ```
+
+3. **Crea y activa un entorno virtual aislado**
+   - En sistemas Unix (Linux/macOS):
+     ```bash
+     python3 -m venv venv
+     source venv/bin/activate
+     ```
+   - En Windows (PowerShell):
+     ```powershell
+     python -m venv venv
+     .\venv\Scripts\Activate.ps1
+     ```
+   Una vez activado el entorno virtual, el prompt mostrará un prefijo `venv`. Manténlo activo mientras trabajes con este proyecto.
+
+4. **Actualiza `pip` dentro del entorno virtual (recomendado)**
+   ```bash
+   python -m pip install --upgrade pip
+   ```
+
+5. **Instala las dependencias del proyecto**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+6. **Descarga el modelo de spaCy necesario para la detección de responsabilidades**
+   ```bash
+   python -m spacy download es_core_news_sm
+   ```
+   Si estás detrás de un proxy o sin acceso a internet, deja documentado el incidente y ejecuta el proyecto en modo degradado (algunos módulos continuarán funcionando, pero la detección de responsabilidades requerirá el modelo descargado previamente).
+
+7. **Comprueba que la instalación fue correcta**
+   Ejecuta una prueba de humo mínima para verificar que los módulos críticos se importan sin errores:
+   ```bash
+   python -c "import embedding_model, responsibility_detector, dag_validation; print('Componentes importados correctamente')"
+   ```
+
+Con estos pasos completados ya puedes explorar los módulos individuales o ejecutar las suites de pruebas descritas a continuación.
 
 ## Pruebas
 ```bash
