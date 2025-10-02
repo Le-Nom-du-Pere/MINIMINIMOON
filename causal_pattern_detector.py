@@ -7,10 +7,11 @@ import pandas as pd
 import pygam
 import torch
 import torch.nn as nn
-from econml.dml import CausalForestDML
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import StandardScaler
 from torch.utils.data import DataLoader, TensorDataset
+
+from econml.dml import CausalForestDML
 
 warnings.filterwarnings("ignore")
 
