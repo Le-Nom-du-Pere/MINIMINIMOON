@@ -17,6 +17,7 @@ y integración automática con el sistema decatalogo.
 - pyyaml>=6.0.0 (configuración YAML)
 """
 
+import csv
 import hashlib
 import json
 import logging
@@ -24,9 +25,9 @@ import os
 import tempfile
 import threading
 import warnings
-from collections import OrderedDict
+from collections import Counter, OrderedDict
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Protocol
+from typing import Any, Dict, Iterable, Iterator, List, Optional, Protocol
 
 import numpy as np
 import torch
@@ -776,17 +777,438 @@ def doctor():
         raise typer.Exit(1)
 
 
+_CONFIDENCE_KEYS = (
+    "confidence",
+    "confidence_score",
+    "score",
+    "probability",
+    "prediction_score",
+)
+_LABEL_KEYS = (
+    "label",
+    "gold_label",
+    "target",
+    "ground_truth",
+    "truth",
+    "is_relevant",
+    "relevant",
+    "match",
+)
+_DOMAIN_KEYS = (
+    "domain",
+    "domain_hint",
+    "domain_name",
+    "segment",
+    "cluster",
+)
+_SIMILARITY_KEYS = (
+    "similarity",
+    "cosine_similarity",
+    "similarity_score",
+    "score_similarity",
+)
+_EMBEDDING_KEYS = (
+    "embedding",
+    "embedding_vector",
+    "vector",
+    "sentence_embedding",
+    "query_embedding",
+)
+_REFERENCE_KEYS = (
+    "reference_embedding",
+    "document_embedding",
+    "target_embedding",
+    "positive_embedding",
+    "candidate_embedding",
+)
+_DIMENSION_KEYS = (
+    "embedding_dim",
+    "embedding_dimension",
+    "dimension",
+    "vector_size",
+    "embedding_size",
+)
+
+
+def _classify_corpus_files(path: Path) -> Dict[str, List[Path]]:
+    """Return mapping with data and metadata files discovered in ``path``."""
+
+    if path.is_file():
+        category = "metadata" if _is_metadata_file(path) else "data"
+        return {"data": [path]} if category == "data" else {"data": [], "metadata": [path]}
+
+    data_files: List[Path] = []
+    metadata_files: List[Path] = []
+
+    for candidate in sorted(path.iterdir()):
+        if candidate.is_dir():
+            # Allow placing corpus shards inside subdirectories
+            nested = _classify_corpus_files(candidate)
+            data_files.extend(nested.get("data", []))
+            metadata_files.extend(nested.get("metadata", []))
+            continue
+
+        if _is_metadata_file(candidate):
+            metadata_files.append(candidate)
+        elif candidate.suffix.lower() in {".jsonl", ".ndjson", ".json", ".csv"}:
+            data_files.append(candidate)
+
+    return {"data": data_files, "metadata": metadata_files}
+
+
+def _is_metadata_file(path: Path) -> bool:
+    """Detect whether ``path`` should be treated as a metadata manifest."""
+
+    name = path.name.lower()
+    if path.suffix.lower() in {".yaml", ".yml"}:
+        return True
+    if any(keyword in name for keyword in ("meta", "manifest", "stats", "statistics")):
+        return True
+    return False
+
+
+def _read_metadata_file(path: Path) -> Dict[str, Any]:
+    """Load metadata dictionary from JSON or YAML manifests."""
+
+    try:
+        if path.suffix.lower() in {".yaml", ".yml"}:
+            with open(path, "r", encoding="utf-8") as handle:
+                payload = yaml.safe_load(handle) or {}
+        else:
+            with open(path, "r", encoding="utf-8") as handle:
+                payload = json.load(handle)
+    except (OSError, json.JSONDecodeError, yaml.YAMLError) as exc:  # type: ignore[attr-defined]
+        raise ValueError(f"No se pudo leer metadata de corpus: {path}") from exc
+
+    if not isinstance(payload, dict):
+        raise ValueError(f"El archivo de metadata debe ser un objeto JSON/YAML: {path}")
+
+    # Permitir estructuras envolventes como {"meta": {...}}
+    for candidate_key in ("meta", "metadata", "stats", "statistics"):
+        candidate = payload.get(candidate_key)
+        if isinstance(candidate, dict):
+            return candidate
+
+    return payload
+
+
+def _iter_corpus_records(path: Path) -> Iterator[Dict[str, Any]]:
+    """Stream records from JSON, JSONL or CSV files."""
+
+    suffix = path.suffix.lower()
+    if suffix in {".jsonl", ".ndjson"}:
+        with open(path, "r", encoding="utf-8") as handle:
+            for line in handle:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                try:
+                    payload = json.loads(line)
+                except json.JSONDecodeError:
+                    logger.debug("Línea inválida en corpus: %s", line[:80])
+                    continue
+                yield from _coerce_payload_to_records(payload)
+    elif suffix == ".json":
+        with open(path, "r", encoding="utf-8") as handle:
+            try:
+                payload = json.load(handle)
+            except json.JSONDecodeError as exc:
+                raise ValueError(f"No se pudo parsear archivo JSON de corpus: {path}") from exc
+        yield from _coerce_payload_to_records(payload)
+    elif suffix == ".csv":
+        with open(path, "r", encoding="utf-8", newline="") as handle:
+            reader = csv.DictReader(handle)
+            for row in reader:
+                if not row:
+                    continue
+                yield {key: _maybe_json(value) for key, value in row.items() if value not in (None, "")}
+    else:
+        raise ValueError(f"Formato de corpus no soportado: {path.suffix}")
+
+
+def _coerce_payload_to_records(payload: Any) -> Iterator[Dict[str, Any]]:
+    """Normalise payloads from JSON/JSONL files into record dictionaries."""
+
+    if isinstance(payload, dict):
+        for meta_key in ("meta", "metadata", "stats", "statistics"):
+            meta_value = payload.get(meta_key)
+            if isinstance(meta_value, dict):
+                yield {meta_key: meta_value}
+        # Detect envolturas comunes {"records": [...]}
+        for key in ("records", "samples", "data"):
+            value = payload.get(key)
+            if isinstance(value, list):
+                for item in value:
+                    if isinstance(item, dict):
+                        yield item
+                return
+        yield payload
+        return
+
+    if isinstance(payload, list):
+        for item in payload:
+            if isinstance(item, dict):
+                yield item
+        return
+
+    # Ignorar otros tipos (p.ej. strings sueltas)
+
+
+def _maybe_json(value: str) -> Any:
+    """Attempt to decode JSON snippets stored as strings."""
+
+    text = value.strip()
+    if not text:
+        return value
+    if text[0] not in "[{" and text.lower() not in {"true", "false", "null"}:
+        return value
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        return value
+
+
+def _extract_dimension_from_metadata(metadata: Dict[str, Any]) -> Optional[int]:
+    for key in _DIMENSION_KEYS:
+        value = metadata.get(key)
+        if value is None:
+            continue
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            continue
+    return None
+
+
+def _extract_confidence(record: Dict[str, Any]) -> Optional[float]:
+    for key in _CONFIDENCE_KEYS:
+        if key not in record:
+            continue
+        value = record[key]
+        if value is None:
+            continue
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            if isinstance(value, list) and value:
+                try:
+                    return float(value[0])
+                except (TypeError, ValueError):
+                    continue
+    return None
+
+
+def _extract_label(record: Dict[str, Any]) -> Optional[int]:
+    for key in _LABEL_KEYS:
+        if key not in record:
+            continue
+        value = record[key]
+        if value is None:
+            continue
+        if isinstance(value, bool):
+            return int(value)
+        if isinstance(value, (int, float)):
+            return int(round(value))
+        if isinstance(value, str):
+            text = value.strip().lower()
+            if text in {"1", "true", "yes", "y", "positive", "pos"}:
+                return 1
+            if text in {"0", "false", "no", "n", "negative", "neg"}:
+                return 0
+        if isinstance(value, list) and value:
+            try:
+                return int(value[0])
+            except (TypeError, ValueError):
+                continue
+    return None
+
+
+def _extract_domain(record: Dict[str, Any]) -> Optional[str]:
+    for key in _DOMAIN_KEYS:
+        if key not in record:
+            continue
+        value = record[key]
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+        if isinstance(value, (list, tuple)) and value:
+            element = value[0]
+            if isinstance(element, str) and element.strip():
+                return element.strip()
+    return None
+
+
+def _extract_similarity(record: Dict[str, Any]) -> Optional[float]:
+    for key in _SIMILARITY_KEYS:
+        if key not in record:
+            continue
+        value = record[key]
+        if value is None:
+            continue
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            if isinstance(value, list) and value:
+                try:
+                    return float(value[0])
+                except (TypeError, ValueError):
+                    continue
+    return None
+
+
+def _extract_vector(record: Dict[str, Any], keys: Iterable[str]) -> Optional[np.ndarray]:
+    for key in keys:
+        if key not in record:
+            continue
+        value = record[key]
+        vector = _coerce_vector(value)
+        if vector is not None:
+            return vector
+    return None
+
+
+def _extract_dimension_from_record(record: Dict[str, Any]) -> Optional[int]:
+    for key in _DIMENSION_KEYS:
+        if key not in record:
+            continue
+        value = record[key]
+        if value is None:
+            continue
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            continue
+    return None
+
+
+def _coerce_vector(value: Any) -> Optional[np.ndarray]:
+    if value is None:
+        return None
+    if isinstance(value, np.ndarray):
+        return value.astype(np.float32, copy=False)
+    if isinstance(value, (list, tuple)):
+        try:
+            return np.asarray(value, dtype=np.float32)
+        except (TypeError, ValueError):
+            return None
+    if isinstance(value, str):
+        parsed = _maybe_json(value)
+        if parsed is not value:
+            return _coerce_vector(parsed)
+    return None
+
+
+def _cosine_similarity(vec_a: np.ndarray, vec_b: np.ndarray) -> float:
+    if vec_a.size == 0 or vec_b.size == 0:
+        return 0.0
+    denom = np.linalg.norm(vec_a) * np.linalg.norm(vec_b)
+    if denom == 0:
+        return 0.0
+    return float(np.dot(vec_a, vec_b) / denom)
+
+
 def _load_corpus_stats(corpus_path: str) -> CalibrationCorpusStats:
     """Carga estadísticas del corpus para calibración."""
-    # Placeholder - implementar según formato específico del corpus PDM
+
+    path = Path(corpus_path).expanduser()
+    if not path.exists():
+        raise FileNotFoundError(f"Corpus de calibración no encontrado: {path}")
+
+    discovered = _classify_corpus_files(path)
+    data_files = discovered.get("data", [])
+    metadata_files = discovered.get("metadata", [])
+
+    if not data_files:
+        raise ValueError(f"No se encontraron archivos de datos en {path}")
+
+    metadata: Dict[str, Any] = {}
+    for meta_file in metadata_files:
+        metadata.update(_read_metadata_file(meta_file))
+
+    embedding_dim = _extract_dimension_from_metadata(metadata)
+    fallback_dim: Optional[int] = None
+
+    confidence_scores: List[float] = []
+    gold_labels: List[int] = []
+    domain_counts: Counter[str] = Counter()
+    similarity_values: List[float] = []
+
+    for data_file in data_files:
+        for record in _iter_corpus_records(data_file):
+            if not isinstance(record, dict):
+                continue
+
+            embedded_metadata = False
+            for meta_key in ("meta", "metadata", "stats", "statistics"):
+                if meta_key not in record:
+                    continue
+                embedded_meta = record.get(meta_key)
+                if isinstance(embedded_meta, dict):
+                    metadata.update(embedded_meta)
+                    embedded_metadata = True
+                    if embedding_dim is None:
+                        embedding_dim = _extract_dimension_from_metadata(metadata)
+            if (
+                embedded_metadata
+                and not any(key in record for key in _CONFIDENCE_KEYS + _LABEL_KEYS)
+            ):
+                continue
+
+            confidence = _extract_confidence(record)
+            label = _extract_label(record)
+            if confidence is None or label is None:
+                continue
+
+            confidence_scores.append(confidence)
+            gold_labels.append(label)
+
+            domain = _extract_domain(record)
+            if domain:
+                domain_counts[domain] += 1
+
+            vector = _extract_vector(record, _EMBEDDING_KEYS)
+            reference_vector = _extract_vector(record, _REFERENCE_KEYS)
+
+            if embedding_dim is None:
+                embedding_dim = _extract_dimension_from_record(record)
+            if embedding_dim is None:
+                candidate_vector = vector or reference_vector
+                if candidate_vector is not None:
+                    fallback_dim = int(candidate_vector.shape[0])
+
+            if vector is not None and reference_vector is not None:
+                similarity_values.append(_cosine_similarity(vector, reference_vector))
+            else:
+                similarity = _extract_similarity(record)
+                if similarity is not None:
+                    similarity_values.append(similarity)
+
+    if not confidence_scores or not gold_labels:
+        raise ValueError("El corpus no contiene suficientes muestras etiquetadas para calibración")
+
+    if embedding_dim is None:
+        embedding_dim = fallback_dim
+
+    if embedding_dim is None:
+        raise ValueError("No fue posible determinar la dimensionalidad de embeddings del corpus")
+
+    if not similarity_values:
+        similarity_values = confidence_scores.copy()
+
+    similarity_array = np.asarray(similarity_values, dtype=np.float32)
+    domain_distribution = (
+        {domain: float(count) for domain, count in domain_counts.items()}
+        if domain_counts
+        else {metadata.get("default_domain", "PDM"): float(len(confidence_scores))}
+    )
+
     return CalibrationCorpusStats(
-        corpus_size=1000,
-        embedding_dim=1024,
-        similarity_mean=0.75,
-        similarity_std=0.15,
-        confidence_scores=[0.6, 0.7, 0.8, 0.9] * 250,  # Datos sintéticos
-        gold_labels=[0, 1, 1, 1] * 250,  # Datos sintéticos
-        domain_distribution={"PDM": 0.8, "general": 0.2},
+        corpus_size=len(confidence_scores),
+        embedding_dim=int(embedding_dim),
+        similarity_mean=float(np.mean(similarity_array)),
+        similarity_std=float(np.std(similarity_array)),
+        confidence_scores=confidence_scores,
+        gold_labels=gold_labels,
+        domain_distribution=domain_distribution,
     )
 
 
