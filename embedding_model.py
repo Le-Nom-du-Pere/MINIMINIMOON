@@ -611,14 +611,83 @@ def load_embedding_config() -> EmbeddingConfig:
     return default_config
 
 
+def create_embedding_model(
+    *,
+    model: Optional[str] = None,
+    device: Optional[str] = None,
+    precision: Optional[str] = None,
+    batch_size: Optional[int] = None,
+    normalize_l2: Optional[bool] = None,
+    similarity: Optional[str] = None,
+    calibration_card: Optional[str] = None,
+    domain_hint_default: Optional[str] = None,
+    enable_cache: Optional[bool] = None,
+    cache_size: Optional[int] = None,
+    config: Optional[EmbeddingConfig] = None,
+) -> "EmbeddingBackend":
+    """Factory flexible para instanciar ``SotaEmbedding``.
+
+    Este helper mantiene compatibilidad con la CLI y los ejemplos del README
+    permitiendo sobrescribir parámetros clave sin mutar la configuración
+    persistente generada por :func:`load_embedding_config`.
+
+    Args:
+        model: Identificador del modelo SentenceTransformer.
+        device: Dispositivo deseado (``"cpu"``, ``"cuda"`` o ``"auto"``).
+        precision: Precisión numérica (``"fp16"``, ``"fp32"`` o ``"int8"``).
+        batch_size: Tamaño de lote por defecto para ``embed_texts``.
+        normalize_l2: Habilita o deshabilita la normalización L2 automática.
+        similarity: Métrica de similitud a utilizar.
+        calibration_card: Ruta personalizada para la tarjeta de calibración.
+        domain_hint_default: Dominio por defecto para suavizado.
+        enable_cache: Activa/desactiva el cache interno de embeddings.
+        cache_size: Tamaño máximo del cache (en lotes) cuando está habilitado.
+        config: Instancia de :class:`EmbeddingConfig` preconstruida.
+
+    Returns:
+        ``SotaEmbedding`` configurado según los parámetros proporcionados.
+    """
+
+    base_config = config or load_embedding_config()
+    update_fields: Dict[str, Any] = {}
+
+    overrides: Dict[str, Optional[Any]] = {
+        "model": model,
+        "device": device,
+        "precision": precision,
+        "batch_size": batch_size,
+        "normalize_l2": normalize_l2,
+        "similarity": similarity,
+        "calibration_card": calibration_card,
+        "domain_hint_default": domain_hint_default,
+    }
+    for field_name, value in overrides.items():
+        if value is not None:
+            update_fields[field_name] = value
+
+    if cache_size is not None:
+        update_fields["cache_size"] = max(0, cache_size)
+
+    if enable_cache is not None:
+        if enable_cache:
+            desired_cache = update_fields.get("cache_size", base_config.cache_size)
+            if desired_cache <= 0:
+                desired_cache = max(1, cache_size or 128)
+            update_fields["cache_size"] = desired_cache
+        else:
+            update_fields["cache_size"] = 0
+
+    effective_config = base_config.copy(update=update_fields)
+    return SotaEmbedding(effective_config)
+
+
 def get_default_embedding() -> "EmbeddingBackend":
     """Factory para obtener backend de embedding por defecto."""
     pid = os.getpid()
     with _DEFAULT_EMBEDDING_LOCK:
         backend = _DEFAULT_EMBEDDING_INSTANCES.get(pid)
         if backend is None:
-            config = load_embedding_config()
-            backend = SotaEmbedding(config)
+            backend = SotaEmbedding(load_embedding_config())
             _DEFAULT_EMBEDDING_INSTANCES[pid] = backend
         return backend
 
