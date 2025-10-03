@@ -1,120 +1,120 @@
 """
-Embedding Model SOTA para Planes de Desarrollo Municipal (PDM) Colombia
-=======================================================================
-Módulo industrial para embeddings multilingües con calibración avanzada
-y integración automática con el sistema decatalogo.
-
-@novelty_manifest
-- sentence-transformers>=3.0.0 (SOTA embeddings multilingües)
-- torch>=2.3.0 (GPU acceleration, torch.compile)
-- numpy>=2.0.0 (operaciones vectoriales optimizadas)
-- scikit-learn>=1.5.0 (calibración isotónica)
-- transformers>=4.40.0 (modelos BGE-M3/MXBai)
-- datasets>=2.18.0 (corpus de calibración)
-- faiss-cpu>=1.8.0 (búsqueda aproximada)
-- typer>=0.12.0 (CLI moderno)
-- pydantic>=2.7.0 (validación configuración)
-- pyyaml>=6.0.0 (configuración YAML)
+Embedding Model with fallback mechanism.
+Provides text embedding functionality with automatic fallback from MPNet to MiniLM.
 """
 
-import csv
-import hashlib
-import json
-import logging
-import os
-import tempfile
-import threading
-import warnings
-from collections import Counter, OrderedDict
-from pathlib import Path
-from typing import Any, Dict, Iterable, Iterator, List, Optional, Protocol, Union
-
+from typing import List, Union, Dict, Any, Optional
 import numpy as np
-import torch
-import typer
-
-import numpy as np
-import torch
-import typer
-import yaml
-from pydantic import BaseModel, Field
 from sentence_transformers import SentenceTransformer
-from sklearn.isotonic import IsotonicRegression
+import logging
 
-# Configuración de logging para producción
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-_DEFAULT_EMBEDDING_INSTANCES: Dict[int, "SotaEmbedding"] = {}
-_DEFAULT_EMBEDDING_LOCK = threading.RLock()
-_POST_INSTALL_SETUP_LOCK = threading.RLock()
+class EmbeddingModel:
+    """
+    Text embedding model with fallback mechanism.
+    
+    Attempts to load the primary MPNet model, falling back to MiniLM if needed.
+    Optimizes batch sizes based on model capabilities and provides robust error handling.
+    
+    Attributes:
+        model: The loaded SentenceTransformer model
+        model_name: Name of the currently active model
+        batch_size: Optimized batch size for the active model
+    """
+    
+    # Model configuration with fallbacks
+    PRIMARY_MODEL = 'paraphrase-multilingual-mpnet-base-v2'
+    FALLBACK_MODEL = 'paraphrase-multilingual-MiniLM-L12-v2'
+    
+    # Model-specific optimal batch sizes
+    BATCH_SIZES = {
+        PRIMARY_MODEL: 16,
+        FALLBACK_MODEL: 32
+    }
+    
+    def __init__(self):
+        """Initialize embedding model with fallback mechanism."""
+        self.model = None
+        self.model_name = None
+        self.batch_size = None
+        self._initialize_model()
+    
+    def _initialize_model(self) -> None:
+        """Attempt to load primary model with fallback to lighter model."""
+        try:
+            logger.info(f"Attempting to load primary model: {self.PRIMARY_MODEL}")
+            self.model = SentenceTransformer(self.PRIMARY_MODEL)
+            self.model_name = self.PRIMARY_MODEL
+            self.batch_size = self.BATCH_SIZES[self.PRIMARY_MODEL]
+            logger.info(f"Successfully loaded primary model: {self.PRIMARY_MODEL}")
+        except Exception as e:
+            logger.warning(f"Failed to load primary model: {e}")
+            try:
+                logger.info(f"Attempting to load fallback model: {self.FALLBACK_MODEL}")
+                self.model = SentenceTransformer(self.FALLBACK_MODEL)
+                self.model_name = self.FALLBACK_MODEL
+                self.batch_size = self.BATCH_SIZES[self.FALLBACK_MODEL]
+                logger.info(f"Successfully loaded fallback model: {self.FALLBACK_MODEL}")
+            except Exception as e2:
+                logger.error(f"Failed to load fallback model: {e2}")
+                raise RuntimeError(f"Failed to initialize embedding models: {e}, then {e2}")
+    
+    def embed(self, texts: List[str]) -> np.ndarray:
+        """
+        Create embeddings for a list of texts.
+        
+        Args:
+            texts: List of strings to embed
+            
+        Returns:
+            numpy.ndarray: Array of embedding vectors
+            
+        Raises:
+            RuntimeError: If embedding fails
+        """
+        if not texts:
+            return np.array([])
+        
+        try:
+            # Process in batches for memory efficiency
+            all_embeddings = []
+            for i in range(0, len(texts), self.batch_size):
+                batch = texts[i:i + self.batch_size]
+                batch_embeddings = self.model.encode(batch, convert_to_numpy=True)
+                all_embeddings.append(batch_embeddings)
+            
+            return np.vstack(all_embeddings)
+        except Exception as e:
+            logger.error(f"Embedding failed: {e}")
+            raise RuntimeError(f"Failed to create embeddings: {e}")
 
-# Suprimir warnings no críticos
-warnings.filterwarnings("ignore", category=UserWarning)
-warnings.filterwarnings("ignore", category=FutureWarning)
-os.environ["TOKENIZERS_PARALLELISM"] = "false"
-
-# Estado de configuración post-instalación
-_POST_INSTALL_SETUP_DONE = False
-
-# =============================================================================
-# AUDIT TRAIL
-# =============================================================================
-"""
-AUDITORÍA Y REFACTORIZACIÓN COMPLETADA:
-
-ELIMINADO:
-- TODO/FIXME/PLACEHOLDER/DUMMY/MOCK: 100% removido
-- IndustrialEmbeddingModel: Arquitectura sobre-compleja reemplazada
-- AdaptiveCache: Reemplazado por cache simple determinista
-- StatisticalNumericsAnalyzer: Fuera del scope de embeddings
-- AdvancedMMR: Moved to separate retrieval module
-- Performance monitoring decorators: Simplificado a logging básico
-- Threading complex: Simplificado para operación síncrona
-- Instruction profiles: Over-engineering removido
-- ProductionLogger: Reemplazado por logging estándar
-
-MIGRADO A SOTA:
-- Modelos: all-mpnet-base-v2 → BAAI/bge-m3
-- Normalización: L2 automática con cosine similarity
-- Precisión: FP16 por defecto con auto-casting
-- Batch processing: Optimizado con torch.compile
-
-NUEVAS IMPLEMENTACIONES:
-- SotaEmbedding: Backend limpio y enfocado
-- Calibration pipeline: Isotónica + Conformal Prediction
-- Factory pattern: Integración automática con decatalogo
-- Novelty guard: Validación dependencias 2024+
-- CLI integrado: pdm-embed commands
-
-CALIBRACIONES IMPLEMENTADAS:
-- Normalización L2 automática
-- Regresión isotónica sobre scores
-- Conformal prediction para umbrales
-- Domain smoothing para PDM
-- Persistencia en CalibrationCard
-"""
-
-# =============================================================================
-# CONFIGURACIÓN Y TIPOS
-# =============================================================================
+    def get_model_info(self) -> Dict[str, Any]:
+        """Return information about the currently loaded model."""
+        return {
+            "model_name": self.model_name,
+            "embedding_dimension": self.model.get_sentence_embedding_dimension(),
+            "batch_size": self.batch_size,
+            "is_fallback": self.model_name == self.FALLBACK_MODEL
+        }
 
 
-class EmbeddingConfig(BaseModel):
-    """Configuración para el backend de embeddings."""
-
-    model: str = Field(default="BAAI/bge-m3", description="Modelo SOTA para embeddings")
-    precision: str = Field(default="fp16", description="Precisión: fp16, fp32, int8")
-    batch_size: int = Field(default=64, description="Tamaño de lote para encoding")
-    normalize_l2: bool = Field(default=True, description="Normalización L2 automática")
-    similarity: str = Field(default="cosine", description="Métrica: cosine, dot")
-    calibration_card: str = Field(
-        default="data/calibration/embedding_pdm.card.json",
-        description="Ruta calibración",
-    )
-    domain_hint_default: str = Field(default="PDM", description="Dominio por defecto")
+def create_embedding_model() -> EmbeddingModel:
+    """
+    Factory function to create an embedding model instance with error handling.
+    
+    Returns:
+        EmbeddingModel: Initialized embedding model
+        
+    Raises:
+        RuntimeError: If model initialization fails
+    """
+    try:
+        return EmbeddingModel()
+    except Exception as e:
+        logger.error(f"Failed to create embedding model: {e}")
+        raise RuntimeError(f"Embedding model creation failed: {e}")
     device: str = Field(default="auto", description="Dispositivo: auto, cuda, cpu")
     cache_size: int = Field(
         default=128,

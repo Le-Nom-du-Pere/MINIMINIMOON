@@ -1,4 +1,4 @@
-"""Tests for the modern SotaEmbedding backend."""
+"""Test suite for the embedding model."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from typing import Iterable, List
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 import numpy as np
 import torch
@@ -255,52 +255,121 @@ class TestSotaEmbedding(unittest.TestCase):
                 pass
 
 
-class TestEmbeddingSingleton(unittest.TestCase):
-    """Validate lazy singleton behaviour and thread-safety."""
+class TestEmbeddingModel(unittest.TestCase):
+    """Tests for the EmbeddingModel class."""
 
-    def setUp(self) -> None:  # noqa: D401 - unittest hook
-        _reset_embedding_singleton_for_testing()
-        self.addCleanup(_reset_embedding_singleton_for_testing)
+    def test_embed_empty_list(self):
+        """Test that embedding an empty list returns an empty array."""
+        with patch("embedding_model.SentenceTransformer") as mock_st:
+            mock_model = MagicMock()
+            mock_st.return_value = mock_model
+            model = EmbeddingModel()
+            result = model.embed([])
+            self.assertIsInstance(result, np.ndarray)
+            self.assertEqual(result.shape[0], 0)
+            # Verify model was not called with empty input
+            mock_model.encode.assert_not_called()
 
-    def test_thread_safe_singleton_initialization(self) -> None:
-        """Concurrent access returns the same backend instance."""
+    def test_embed_single_text(self):
+        """Test embedding a single text string."""
+        with patch("embedding_model.SentenceTransformer") as mock_st:
+            mock_model = MagicMock()
+            mock_model.encode.return_value = np.array([[0.1, 0.2, 0.3]])
+            mock_st.return_value = mock_model
+            model = EmbeddingModel()
+            result = model.embed(["test text"])
+            self.assertIsInstance(result, np.ndarray)
+            self.assertEqual(result.shape, (1, 3))
+            mock_model.encode.assert_called_once()
 
-        config = EmbeddingConfig()
+    def test_embed_multiple_texts(self):
+        """Test embedding multiple text strings."""
+        with patch("embedding_model.SentenceTransformer") as mock_st:
+            mock_model = MagicMock()
+            mock_model.encode.return_value = np.array([[0.1, 0.2], [0.3, 0.4]])
+            mock_st.return_value = mock_model
+            model = EmbeddingModel()
+            # Override batch size for testing
+            model.batch_size = 10
+            result = model.embed(["text1", "text2"])
+            self.assertIsInstance(result, np.ndarray)
+            self.assertEqual(result.shape, (2, 2))
+            mock_model.encode.assert_called_once_with(["text1", "text2"], convert_to_numpy=True)
 
-        class _StubBackend:
-            def __init__(self, cfg: EmbeddingConfig) -> None:
-                self.config = cfg
+    def test_batch_processing(self):
+        """Test that texts are processed in batches."""
+        with patch("embedding_model.SentenceTransformer") as mock_st:
+            mock_model = MagicMock()
+            # Return different arrays for different batches
+            mock_model.encode.side_effect = [
+                np.array([[0.1, 0.2], [0.3, 0.4]]),
+                np.array([[0.5, 0.6]])
+            ]
+            mock_st.return_value = mock_model
+            model = EmbeddingModel()
+            # Set small batch size to force multiple batches
+            model.batch_size = 2
+            result = model.embed(["text1", "text2", "text3"])
+            self.assertIsInstance(result, np.ndarray)
+            self.assertEqual(result.shape, (3, 2))
+            # Check that encode was called twice with correct batches
+            self.assertEqual(mock_model.encode.call_count, 2)
 
-        def build_stub(cfg: EmbeddingConfig) -> _StubBackend:
-            backend = _StubBackend(cfg)
-            return backend
+    def test_fallback_mechanism(self):
+        """Test model fallback when primary model fails."""
+        with patch("embedding_model.SentenceTransformer") as mock_st:
+            # Make first call fail, second succeed
+            mock_st.side_effect = [RuntimeError("Model not found"), MagicMock()]
+            model = EmbeddingModel()
+            # Should have tried to load fallback model
+            self.assertEqual(mock_st.call_count, 2)
+            self.assertEqual(model.model_name, EmbeddingModel.FALLBACK_MODEL)
 
-        with patch("embedding_model.load_embedding_config", return_value=config), patch(
-            "embedding_model.SotaEmbedding", side_effect=build_stub
-        ) as factory:
-            results: List[_StubBackend] = []
-            errors: List[BaseException] = []
-            barrier = threading.Barrier(4)
+    def test_complete_failure(self):
+        """Test error handling when both models fail."""
+        with patch("embedding_model.SentenceTransformer") as mock_st:
+            # Make both primary and fallback model loading fail
+            mock_st.side_effect = [
+                RuntimeError("Primary model error"),
+                RuntimeError("Fallback model error"),
+            ]
+            with self.assertRaises(RuntimeError):
+                model = EmbeddingModel()
 
-            def worker() -> None:
-                try:
-                    barrier.wait()
-                    results.append(get_default_embedding())
-                except BaseException as exc:  # pragma: no cover - diagnostic aid
-                    errors.append(exc)
+    def test_embedding_failure(self):
+        """Test error handling when embedding fails."""
+        with patch("embedding_model.SentenceTransformer") as mock_st:
+            mock_model = MagicMock()
+            mock_model.encode.side_effect = RuntimeError("Encoding failed")
+            mock_st.return_value = mock_model
+            model = EmbeddingModel()
+            with self.assertRaises(RuntimeError):
+                model.embed(["test"])
 
-            threads = [threading.Thread(target=worker) for _ in range(4)]
-            for thread in threads:
-                thread.start()
-            for thread in threads:
-                thread.join()
+    def test_get_model_info(self):
+        """Test getting model information."""
+        with patch("embedding_model.SentenceTransformer") as mock_st:
+            mock_model = MagicMock()
+            mock_model.get_sentence_embedding_dimension.return_value = 768
+            mock_st.return_value = mock_model
+            model = EmbeddingModel()
+            info = model.get_model_info()
+            self.assertEqual(info["model_name"], EmbeddingModel.PRIMARY_MODEL)
+            self.assertEqual(info["embedding_dimension"], 768)
+            self.assertEqual(info["batch_size"], EmbeddingModel.BATCH_SIZES[EmbeddingModel.PRIMARY_MODEL])
+            self.assertFalse(info["is_fallback"])
 
-        self.assertFalse(errors)
-        self.assertEqual(factory.call_count, 1)
-        self.assertGreater(len(results), 0)
-        first = results[0]
-        for backend in results:
-            self.assertIs(backend, first)
+    def test_factory_function(self):
+        """Test the factory function for creating models."""
+        with patch("embedding_model.EmbeddingModel") as mock_embedding_model:
+            create_embedding_model()
+            mock_embedding_model.assert_called_once()
+
+    def test_factory_function_error(self):
+        """Test error handling in factory function."""
+        with patch("embedding_model.EmbeddingModel", side_effect=RuntimeError("Initialization failed")):
+            with self.assertRaises(RuntimeError):
+                create_embedding_model()
 
 
 if __name__ == "__main__":

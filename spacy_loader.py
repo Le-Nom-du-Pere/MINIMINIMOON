@@ -1,3 +1,6 @@
+"""
+Robust spaCy model loader with automatic download and fallback mechanisms.
+"""
 import logging
 import os
 import subprocess
@@ -22,16 +25,34 @@ _SPACY_SINGLETON_LOCK = threading.RLock()
 
 class SpacyModelLoader:
     """
-    Robust spaCy model loader with automatic download, retry logic, and degraded mode fallback.
+    Robust loader for spaCy models with automatic download and fallback.
+
+    Features:
+    - Automatic model download with retry logic
+    - Model caching to prevent redundant loading
+    - Graceful error handling with fallback options
+    - Support for multiple model configurations
+
+    Attributes:
+        models: Dictionary of loaded spaCy models
+        max_retries: Maximum number of download attempts
+        retry_delay: Delay between download attempts in seconds
     """
 
     def __init__(
         self,
-        max_retries: int = 2,
-        retry_delay: float = 1.0,
+        max_retries: int = 3,
+        retry_delay: int = 2,
         *,
         max_cache_size: int = 4,
     ):
+        """
+        Initialize the model loader.
+
+        Args:
+            max_retries: Maximum number of download attempts
+            retry_delay: Delay between download attempts in seconds
+        """
         self.max_retries = max_retries
         self.retry_delay = retry_delay
         self.degraded_mode = False
@@ -184,7 +205,9 @@ class SpacyModelLoader:
 
 class SafeSpacyProcessor:
     """
-    Example processor that gracefully handles missing spaCy models.
+    Example text processor with graceful degradation when models are unavailable.
+
+    Provides basic text processing functions even when spaCy models fail to load.
     """
 
     def __init__(
@@ -196,6 +219,7 @@ class SafeSpacyProcessor:
         self.loader = loader or get_spacy_model_loader()
         self.model = self.loader.load_model(preferred_model)
         self.preferred_model = preferred_model
+
     def process_text(self, text: str) -> dict:
         """
         Process text with available spaCy functionality or fallback methods.
@@ -243,30 +267,6 @@ def get_spacy_model_loader() -> SpacyModelLoader:
 
     pid = os.getpid()
     with _SPACY_SINGLETON_LOCK:
-        loader = _SPACY_SINGLETONS.get(pid)
-        if loader is None:
-            loader = SpacyModelLoader()
-            _SPACY_SINGLETONS[pid] = loader
-        return loader
-
-
-def _reset_spacy_singleton_for_testing() -> None:
-    """Clear singleton cache – intended for test suites only."""
-
-    with _SPACY_SINGLETON_LOCK:
-        _SPACY_SINGLETONS.pop(os.getpid(), None)
-
-
-def setup_logging():
-    """
-    Setup logging with RotatingFileHandler and configurable log directory.
-    Falls back to current working directory if LOG_DIR is not set or not writable.
-    """
-    # Get log directory from environment variable or fallback to current directory
-    log_dir = os.getenv("LOG_DIR", os.getcwd())
-
-    # Ensure log directory exists and is writable
-    try:
         os.makedirs(log_dir, exist_ok=True)
         # Test if directory is writable
         test_file = os.path.join(log_dir, ".write_test")
