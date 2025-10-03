@@ -1032,6 +1032,27 @@ class DocumentSegmenter:
         except (statistics.StatisticsError, ZeroDivisionError):
             return 0.5
 
+    def _calculate_target_adherence_score(self) -> float:
+        """Calculate how well segments adhere to target criteria"""
+        if not self.segmentation_stats or self.segmentation_stats.total_segments == 0:
+            return 0.0
+        
+        segments_in_target = sum(
+            1 for seg in self.segmentation_stats.segments
+            if self.target_char_min <= seg.char_count <= self.target_char_max
+            and seg.sentence_count == self.target_sentences
+        )
+        
+        return segments_in_target / self.segmentation_stats.total_segments
+
+    def _calculate_overall_quality_score(self) -> float:
+        """Calculate overall quality score combining consistency and adherence"""
+        consistency_score = self._calculate_consistency_score()
+        adherence_score = self._calculate_target_adherence_score()
+        
+        # Weighted combination (can be adjusted)
+        return (consistency_score * 0.5 + adherence_score * 0.5)
+
     def get_segmentation_report(self) -> Dict[str, Any]:
         """Generate comprehensive segmentation report with quality metrics"""
         if not self.segmentation_stats or self.segmentation_stats.total_segments == 0:
@@ -1138,9 +1159,9 @@ class DocumentSegmenter:
         """Emergency fallback for when all other segmentation methods fail"""
         LOGGER.warning("Using emergency fallback segmentation")
         
-        # Simple character-based chunking
+        # Simple character-based chunking using average of target range
         segments = []
-        chunk_size = self.target_char_max
+        chunk_size = (self.target_char_min + self.target_char_max) // 2
         
         for i in range(0, len(text), chunk_size):
             chunk = text[i:i + chunk_size]
