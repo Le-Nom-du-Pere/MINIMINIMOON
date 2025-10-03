@@ -126,12 +126,25 @@ class SpacyModelLoader:
                 logger.info(
                     f"Downloading spaCy model '{model_name}' (attempt {attempt + 1}/{self.max_retries + 1})"
                 )
-                spacy.cli.download(model_name)
+                # Try using spacy.cli.download first for compatibility
+                # but catch SystemExit to prevent process termination
+                try:
+                    spacy.cli.download(model_name)
+                except SystemExit as e:
+                    # SystemExit with code 0 means success
+                    if e.code == 0:
+                        logger.info(
+                            f"Successfully downloaded spaCy model '{model_name}'")
+                        return True
+                    else:
+                        raise RuntimeError(f"Download failed with exit code {e.code}")
+                
+                # If we get here without exception, download succeeded
                 logger.info(
                     f"Successfully downloaded spaCy model '{model_name}'")
                 return True
 
-            except Exception as e:
+            except (Exception, SystemExit) as e:
                 logger.warning(
                     f"Download attempt {attempt + 1} failed for model '{model_name}': {e}"
                 )
