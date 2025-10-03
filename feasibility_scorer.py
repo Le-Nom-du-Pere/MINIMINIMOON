@@ -218,13 +218,14 @@ class FeasibilityScorer:
         """
         self.detection_patterns = self._initialize_patterns()
         self.weights = {
-            ComponentType.BASELINE: 0.4,
-            ComponentType.TARGET: 0.4,
+            ComponentType.BASELINE: 0.2,
+            ComponentType.TARGET: 0.2,
             ComponentType.TIME_HORIZON: 0.2,
-            ComponentType.NUMERICAL: 0.1,
+            ComponentType.NUMERICAL: 0.15,
             ComponentType.DATE: 0.1,
         }
-        self.quality_thresholds = {"high": 0.8, "medium": 0.5, "low": 0.2}
+        self.quantitative_bonus = 0.05
+        self.quality_thresholds = {"high": 0.8, "medium": 0.45, "low": 0.2}
 
         # Override with CLI arguments if available
         cli_workers = os.environ.get("CLI_WORKERS")
@@ -310,6 +311,11 @@ class FeasibilityScorer:
                     "language": "es/en",
                 },
                 {
+                    "pattern": r"(?:situación\s+actual)",
+                    "confidence": 0.85,
+                    "language": "es",
+                },
+                {
                     "pattern": r"(?:punto\s+de\s+partida|referencia\s+inicial|nivel\s+base)",
                     "confidence": 0.8,
                     "language": "es",
@@ -352,6 +358,11 @@ class FeasibilityScorer:
                     "pattern": r"(?:para\s+el\s+año|hasta\s+el|en\s+los\s+próximos|within|by\s+\d{4})",
                     "confidence": 0.8,
                     "language": "es/en",
+                },
+                {
+                    "pattern": r"by\s+(?:january|february|march|april|may|june|july|august|september|october|november|december)\s+20\d{2}",
+                    "confidence": 0.85,
+                    "language": "en",
                 },
             ],
             ComponentType.NUMERICAL: [
@@ -476,26 +487,49 @@ class FeasibilityScorer:
         normalized_text = FeasibilityScorer._normalize_text(text)
         text_lower = normalized_text.lower()
 
-        # Find component mentions
-        component_positions = []
+        component_spans: List[Tuple[int, int]] = []
         for pattern_info in self.detection_patterns[component_type]:
             pattern = pattern_info["pattern"]
-            matches = re.finditer(pattern, text_lower, re.IGNORECASE)
-            component_positions.extend([match.start() for match in matches])
+            for match in re.finditer(pattern, text_lower, re.IGNORECASE):
+                component_spans.append((match.start(), match.end()))
 
-        if not component_positions:
+        if not component_spans:
             return False
 
-        # Check for numerical values within 30 characters of component mentions
-        numerical_patterns = self.detection_patterns[ComponentType.NUMERICAL]
-        for pos in component_positions:
-            context_start = max(0, pos - 30)
-            context_end = min(len(text), pos + 30)
-            context = text_lower[context_start:context_end]
+        numerical_spans: List[Tuple[int, int]] = []
+        for pattern_info in self.detection_patterns[ComponentType.NUMERICAL]:
+            pattern = pattern_info["pattern"]
+            for match in re.finditer(pattern, text_lower, re.IGNORECASE):
+                numerical_spans.append((match.start(), match.end()))
 
-            for pattern_info in numerical_patterns:
-                if re.search(pattern_info["pattern"], context, re.IGNORECASE):
-                    return True
+        if not numerical_spans:
+            return False
+
+        window = 40
+        target_spans: List[Tuple[int, int]] = []
+        if component_type == ComponentType.BASELINE:
+            for pattern_info in self.detection_patterns[ComponentType.TARGET]:
+                pattern = pattern_info["pattern"]
+                for match in re.finditer(pattern, text_lower, re.IGNORECASE):
+                    target_spans.append((match.start(), match.end()))
+
+        for comp_start, comp_end in component_spans:
+            for num_start, num_end in numerical_spans:
+                distance_after = num_start - comp_end
+                distance_before = comp_start - num_end
+
+                if component_type == ComponentType.BASELINE:
+                    intervening_target = any(
+                        comp_end <= target_start <= num_start
+                        for target_start, _ in target_spans
+                    )
+                    if intervening_target and distance_after >= 0:
+                        continue
+                    if (0 <= distance_after <= window) or (0 <= distance_before <= window):
+                        return True
+                else:
+                    if 0 <= distance_after <= window:
+                        return True
 
         return False
 
@@ -517,9 +551,9 @@ class FeasibilityScorer:
 
         Scoring Requirements:
             - Must have both baseline and target components for positive score
-            - Base score: 0.8 (0.4 baseline + 0.4 target)
-            - Quantitative bonuses: +0.2 each for quantitative baseline and target
-            - Component bonuses: +0.2 time horizon, +0.1 numerical, +0.1 dates
+            - Base contributions: 0.2 baseline + 0.2 target
+            - Component bonuses: +0.2 time horizon, +0.15 numerical evidence, +0.1 dates
+            - Quantitative bonuses: +0.05 each when numerical values appear near the baseline/target
             - Confidence weighting: Final score multiplied by average pattern confidence
 
         Quality Tiers:
@@ -591,9 +625,9 @@ class FeasibilityScorer:
 
         # Bonus for quantitative elements
         if has_quantitative_baseline:
-            base_score += 0.2
+            base_score += self.quantitative_bonus
         if has_quantitative_target:
-            base_score += 0.2
+            base_score += self.quantitative_bonus
 
         # Additional component bonuses
         if ComponentType.TIME_HORIZON in component_types:
@@ -858,9 +892,9 @@ The feasibility scorer evaluates indicator quality by detecting three core compo
 
 ## Scoring Logic
 - **Minimum requirement**: Both baseline AND target components must be present for positive score
-- **Base score**: 0.8 (0.4 baseline + 0.4 target)
-- **Quantitative bonus**: +0.2 each for quantitative baseline and target
-- **Component bonuses**: +0.2 time horizon, +0.1 numerical, +0.1 dates
+- **Base contributions**: baseline (0.2) + target (0.2)
+- **Component bonuses**: +0.2 time horizon, +0.15 numerical evidence, +0.1 dates
+- **Quantitative bonus**: +0.05 each when numerical values appear near the baseline/target
 - **Confidence weighting**: Final score multiplied by average pattern confidence
 
 ## Spanish Pattern Recognition
@@ -889,21 +923,21 @@ The feasibility scorer evaluates indicator quality by detecting three core compo
 
 ## Quality Tiers
 - **High** (≥0.8): Complete indicators with quantitative elements
-- **Medium** (≥0.5): Has baseline/target, some quantitative elements  
+- **Medium** (≥0.45): Has baseline/target, some quantitative elements  
 - **Low** (≥0.2): Basic baseline/target, limited quantitative data
 - **Poor** (<0.2): Missing core components or very low confidence
 - **Insufficient** (0.0): Missing baseline or target components
 
 ## Examples
 
-### High Quality (Score: 0.95)
+### High Quality (Score: ~0.9)
 "Incrementar la línea base de 65% de cobertura educativa a una meta de 85% para el año 2025"
 - ✓ Baseline: "línea base de 65%"  
 - ✓ Target: "meta de 85%"
 - ✓ Time horizon: "para el año 2025"
 - ✓ Quantitative baseline and target
 
-### Medium Quality (Score: 0.6)  
+### Medium Quality (Score: ~0.6)  
 "Mejorar el objetivo de acceso al agua desde la situación actual hasta alcanzar la meta establecida"
 - ✓ Baseline: "situación actual"
 - ✓ Target: "meta establecida"  
@@ -954,10 +988,10 @@ The feasibility scorer evaluates indicator quality by detecting three core compo
 
         # Weights for different scoring components
         weights = {
-            "monetary": 0.35,
-            "dates": 0.25,
-            "terminology": 0.25,
-            "structure_penalty": -0.15,
+            "monetary": 0.3,
+            "dates": 0.3,
+            "terminology": 0.3,
+            "structure_penalty": -0.2,
         }
 
         # 1. Monetary amount detection
@@ -1065,7 +1099,12 @@ The feasibility scorer evaluates indicator quality by detecting three core compo
                 score += 0.4
             elif re.search(r"q[1-4]|trimestre|quarter", match_text):
                 score += 0.3
-            elif re.search(r"enero|febrero|january|february", match_text):
+            elif re.search(
+                r"enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre|january|february|march|april|may|june|july|august|september|october|november|december",
+                match_text,
+            ):
+                score += 0.25
+            elif re.search(r"periodicidad|periodicity|frecuencia|frequency|cada|every", match_text):
                 score += 0.25
             else:
                 score += 0.15
@@ -1091,7 +1130,11 @@ The feasibility scorer evaluates indicator quality by detecting three core compo
             r"(?:evaluación|evaluation|assessment|valoración)",
             # Quantitative terms
             r"(?:incremento|aumento|reducción|mejora|improvement)",
+            r"(?:incrementar|aumentar|reducir|disminuir)",
+            r"\d+\s*%",
             r"(?:porcentaje|percentage|proporción|proportion|ratio)",
+            r"(?:beneficiarios?|beneficiaries|participantes?|participants?)",
+            r"(?:cobertura|coverage)",
             # Comparative terms
             r"(?:comparado\s+con|compared\s+to|respecto\s+a|versus)",
             r"(?:mayor\s+que|menor\s+que|igual\s+a|greater\s+than|less\s+than)",
@@ -1106,7 +1149,7 @@ The feasibility scorer evaluates indicator quality by detecting three core compo
 
         # Score based on terminology richness
         unique_matches = set(match.group().lower() for match in matches)
-        richness_score = min(len(unique_matches) * 0.2, 1.0)
+        richness_score = min(len(unique_matches) * 0.25, 1.0)
 
         # Bonus for measurement-specific terminology
         measurement_bonus = 0.0
@@ -1119,6 +1162,17 @@ The feasibility scorer evaluates indicator quality by detecting three core compo
             "monitoring",
             "evaluación",
             "evaluation",
+            "measurement",
+            "meta",
+            "objetivo",
+            "goal",
+            "target",
+            "cobertura",
+            "coverage",
+            "beneficiarios",
+            "beneficiaries",
+            "valor inicial",
+            "punto de partida",
         ]
 
         for term in measurement_terms:
@@ -1130,19 +1184,16 @@ The feasibility scorer evaluates indicator quality by detecting three core compo
     @staticmethod
     def _calculate_structure_penalty(text: str) -> float:
         """Calculate penalty for indicators in titles/bullets without values."""
-        # Check for title/bullet point patterns
-        title_patterns = [
-            r"^[-•*]\s+",  # Bullet points
-            r"^#{1,6}\s+",  # Markdown headers
-            r"^[A-Z\s]+:$",  # All caps titles with colon
-            r"^[^\w]*(?:[A-Z][^.]*[^.]|[A-Z\s]+)$",  # Title-like structure
-        ]
+        stripped = text.strip()
+        if not stripped:
+            return 0.0
 
-        is_title_like = any(
-            re.match(pattern, text, re.MULTILINE) for pattern in title_patterns
-        )
+        is_bullet = bool(re.match(r"^[-•*]\s+", stripped))
+        is_header = bool(re.match(r"^#{1,6}\s+", stripped))
+        is_all_caps = stripped.isupper()
+        is_caps_title = stripped.endswith(":") and stripped[:-1].strip().isupper()
 
-        if not is_title_like:
+        if not (is_bullet or is_header or is_all_caps or is_caps_title):
             return 0.0
 
         # Check if title has associated quantitative values

@@ -1328,8 +1328,9 @@ def _create_seed_from_plan_name(self, plan_name: str) -> int:
 
 def _initialize_rng(self, plan_name: str, salt: str = "") -> None:
     seed = _create_seed_from_plan_name(self, plan_name + salt)
-    self._rng = random.Random(seed)
-    np.random.seed(seed)
+    bounded_seed = seed % (2**32 - 1)
+    self._rng = random.Random(bounded_seed)
+    np.random.seed(bounded_seed)
     return None
 
 
@@ -1553,6 +1554,24 @@ def create_complex_causal_graph() -> AdvancedDAGValidator:
 
     for pathway, weights in pathways:
         validator.add_causal_pathway(pathway, weights)
+
+    return validator
+
+
+def create_sample_causal_graph() -> AdvancedDAGValidator:
+    """Create a lightweight sample causal graph expected by tests."""
+
+    validator = AdvancedDAGValidator(graph_type=GraphType.CAUSAL_DAG)
+
+    validator.add_node("inputs")
+    validator.add_node("capacity", {"inputs"})
+    validator.add_node("activities", {"capacity"})
+    validator.add_node("outputs", {"activities"})
+    validator.add_node("outcomes", {"outputs"})
+
+    # Additional supportive edges
+    validator.add_edge("inputs", "activities")
+    validator.add_edge("capacity", "outputs")
 
     return validator
 
