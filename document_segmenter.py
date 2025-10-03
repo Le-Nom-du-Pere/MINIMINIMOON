@@ -902,7 +902,190 @@ class DocumentSegmenter:
             embedding_coherence=embedding_coherence,
         )
 
-        # Return dictionary with exact original structure + enhan
+        # Return dictionary with exact original structure + enhanced metrics
+        return {
+            "text": text,
+            "metrics": metrics,
+            "sentences": sentences,
+            "type": segment_type,
+        }
+
+    def _post_process_segments(
+        self, segments: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        """Post-process segments to ensure quality and consistency (maintain original logic)"""
+
+        # Remove empty segments
+        segments = [seg for seg in segments if seg["text"].strip()]
+
+        # Merge small segments (below min_segment_chars) with previous one
+        if self.min_segment_chars > 0:
+            merged_segments = []
+            current_segment = None
+
+            for seg in segments:
+                if current_segment is None:
+                    current_segment = seg
+                else:
+                    combined_text = current_segment["text"] + " " + seg["text"]
+                    if len(combined_text) < self.min_segment_chars:
+                        current_segment["text"] = combined_text
+                        current_segment["sentences"].extend(seg["sentences"])
+                    else:
+                        merged_segments.append(current_segment)
+                        current_segment = seg
+
+            if current_segment is not None:
+                merged_segments.append(current_segment)
+
+            segments = merged_segments
+
+        # Final consistency check (maintain original logic)
+        segments = [seg for seg in segments if len(seg["text"].strip()) >= 10]
+
+        return segments
+
+    def _emergency_fallback_segmentation(self, text: str) -> List[Dict[str, Any]]:
+        """Emergency fallback segmentation using simple character-based chunking"""
+        if not text or not text.strip():
+            return []
+
+        segments = []
+        words = text.split()
+        current_words = []
+        current_length = 0
+        target_length = (self.target_char_min + self.target_char_max) // 2
+
+        for word in words:
+            word_len = len(word) + 1  # +1 for space
+            if current_length + word_len > target_length and current_words:
+                segment_text = " ".join(current_words)
+                if len(segment_text) >= self.min_segment_chars:
+                    segments.append(
+                        self._create_segment_dict(segment_text, [], "emergency_fallback")
+                    )
+                current_words = [word]
+                current_length = len(word)
+            else:
+                current_words.append(word)
+                current_length += word_len
+
+        if current_words:
+            segment_text = " ".join(current_words)
+            segments.append(
+                self._create_segment_dict(segment_text, [], "emergency_fallback")
+            )
+
+        return segments
+
+    def _estimate_sentence_count(self, text: str) -> int:
+        """Estimate sentence count using simple heuristics"""
+        if not text:
+            return 0
+
+        # Count sentence-ending punctuation
+        sentence_enders = re.findall(r'[.!?]+', text)
+        estimated_sentences = len(sentence_enders)
+
+        # Fallback: estimate based on text length (rough approximation)
+        if estimated_sentences == 0:
+            # Average sentence length is about 15-20 words
+            word_count = len(text.split())
+            estimated_sentences = max(1, word_count // 18)
+
+        return max(1, estimated_sentences)
+
+    def _estimate_semantic_coherence(self, text: str) -> float:
+        """Basic semantic coherence estimation using lexical overlap"""
+        if not text or len(text) < 50:
+            return 0.5
+
+        words = re.findall(r'\b\w+\b', text.lower())
+        if len(words) < 10:
+            return 0.5
+
+        # Simple coherence based on word repetition
+        word_counts = Counter(words)
+        repeated_words = sum(1 for count in word_counts.values() if count > 1)
+        unique_words = len(word_counts)
+
+        # Normalize to 0-1 range
+        coherence = min(1.0, repeated_words / max(unique_words, 1) * 2)
+        return coherence
+
+    def _calculate_readability_score(self, text: str) -> float:
+        """Calculate basic readability score using Flesch-Kincaid approximation"""
+        if not text or len(text) < 50:
+            return 0.0
+
+        words = text.split()
+        sentences = self._estimate_sentence_count(text)
+
+        if len(words) == 0 or sentences == 0:
+            return 0.0
+
+        avg_words_per_sentence = len(words) / sentences
+        avg_syllables_per_word = sum(self._count_syllables(word) for word in words) / len(words)
+
+        # Simplified Flesch Reading Ease formula
+        readability = 206.835 - (1.015 * avg_words_per_sentence) - (84.6 * avg_syllables_per_word)
+
+        # Normalize to 0-1 scale (Flesch scores typically 0-100)
+        return max(0.0, min(1.0, readability / 100.0))
+
+    def _count_syllables(self, word: str) -> int:
+        """Count syllables in a word (simplified)"""
+        word = word.lower()
+        count = 0
+        vowels = "aeiouy"
+
+        if word[0] in vowels:
+            count += 1
+
+        for i in range(1, len(word)):
+            if word[i] in vowels and word[i - 1] not in vowels:
+                count += 1
+
+        if word.endswith("e"):
+            count -= 1
+
+        return max(1, count)
+
+    def _calculate_lexical_diversity(self, text: str) -> float:
+        """Calculate lexical diversity (unique words / total words)"""
+        if not text:
+            return 0.0
+
+        words = re.findall(r'\b\w+\b', text.lower())
+        if len(words) < 5:
+            return 0.0
+
+        unique_words = len(set(words))
+        return unique_words / len(words)
+
+    def _calculate_syntactic_complexity(self, text: str) -> float:
+        """Calculate syntactic complexity based on sentence structure"""
+        if not text:
+            return 0.0
+
+        sentences = re.split(r'[.!?]+', text)
+        sentences = [s.strip() for s in sentences if s.strip()]
+
+        if len(sentences) < 2:
+            return 0.0
+
+        # Average sentence length in words
+        avg_sentence_length = sum(len(s.split()) for s in sentences) / len(sentences)
+
+        # Complexity based on sentence length variation and average length
+        lengths = [len(s.split()) for s in sentences]
+        if len(lengths) > 1:
+            length_std = statistics.stdev(lengths)
+            complexity = min(1.0, (avg_sentence_length / 20.0) + (length_std / 10.0))
+        else:
+            complexity = min(1.0, avg_sentence_length / 20.0)
+
+        return complexity
 
 
 def audit_performance_hotspots() -> Dict[str, List[str]]:

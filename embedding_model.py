@@ -764,6 +764,39 @@ def create_embedding_model(
     return SotaEmbedding(effective_config)
 
 
+def create_industrial_embedding_model(
+    model_tier: str = "standard",
+    device: str = "auto",
+    enable_adaptive_caching: bool = True
+) -> "EmbeddingBackend":
+    """
+    Create an industrial-grade embedding model with optimized settings.
+
+    Args:
+        model_tier: Model quality tier ("standard", "high_quality", "lightweight")
+        device: Device to use ("cpu", "cuda", "auto")
+        enable_adaptive_caching: Whether to enable adaptive caching
+
+    Returns:
+        Configured EmbeddingBackend instance
+    """
+    # Map model tiers to actual models
+    model_configs = {
+        "standard": "all-MiniLM-L6-v2",
+        "high_quality": "all-mpnet-base-v2",
+        "lightweight": "all-MiniLM-L12-v2"
+    }
+
+    model_name = model_configs.get(model_tier, "all-MiniLM-L6-v2")
+
+    return create_embedding_model(
+        model=model_name,
+        device=device,
+        enable_cache=enable_adaptive_caching,
+        cache_size=1000 if enable_adaptive_caching else 0
+    )
+
+
 def get_default_embedding() -> "EmbeddingBackend":
     """Factory para obtener backend de embedding por defecto."""
     pid = os.getpid()

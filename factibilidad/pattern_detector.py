@@ -351,17 +351,11 @@ class PatternDetector:
         return clusters
 
     @staticmethod
-<<<<<<< HEAD
-    def _within_proximity(a: PatternMatch, b: PatternMatch, proximity_window: int) -> bool:
-         """
-         Check if two matches are within the specified proximity window.
-=======
     def _within_proximity(
         a: PatternMatch, b: PatternMatch, proximity_window: int
     ) -> bool:
         """
         Check if two matches are within the specified proximity window.
->>>>>>> dc5f908e37a410bbd6bf333b87dea40cd0e1fcab
 
         Calculates the minimum distance between two pattern matches to determine
         if they should be considered part of the same indicator cluster.
