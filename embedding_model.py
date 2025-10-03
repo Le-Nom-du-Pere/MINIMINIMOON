@@ -1,3 +1,15 @@
+try:
+    from pydantic import BaseModel, Field
+except Exception:
+    from pydantic.v1 import BaseModel, Field
+
+from pathlib import Path
+from typing import List, Dict, Optional, Any, Union, Tuple, Protocol, Protocol
+import json
+import numpy as np
+
+from pathlib import Path
+
 """
 Embedding Model with fallback mechanism.
 Provides text embedding functionality with automatic fallback from MPNet to MiniLM.
