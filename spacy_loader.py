@@ -267,6 +267,30 @@ def get_spacy_model_loader() -> SpacyModelLoader:
 
     pid = os.getpid()
     with _SPACY_SINGLETON_LOCK:
+        loader = _SPACY_SINGLETONS.get(pid)
+        if loader is None:
+            loader = SpacyModelLoader()
+            _SPACY_SINGLETONS[pid] = loader
+        return loader
+
+
+def _reset_spacy_singleton_for_testing() -> None:
+    """Clear singleton cache – intended for test suites only."""
+
+    with _SPACY_SINGLETON_LOCK:
+        _SPACY_SINGLETONS.pop(os.getpid(), None)
+
+
+def setup_logging():
+    """
+    Setup logging with RotatingFileHandler and configurable log directory.
+    Falls back to current working directory if LOG_DIR is not set or not writable.
+    """
+    # Get log directory from environment variable or fallback to current directory
+    log_dir = os.getenv("LOG_DIR", os.getcwd())
+
+    # Ensure log directory exists and is writable
+    try:
         os.makedirs(log_dir, exist_ok=True)
         # Test if directory is writable
         test_file = os.path.join(log_dir, ".write_test")
@@ -333,7 +357,7 @@ def get_spacy_model_loader() -> SpacyModelLoader:
         console_formatter = logging.Formatter("%(levelname)s - %(message)s")
         console_handler.setFormatter(console_formatter)
         root_logger.addHandler(console_handler)
-    
+
     return None
 
 

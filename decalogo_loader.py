@@ -1,131 +1,134 @@
-import logging
+"""
+DECALOGO_INDUSTRIAL template loader with atomic file operations and fallback.
+"""
 import os
 import tempfile
-from pathlib import Path
+import logging
 from typing import Optional
 
-from text_truncation_logger import (
-    log_error_with_text,
-    log_info_with_text,
-    log_warning_with_text,
-)
-
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Hardcoded template data for fallback
-DECALOGO_INDUSTRIAL_TEMPLATE = """
-1. Prioritize safety in all operations and decisions
-2. Maintain highest quality standards in production
-3. Ensure environmental responsibility and sustainability
-4. Foster continuous improvement and innovation
-5. Promote teamwork and effective communication
-6. Uphold integrity and ethical business practices
-7. Invest in employee development and well-being
-8. Deliver value to customers and stakeholders
-9. Embrace technology and digital transformation
-10. Build resilient and adaptable operations
-"""
+# Fallback template in case file operations fail
+DECALOGO_INDUSTRIAL_TEMPLATE = """# DECÁLOGO INDUSTRIAL
+
+1. **Innovación Constante**: Invertir en investigación y desarrollo para mantener la competitividad.
+
+2. **Sostenibilidad**: Implementar procesos productivos que minimicen el impacto ambiental.
+
+3. **Digitalización**: Adoptar tecnologías de Industria 4.0 para optimizar la producción.
+
+4. **Capital Humano**: Formar y retener talento especializado en nuevas tecnologías.
+
+5. **Calidad y Estandarización**: Mantener los más altos estándares de calidad en productos y procesos.
+
+6. **Internacionalización**: Buscar oportunidades en mercados globales para expandir operaciones.
+
+7. **Colaboración**: Establecer alianzas estratégicas con universidades, centros de investigación y otras empresas.
+
+8. **Infraestructura**: Modernizar las instalaciones para aumentar la eficiencia energética y productiva.
+
+9. **Financiación**: Diversificar fuentes de financiación para proyectos industriales.
+
+10. **Cumplimiento Normativo**: Adaptarse proactivamente a regulaciones nacionales e internacionales."""
+
+# Cache for template content
+_cached_template = None
 
 
-def load_decalogo_industrial(target_path: Optional[str] = None) -> str:
+def load_decalogo_industrial(file_path: str = "decalogo_industrial.txt") -> str:
     """
-    Load DECALOGO_INDUSTRIAL template, attempting to write to file first,
-    then falling back to in-memory template on failure.
+    Load the DECALOGO_INDUSTRIAL template with atomic file operations and fallback.
 
     Args:
-        target_path: Optional path where the template should be written
+        file_path: Path to the template file
 
     Returns:
-        The DECALOGO_INDUSTRIAL template content
+        str: Content of the DECALOGO_INDUSTRIAL template
     """
-    template_content = DECALOGO_INDUSTRIAL_TEMPLATE.strip()
+    global _cached_template
 
-    if target_path:
-        target_file = Path(target_path)
+    # Return cached template if available
+    if _cached_template is not None:
+        return _cached_template
 
-        try:
-            # Create temporary file in the same directory as target
-            temp_dir = target_file.parent
-            temp_dir.mkdir(parents=True, exist_ok=True)
-
-            with tempfile.NamedTemporaryFile(
-                mode="w",
-                dir=temp_dir,
-                prefix=f".{target_file.name}_tmp_",
-                suffix=".tmp",
-                delete=False,
-                encoding="utf-8",
-            ) as temp_file:
-                temp_file.write(template_content)
-                temp_file.flush()
-                os.fsync(temp_file.fileno())
-                temp_path = Path(temp_file.name)
-
-            # Atomically replace/rename temporary file to target location
-            os.replace(temp_path, target_file)
-            log_info_with_text(
-                logger,
-                f"DECALOGO_INDUSTRIAL loaded and written to file: {target_path}",
-                template_content,
-            )
-
-        except (PermissionError, OSError, IOError) as e:
-            log_warning_with_text(
-                logger,
-                f"Failed to write DECALOGO_INDUSTRIAL to {target_path}: {e}. Using in-memory fallback template.",
-                template_content,
-            )
-            # Clean up temp file if it exists
-            try:
-                if "temp_path" in locals() and temp_path.exists():
-                    temp_path.unlink()
-            except Exception:
-                pass  # Best effort cleanup
-
-            log_info_with_text(
-                logger,
-                "DECALOGO_INDUSTRIAL loaded from in-memory fallback template",
-                template_content,
-            )
-
-        except Exception as e:
-            log_error_with_text(
-                logger,
-                f"Unexpected error writing DECALOGO_INDUSTRIAL to {target_path}: {e}. Using in-memory fallback template.",
-                template_content,
-            )
-            # Clean up temp file if it exists
-            try:
-                if "temp_path" in locals() and temp_path.exists():
-                    temp_path.unlink()
-            except Exception:
-                pass  # Best effort cleanup
-
-            log_info_with_text(
-                logger,
-                "DECALOGO_INDUSTRIAL loaded from in-memory fallback template",
-                template_content,
-            )
-    else:
-        log_info_with_text(
-            logger,
-            "DECALOGO_INDUSTRIAL loaded from in-memory template (no target path specified)",
-            template_content,
+    try:
+        # Check if file exists
+        if os.path.exists(file_path):
+            logger.info(f"Loading DECALOGO_INDUSTRIAL from {file_path}")
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+                _cached_template = content
+                return content
+        else:
+            # Create file with template content using atomic operations
+            logger.info(f"Creating DECALOGO_INDUSTRIAL at {file_path}")
+            write_template_atomically(file_path, DECALOGO_INDUSTRIAL_TEMPLATE)
+            _cached_template = DECALOGO_INDUSTRIAL_TEMPLATE
+            return DECALOGO_INDUSTRIAL_TEMPLATE
+    except (IOError, OSError, PermissionError) as e:
+        # Fallback to hardcoded template on any file error
+        logger.warning(
+            f"Error accessing {file_path}: {e}. Using fallback template."
         )
+        _cached_template = DECALOGO_INDUSTRIAL_TEMPLATE
+        return DECALOGO_INDUSTRIAL_TEMPLATE
 
-    return template_content
 
-
-def get_decalogo_industrial(
-    cache_path: Optional[str] = "decalogo_industrial.txt",
-) -> str:
+def write_template_atomically(file_path: str, content: str) -> bool:
     """
-    Convenience function to get DECALOGO_INDUSTRIAL with optional caching.
+    Write template content to file using atomic operations.
 
     Args:
-        cache_path: Path where template should be cached, or None to skip caching
+        file_path: Path where to write the template
+        content: Template content to write
 
     Returns:
-        The DECALOGO_INDUSTRIAL template content
+        bool: True if successful, False otherwise
     """
-    return load_decalogo_industrial(cache_path)
+    # Get directory from file path
+    directory = os.path.dirname(file_path)
+    if directory and not os.path.exists(directory):
+        try:
+            os.makedirs(directory, exist_ok=True)
+        except (IOError, OSError, PermissionError) as e:
+            logger.error(f"Cannot create directory {directory}: {e}")
+            return False
+
+    try:
+        # Create temporary file in the same directory
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            delete=False,
+            dir=directory if directory else None,
+            encoding="utf-8",
+            prefix="decalogo_",
+            suffix=".tmp",
+        ) as temp_file:
+            # Write content to temporary file
+            temp_file.write(content)
+            temp_path = temp_file.name
+
+        # Rename temporary file to target path (atomic operation)
+        os.replace(temp_path, file_path)
+        logger.info(f"Successfully wrote template to {file_path}")
+        return True
+    except (IOError, OSError, PermissionError) as e:
+        logger.error(f"Error writing template: {e}")
+        try:
+            # Clean up temporary file if it exists
+            if "temp_path" in locals() and os.path.exists(temp_path):
+                os.unlink(temp_path)
+        except Exception:
+            pass
+        return False
+
+
+def get_decalogo_industrial() -> str:
+    """
+    Convenience wrapper to get the DECALOGO_INDUSTRIAL template.
+
+    Returns:
+        str: Content of the DECALOGO_INDUSTRIAL template
+    """
+    return load_decalogo_industrial()

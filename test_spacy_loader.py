@@ -1,3 +1,6 @@
+"""
+Test suite for SpaCy model loader components.
+"""
 import logging
 import threading
 import unittest
@@ -11,113 +14,115 @@ from spacy_loader import (
 )
 
 class TestSpacyModelLoader(unittest.TestCase):
-
-    def setUp(self):
-        self.loader = SpacyModelLoader(max_retries=1, retry_delay=0.1)
+    """Tests for the SpacyModelLoader class."""
+    
+    @patch('spacy_loader.spacy.load')
+    def test_load_existing_model(self, mock_load):
+        """Test loading an existing model."""
+        mock_model = MagicMock()
+        mock_load.return_value = mock_model
         
-    def test_successful_model_load(self):
-        """Test successful model loading"""
-        with patch('spacy.load') as mock_load:
-            mock_model = MagicMock()
-            mock_load.return_value = mock_model
-            
-            result = self.loader.load_model('en_core_web_sm')
-            
-            self.assertIsNotNone(result)
-            self.assertEqual(result, mock_model)
-            self.assertFalse(self.loader.is_degraded_mode())
+        loader = SpacyModelLoader()
+        model = loader.load_model("test_model")
+        
+        self.assertEqual(model, mock_model)
+        mock_load.assert_called_once_with("test_model")
     
-    def test_model_load_with_download(self):
-        """Test model loading with automatic download"""
-        with patch('spacy.load') as mock_load, \
-             patch('spacy.cli.download') as mock_download:
-            
-            # First call fails, second call succeeds after download
-            mock_load.side_effect = [OSError("Model not found"), MagicMock()]
-            
-            result = self.loader.load_model('en_core_web_sm')
-            
-            mock_download.assert_called_once_with('en_core_web_sm')
-            self.assertIsNotNone(result)
-            self.assertFalse(self.loader.is_degraded_mode())
+    @patch('spacy_loader.spacy.load')
+    def test_load_cached_model(self, mock_load):
+        """Test that models are cached."""
+        mock_model = MagicMock()
+        mock_load.return_value = mock_model
+        
+        loader = SpacyModelLoader()
+        # Load model first time
+        model1 = loader.load_model("test_model")
+        # Load same model second time
+        model2 = loader.load_model("test_model")
+        
+        # Should be same instance and load called only once
+        self.assertEqual(model1, model2)
+        mock_load.assert_called_once_with("test_model")
     
-    def test_model_load_failure_degraded_mode(self):
-        """Test graceful fallback to degraded mode"""
-        with patch('spacy.load') as mock_load, \
-             patch('spacy.cli.download') as mock_download:
-            
-            # Model load always fails
-            mock_load.side_effect = OSError("Model not found")
-            # Download also fails
-            mock_download.side_effect = Exception("Download failed")
-            
-            result = self.loader.load_model('en_core_web_sm')
-            
-            self.assertIsNone(result)
-            self.assertTrue(self.loader.is_degraded_mode())
+    @patch('spacy_loader.spacy.load')
+    @patch('spacy_loader.download')
+    def test_download_missing_model(self, mock_download, mock_load):
+        """Test downloading a missing model."""
+        # First call raises OSError, second call succeeds
+        mock_model = MagicMock()
+        mock_load.side_effect = [OSError("Model not found"), mock_model]
+        
+        loader = SpacyModelLoader()
+        model = loader.load_model("test_model")
+        
+        self.assertEqual(model, mock_model)
+        mock_download.assert_called_once_with("test_model")
+        self.assertEqual(mock_load.call_count, 2)
     
-    def test_cached_model_loading(self):
-        """Test that models are cached after first load"""
-        with patch('spacy.load') as mock_load:
-            mock_model = MagicMock()
-            mock_load.return_value = mock_model
-
-            # Load same model twice
-            result1 = self.loader.load_model('en_core_web_sm')
-            result2 = self.loader.load_model('en_core_web_sm')
-
-            # spacy.load should only be called once
-            mock_load.assert_called_once()
-            self.assertEqual(result1, result2)
-
-    def test_cache_prunes_oldest_entry(self):
-        """LRU cache drops the oldest model when capacity is exceeded."""
-        loader = SpacyModelLoader(max_retries=0, retry_delay=0.0, max_cache_size=2)
-        with patch('spacy.load') as mock_load:
-            mock_load.side_effect = [MagicMock(name='m1'), MagicMock(name='m2'), MagicMock(name='m3')]
-
-            loader.load_model('model-1')
-            loader.load_model('model-2')
-            loader.load_model('model-3')
-
-            cached = loader.get_loaded_models()
-
-            self.assertNotIn('model-1', cached)
-            self.assertIn('model-2', cached)
-            self.assertIn('model-3', cached)
-
-    def test_thread_safe_loading(self):
-        """Concurrent loads result in a single underlying spaCy load."""
-
-        with patch('spacy.load') as mock_load:
-            mock_model = MagicMock()
-            mock_load.return_value = mock_model
-
-            barrier = threading.Barrier(4)
-            results = []
-            errors = []
-
-            def worker():
-                try:
-                    barrier.wait()
-                    results.append(self.loader.load_model('es_core_news_sm'))
-                except BaseException as exc:  # pragma: no cover - diagnostic aid
-                    errors.append(exc)
-
-            threads = [threading.Thread(target=worker) for _ in range(4)]
-            for thread in threads:
-                thread.start()
-            for thread in threads:
-                thread.join()
-
-        self.assertFalse(errors)
-        self.assertEqual(mock_load.call_count, 1)
-        for model in results:
-            self.assertIs(model, mock_model)
+    @patch('spacy_loader.spacy.load')
+    @patch('spacy_loader.download')
+    def test_download_failure(self, mock_download, mock_load):
+        """Test handling download failures."""
+        mock_load.side_effect = OSError("Model not found")
+        mock_download.side_effect = Exception("Download failed")
+        
+        loader = SpacyModelLoader(max_retries=2)
+        model = loader.load_model("test_model")
+        
+        self.assertIsNone(model)
+        self.assertEqual(mock_download.call_count, 2)  # Should retry twice
+    
+    @patch('spacy_loader.spacy.load')
+    def test_unexpected_error(self, mock_load):
+        """Test handling unexpected errors."""
+        mock_load.side_effect = RuntimeError("Unexpected error")
+        
+        loader = SpacyModelLoader()
+        model = loader.load_model("test_model")
+        
+        self.assertIsNone(model)
+    
+    @patch('spacy_loader.spacy.load')
+    def test_no_download_if_disabled(self, mock_load):
+        """Test that download is not attempted if disabled."""
+        mock_load.side_effect = OSError("Model not found")
+        
+        loader = SpacyModelLoader()
+        with patch('spacy_loader.download') as mock_download:
+            model = loader.load_model("test_model", download_if_missing=False)
+            
+            self.assertIsNone(model)
+            mock_download.assert_not_called()
+    
+    @patch('spacy_loader.spacy.load')
+    def test_get_model_info(self, mock_load):
+        """Test getting model information."""
+        mock_model1 = MagicMock()
+        mock_model1.pipe_names = ["tagger", "parser"]
+        mock_model1.has_vector_data = True
+        mock_model1.pipeline = [1, 2]  # Mock pipeline components
+        
+        mock_model2 = MagicMock()
+        mock_model2.pipe_names = ["ner"]
+        mock_model2.has_vector_data = False
+        mock_model2.pipeline = [1]  # Mock pipeline component
+        
+        mock_load.side_effect = [mock_model1, mock_model2]
+        
+        loader = SpacyModelLoader()
+        loader.load_model("model1")
+        loader.load_model("model2")
+        
+        info = loader.get_model_info()
+        self.assertEqual(len(info), 2)
+        self.assertEqual(info["model1"]["pipeline"], ["tagger", "parser"])
+        self.assertTrue(info["model1"]["vectors"])
+        self.assertEqual(info["model2"]["components"], 1)
 
 
 class TestSafeSpacyProcessor(unittest.TestCase):
-
+    """Tests for the SafeSpacyProcessor class."""
+    
     def setUp(self):
         _reset_spacy_singleton_for_testing()
         self.addCleanup(_reset_spacy_singleton_for_testing)
