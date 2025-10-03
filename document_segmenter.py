@@ -902,7 +902,254 @@ class DocumentSegmenter:
             embedding_coherence=embedding_coherence,
         )
 
-        # Return dictionary with exact original structure + enhan
+        # Return dictionary with exact original structure + enhancements
+        return {
+            "text": text,
+            "metrics": metrics,
+            "segment_type": segment_type,
+        }
+
+    def _estimate_sentence_count(self, text: str) -> int:
+        """Estimate sentence count using simple heuristics"""
+        sentence_endings = text.count('.') + text.count('!') + text.count('?')
+        return max(1, sentence_endings)
+
+    def _estimate_semantic_coherence(self, text: str) -> float:
+        """Simple heuristic for semantic coherence without advanced models"""
+        # Basic heuristic: longer texts with more variety tend to be more coherent
+        words = text.split()
+        if len(words) < 5:
+            return 0.5
+        unique_words = len(set(w.lower() for w in words))
+        diversity = unique_words / len(words)
+        # Scale to 0-1 range
+        return min(1.0, diversity * 2)
+
+    def _calculate_readability_score(self, text: str) -> float:
+        """Calculate simple readability score"""
+        words = text.split()
+        if len(words) == 0:
+            return 0.0
+        sentences = max(1, self._estimate_sentence_count(text))
+        avg_word_length = sum(len(w) for w in words) / len(words)
+        avg_sentence_length = len(words) / sentences
+        # Simple readability formula (normalized to 0-1)
+        score = 1.0 - min(1.0, (avg_word_length * 0.1 + avg_sentence_length * 0.01))
+        return max(0.0, score)
+
+    def _calculate_lexical_diversity(self, text: str) -> float:
+        """Calculate lexical diversity (type-token ratio)"""
+        words = text.split()
+        if len(words) == 0:
+            return 0.0
+        unique_words = len(set(w.lower() for w in words))
+        return unique_words / len(words)
+
+    def _calculate_syntactic_complexity(self, text: str) -> float:
+        """Estimate syntactic complexity"""
+        # Simple heuristic based on sentence length and punctuation
+        sentences = max(1, self._estimate_sentence_count(text))
+        words = text.split()
+        if len(words) == 0:
+            return 0.0
+        avg_sentence_length = len(words) / sentences
+        comma_ratio = text.count(',') / len(words) if len(words) > 0 else 0
+        # Normalize to 0-1 range
+        complexity = min(1.0, (avg_sentence_length / 30.0 + comma_ratio * 2))
+        return complexity
+
+    def _post_process_segments(self, segments: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Post-process segments to merge very small ones and ensure quality"""
+        if not segments:
+            return segments
+        
+        processed = []
+        i = 0
+        while i < len(segments):
+            current = segments[i]
+            # If segment is very small and not the last one, try to merge with next
+            if (i < len(segments) - 1 and 
+                current["metrics"].char_count < self.min_segment_chars):
+                next_seg = segments[i + 1]
+                merged_text = current["text"] + " " + next_seg["text"]
+                merged_sentences = []
+                processed.append(
+                    self._create_segment_dict(merged_text, merged_sentences, "merged")
+                )
+                i += 2  # Skip both segments
+            else:
+                processed.append(current)
+                i += 1
+        
+        return processed
+
+    def _enhance_segments_with_advanced_metrics(self, segments: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Enhance segments with advanced semantic metrics"""
+        # This is already handled in _create_segment_dict when enable_advanced_semantics is True
+        return segments
+
+    def _create_char_distribution(self, char_lengths: List[int]) -> Dict[str, int]:
+        """Create character length distribution buckets for analysis"""
+        distribution = {
+            "< 500": 0,
+            "500-699": 0,
+            "700-900 (target)": 0,
+            "> 900": 0
+        }
+        
+        for length in char_lengths:
+            if length < 500:
+                distribution["< 500"] += 1
+            elif length < 700:
+                distribution["500-699"] += 1
+            elif length <= 900:
+                distribution["700-900 (target)"] += 1
+            else:
+                distribution["> 900"] += 1
+        
+        return distribution
+
+    def _calculate_consistency_score(self) -> float:
+        """Calculate consistency score based on segment statistics"""
+        if not self.segmentation_stats or self.segmentation_stats.total_segments == 0:
+            return 0.0
+        
+        # Measure consistency by looking at standard deviation of segment lengths
+        char_lengths = [seg.char_count for seg in self.segmentation_stats.segments]
+        if len(char_lengths) < 2:
+            return 1.0
+        
+        try:
+            mean_length = statistics.mean(char_lengths)
+            stdev_length = statistics.stdev(char_lengths)
+            # Lower standard deviation relative to mean = higher consistency
+            if mean_length == 0:
+                return 0.0
+            cv = stdev_length / mean_length  # Coefficient of variation
+            # Convert to 0-1 score (lower CV = higher consistency)
+            consistency = max(0.0, 1.0 - min(1.0, cv))
+            return consistency
+        except (statistics.StatisticsError, ZeroDivisionError):
+            return 0.5
+
+    def get_segmentation_report(self) -> Dict[str, Any]:
+        """Generate comprehensive segmentation report with quality metrics"""
+        if not self.segmentation_stats or self.segmentation_stats.total_segments == 0:
+            return {
+                "summary": {
+                    "total_segments": 0,
+                    "avg_char_length": 0.0,
+                    "avg_sentence_count": 0.0
+                },
+                "character_analysis": {},
+                "sentence_analysis": {},
+                "quality_indicators": {
+                    "consistency_score": 0.0,
+                    "target_adherence_score": 0.0,
+                    "overall_quality_score": 0.0
+                }
+            }
+        
+        stats = self.segmentation_stats
+        char_lengths = [seg.char_count for seg in stats.segments]
+        sentence_counts = [seg.sentence_count for seg in stats.segments]
+        
+        # Calculate target adherence (how many segments are in target range)
+        segments_in_target = sum(
+            1 for seg in stats.segments
+            if self.target_char_min <= seg.char_count <= self.target_char_max
+            and seg.sentence_count == self.target_sentences
+        )
+        target_adherence = segments_in_target / stats.total_segments if stats.total_segments > 0 else 0.0
+        
+        # Calculate consistency score
+        consistency_score = self._calculate_consistency_score()
+        
+        # Overall quality score
+        overall_quality = (consistency_score * 0.5 + target_adherence * 0.5)
+        
+        return {
+            "summary": {
+                "total_segments": stats.total_segments,
+                "avg_char_length": stats.avg_char_length,
+                "avg_sentence_count": stats.avg_sentence_count,
+                "segments_in_target_range": segments_in_target,
+            },
+            "character_analysis": {
+                "distribution": self._create_char_distribution(char_lengths),
+                "min": min(char_lengths) if char_lengths else 0,
+                "max": max(char_lengths) if char_lengths else 0,
+                "median": statistics.median(char_lengths) if char_lengths else 0,
+            },
+            "sentence_analysis": {
+                "distribution": dict(Counter(sentence_counts)),
+                "min": min(sentence_counts) if sentence_counts else 0,
+                "max": max(sentence_counts) if sentence_counts else 0,
+                "median": statistics.median(sentence_counts) if sentence_counts else 0,
+            },
+            "quality_indicators": {
+                "consistency_score": consistency_score,
+                "target_adherence_score": target_adherence,
+                "overall_quality_score": overall_quality,
+            }
+        }
+
+    def _calculate_segmentation_stats(self, segments: List[Dict[str, Any]]) -> None:
+        """Calculate and store segmentation statistics"""
+        if not segments:
+            self.segmentation_stats = SegmentationStats()
+            return
+        
+        # Extract metrics from segments
+        segment_metrics = [seg["metrics"] for seg in segments]
+        char_lengths = [m.char_count for m in segment_metrics]
+        sentence_counts = [m.sentence_count for m in segment_metrics]
+        
+        # Calculate statistics
+        total_segments = len(segments)
+        segments_in_char_range = sum(
+            1 for m in segment_metrics
+            if self.target_char_min <= m.char_count <= self.target_char_max
+        )
+        segments_with_3_sentences = sum(
+            1 for m in segment_metrics if m.sentence_count == self.target_sentences
+        )
+        
+        avg_char_length = sum(char_lengths) / total_segments if total_segments > 0 else 0.0
+        avg_sentence_count = sum(sentence_counts) / total_segments if total_segments > 0 else 0.0
+        
+        # Create distributions
+        char_length_distribution = self._create_char_distribution(char_lengths)
+        sentence_count_distribution = dict(Counter(sentence_counts))
+        
+        # Update segmentation stats
+        self.segmentation_stats = SegmentationStats(
+            segments=segment_metrics,
+            total_segments=total_segments,
+            segments_in_char_range=segments_in_char_range,
+            segments_with_3_sentences=segments_with_3_sentences,
+            avg_char_length=avg_char_length,
+            avg_sentence_count=avg_sentence_count,
+            char_length_distribution=char_length_distribution,
+            sentence_count_distribution=sentence_count_distribution,
+        )
+
+    def _emergency_fallback_segmentation(self, text: str) -> List[Dict[str, Any]]:
+        """Emergency fallback for when all other segmentation methods fail"""
+        LOGGER.warning("Using emergency fallback segmentation")
+        
+        # Simple character-based chunking
+        segments = []
+        chunk_size = self.target_char_max
+        
+        for i in range(0, len(text), chunk_size):
+            chunk = text[i:i + chunk_size]
+            if chunk.strip():
+                segments.append(
+                    self._create_segment_dict(chunk.strip(), [], "emergency")
+                )
+        
+        return segments if segments else [self._create_segment_dict(text, [], "emergency")]
 
 
 def audit_performance_hotspots() -> Dict[str, List[str]]:

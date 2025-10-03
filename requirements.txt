@@ -16,6 +16,12 @@ pdfplumber==0.11.4
 pandas==2.2.3
 joblib==1.4.2
 
+# Causal inference dependencies
+pygam==0.9.1
+dcor==0.6.1
+networkx==3.2.1
+econml==0.15.1
+
 # Testing and validation
 pytest==8.3.3
 jsonschema==4.23.0
