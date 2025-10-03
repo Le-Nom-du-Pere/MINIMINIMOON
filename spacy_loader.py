@@ -126,21 +126,23 @@ class SpacyModelLoader:
                 logger.info(
                     f"Downloading spaCy model '{model_name}' (attempt {attempt + 1}/{self.max_retries + 1})"
                 )
-                # Use subprocess to avoid SystemExit from spacy.cli.download
-                import subprocess
-                import sys
-                result = subprocess.run(
-                    [sys.executable, "-m", "spacy", "download", model_name],
-                    capture_output=True,
-                    text=True,
-                    timeout=300
-                )
-                if result.returncode == 0:
-                    logger.info(
-                        f"Successfully downloaded spaCy model '{model_name}'")
-                    return True
-                else:
-                    raise RuntimeError(f"Download failed with return code {result.returncode}: {result.stderr}")
+                # Try using spacy.cli.download first for compatibility
+                # but catch SystemExit to prevent process termination
+                try:
+                    spacy.cli.download(model_name)
+                except SystemExit as e:
+                    # SystemExit with code 0 means success
+                    if e.code == 0:
+                        logger.info(
+                            f"Successfully downloaded spaCy model '{model_name}'")
+                        return True
+                    else:
+                        raise RuntimeError(f"Download failed with exit code {e.code}")
+                
+                # If we get here without exception, download succeeded
+                logger.info(
+                    f"Successfully downloaded spaCy model '{model_name}'")
+                return True
 
             except (Exception, SystemExit) as e:
                 logger.warning(
