@@ -1,4 +1,6 @@
-"""Test suite for the embedding model."""
+"""
+Test suite for the embedding model.
+"""
 
 from __future__ import annotations
 

@@ -1,908 +1,908 @@
 """
-Industrial-Grade Advanced Document Segmentation Module
-=====================================================
+Document Segmenter Module
 
-Implements sophisticated dual-criteria segmentation with enterprise-level capabilities:
-- Advanced multi-modal semantic coherence analysis using transformer embeddings
-- Hierarchical clustering-based segment boundary optimization
-- Multi-threaded parallel processing with intelligent work distribution
-- Comprehensive linguistic feature extraction and quality assessment
-- Real-time streaming processing with backpressure management
-- Industrial-strength caching with persistent storage and LRU eviction
-- Extensive performance profiling and quality metrics
-- Fault-tolerant processing with graceful degradation strategies
+Segments plan documents into logical units (objectives, strategies, etc.)
+to enable precise analysis and alignment with DECALOGO questions.
 
-Technical Architecture:
-- Utilizes state-of-the-art transformer models for semantic understanding
-- Implements advanced statistical analysis for segment quality optimization
-- Employs sophisticated NLP techniques for syntactic and semantic coherence
-- Features comprehensive error handling and recovery mechanisms
+Features:
+- Multiple segmentation strategies (paragraph, section, semantic)
+- Section type detection
+- Logical unit identification
+- Cross-reference preservation
+- Context preservation
+- Direct alignment with DECALOGO dimensions
 """
 
-import hashlib
 import logging
 import re
-import statistics
-import time
-import warnings
-from collections import Counter, defaultdict
 from dataclasses import dataclass, field
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Generator,
-    Iterable,
-    List,
-    Optional,
-    Set,
-    Tuple,
-    Union,
-)
+from enum import Enum
+from pathlib import Path
+from typing import Dict, List, Optional, Set, Tuple, Union, Any
 
-from log_config import configure_logging
-from spacy_loader import SpacyModelLoader
+import numpy as np
 
-configure_logging()
-LOGGER = logging.getLogger(__name__)
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-# Suppress non-critical warnings for production deployment
-warnings.filterwarnings("ignore", category=UserWarning, module="transformers")
-warnings.filterwarnings("ignore", category=FutureWarning, module="torch")
 
-# Advanced imports with sophisticated fallback mechanisms
-try:
-    import numpy as np
-    from scipy.spatial.distance import pdist, squareform
-    from scipy.stats import entropy, kstest
-    from sklearn.cluster import DBSCAN, KMeans
-    from sklearn.feature_extraction.text import TfidfVectorizer
-    from sklearn.metrics.pairwise import cosine_similarity
+class SegmentationType(Enum):
+    """Type of segmentation strategy to use."""
+    PARAGRAPH = "paragraph"
+    SECTION = "section"
+    SENTENCE = "sentence"
+    SEMANTIC = "semantic"
 
-    HAS_ADVANCED_ML = True
-    LOGGER.info("Advanced ML libraries loaded successfully")
-except ImportError as e:
-    HAS_ADVANCED_ML = False
-    LOGGER.warning("Advanced ML libraries unavailable: %s", e)
 
-try:
-    import torch
-    import torch.nn.functional as F
-    from sentence_transformers import SentenceTransformer
-    from torch.nn.utils.rnn import pad_sequence
-    from transformers import (
-        AutoConfig,
-        AutoModel,
-        AutoTokenizer,
-        BertModel,
-        BertTokenizer,
-    )
-    from transformers import logging as transformers_logging
-    from transformers import (
-        pipeline,
-    )
-
-    # Suppress transformers logging for production
-    transformers_logging.set_verbosity_error()
-    HAS_TRANSFORMERS = True
-    LOGGER.info("Transformer libraries loaded successfully")
-except ImportError as e:
-    HAS_TRANSFORMERS = False
-    LOGGER.warning("Transformer libraries unavailable: %s", e)
-
-try:
-    import nltk
-    from nltk.chunk import ne_chunk
-    from nltk.corpus import stopwords
-    from nltk.stem import WordNetLemmatizer
-    from nltk.tag import pos_tag
-    from nltk.tokenize import sent_tokenize, word_tokenize
-    from nltk.tree import Tree
-
-    HAS_NLTK = True
-
-    # Download required NLTK data if not present
-    required_nltk_data = [
-        "punkt",
-        "stopwords",
-        "wordnet",
-        "averaged_perceptron_tagger",
-        "maxent_ne_chunker",
-        "words",
-    ]
-    for data in required_nltk_data:
-        try:
-            nltk.data.find(
-                f"tokenizers/{data}"
-                if data == "punkt"
-                else (
-                    f"corpora/{data}"
-                    if data in ["stopwords", "wordnet", "words"]
-                    else f"taggers/{data}"
-                    if "tagger" in data
-                    else f"chunkers/{data}"
-                )
-            )
-        except LookupError:
-            try:
-                nltk.download(data, quiet=True)
-            except Exception as download_error:
-                LOGGER.debug(
-                    "Failed to download NLTK resource '%s': %s", data, download_error
-                )
-
-except ImportError:
-    HAS_NLTK = False
-    LOGGER.warning("NLTK unavailable - using fallback tokenization")
-
-# Original spaCy loader import maintained for compatibility
+class SectionType(Enum):
+    """Types of sections in a plan document relevant to DECALOGO."""
+    DIAGNOSTIC = "diagnostic"           # DE-2: Thematic Inclusion
+    VISION = "vision"                   # DE-1: Logic Intervention Framework
+    OBJECTIVE = "objective"             # DE-1: Logic Intervention Framework
+    STRATEGY = "strategy"               # DE-1: Logic Intervention Framework
+    INDICATOR = "indicator"             # DE-4: Results Orientation
+    RESPONSIBILITY = "responsibility"   # DE-1: Logic Intervention Framework (Q2)
+    PARTICIPATION = "participation"     # DE-3: Participation and Governance
+    MONITORING = "monitoring"           # DE-4: Results Orientation
+    BUDGET = "budget"                   # DE-2: Thematic Inclusion
+    TIMELINE = "timeline"               # DE-4: Results Orientation
+    OTHER = "other"                     # General content
 
 
 @dataclass
-class SegmentMetrics:
-    """Enhanced metrics for document segment analysis (maintain compatibility)."""
-
-    char_count: int
-    sentence_count: int
-    word_count: int
-    token_count: int
-    semantic_coherence_score: float = 0.0
-    segment_type: str = "unknown"
-
-    # Industrial extensions (backward compatible)
-    readability_score: float = 0.0
-    lexical_diversity: float = 0.0
-    syntactic_complexity: float = 0.0
-    embedding_coherence: Optional[float] = None
-
-
-@dataclass
-class SegmentationStats:
-    """Enhanced statistics for segmentation quality analysis (maintain compatibility)."""
-
-    segments: List[SegmentMetrics] = field(default_factory=list)
-    total_segments: int = 0
-    segments_in_char_range: int = 0
-    segments_with_3_sentences: int = 0
-    avg_char_length: float = 0.0
-    avg_sentence_count: float = 0.0
-    char_length_distribution: Dict[str, int] = field(default_factory=dict)
-    sentence_count_distribution: Dict[int, int] = field(default_factory=dict)
-
-    # Industrial extensions
-    processing_time_ms: float = 0.0
-    memory_usage_mb: float = 0.0
-    quality_metrics: Dict[str, float] = field(default_factory=dict)
-
-
-class IndustrialSemanticAnalyzer:
-    """Advanced semantic analyzer with state-of-the-art NLP capabilities"""
-
-    def __init__(self, cache_size: int = 1000):
-        self.cache_size = cache_size
-        self._coherence_cache = {}
-        self._embedding_model = None
-        self._sentiment_analyzer = None
-
-        # Initialize models with fallbacks
-        self._initialize_models()
-
-        if HAS_NLTK:
-            try:
-                self._lemmatizer = WordNetLemmatizer()
-                self._stop_words = set(stopwords.words("english"))
-            except (LookupError, OSError) as exc:
-                LOGGER.debug("NLTK resources unavailable during init: %s", exc)
-                self._stop_words = set()
-        else:
-            self._stop_words = {
-                "the",
-                "a",
-                "an",
-                "and",
-                "or",
-                "but",
-                "in",
-                "on",
-                "at",
-                "to",
-                "for",
-                "of",
-                "with",
-                "by",
-                "from",
-                "up",
-                "about",
-                "into",
-            }
-
-    def _initialize_models(self):
-        """Initialize semantic analysis models with graceful degradation"""
-        try:
-            if HAS_TRANSFORMERS:
-                self._embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
-                LOGGER.info("Loaded SentenceTransformer model for semantic analysis")
-        except Exception as exc:
-            LOGGER.warning("Failed to load SentenceTransformer: %s", exc)
-
-        try:
-            if HAS_TRANSFORMERS:
-                self._sentiment_analyzer = pipeline(
-                    "sentiment-analysis", return_all_scores=True
-                )
-                LOGGER.info("Loaded transformer model for sentiment analysis")
-        except Exception as exc:
-            LOGGER.warning("Failed to load sentiment analyzer: %s", exc)
-
-    def analyze_comprehensive_coherence(
-        self, text: str
-    ) -> Tuple[float, Dict[str, float]]:
-        """
-        Perform comprehensive multi-dimensional coherence analysis
-
-        Returns:
-            Tuple of (overall_coherence_score, detailed_metrics)
-        """
-
-        cache_key = self._generate_cache_key(text)
-        if cache_key in self._coherence_cache:
-            return self._coherence_cache[cache_key]
-
-        # Multi-dimensional coherence analysis
-        coherence_components = {}
-
-        # 1. Lexical coherence analysis
-        coherence_components["lexical_coherence"] = self._compute_lexical_coherence(
-            text
-        )
-
-        # 2. Semantic coherence via embeddings
-        if self._embedding_model:
-            coherence_components["embedding_coherence"] = (
-                self._compute_embedding_coherence(text)
-            )
-
-        # 3. Topic modeling coherence
-        coherence_components["topic_coherence"] = self._compute_topic_coherence(text)
-
-        # 4. Syntactic coherence
-        coherence_components["syntactic_coherence"] = self._compute_syntactic_coherence(
-            text
-        )
-
-        # 5. Entity coherence
-        coherence_components["entity_coherence"] = self._compute_entity_coherence(text)
-
-        # Sophisticated weighted combination
-        weights = self._compute_adaptive_weights(coherence_components, text)
-        overall_coherence = sum(
-            coherence_components[component] * weights[component]
-            for component in coherence_components
-        )
-
-        # Normalize to [0, 1] range
-        overall_coherence = max(0.0, min(1.0, overall_coherence))
-
-        result = (overall_coherence, coherence_components)
-
-        # Cache with LRU eviction
-        if len(self._coherence_cache) >= self.cache_size:
-            oldest_key = next(iter(self._coherence_cache))
-            del self._coherence_cache[oldest_key]
-
-        self._coherence_cache[cache_key] = result
-        return result
-
-    def _compute_embedding_coherence(self, text: str) -> float:
-        """Advanced embedding-based coherence using transformer models"""
-
-        if not self._embedding_model or not HAS_ADVANCED_ML:
-            return 0.5
-
-        try:
-            sentences = self._advanced_sentence_segmentation(text)
-            if len(sentences) < 2:
-                return 1.0
-
-            embeddings = self._embedding_model.encode(sentences, convert_to_numpy=True)
-
-            # Calculate pairwise cosine similarity
-            similarity_matrix = cosine_similarity(embeddings)
-            np.fill_diagonal(similarity_matrix, 0)  # Remove self-similarities
-            avg_similarity = np.mean(similarity_matrix)
-
-            return max(0.0, min(1.0, avg_similarity))
-
-        except Exception as exc:
-            LOGGER.debug("Embedding coherence computation failed: %s", exc)
-            return 0.5
-
-    def _compute_lexical_coherence(self, text: str) -> float:
-        """Calculate lexical coherence through word repetition and relationships"""
-        words = self._extract_content_words(text)
-        if len(words) < 5:
-            return 0.5
-
-        word_counts = Counter(words)
-        repeated_words = sum(1 for count in word_counts.values() if count > 1)
-        unique_words = len(word_counts)
-
-        cohesion_score = repeated_words / max(unique_words, 1)
-        return min(1.0, cohesion_score * 1.5)
-
-    def _compute_topic_coherence(self, text: str) -> float:
-        """Calculate topic coherence using term frequency analysis"""
-        words = self._extract_content_words(text)
-        if len(words) < 3:
-            return 0.5
-
-        word_freq = Counter(words)
-        total_words = sum(word_freq.values())
-
-        # Topic concentration using frequency distribution
-        top_10_freq = sum(dict(word_freq.most_common(10)).values())
-        concentration = top_10_freq / max(total_words, 1)
-
-        return min(1.0, concentration * 1.5)
-
-    def _compute_syntactic_coherence(self, text: str) -> float:
-        """Calculate syntactic coherence through sentence structure analysis"""
-        sentences = self._advanced_sentence_segmentation(text)
-        if len(sentences) < 2:
-            return 1.0
-
-        # Analyze sentence length consistency
-        lengths = [len(sent.split()) for sent in sentences]
-        if len(lengths) > 1:
-            cv = statistics.stdev(lengths) / max(statistics.mean(lengths), 1)
-            consistency = 1 / (1 + cv)
-        else:
-            consistency = 1.0
-
-        return consistency
-
-    def _compute_entity_coherence(self, text: str) -> float:
-        """Calculate entity coherence using named entity patterns"""
-        entities = self._extract_entities_simple(text)
-        if len(entities) < 2:
-            return 0.5
-
-        entity_freq = Counter(entities)
-        repeated_entities = sum(1 for count in entity_freq.values() if count > 1)
-
-        return min(1.0, repeated_entities / max(len(entities), 1) * 2)
-
-    @staticmethod
-    def _compute_adaptive_weights(
-        coherence_components: Dict[str, float], text: str
-    ) -> Dict[str, float]:
-        """Compute adaptive weights based on text characteristics"""
-
-        text_length = len(text)
-
-        base_weights = {
-            "lexical_coherence": 0.3,
-            "embedding_coherence": 0.25,
-            "topic_coherence": 0.25,
-            "syntactic_coherence": 0.1,
-            "entity_coherence": 0.1,
+class DocumentSegment:
+    """
+    A segment of a document with metadata for DECALOGO evaluation.
+    
+    Attributes:
+        text: The text content of the segment
+        start_pos: Start position in the original document
+        end_pos: End position in the original document
+        segment_type: Type of segment (paragraph, section, etc.)
+        section_type: Type of section content (diagnostic, objective, etc.)
+        metadata: Additional metadata about the segment
+        decalogo_dimensions: DECALOGO dimensions this segment is relevant to
+        parent_id: ID of parent segment (for hierarchical structure)
+        segment_id: Unique identifier for the segment
+    """
+    text: str
+    start_pos: int
+    end_pos: int
+    segment_type: SegmentationType
+    section_type: SectionType = SectionType.OTHER
+    metadata: Dict[str, Any] = field(default_factory=dict)
+    decalogo_dimensions: List[str] = field(default_factory=list)
+    parent_id: Optional[str] = None
+    segment_id: Optional[str] = None
+    
+    def __post_init__(self):
+        """Initialize derived fields after creation."""
+        if self.segment_id is None:
+            # Generate a unique ID based on content and position
+            import hashlib
+            content_hash = hashlib.md5(self.text[:100].encode()).hexdigest()[:8]
+            self.segment_id = f"{self.start_pos}_{self.end_pos}_{content_hash}"
+        
+        # Auto-assign relevant DECALOGO dimensions based on section type
+        if not self.decalogo_dimensions:
+            self.decalogo_dimensions = self._infer_decalogo_dimensions()
+    
+    def _infer_decalogo_dimensions(self) -> List[str]:
+        """Infer which DECALOGO dimensions this segment is relevant to."""
+        section_to_dimension = {
+            SectionType.DIAGNOSTIC: ["DE-2"],
+            SectionType.VISION: ["DE-1"],
+            SectionType.OBJECTIVE: ["DE-1"],
+            SectionType.STRATEGY: ["DE-1"],
+            SectionType.INDICATOR: ["DE-1", "DE-4"],
+            SectionType.RESPONSIBILITY: ["DE-1"],  # Specifically for DE-1 Q2
+            SectionType.PARTICIPATION: ["DE-3"],
+            SectionType.MONITORING: ["DE-4"],
+            SectionType.BUDGET: ["DE-2"],
+            SectionType.TIMELINE: ["DE-4"],
+            SectionType.OTHER: [],
         }
-
-        # Adjust weights based on text characteristics
-        weights = base_weights.copy()
-
-        if text_length < 500:
-            weights["lexical_coherence"] *= 1.3
-            weights["syntactic_coherence"] *= 1.2
-            if "embedding_coherence" in weights:
-                weights["embedding_coherence"] *= 0.8
-        elif text_length > 2000:
-            weights["topic_coherence"] *= 1.4
-            weights["lexical_coherence"] *= 0.9
-
-        # Normalize weights to sum to 1
-        total_weight = sum(weights.values())
-        return {k: v / total_weight for k, v in weights.items()}
-
-    @staticmethod
-    def _advanced_sentence_segmentation(text: str) -> List[str]:
-        """Advanced sentence segmentation with multiple algorithms"""
-
-        sentences = []
-
-        if HAS_NLTK:
-            try:
-                sentences = sent_tokenize(text)
-            except (LookupError, ValueError) as exc:
-                LOGGER.debug("NLTK sentence tokenization failed: %s", exc)
-
-        if not sentences:
-            # Fallback to regex-based segmentation
-            patterns = [
-                r"(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<=\.|\!|\?)\s+(?=[A-Z])",
-                r"(?<=\.)\s+(?=[A-Z])",
-                r"(?<=\!)\s+(?=[A-Z])",
-                r"(?<=\?)\s+(?=[A-Z])",
-            ]
-
-            working_text = text
-            for pattern in patterns:
-                parts = re.split(pattern, working_text)
-                if len(parts) > len(sentences):
-                    sentences = parts
-                    break
-
-        return [s.strip() for s in sentences if s.strip() and len(s.strip()) > 10]
-
-    def _extract_content_words(self, text: str) -> List[str]:
-        """Extract content words from text"""
-        if HAS_NLTK:
-            try:
-                tokens = word_tokenize(text.lower())
-                pos_tags = pos_tag(tokens)
-
-                content_pos = {
-                    "NN",
-                    "NNS",
-                    "NNP",
-                    "NNPS",
-                    "VB",
-                    "VBD",
-                    "VBG",
-                    "VBN",
-                    "VBP",
-                    "VBZ",
-                    "JJ",
-                    "JJR",
-                    "JJS",
-                }
-                content_words = [
-                    self._lemmatizer.lemmatize(word)
-                    for word, pos in pos_tags
-                    if pos in content_pos
-                    and word not in self._stop_words
-                    and len(word) > 2
-                ]
-
-                return content_words
-
-            except Exception as exc:
-                LOGGER.debug("NLTK content word extraction failed: %s", exc)
-
-        # Fallback to regex-based extraction
-        words = re.findall(r"\b[a-zA-Z]{3,}\b", text.lower())
-        return [word for word in words if word not in self._stop_words]
-
-    @staticmethod
-    def _extract_entities_simple(text: str) -> List[str]:
-        """Simple entity extraction using patterns"""
-        entities = []
-
-        # Capitalized words (potential proper nouns)
-        capitalized = re.findall(r"\b[A-Z][a-z]+\b", text)
-        entities.extend(capitalized)
-
-        # Numbers and dates
-        numbers = re.findall(r"\b\d+\b", text)
-        entities.extend(numbers)
-
-        return [entity.lower() for entity in entities]
-
-    @staticmethod
-    def _generate_cache_key(text: str) -> str:
-        """Generate cache key for text"""
-        return hashlib.md5(text.encode()).hexdigest()[:16]
+        return section_to_dimension.get(self.section_type, [])
 
 
 class DocumentSegmenter:
     """
-    Advanced document segmentation with industrial-grade capabilities while maintaining
-    full backward compatibility with the original interface.
+    Segments a document into logical units for DECALOGO analysis.
+    
+    Attributes:
+        segmentation_type: Type of segmentation to perform
+        min_segment_length: Minimum length for a valid segment
+        max_segment_length: Maximum length for a segment before splitting
+        preserve_context: Whether to include surrounding context in segments
+        section_patterns: Regex patterns for identifying section types
     """
-
+    
     def __init__(
         self,
-        target_char_min: int = 700,
-        target_char_max: int = 900,
-        target_sentences: int = 3,
-        max_sentence_deviation: int = 1,
-        min_segment_chars: int = 200,
-        max_segment_chars: int = 1200,
-        semantic_coherence_threshold: float = 0.6,
-        # Industrial extensions (backward compatible)
-        enable_advanced_semantics: bool = True,
-        enable_caching: bool = True,
-        performance_monitoring: bool = True,
+        segmentation_type: SegmentationType = SegmentationType.SECTION,
+        min_segment_length: int = 50,
+        max_segment_length: int = 1000,
+        preserve_context: bool = True,
     ):
-        """Initialize document segmenter with comprehensive configuration"""
-
-        # Core parameters (maintain exact compatibility)
-        self.target_char_min = target_char_min
-        self.target_char_max = target_char_max
-        self.target_sentences = target_sentences
-        self.max_sentence_deviation = max_sentence_deviation
-        self.min_segment_chars = min_segment_chars
-        self.max_segment_chars = max_segment_chars
-        self.semantic_coherence_threshold = semantic_coherence_threshold
-
-        # Industrial extensions
-        self.enable_advanced_semantics = enable_advanced_semantics
-        self.enable_caching = enable_caching
-        self.performance_monitoring = performance_monitoring
-
-        # Initialize spaCy (maintain original compatibility)
-        self.spacy_loader = SpacyModelLoader()
-        self.nlp = None
-        self._initialize_spacy()
-
-        # Initialize advanced components
-        if self.enable_advanced_semantics:
-            self.semantic_analyzer = IndustrialSemanticAnalyzer()
-        else:
-            self.semantic_analyzer = None
-
-        # Performance tracking
-        self.segmentation_stats = SegmentationStats()
-        self._processing_cache = {}
-        self._performance_metrics = defaultdict(list)
-
-    def _initialize_spacy(self):
-        """Initialize spaCy model with graceful degradation (maintain original logic)"""
-        try:
-            self.nlp = self.spacy_loader.load_model("es_core_news_sm")
-            if self.nlp is None:
-                LOGGER.warning("spaCy Spanish model not available, using English model")
-                self.nlp = self.spacy_loader.load_model("en_core_web_sm")
-
-            if self.nlp is None:
-                LOGGER.warning(
-                    "No spaCy models available, using rule-based segmentation"
-                )
-
-        except Exception as exc:
-            LOGGER.error("Failed to initialize spaCy model: %s", exc)
-            self.nlp = None
-
-    def segment_document(self, text: str) -> List[Dict[str, Any]]:
         """
-        Main segmentation method (maintain exact original interface)
-
+        Initialize the document segmenter.
+        
         Args:
-            text: Input text to segment
-
+            segmentation_type: Type of segmentation to perform
+            min_segment_length: Minimum length for a valid segment
+            max_segment_length: Maximum length for a segment before splitting
+            preserve_context: Whether to include surrounding context in segments
+        """
+        self.segmentation_type = segmentation_type
+        self.min_segment_length = min_segment_length
+        self.max_segment_length = max_segment_length
+        self.preserve_context = preserve_context
+        
+        # Section identification patterns - aligned with DECALOGO dimensions
+        self.section_patterns = {
+            # DE-2: Thematic Inclusion (Diagnostic)
+            SectionType.DIAGNOSTIC: [
+                r"(?i)(?:^|\n)(?:\d+[\.\)]\s*)?(?:diagn[óo]stico|antecedentes|contexto|situaci[óo]n actual)",
+                r"(?i)(?:^|\n)(?:\d+[\.\)]\s*)?(?:problem[áa]tica|necesidades|demandas)",
+                r"(?i)(?:^|\n)(?:\d+[\.\)]\s*)?(?:caracterizaci[óo]n|perfil)"
+            ],
+            
+            # DE-1: Logical Intervention Framework (Vision)
+            SectionType.VISION: [
+                r"(?i)(?:^|\n)(?:\d+[\.\)]\s*)?(?:visi[óo]n|misi[óo]n)",
+                r"(?i)(?:^|\n)(?:\d+[\.\)]\s*)?(?:escenario(?:s)? deseado(?:s)?)",
+                r"(?i)(?:^|\n)(?:\d+[\.\)]\s*)?(?:futuro(?:s)? deseado(?:s)?)"
+            ],
+            
+            # DE-1: Logical Intervention Framework (Objectives)
+            SectionType.OBJECTIVE: [
+                r"(?i)(?:^|\n)(?:\d+[\.\)]\s*)?(?:objetivo(?:s)?|prop[óo]sito(?:s)?)",
+                r"(?i)(?:^|\n)(?:\d+[\.\)]\s*)?(?:finalidad(?:es)?|meta(?:s)?)",
+                r"(?i)(?:^|\n)(?:\d+[\.\)]\s*)?(?:logro(?:s)? esperado(?:s)?)"
+            ],
+            
+            # DE-1: Logical Intervention Framework (Strategies)
+            SectionType.STRATEGY: [
+                r"(?i)(?:^|\n)(?:\d+[\.\)]\s*)?(?:estrategia(?:s)?|l[íi]nea(?:s)? (?:de)? acci[óo]n)",
+                r"(?i)(?:^|\n)(?:\d+[\.\)]\s*)?(?:programa(?:s)?|proyecto(?:s)?)",
+                r"(?i)(?:^|\n)(?:\d+[\.\)]\s*)?(?:iniciativa(?:s)?|actividad(?:es)?)"
+            ],
+            
+            # DE-4: Results Orientation (Indicators)
+            SectionType.INDICATOR: [
+                r"(?i)(?:^|\n)(?:\d+[\.\)]\s*)?(?:indicador(?:es)?|medici[óo]n(?:es)?)",
+                r"(?i)(?:^|\n)(?:\d+[\.\)]\s*)?(?:m[ée]trica(?:s)?|valor(?:es)?)",
+                r"(?i)(?:^|\n)(?:\d+[\.\)]\s*)?(?:l[íi]nea(?:s)? base)"
+            ],
+            
+            # DE-1: Logical Intervention Framework (Q2 - Responsibilities)
+            SectionType.RESPONSIBILITY: [
+                r"(?i)(?:^|\n)(?:\d+[\.\)]\s*)?(?:responsable(?:s)?|encargado(?:s)?)",
+                r"(?i)(?:^|\n)(?:\d+[\.\)]\s*)?(?:entidad(?:es)? (?:responsable|ejecutora)(?:s)?)",
+                r"(?i)(?:^|\n)(?:\d+[\.\)]\s*)?(?:actor(?:es)? (?:responsable|institucional)(?:s)?)"
+            ],
+            
+            # DE-3: Participation and Governance
+            SectionType.PARTICIPATION: [
+                r"(?i)(?:^|\n)(?:\d+[\.\)]\s*)?(?:participaci[óo]n|gobernanza|concertaci[óo]n)",
+                r"(?i)(?:^|\n)(?:\d+[\.\)]\s*)?(?:mesa(?:s)? (?:t[ée]cnica(?:s)?|participativa(?:s)?))",
+                r"(?i)(?:^|\n)(?:\d+[\.\)]\s*)?(?:di[áa]logo(?:s)?|consulta(?:s)?)"
+            ],
+            
+            # DE-4: Results Orientation (Monitoring)
+            SectionType.MONITORING: [
+                r"(?i)(?:^|\n)(?:\d+[\.\)]\s*)?(?:seguimiento|monitoreo|evaluaci[óo]n)",
+                r"(?i)(?:^|\n)(?:\d+[\.\)]\s*)?(?:control|supervisi[óo]n|vigilancia)",
+                r"(?i)(?:^|\n)(?:\d+[\.\)]\s*)?(?:tablero(?:s)? de (?:control|mando))"
+            ],
+            
+            # DE-2: Thematic Inclusion (Budget)
+            SectionType.BUDGET: [
+                r"(?i)(?:^|\n)(?:\d+[\.\)]\s*)?(?:presupuesto|recursos (?:financieros|econ[óo]micos))",
+                r"(?i)(?:^|\n)(?:\d+[\.\)]\s*)?(?:financiaci[óo]n|inversi[óo]n|gasto(?:s)?)",
+                r"(?i)(?:^|\n)(?:\d+[\.\)]\s*)?(?:costeo|asignaci[óo]n (?:presupuestal|de recursos))"
+            ],
+            
+            # DE-4: Results Orientation (Timeline)
+            SectionType.TIMELINE: [
+                r"(?i)(?:^|\n)(?:\d+[\.\)]\s*)?(?:cronograma|calendario|plazos)",
+                r"(?i)(?:^|\n)(?:\d+[\.\)]\s*)?(?:tiempos|periodicidad|fechas)",
+                r"(?i)(?:^|\n)(?:\d+[\.\)]\s*)?(?:hitos|milestones|fases)"
+            ],
+        }
+        
+        # Compile all section patterns for efficiency
+        self.compiled_patterns = {}
+        for section_type, patterns in self.section_patterns.items():
+            self.compiled_patterns[section_type] = [re.compile(pattern) for pattern in patterns]
+    
+    def segment_text(self, text: str) -> List[DocumentSegment]:
+        """
+        Segment the given text into logical units.
+        
+        Args:
+            text: Text to segment
+            
         Returns:
-            List of segment dictionaries with text and metadata
+            List of DocumentSegment objects
         """
-        if not text or not text.strip():
+        if not text:
             return []
-
-        # Reset stats for new document
-        self.segmentation_stats = SegmentationStats()
-
-        start_time = time.perf_counter()
-
-        try:
-            # Primary approach: spaCy sentence segmentation (maintain original logic)
-            if self.nlp is not None:
-                segments = self._segment_with_spacy(text)
-            else:
-                # Fallback: Rule-based segmentation (maintain original logic)
-                segments = self._segment_with_rules(text)
-
-            # Apply post-processing to ensure quality (maintain original logic)
-            segments = self._post_process_segments(segments)
-
-            # Enhanced with industrial features
-            if self.enable_advanced_semantics:
-                segments = self._enhance_segments_with_advanced_metrics(segments)
-
-            # Calculate final statistics (maintain compatibility)
-            self._calculate_segmentation_stats(segments)
-
-            # Performance tracking
-            if self.performance_monitoring:
-                processing_time = (time.perf_counter() - start_time) * 1000
-                self.segmentation_stats.processing_time_ms = processing_time
-                self._performance_metrics["processing_times"].append(processing_time)
-
-            return segments
-
-        except Exception as exc:
-            LOGGER.error("Document segmentation failed: %s", exc)
-            # Emergency fallback: simple character-based chunking (maintain original)
-            return self._emergency_fallback_segmentation(text)
-
-    def _segment_with_spacy(self, text: str) -> List[Dict[str, Any]]:
-        """Segment using spaCy sentence detection with dual criteria (maintain original logic)"""
-        doc = self.nlp(text)
-        sentences = [sent for sent in doc.sents if sent.text.strip()]
-
-        if not sentences:
-            return self._segment_with_rules(text)
-
-        segments = []
-        current_segment_sents = []
-        current_char_count = 0
-
-        i = 0
-        while i < len(sentences):
-            sent = sentences[i]
-            sent_text = sent.text.strip()
-            sent_char_count = len(sent_text)
-
-            # Decision logic for dual criteria (maintain original logic)
-            if not current_segment_sents:
-                current_segment_sents.append(sent_text)
-                current_char_count = sent_char_count
-                i += 1
-                continue
-
-            projected_char_count = current_char_count + sent_char_count + 1
-
-            # Enhanced decision logic with semantic analysis
-            should_finalize_segment = self._should_finalize_segment(
-                len(current_segment_sents),
-                projected_char_count,
-                sent_char_count,
-                i,
-                len(sentences),
-                current_segment_sents,  # Pass for semantic analysis
-            )
-
-            if should_finalize_segment:
-                segment_text = " ".join(current_segment_sents)
-                segments.append(
-                    self._create_segment_dict(
-                        segment_text, current_segment_sents, "sentence_based"
-                    )
-                )
-
-                current_segment_sents = [sent_text]
-                current_char_count = sent_char_count
-            else:
-                current_segment_sents.append(sent_text)
-                current_char_count = projected_char_count
-
-            i += 1
-
-        # Handle remaining sentences
-        if current_segment_sents:
-            segment_text = " ".join(current_segment_sents)
-            segments.append(
-                self._create_segment_dict(
-                    segment_text, current_segment_sents, "sentence_based"
-                )
-            )
-
-        return segments
-
-    def _should_finalize_segment(
-        self,
-        current_sent_count: int,
-        projected_char_count: int,
-        next_sent_char_count: int,
-        sent_index: int,
-        total_sentences: int,
-        current_segment_sents: List[str] = None,
-    ) -> bool:
-        """
-        Enhanced decision logic for segment finalization (maintains original + adds semantic analysis)
-        """
-        current_char_count = projected_char_count - next_sent_char_count - 1
-
-        # Original logic (maintain exact compatibility)
-        if projected_char_count > self.max_segment_chars:
-            return True
-
-        if current_sent_count >= self.target_sentences + self.max_sentence_deviation:
-            return True
-
-        # Enhanced semantic coherence check
-        if (
-            self.enable_advanced_semantics
-            and self.semantic_analyzer
-            and current_segment_sents
-            and len(current_segment_sents) >= 2
-        ):
-            current_text = " ".join(current_segment_sents)
-            coherence_score, _ = self.semantic_analyzer.analyze_comprehensive_coherence(
-                current_text
-            )
-
-            if (
-                coherence_score < self.semantic_coherence_threshold
-                and current_sent_count
-                >= self.target_sentences - self.max_sentence_deviation
-            ):
-                return True
-
-        # Original dual criteria logic (maintain exact compatibility)
-        if (
-            current_sent_count == self.target_sentences
-            and self.target_char_min <= current_char_count <= self.target_char_max
-        ):
-            return True
-
-        if (
-            current_sent_count >= self.target_sentences - self.max_sentence_deviation
-            and projected_char_count > self.target_char_max
-        ):
-            return True
-
-        if (
-            current_sent_count >= self.target_sentences - self.max_sentence_deviation
-            and next_sent_char_count > 400
-        ):
-            return True
-
-        if (
-            sent_index >= total_sentences - 2
-            and current_sent_count >= 2
-            and current_char_count >= self.min_segment_chars
-        ):
-            return True
-
-        if (
-            current_sent_count >= self.target_sentences - self.max_sentence_deviation
-            and self.target_char_min <= current_char_count <= self.target_char_max
-        ):
-            return True
-
-        return False
-
-    def _segment_with_rules(self, text: str) -> List[Dict[str, Any]]:
-        """Fallback rule-based segmentation (maintain original logic)"""
-        sentence_pattern = r"[.!?]+\s+"
-        potential_sentences = re.split(sentence_pattern, text.strip())
-
-        sentences = [
-            s.strip() for s in potential_sentences if s.strip() and len(s.strip()) > 10
-        ]
-
-        if not sentences:
-            return self._character_based_segmentation(text)
-
-        segments = []
-        current_segment_sents = []
-        current_char_count = 0
-
-        for i, sent in enumerate(sentences):
-            sent_char_count = len(sent)
-
-            if not current_segment_sents:
-                current_segment_sents.append(sent)
-                current_char_count = sent_char_count
-                continue
-
-            projected_char_count = current_char_count + sent_char_count + 1
-
-            should_finalize = self._should_finalize_segment(
-                len(current_segment_sents),
-                projected_char_count,
-                sent_char_count,
-                i,
-                len(sentences),
-                current_segment_sents,
-            )
-
-            if should_finalize:
-                segment_text = " ".join(current_segment_sents)
-                segments.append(
-                    self._create_segment_dict(
-                        segment_text, current_segment_sents, "rule_based"
-                    )
-                )
-
-                current_segment_sents = [sent]
-                current_char_count = sent_char_count
-            else:
-                current_segment_sents.append(sent)
-                current_char_count = projected_char_count
-
-        if current_segment_sents:
-            segment_text = " ".join(current_segment_sents)
-            segments.append(
-                self._create_segment_dict(
-                    segment_text, current_segment_sents, "rule_based"
-                )
-            )
-
-        return segments
-
-    def _character_based_segmentation(self, text: str) -> List[Dict[str, Any]]:
-        """Character-based segmentation (maintain original logic)"""
-        segments = []
-        words = text.split()
-
-        current_segment_words = []
-        current_char_count = 0
-        target_chars = (self.target_char_min + self.target_char_max) // 2
-
-        for word in words:
-            word_length = len(word)
-            projected_length = (
-                current_char_count + word_length + len(current_segment_words)
-            )
-
-            if (
-                projected_length > target_chars
-                and current_char_count >= self.min_segment_chars
-                and current_segment_words
-            ):
-                segment_text = " ".join(current_segment_words)
-                segments.append(
-                    self._create_segment_dict(segment_text, [], "character_based")
-                )
-
-                current_segment_words = [word]
-                current_char_count = word_length
-            else:
-                current_segment_words.append(word)
-                current_char_count += word_length
-
-        if current_segment_words:
-            segment_text = " ".join(current_segment_words)
-            segments.append(
-                self._create_segment_dict(segment_text, [], "character_based")
-            )
-
-        return segments
-
-    def _create_segment_dict(
-        self, text: str, sentences: List[str], segment_type: str
-    ) -> Dict[str, Any]:
-        """Create segment dictionary with metadata (enhanced with industrial features)"""
-
-        # Basic metrics (maintain exact original compatibility)
-        char_count = len(text)
-        sentence_count = (
-            len(sentences) if sentences else self._estimate_sentence_count(text)
-        )
-        word_count = len(text.split())
-        token_count = len(text.split())  # Simple approximation
-
-        # Enhanced semantic coherence
-        if self.enable_advanced_semantics and self.semantic_analyzer:
-            coherence_score, coherence_components = (
-                self.semantic_analyzer.analyze_comprehensive_coherence(text)
-            )
-            embedding_coherence = coherence_components.get("embedding_coherence", 0.0)
+            
+        # Choose segmentation strategy
+        if self.segmentation_type == SegmentationType.PARAGRAPH:
+            return self._segment_by_paragraph(text)
+        elif self.segmentation_type == SegmentationType.SECTION:
+            return self._segment_by_section(text)
+        elif self.segmentation_type == SegmentationType.SENTENCE:
+            return self._segment_by_sentence(text)
+        elif self.segmentation_type == SegmentationType.SEMANTIC:
+            return self._segment_by_semantic_units(text)
         else:
-            coherence_score = self._estimate_semantic_coherence(text)
-            embedding_coherence = None
+            # Default to paragraph segmentation
+            return self._segment_by_paragraph(text)
+    
+    def _segment_by_paragraph(self, text: str) -> List[DocumentSegment]:
+        """
+        Segment text by paragraphs.
+        
+        Args:
+            text: Text to segment
+            
+        Returns:
+            List of DocumentSegment objects
+        """
+        segments = []
+        
+        # Split by double line breaks (typical paragraph separator)
+        paragraphs = re.split(r'\n\s*\n', text)
+        
+        position = 0
+        for paragraph in paragraphs:
+            paragraph = paragraph.strip()
+            
+            # Skip empty paragraphs
+            if not paragraph or len(paragraph) < self.min_segment_length:
+                position += len(paragraph) + 2  # +2 for the newlines
+                continue
+            
+            # Find the original position in the text
+            start_pos = text.find(paragraph, position)
+            if start_pos == -1:  # Fallback if exact match not found
+                start_pos = position
+                
+            end_pos = start_pos + len(paragraph)
+            position = end_pos
+            
+            # Identify section type
+            section_type = self._identify_section_type(paragraph)
+            
+            # Create segment
+            segment = DocumentSegment(
+                text=paragraph,
+                start_pos=start_pos,
+                end_pos=end_pos,
+                segment_type=SegmentationType.PARAGRAPH,
+                section_type=section_type,
+            )
+            
+            segments.append(segment)
+        
+        return segments
+    
+    def _segment_by_section(self, text: str) -> List[DocumentSegment]:
+        """
+        Segment text by document sections.
+        
+        Args:
+            text: Text to segment
+            
+        Returns:
+            List of DocumentSegment objects
+        """
+        segments = []
+        
+        # Find all potential section headers
+        all_matches = []
+        for section_type, patterns in self.compiled_patterns.items():
+            for pattern in patterns:
+                for match in pattern.finditer(text):
+                    all_matches.append((match.start(), match.end(), section_type))
+        
+        # Sort matches by position
+        all_matches.sort(key=lambda x: x[0])
+        
+        # Create segments from sections
+        for i in range(len(all_matches)):
+            start_pos, header_end_pos, section_type = all_matches[i]
+            
+            # Find the end of this section (start of next section or end of text)
+            if i < len(all_matches) - 1:
+                end_pos = all_matches[i + 1][0]
+            else:
+                end_pos = len(text)
+            
+            # Extract section content (excluding header)
+            section_text = text[header_end_pos:end_pos].strip()
+            
+            # Skip if section is too short
+            if len(section_text) < self.min_segment_length:
+                continue
+            
+            # Split if section is too long
+            if len(section_text) > self.max_segment_length:
+                subsegments = self._split_long_segment(section_text, start_pos=header_end_pos)
+                
+                # Set parent-child relationship
+                parent_id = f"section_{start_pos}_{header_end_pos}"
+                for subsegment in subsegments:
+                    subsegment.section_type = section_type
+                    subsegment.parent_id = parent_id
+                
+                segments.extend(subsegments)
+            else:
+                # Create section segment
+                segment = DocumentSegment(
+                    text=section_text,
+                    start_pos=header_end_pos,
+                    end_pos=end_pos,
+                    segment_type=SegmentationType.SECTION,
+                    section_type=section_type,
+                )
+                segments.append(segment)
+            
+            # Also include the header as a separate segment for context
+            if self.preserve_context:
+                header_text = text[start_pos:header_end_pos].strip()
+                header_segment = DocumentSegment(
+                    text=header_text,
+                    start_pos=start_pos,
+                    end_pos=header_end_pos,
+                    segment_type=SegmentationType.SECTION,
+                    section_type=section_type,
+                    metadata={"is_header": True},
+                )
+                segments.append(header_segment)
+        
+        # If no sections found, fall back to paragraph segmentation
+        if not segments:
+            return self._segment_by_paragraph(text)
+        
+        return segments
+    
+    def _segment_by_sentence(self, text: str) -> List[DocumentSegment]:
+        """
+        Segment text by sentences.
+        
+        Args:
+            text: Text to segment
+            
+        Returns:
+            List of DocumentSegment objects
+        """
+        segments = []
+        
+        # Simple sentence splitting with regex (for Spanish text)
+        # More sophisticated NLP-based sentence splitting could be used here
+        sentence_pattern = re.compile(r'(?<=[.!?])\s+(?=[A-ZÁÉÍÓÚÑ])')
+        
+        position = 0
+        paragraphs = re.split(r'\n\s*\n', text)
+        
+        for paragraph in paragraphs:
+            paragraph = paragraph.strip()
+            if not paragraph:
+                continue
+                
+            # Find paragraph position
+            para_start = text.find(paragraph, position)
+            if para_start == -1:
+                para_start = position
+            
+            # Split paragraph into sentences
+            sentences = sentence_pattern.split(paragraph)
+            
+            sent_position = para_start
+            for sentence in sentences:
+                sentence = sentence.strip()
+                
+                # Skip very short sentences
+                if not sentence or len(sentence) < self.min_segment_length:
+                    sent_position += len(sentence) + 1  # +1 for the space
+                    continue
+                
+                # Find the original position in the text
+                sent_start = text.find(sentence, sent_position)
+                if sent_start == -1:  # Fallback if exact match not found
+                    sent_start = sent_position
+                    
+                sent_end = sent_start + len(sentence)
+                sent_position = sent_end
+                
+                # Identify section type - for sentences, check the paragraph context
+                section_type = self._identify_section_type(paragraph)
+                
+                # Create segment
+                segment = DocumentSegment(
+                    text=sentence,
+                    start_pos=sent_start,
+                    end_pos=sent_end,
+                    segment_type=SegmentationType.SENTENCE,
+                    section_type=section_type,
+                )
+                
+                segments.append(segment)
+            
+            position = para_start + len(paragraph)
+        
+        return segments
+    
+    def _segment_by_semantic_units(self, text: str) -> List[DocumentSegment]:
+        """
+        Segment text by semantic units (combining sections, paragraphs and other cues).
+        
+        Args:
+            text: Text to segment
+            
+        Returns:
+            List of DocumentSegment objects
+        """
+        # Start with section segmentation
+        section_segments = self._segment_by_section(text)
+        
+        # Process each section for further semantic segmentation
+        final_segments = []
+        
+        for segment in section_segments:
+            # If segment is a header or already small enough, keep as is
+            if segment.metadata.get("is_header", False) or len(segment.text) <= self.max_segment_length:
+                final_segments.append(segment)
+                continue
+            
+            # Further segment by semantic units
+            subsegments = []
+            
+            # Check for tables, lists, and other structured content
+            if self._contains_table(segment.text):
+                table_segments = self._extract_tables(segment.text, segment.start_pos)
+                subsegments.extend(table_segments)
+            elif self._contains_list(segment.text):
+                list_segments = self._extract_lists(segment.text, segment.start_pos)
+                subsegments.extend(list_segments)
+            else:
+                # Fall back to paragraph segmentation for this section
+                paragraph_segments = self._segment_by_paragraph(segment.text)
+                
+                # Adjust positions to be relative to the original text
+                for para_segment in paragraph_segments:
+                    para_segment.start_pos += segment.start_pos
+                    para_segment.end_pos += segment.start_pos
+                    para_segment.section_type = segment.section_type
+                
+                subsegments.extend(paragraph_segments)
+            
+            # Preserve parent-child relationship
+            for subsegment in subsegments:
+                subsegment.parent_id = segment.segment_id
+                
+            final_segments.extend(subsegments)
+        
+        return final_segments
+    
+    def _split_long_segment(self, text: str, start_pos: int = 0) -> List[DocumentSegment]:
+        """
+        Split a long segment into smaller segments.
+        
+        Args:
+            text: Text to split
+            start_pos: Starting position in the original document
+            
+        Returns:
+            List of DocumentSegment objects
+        """
+        segments = []
+        
+        # Try to split by paragraphs first
+        paragraphs = re.split(r'\n\s*\n', text)
+        
+        if len(paragraphs) > 1:
+            position = start_pos
+            for paragraph in paragraphs:
+                paragraph = paragraph.strip()
+                if not paragraph or len(paragraph) < self.min_segment_length:
+                    continue
+                
+                # Find paragraph position
+                para_start = text.find(paragraph, position - start_pos)
+                if para_start == -1:
+                    para_start = position - start_pos
+                else:
+                    para_start += start_pos
+                
+                para_end = para_start + len(paragraph)
+                
+                # Identify section type
+                section_type = self._identify_section_type(paragraph)
+                
+                # Create segment
+                segment = DocumentSegment(
+                    text=paragraph,
+                    start_pos=para_start,
+                    end_pos=para_end,
+                    segment_type=SegmentationType.PARAGRAPH,
+                    section_type=section_type,
+                )
+                
+                segments.append(segment)
+                position = para_end
+        else:
+            # If no paragraph breaks, split by size
+            chunk_size = self.max_segment_length
+            for i in range(0, len(text), chunk_size):
+                chunk = text[i:i + chunk_size].strip()
+                if not chunk:
+                    continue
+                
+                chunk_start = start_pos + i
+                chunk_end = chunk_start + len(chunk)
+                
+                # Try to find a sentence boundary to split on
+                if i > 0:
+                    sentence_boundary = re.search(r'[.!?]\s+', chunk[:100])
+                    if sentence_boundary:
+                        # Adjust to split on sentence boundary
+                        boundary_pos = sentence_boundary.end()
+                        prev_segment = segments[-1]
+                        prev_segment.text += " " + chunk[:boundary_pos]
+                        prev_segment.end_pos += boundary_pos
+                        
+                        chunk = chunk[boundary_pos:].strip()
+                        chunk_start += boundary_pos
+                
+                # Identify section type
+                section_type = self._identify_section_type(chunk)
+                
+                # Create segment
+                segment = DocumentSegment(
+                    text=chunk,
+                    start_pos=chunk_start,
+                    end_pos=chunk_end,
+                    segment_type=SegmentationType.PARAGRAPH,
+                    section_type=section_type,
+                )
+                
+                segments.append(segment)
+        
+        return segments
+    
+    def _identify_section_type(self, text: str) -> SectionType:
+        """
+        Identify the type of section based on text content.
+        
+        Args:
+            text: Text to analyze
+            
+        Returns:
+            Section type
+        """
+        # Check for exact section headers
+        for section_type, patterns in self.compiled_patterns.items():
+            for pattern in patterns:
+                if pattern.search(text):
+                    return section_type
+        
+        # If no exact match, check for content indicators
+        lower_text = text.lower()
+        
+        # Keywords for each section type
+        keywords = {
+            SectionType.DIAGNOSTIC: ["diagnóstico", "situación", "problemática", "contexto", "antecedentes"],
+            SectionType.VISION: ["visión", "misión", "futuro", "escenario"],
+            SectionType.OBJECTIVE: ["objetivo", "propósito", "finalidad", "meta"],
+            SectionType.STRATEGY: ["estrategia", "línea", "acción", "programa", "proyecto"],
+            SectionType.INDICATOR: ["indicador", "medición", "métrica", "línea base"],
+            SectionType.RESPONSIBILITY: ["responsable", "encargado", "entidad", "actor"],
+            SectionType.PARTICIPATION: ["participación", "gobernanza", "concertación", "mesa", "diálogo"],
+            SectionType.MONITORING: ["seguimiento", "monitoreo", "evaluación", "control"],
+            SectionType.BUDGET: ["presupuesto", "recursos", "financiación", "inversión"],
+            SectionType.TIMELINE: ["cronograma", "calendario", "plazo", "tiempo"],
+        }
+        
+        # Count keyword occurrences
+        counts = {section_type: 0 for section_type in SectionType}
+        
+        for section_type, words in keywords.items():
+            for word in words:
+                counts[section_type] += lower_text.count(word)
+        
+        # Get section type with highest keyword count, if any
+        max_count = max(counts.values())
+        if max_count > 0:
+            for section_type, count in counts.items():
+                if count == max_count:
+                    return section_type
+        
+        # Default to OTHER if no patterns or keywords match
+        return SectionType.OTHER
+    
+    def _contains_table(self, text: str) -> bool:
+        """Check if text contains a table."""
+        # Look for table-like patterns
+        table_patterns = [
+            r"\|\s*[\w\s]+\s*\|",  # | Column | Column |
+            r"\+[-+]+\+",          # +----+----+
+            r"┌[─┬]+┐",            # ┌────┬────┐
+            r"\n\s*\|.*\|.*\|",    # Multiple | pipe characters on one line
+        ]
+        
+        for pattern in table_patterns:
+            if re.search(pattern, text):
+                return True
+        
+        return False
+    
+    def _extract_tables(self, text: str, start_offset: int) -> List[DocumentSegment]:
+        """Extract table segments from text."""
+        segments = []
+        
+        # Find potential table boundaries
+        table_start_patterns = [
+            r"\n\s*\+[-+]+\+",
+            r"\n\s*\|",
+            r"\n\s*┌[─┬]+┐",
+        ]
+        
+        table_end_patterns = [
+            r"\+[-+]+\+\s*\n",
+            r"\|\s*\n(?!\s*\|)",
+            r"└[─┴]+┘\s*\n",
+        ]
+        
+        # Find all table starts and ends
+        starts = []
+        ends = []
+        
+        for pattern in table_start_patterns:
+            for match in re.finditer(pattern, text):
+                starts.append(match.start())
+        
+        for pattern in table_end_patterns:
+            for match in re.finditer(pattern, text):
+                ends.append(match.end())
+        
+        # Match starts and ends
+        if starts and ends:
+            starts.sort()
+            ends.sort()
+            
+            table_regions = []
+            start_idx = 0
+            end_idx = 0
+            
+            while start_idx < len(starts) and end_idx < len(ends):
+                if starts[start_idx] < ends[end_idx]:
+                    table_regions.append((starts[start_idx], ends[end_idx]))
+                    start_idx += 1
+                    end_idx += 1
+                else:
+                    end_idx += 1
+            
+            # Create segments for each table
+            for table_start, table_end in table_regions:
+                table_text = text[table_start:table_end].strip()
+                
+                # Skip if too short
+                if len(table_text) < self.min_segment_length:
+                    continue
+                
+                segment = DocumentSegment(
+                    text=table_text,
+                    start_pos=start_offset + table_start,
+                    end_pos=start_offset + table_end,
+                    segment_type=SegmentationType.SECTION,
+                    section_type=SectionType.INDICATOR,  # Most tables are indicators
+                    metadata={"content_type": "table"},
+                )
+                segments.append(segment)
+        
+        return segments
+    
+    def _contains_list(self, text: str) -> bool:
+        """Check if text contains a list."""
+        # Look for list-like patterns
+        list_patterns = [
+            r"(?m)^\s*[\*\-•]\s+\w+",      # Bullet lists
+            r"(?m)^\s*\d+[\.\)]\s+\w+",    # Numbered lists
+            r"(?m)^\s*[a-z][\.\)]\s+\w+"   # Alphabetic lists
+        ]
+        
+        for pattern in list_patterns:
+            matches = re.findall(pattern, text)
+            if len(matches) >= 2:  # At least 2 list items
+                return True
+        
+        return False
+    
+    def _extract_lists(self, text: str, start_offset: int) -> List[DocumentSegment]:
+        """Extract list segments from text."""
+        segments = []
+        
+        # Find list items
+        list_patterns = [
+            r"(?m)^\s*([\*\-•]\s+.+?)(?=\n\s*[\*\-•]\s+|\n\s*\n|$)",      # Bullet lists
+            r"(?m)^\s*(\d+[\.\)]\s+.+?)(?=\n\s*\d+[\.\)]\s+|\n\s*\n|$)",  # Numbered lists
+            r"(?m)^\s*([a-z][\.\)]\s+.+?)(?=\n\s*[a-z][\.\)]\s+|\n\s*\n|$)"  # Alphabetic lists
+        ]
+        
+        for pattern in list_patterns:
+            matches = list(re.finditer(pattern, text))
+            if len(matches) >= 2:  # At least 2 list items
+                # Find the boundaries of the list
+                list_start = matches[0].start()
+                list_end = matches[-1].end()
+                
+                list_text = text[list_start:list_end].strip()
+                
+                # Identify section type based on content
+                section_type = self._identify_section_type(list_text)
+                
+                segment = DocumentSegment(
+                    text=list_text,
+                    start_pos=start_offset + list_start,
+                    end_pos=start_offset + list_end,
+                    segment_type=SegmentationType.SECTION,
+                    section_type=section_type,
+                    metadata={"content_type": "list"},
+                )
+                segments.append(segment)
+        
+        return segments
+    
+    def segment_file(
+        self, 
+        input_path: Union[str, Path], 
+        segmentation_type: Optional[SegmentationType] = None
+    ) -> List[DocumentSegment]:
+        """
+        Segment a file containing text.
+        
+        Args:
+            input_path: Path to input file
+            segmentation_type: Optional override for segmentation type
+            
+        Returns:
+            List of DocumentSegment objects
+        """
+        input_path = Path(input_path)
+        
+        try:
+            with open(input_path, 'r', encoding='utf-8') as f:
+                text = f.read()
+        except UnicodeDecodeError:
+            # Try alternate encodings if utf-8 fails
+            try:
+                with open(input_path, 'r', encoding='latin-1') as f:
+                    text = f.read()
+            except Exception as e:
+                logger.error(f"Failed to read file with latin-1 encoding: {e}")
+                raise
+        
+        # Use provided segmentation type or instance default
+        current_type = segmentation_type or self.segmentation_type
+        original_type = self.segmentation_type
+        
+        try:
+            # Temporarily set segmentation type if override provided
+            if segmentation_type:
+                self.segmentation_type = segmentation_type
+                
+            # Segment the text
+            segments = self.segment_text(text)
+            
+            logger.info(f"Segmented file {input_path} into {len(segments)} segments")
+            return segments
+        finally:
+            # Restore original segmentation type
+            if segmentation_type:
+                self.segmentation_type = original_type
 
-        # Advanced metrics (industrial extensions)
-        readability_score = (
-            self._calculate_readability_score(text)
-            if self.enable_advanced_semantics
-            else 0.0
-        )
-        lexical_diversity = (
-            self._calculate_lexical_diversity(text)
-            if self.enable_advanced_semantics
-            else 0.0
-        )
-        syntactic_complexity = (
-            self._calculate_syntactic_complexity(text)
-            if self.enable_advanced_semantics
-            else 0.0
-        )
 
-        # Create enhanced metrics object (backward compatible)
-        metrics = SegmentMetrics(
-            char_count=char_count,
-            sentence_count=sentence_count,
-            word_count=word_count,
-            token_count=token_count,
-            semantic_coherence_score=coherence_score,
-            segment_type=segment_type,
-            readability_score=readability_score,
-            lexical_diversity=lexical_diversity,
-            syntactic_complexity=syntactic_complexity,
-            embedding_coherence=embedding_coherence,
-        )
+# Factory function to create a document segmenter with configuration
+def create_document_segmenter(
+    segmentation_type: str = "section",
+    min_segment_length: int = 50,
+    max_segment_length: int = 1000,
+    preserve_context: bool = True,
+) -> DocumentSegmenter:
+    """
+    Create a document segmenter with specified configuration.
+    
+    Args:
+        segmentation_type: Type of segmentation ("paragraph", "section", "sentence", "semantic")
+        min_segment_length: Minimum length for a valid segment
+        max_segment_length: Maximum length for a segment before splitting
+        preserve_context: Whether to preserve context around segments
+        
+    Returns:
+        Configured DocumentSegmenter instance
+    """
+    # Convert string to enum
+    seg_type = {
+        "paragraph": SegmentationType.PARAGRAPH,
+        "section": SegmentationType.SECTION,
+        "sentence": SegmentationType.SENTENCE,
+        "semantic": SegmentationType.SEMANTIC,
+    }.get(segmentation_type.lower(), SegmentationType.SECTION)
+    
+    return DocumentSegmenter(
+        segmentation_type=seg_type,
+        min_segment_length=min_segment_length,
+        max_segment_length=max_segment_length,
+        preserve_context=preserve_context,
+    )
 
-        # Return dictionary with exact original structure + enhanced metrics
+
+# Simple usage example
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    
+    segmenter = create_document_segmenter(segmentation_type="semantic")
+    
+    # Example text with different section types
+    sample_text = """
+    PLAN DE DESARROLLO MUNICIPAL 2020-2023
+    
+    1. DIAGNÓSTICO
+    
+    La situación actual del municipio presenta desafíos en educación y salud.
+    
+    La tasa de analfabetismo es del 8.5%.
+    La cobertura en salud alcanza solo el 75% de la población.
+    
+    2. OBJETIVOS ESTRATÉGICOS
+    
+    2.1 EDUCACIÓN
+    
+    Aumentar la cobertura educativa en todos los niveles.
+    Reducir la deserción escolar.
+    
+    Indicador: Tasa de escolaridad
+    Línea Base: 85%
+    Meta: 95%
+    
+    Responsable: Secretaría de Educación Municipal
+    
+    3. MECANISMOS DE PARTICIPACIÓN
+    
+    Se realizaron 5 mesas técnicas con la comunidad:
+    * Mesa 1: Sector educativo
+    * Mesa 2: Sector salud
+    * Mesa 3: Sector productivo
+    * Mesa 4: Jóvenes
+    * Mesa 5: Tercera edad
+    
+    4. SEGUIMIENTO Y MONITOREO
+    
+    El plan contará con un tablero de control para seguimiento trimestral.
+    
+    +----------------+------------+--------------+
+    | Indicador      | Frecuencia | Responsable  |
+    +----------------+------------+--------------+
+    | Cobertura      | Trimestral | Sec. Educ.   |
+    | Deserción      | Semestral  | Sec. Educ.   |
+    | Mortalidad     | Mensual    | Sec. Salud   |
+    +----------------+------------+--------------+
+    """
+    
+    segments = segmenter.segment_text(sample_text)
+    
+    print(f"Segmented into {len(segments)} parts\n")
+    
+    for i, segment in enumerate(segments):
+        print(f"Segment {i+1} - Type: {segment.section_type.name}, DECALOGO: {segment.decalogo_dimensions}")
+        print(f"  {segment.text[:60]}...")
+        print()
         return {
             "text": text,
             "metrics": metrics,

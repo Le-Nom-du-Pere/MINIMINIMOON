@@ -1,152 +1,152 @@
 """
-Test suite for ResponsibilityDetector
+Test suite for responsibility detection.
 """
 
+import unittest
+from unittest.mock import patch, MagicMock
 import pytest
+from responsibility_detector import ResponsibilityDetector, ResponsibilityEntity, EntityType
 
-from responsibility_detector import EntityType, ResponsibilityDetector
 
+class TestResponsibilityDetector(unittest.TestCase):
+    """Tests for the ResponsibilityDetector class."""
 
-class TestResponsibilityDetector:
-    @pytest.fixture
-    def detector(self):
-        """Create a ResponsibilityDetector instance for testing."""
-        return ResponsibilityDetector()
+    def setUp(self):
+        """Set up mock model loader."""
+        self.mock_model_loader = MagicMock()
+        self.mock_nlp = MagicMock()
+        self.mock_model_loader.load_model.return_value = self.mock_nlp
 
-    @staticmethod
-    def test_government_entity_detection(detector):
-        """Test detection of government entities with high confidence."""
-        text = "La Alcaldía Municipal coordinará con la Secretaría de Salud."
-        result = detector.calculate_responsibility_score(text)
+    def test_detect_empty_text(self):
+        """Test detection with empty text."""
+        detector = ResponsibilityDetector(self.mock_model_loader)
+        result = detector.detect_entities("")
+        self.assertEqual(result, [])
 
-        assert result["factibility_score"] > 0.7
-        assert result["has_government_entities"] is True
+    def test_detect_government_pattern(self):
+        """Test detection of government pattern."""
+        detector = ResponsibilityDetector(self.mock_model_loader)
+        text = "El Ministerio de Educación implementará la política."
 
-        # Check for government entities
-        gov_entities = [e for e in result["entities"] if e.is_government]
-        assert len(gov_entities) >= 1
+        # Mock NER to return no entities
+        mock_doc = MagicMock()
+        mock_doc.ents = []
+        self.mock_nlp.return_value = mock_doc
 
-        # Government entities should have high confidence
-        for entity in gov_entities:
-            assert entity.confidence >= 0.8
+        result = detector.detect_entities(text)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0].text, "Ministerio de Educación")
+        self.assertEqual(result[0].entity_type, EntityType.GOVERNMENT)
+        self.assertGreaterEqual(result[0].confidence, 0.8)
 
-    @staticmethod
-    def test_official_position_detection(detector):
-        """Test detection of official positions."""
-        text = "El alcalde y la secretaria de educación supervisarán el proyecto."
-        result = detector.calculate_responsibility_score(text)
+    def test_detect_position_pattern(self):
+        """Test detection of position pattern."""
+        detector = ResponsibilityDetector(self.mock_model_loader)
+        text = "El alcalde anunció nuevas medidas para la ciudad."
 
-        assert result["has_official_positions"] is True
+        # Mock NER to return no entities
+        mock_doc = MagicMock()
+        mock_doc.ents = []
+        self.mock_nlp.return_value = mock_doc
 
-        position_entities = [
-            e for e in result["entities"] if e.entity_type == EntityType.POSITION
-        ]
-        assert len(position_entities) >= 1
+        result = detector.detect_entities(text)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0].text, "alcalde")
+        self.assertEqual(result[0].entity_type, EntityType.POSITION)
 
-        # Position entities should have high confidence
-        for entity in position_entities:
-            assert entity.confidence >= 0.7
+    def test_detect_institution_pattern(self):
+        """Test detection of institution pattern."""
+        detector = ResponsibilityDetector(self.mock_model_loader)
+        text = "La universidad implementará nuevos programas."
 
-    @staticmethod
-    def test_person_organization_detection(detector):
-        """Test detection of persons and organizations via NER."""
-        text = "Juan Pérez de Microsoft trabajará con María González."
-        result = detector.calculate_responsibility_score(text)
+        # Mock NER to return no entities
+        mock_doc = MagicMock()
+        mock_doc.ents = []
+        self.mock_nlp.return_value = mock_doc
 
-        entities = result["entities"]
-        person_entities = [
-            e for e in entities if e.entity_type == EntityType.PERSON]
-        org_entities = [e for e in entities if e.entity_type ==
-                        EntityType.ORGANIZATION]
+        result = detector.detect_entities(text)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0].text, "universidad")
+        self.assertEqual(result[0].entity_type, EntityType.INSTITUTION)
 
-        # Should detect some entities (specific counts may vary with NER model)
-        assert len(entities) > 0
+    def test_detect_ner_entities(self):
+        """Test detection using spaCy NER."""
+        detector = ResponsibilityDetector(self.mock_model_loader)
+        text = "Juan Pérez presentó el informe."
 
-    @staticmethod
-    def test_confidence_scoring_hierarchy(detector):
-        """Test that government entities get higher confidence than generic organizations."""
-        gov_text = "La Secretaría de Salud implementará el programa."
-        generic_text = "La empresa XYZ implementará el programa."
+        # Create mock entity
+        mock_ent = MagicMock()
+        mock_ent.text = "Juan Pérez"
+        mock_ent.label_ = "PERSON"
+        mock_ent.start_char = 0
+        mock_ent.end_char = 10
 
-        gov_result = detector.calculate_responsibility_score(gov_text)
-        generic_result = detector.calculate_responsibility_score(generic_text)
+        # Create mock doc with entity
+        mock_doc = MagicMock()
+        mock_doc.ents = [mock_ent]
+        self.mock_nlp.return_value = mock_doc
 
-        # Government text should have higher factibility score
-        assert gov_result["factibility_score"] > generic_result["factibility_score"]
+        result = detector.detect_entities(text)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0].text, "Juan Pérez")
+        self.assertEqual(result[0].entity_type, EntityType.PERSON)
 
-    @staticmethod
-    def test_overlapping_entity_merge(detector):
-        """Test that overlapping entities are properly merged."""
-        text = "La Alcaldía Municipal de Bogotá coordinará las actividades."
-        entities = detector.detect_entities(text)
+    def test_merge_overlapping_entities(self):
+        """Test merging of overlapping entities."""
+        detector = ResponsibilityDetector(self.mock_model_loader)
 
-        # Check that overlapping entities were merged (no overlaps)
-        for i in range(len(entities) - 1):
-            assert entities[i].end_pos <= entities[i + 1].start_pos
-
-    @staticmethod
-    def test_fallback_lexical_patterns(detector):
-        """Test that lexical patterns catch entities missed by NER."""
-        # Text with clear institutional language but may be missed by NER
-        text = "El programa municipal establecerá nuevas directrices."
-        result = detector.calculate_responsibility_score(text)
-
-        # Should detect institutional entities even without NER
-        assert len(result["entities"]) > 0
-        assert result["factibility_score"] > 0.3
-
-    @staticmethod
-    def test_empty_text(detector):
-        """Test handling of empty or whitespace-only text."""
-        result = detector.calculate_responsibility_score("")
-
-        assert result["factibility_score"] == 0.0
-        assert len(result["entities"]) == 0
-        assert result["has_government_entities"] is False
-
-    @staticmethod
-    def test_complex_institutional_text(detector):
-        """Test complex text with multiple institutional entities."""
-        text = """
-        La Alcaldía Municipal, en coordinación con la Secretaría de Educación 
-        y el Ministerio de Salud, designará al director técnico Juan Pérez 
-        como responsable del programa de desarrollo social.
-        """
-
-        result = detector.calculate_responsibility_score(text)
-
-        # Should have high factibility due to multiple government entities
-        assert result["factibility_score"] > 0.8
-        assert result["has_government_entities"] is True
-        assert result["has_official_positions"] is True
-
-        # Should detect multiple entity types
-        entities = result["entities"]
-        entity_types = {e.entity_type for e in entities}
-        assert len(entity_types) >= 2
-
-    @staticmethod
-    def test_government_entity_identification(detector):
-        """Test the _is_government_entity helper method."""
-        assert detector._is_government_entity("Alcaldía Municipal")
-        assert detector._is_government_entity("Secretaría de Salud")
-        assert detector._is_government_entity("Instituto Nacional")
-        assert not detector._is_government_entity("Empresa Privada")
-        assert not detector._is_government_entity("Juan Pérez")
-
-    @staticmethod
-    def test_pattern_coverage(detector):
-        """Test that key government patterns are covered."""
-        test_cases = [
-            ("alcaldía", True),
-            ("secretaría de educación", True),
-            ("programa social", True),
-            ("ministerio del interior", True),
-            ("alcalde municipal", True),
-            ("director general", True),
-            ("coordinador técnico", True),
+        entities = [
+            ResponsibilityEntity(
+                text="Ministerio",
+                entity_type=EntityType.INSTITUTION,
+                confidence=0.6,
+                start_char=0,
+                end_char=10,
+            ),
+            ResponsibilityEntity(
+                text="Ministerio de Educación",
+                entity_type=EntityType.GOVERNMENT,
+                confidence=0.9,
+                start_char=0,
+                end_char=22,
+            ),
         ]
 
+        merged = detector._merge_overlapping(entities)
+        self.assertEqual(len(merged), 1)
+        self.assertEqual(merged[0].text, "Ministerio de Educación")
+        self.assertEqual(merged[0].entity_type, EntityType.GOVERNMENT)
+        self.assertEqual(merged[0].confidence, 0.9)
+
+    def test_degraded_mode(self):
+        """Test detection in degraded mode."""
+        mock_loader = MagicMock()
+        mock_loader.load_model.return_value = None
+
+        detector = ResponsibilityDetector(mock_loader)
+        self.assertTrue(detector.is_degraded)
+
+        text = "El Ministerio de Educación implementará la política."
+        result = detector.detect_entities(text)
+
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0].text, "Ministerio de Educación")
+        self.assertEqual(result[0].entity_type, EntityType.GOVERNMENT)
+
+    def test_get_status(self):
+        """Test getting detector status."""
+        detector = ResponsibilityDetector(self.mock_model_loader)
+        status = detector.get_status()
+
+        self.assertFalse(status["is_degraded"])
+        self.assertEqual(status["capabilities"], "NER+pattern")
+        self.assertGreater(status["patterns"]["government"], 0)
+        self.assertGreater(status["patterns"]["position"], 0)
+        self.assertGreater(status["patterns"]["institutional"], 0)
+
+
+if __name__ == "__main__":
+    unittest.main()
         for text, should_detect in test_cases:
             entities = detector.detect_entities(text)
             if should_detect:

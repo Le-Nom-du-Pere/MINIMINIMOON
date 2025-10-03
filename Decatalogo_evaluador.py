@@ -377,14 +377,14 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
 
     @staticmethod
     def _definir_preguntas_de1() -> Dict[str, str]:
-        """Define preguntas para DE-1: Lógica de Intervención."""
+        """Define preguntas para dimensión DE-1: Lógica de Intervención y Coherencia Interna."""
         return {
-            "Q1": "¿El PDT define productos medibles alineados con la prioridad?",
-            "Q2": "¿Las metas de producto incluyen responsable institucional?",
-            "Q3": "¿Formula resultados medibles con línea base y meta al 2027?",
-            "Q4": "¿Resultados y productos están lógicamente vinculados según la cadena de valor?",
-            "Q5": "¿El impacto esperado está definido y alineado al Decálogo?",
-            "Q6": "¿Existe una explicación explícita de la lógica de intervención completa?",
+            "Q1": "¿El plan define productos medibles y alineados con la cadena de valor?",
+            "Q2": "¿Se identifican claramente los responsables institucionales para cada intervención?",
+            "Q3": "¿Los resultados incluyen líneas base (2023) y metas cuantificables (2027)?",
+            "Q4": "¿Existe una vinculación lógica en la cadena de valor, desde insumos hasta impactos?",
+            "Q5": "¿El impacto esperado está alineado con los principios del Decálogo de DDHH?",
+            "Q6": "¿La lógica de intervención es explícita y está documentada en el plan?"
         }
 
     @staticmethod
@@ -1269,7 +1269,7 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
         if analisis.recursos > 0 or analisis.valores_monetarios:
             explicacion_partes.append(
                 f"Se identificaron {analisis.recursos} elementos de asignación presupuestal "
-                f"{'con valores monetarios específicos' if analisis.valores_monetarios else ''}. "
+                f"{'con valores monetarios específicos' if analisis.valores_monetarios
             )
 
         # IDENTIFICAR BRECHAS PRINCIPALES

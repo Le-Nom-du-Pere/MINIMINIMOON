@@ -1,1181 +1,1181 @@
 """
-Feasibility Scorer for Indicator Quality Assessment
-===================================================
+Feasibility Scoring Module
 
-Advanced quality assessment system for policy indicators with comprehensive
-detection capabilities and statistical validation.
+Evaluates the presence and quality of baselines, targets, and timeframes in plans,
+which are essential for answering key DECALOGO questions:
+- DE-1 Q3: "Do outcomes have baselines and targets?"
+- DE-4 Q1: "Do products have measurable KPIs?"
+- DE-4 Q2: "Do results have baselines?"
 
-This module implements a sophisticated weighted quality assessment system that evaluates
-policy indicators based on the presence and quality of baseline values, targets/goals,
-and time horizons. It uses advanced pattern recognition, Unicode normalization, and
-parallel processing for robust indicator analysis in production environments.
-
-The scorer provides comprehensive analysis including:
-- Multilingual pattern detection (Spanish/English)
-- Unicode normalization for consistent text processing
-- Quantitative component detection and validation
-- Parallel processing capabilities for large datasets
-- Detailed confidence scoring and quality classification
-- Comprehensive logging and performance monitoring
-
-Classes:
-    ComponentType: Enumeration of detectable component types
-    DetectionResult: Individual component detection result
-    IndicatorScore: Comprehensive indicator quality score
-    BatchScoreResult: Batch processing results with performance metrics
-    FeasibilityScorer: Main scoring engine with advanced capabilities
-
-Functions:
-    All scoring and detection methods are encapsulated within the FeasibilityScorer class
-
-Example:
-    >>> scorer = FeasibilityScorer(enable_parallel=True)
-    >>> score = scorer.calculate_feasibility_score(
-    ...     "Reducir la tasa de pobreza del 25% actual a 15% para el año 2025"
-    ... )
-    >>> print(f"Feasibility score: {score.feasibility_score:.2f}")
-    >>> print(f"Quality tier: {score.quality_tier}")
-
-Note:
-    All text processing includes Unicode normalization to ensure consistent
-    handling of accented characters and different text encodings. The system
-    is designed for production use with comprehensive error handling.
+Features:
+- Detection of quantitative targets
+- Baseline identification
+- Timeframe recognition
+- Indicator quality assessment
+- SMART criteria evaluation
 """
 
-import argparse
-import datetime
-import errno
-import gzip
-import io
-import json
 import logging
-import os
 import re
-import time
-import unicodedata
-import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
-from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple, Union, Any
 
-from safe_io import SafeWriteResult, safe_write_bytes, safe_write_json, safe_write_text
-
-try:
-    import pandas as pd
-
-    PANDAS_AVAILABLE = True
-except ImportError:
-    PANDAS_AVAILABLE = False
-
-try:
-    from joblib import Parallel, delayed
-
-    JOBLIB_AVAILABLE = True
-except ImportError:
-    JOBLIB_AVAILABLE = False
-
-
-_RECOVERABLE_ERRNOS = {errno.EACCES, errno.EROFS, errno.ENOSPC}
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 class ComponentType(Enum):
-    """
-    Enumeration of detectable component types in policy indicators.
-
-    Defines the key components that determine indicator quality and feasibility
-    for effective policy evaluation and monitoring.
-
-    Attributes:
-        BASELINE: Baseline or current state values
-        TARGET: Goals, targets, or desired outcomes
-        TIME_HORIZON: Temporal frameworks and deadlines
-        NUMERICAL: Quantitative values and metrics
-        DATE: Specific dates and temporal references
-    """
-
-    BASELINE = "baseline"
-    TARGET = "target"
-    TIME_HORIZON = "time_horizon"
-    NUMERICAL = "numerical"
-    DATE = "date"
+    """Component types that can be detected in plans."""
+    BASELINE = "baseline"           # Starting point measurement
+    TARGET = "target"               # Target to achieve
+    TIME_HORIZON = "time_horizon"   # Time horizon for achievement
+    DATE = "date"                   # Specific date reference
+    NUMERICAL = "numerical"         # General numerical reference
+    INDICATOR = "indicator"         # Performance indicator
+    PERCENTAGE = "percentage"       # Percentage value
+    RESPONSIBLE = "responsible"     # Entity responsible for achievement
 
 
 @dataclass
 class DetectionResult:
     """
-    Individual component detection result with position and confidence.
-
-    Args:
-        component_type (ComponentType): Type of component detected
-        matched_text (str): Actual text that matched the pattern
-        confidence (float): Confidence level of the match (0.0-1.0)
-        position (int): Character position where match was found
+    Result of a detection in text with metadata.
+    
+    Attributes:
+        text: Detected text
+        component_type: Type of detected component
+        confidence: Confidence score (0-1)
+        start_pos: Starting position in text
+        end_pos: Ending position in text
+        numeric_value: Extracted numerical value if applicable
+        unit: Unit of measurement if applicable
+        metadata: Additional metadata
     """
-
+    text: str
     component_type: ComponentType
-    matched_text: str
     confidence: float
-    position: int
+    start_pos: int
+    end_pos: int
+    numeric_value: Optional[float] = None
+    unit: str = ""
+    metadata: Dict[str, Any] = field(default_factory=dict)
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for serialization."""
+        return {
+            "text": self.text,
+            "component_type": self.component_type.value,
+            "confidence": self.confidence,
+            "start_pos": self.start_pos,
+            "end_pos": self.end_pos,
+            "numeric_value": self.numeric_value,
+            "unit": self.unit,
+            **self.metadata
+        }
 
 
 @dataclass
 class IndicatorScore:
     """
-    Comprehensive indicator quality score with detailed analysis.
-
-    Args:
-        feasibility_score (float): Overall feasibility score (0.0-1.0)
-        components_detected (List[ComponentType]): List of detected component types
-        detailed_matches (List[DetectionResult]): Detailed pattern matches
-        has_quantitative_baseline (bool): Whether quantitative baseline was detected
-        has_quantitative_target (bool): Whether quantitative target was detected
-        quality_tier (str): Quality classification ("high", "medium", "low", "poor", "insufficient")
+    Comprehensive evaluation of an indicator's quality and feasibility.
+    
+    Attributes:
+        text: The indicator text
+        has_baseline: Whether the indicator has a baseline
+        has_target: Whether the indicator has a target
+        has_timeframe: Whether the indicator has a timeframe
+        has_quantitative_target: Whether the target is quantitative
+        has_unit: Whether a unit of measurement is specified
+        has_responsible: Whether a responsible entity is specified
+        smart_score: Score for SMART criteria (0-1)
+        feasibility_score: Overall feasibility score (0-1)
+        components: Detected components related to this indicator
     """
-
-    feasibility_score: float
-    components_detected: List[ComponentType]
-    detailed_matches: List[DetectionResult]
-    has_quantitative_baseline: bool
-    has_quantitative_target: bool
-    quality_tier: str
-
-
-@dataclass
-class BatchScoreResult:
-    """
-    Batch processing results with comprehensive performance metrics.
-
-    Args:
-        scores (List[IndicatorScore]): Individual indicator scores
-        total_indicators (int): Total number of indicators processed
-        execution_time (str): Human-readable execution time
-        duracion_segundos (float): Execution duration in seconds
-        planes_por_minuto (float): Processing rate (indicators per minute)
-    """
-
-    scores: List[IndicatorScore]
-    total_indicators: int
-    execution_time: str
-    duracion_segundos: float
-    planes_por_minuto: float
+    text: str
+    has_baseline: bool = False
+    has_target: bool = False
+    has_timeframe: bool = False
+    has_quantitative_target: bool = False
+    has_unit: bool = False
+    has_responsible: bool = False
+    smart_score: float = 0.0
+    feasibility_score: float = 0.0
+    components: List[DetectionResult] = field(default_factory=list)
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for serialization."""
+        return {
+            "text": self.text,
+            "has_baseline": self.has_baseline,
+            "has_target": self.has_target,
+            "has_timeframe": self.has_timeframe,
+            "has_quantitative_target": self.has_quantitative_target,
+            "has_unit": self.has_unit,
+            "has_responsible": self.has_responsible,
+            "smart_score": self.smart_score,
+            "feasibility_score": self.feasibility_score,
+            "components": [c.to_dict() for c in self.components]
+        }
 
 
 class FeasibilityScorer:
     """
-    Advanced feasibility scorer for policy indicator quality assessment.
-
-    Comprehensive assessment engine that evaluates policy indicators using advanced
-    pattern recognition, multilingual support, and statistical validation methods.
-    Includes parallel processing capabilities for large-scale analysis.
-
-    The scorer uses a weighted scoring system based on the presence and quality of:
-    - Baseline values (40% weight)
-    - Targets/goals (40% weight)
-    - Time horizons (20% weight)
-    - Quantitative components (10% bonus each)
-
-    Args:
-        enable_parallel (bool, optional): Enable parallel processing. Defaults to True.
-        n_jobs (int, optional): Number of parallel jobs. Defaults to None (auto-detect).
-        backend (str, optional): Parallel backend ('loky', 'threading'). Defaults to 'loky'.
-
-    Attributes:
-        detection_patterns (Dict): Compiled regex patterns by component type
-        weights (Dict): Component weighting factors for scoring
-        quality_thresholds (Dict): Quality tier classification thresholds
-        logger (logging.Logger): Performance and error logger
-
-    Methods:
-        calculate_feasibility_score: Score single indicator
-        batch_score: Score multiple indicators with optional parallel processing
-        detect_components: Detect all components in text
-        batch_score_with_monitoring: Score with comprehensive performance monitoring
-        get_detection_rules_documentation: Get complete documentation of detection rules
-
-    Example:
-        >>> scorer = FeasibilityScorer(enable_parallel=True, n_jobs=4)
-        >>> result = scorer.calculate_feasibility_score(
-        ...     "Aumentar cobertura de salud del 60% actual al 85% en 2025"
-        ... )
-        >>> print(f"Score: {result.feasibility_score:.2f}")
-        >>> print(f"Tier: {result.quality_tier}")
-
-    Note:
-        All text processing includes Unicode NFKC normalization for consistent
-        handling of composed/decomposed characters and encoding variations.
-        The system supports both Spanish and English pattern detection.
-
+    Evaluates the feasibility of plan elements by detecting baselines, targets, and timeframes.
+    
+    This scorer is essential for answering:
+    - DE-1 Q3: "Do outcomes have baselines and targets?"
+    - DE-4 Q1: "Do products have measurable KPIs?"
+    - DE-4 Q2: "Do results have baselines?"
+    
+    It detects and evaluates indicators according to SMART criteria and provides
+    comprehensive scoring of their feasibility.
     """
-
-    def __init__(self, enable_parallel=True, n_jobs=None, backend="loky"):
-        """Initialize the feasibility scorer.
-
-        Args:
-            enable_parallel: Enable parallel processing for batch operations.
-            n_jobs: Number of parallel jobs (default: min(CPU count, 8)).
-            backend: Parallel processing backend ('loky' or 'threading').
+    
+    def __init__(self, enable_parallel: bool = False):
         """
-        self.detection_patterns = self._initialize_patterns()
-        self.weights = {
-            ComponentType.BASELINE: 0.2,
-            ComponentType.TARGET: 0.2,
-            ComponentType.TIME_HORIZON: 0.2,
-            ComponentType.NUMERICAL: 0.15,
-            ComponentType.DATE: 0.1,
+        Initialize the feasibility scorer.
+        
+        Args:
+            enable_parallel: Whether to enable parallel processing for large documents
+        """
+        self.enable_parallel = enable_parallel
+        
+        # Define detection patterns
+        
+        # Baseline patterns
+        self.baseline_patterns = [
+            r'(?i)l[ií]nea\s+(?:de\s+)?base\s*[:=]?\s*(\d+(?:[.,]\d+)?(?:\s*%)?)',
+            r'(?i)(?:valor|medici[óo]n)\s+(?:inicial|actual|presente)\s*[:=]?\s*(\d+(?:[.,]\d+)?(?:\s*%)?)',
+            r'(?i)(?:actualmente|al presente|al inicio|hoy)[^.]*?(\d+(?:[.,]\d+)?(?:\s*%))',
+            r'(?i)(?:situaci[óo]n actual|escenario base)[^.]*?(\d+(?:[.,]\d+)?(?:\s*%))',
+            r'(?i)(?:indicador|valor)[^.]*?(\d{4})[^.]*?(?:fue|era|correspondi[óo] a)\s*(\d+(?:[.,]\d+)?(?:\s*%))',
+        ]
+        
+        # Target patterns
+        self.target_patterns = [
+            r'(?i)meta\s*[:=]?\s*(\d+(?:[.,]\d+)?(?:\s*%)?)',
+            r'(?i)(?:alcanzar|lograr|conseguir|obtener|llegar a)\s*(?:un|una|el|la)?[^.]*?(\d+(?:[.,]\d+)?(?:\s*%))',
+            r'(?i)(?:valor|nivel)\s+(?:esperado|objetivo|deseado)\s*[:=]?\s*(\d+(?:[.,]\d+)?(?:\s*%))',
+            r'(?i)(?:aumentar|incrementar|crecer|elevar)[^.]*?(?:hasta|a)\s*(\d+(?:[.,]\d+)?(?:\s*%))',
+            r'(?i)(?:reducir|disminuir|bajar|decrecer)[^.]*?(?:hasta|a)\s*(\d+(?:[.,]\d+)?(?:\s*%))',
+        ]
+        
+        # Time horizon patterns
+        self.time_horizon_patterns = [
+            r'(?i)(?:para|en)(?:\s+el)?\s+(?:año)?\s*(20\d{2})',
+            r'(?i)(?:durante el|en el)?\s+(?:periodo|período|cuatrienio|horizonte)\s+(?:20\d{2})[^.]*?(?:20\d{2})',
+            r'(?i)a[lñ]\s+(?:finalizar|terminar|concluir)[^.]*?(?:20\d{2})',
+            r'(?i)(?:plazo|horizonte)(?:\s+de\s+tiempo)?\s*[:=]?\s*(?:\d+)\s*(?:años?|meses|semanas)',
+            r'(?i)(?:mensual|anual|semestral|trimestral)(?:mente)?',
+        ]
+        
+        # Indicator patterns
+        self.indicator_patterns = [
+            r'(?i)(?:indicador|KPI|métricas)[^.]*?:[^.]*?(\w[^.]+)',
+            r'(?i)(?:tasa|porcentaje|índice|ratio)\s+de\s+(\w[^.]+)',
+            r'(?i)(?:porcentaje|proporción|número|cantidad|total)\s+de\s+(\w[^.]+)',
+            r'(?i)(?:cobertura|acceso)[^.]*?(?:servicios?|atención|asistencia)',
+        ]
+        
+        # Unit patterns
+        self.unit_patterns = [
+            r'(?i)(?:porcentaje|porciento|%)',
+            r'(?i)(?:kilómetros?|km|metros?|m)',
+            r'(?i)(?:toneladas?|kg|kilogramos?|gramos?)',
+            r'(?i)(?:litros?|l|metros? cúbicos?|m3)',
+            r'(?i)(?:hectáreas?|ha|metros? cuadrados?|m2)',
+            r'(?i)(?:personas?|habitantes?|individuos?|beneficiarios?)',
+            r'(?i)(?:viviendas?|hogares?|casas?|unidades habitacionales?)',
+            r'(?i)(?:días?|semanas?|meses?|años?|bimestres?|trimestres?|semestres?)',
+            r'(?i)(?:pesos|COP|\$|USD|EUR|dólares?|euros?)',
+        ]
+        
+        # Responsible entity patterns
+        self.responsible_patterns = [
+            r'(?i)(?:responsable)[^.]*?:\s*([^.]+)',
+            r'(?i)(?:a cargo de|ejecutado por|implementado por)[^.]*?([^.]+)',
+        ]
+        
+        # Compile patterns for efficiency
+        self.compiled_baseline_patterns = [re.compile(p) for p in self.baseline_patterns]
+        self.compiled_target_patterns = [re.compile(p) for p in self.target_patterns]
+        self.compiled_time_horizon_patterns = [re.compile(p) for p in self.time_horizon_patterns]
+        self.compiled_indicator_patterns = [re.compile(p) for p in self.indicator_patterns]
+        self.compiled_unit_patterns = [re.compile(p) for p in self.unit_patterns]
+        self.compiled_responsible_patterns = [re.compile(p) for p in self.responsible_patterns]
+    
+    def detect_components(self, text: str) -> Dict[ComponentType, List[DetectionResult]]:
+        """
+        Detect all components (baselines, targets, timeframes, etc.) in text.
+        
+        Args:
+            text: Text to analyze
+            
+        Returns:
+            Dictionary mapping component types to lists of detection results
+        """
+        if not text:
+            return {ct: [] for ct in ComponentType}
+        
+        results = {
+            ComponentType.BASELINE: self._detect_baselines(text),
+            ComponentType.TARGET: self._detect_targets(text),
+            ComponentType.TIME_HORIZON: self._detect_time_horizons(text),
+            ComponentType.INDICATOR: self._detect_indicators(text),
+            ComponentType.NUMERICAL: self._detect_numerical_values(text),
+            ComponentType.PERCENTAGE: self._detect_percentages(text),
+            ComponentType.RESPONSIBLE: self._detect_responsible_entities(text),
+            ComponentType.DATE: self._detect_dates(text),
         }
-        self.quantitative_bonus = 0.05
-        self.quality_thresholds = {"high": 0.8, "medium": 0.45, "low": 0.2}
-
-        # Override with CLI arguments if available
-        cli_workers = os.environ.get("CLI_WORKERS")
-        if cli_workers:
-            n_jobs = int(cli_workers)
-
-        # Parallel processing configuration
-        self.enable_parallel = enable_parallel and JOBLIB_AVAILABLE
-        self.n_jobs = n_jobs if n_jobs is not None else min(
-            os.cpu_count() or 1, 8)
-        self.backend = backend
-
-        # Performance logging setup
-        self.logger = logging.getLogger(__name__)
-        self._setup_logging()
-
-    def _setup_logging(self):
-        """
-        Setup comprehensive performance and error logging.
-
-        Configures logging with appropriate formatters and handlers for
-        production monitoring and debugging capabilities.
-
-        """
-        if not self.logger.handlers:
-            handler = logging.StreamHandler()
-            formatter = logging.Formatter(
-                "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-            )
-            handler.setFormatter(formatter)
-            self.logger.addHandler(handler)
-            self.logger.setLevel(logging.INFO)
-
-    @staticmethod
-    def _is_recoverable_io_error(exc: Exception) -> bool:
-        return isinstance(exc, PermissionError) or (
-            isinstance(exc, OSError) and getattr(exc, "errno", None) in _RECOVERABLE_ERRNOS
-        )
-
-    def _log_safe_write_result(
-        self, label: str, original_path: Path, result: SafeWriteResult
-    ) -> None:
-        if result.status == "primary":
-            self.logger.info("%s guardado en %s", label, result.path)
-        elif result.status == "fallback":
-            self.logger.warning(
-                "%s persistido en fallback %s (ruta original: %s)",
-                label,
-                result.path,
-                original_path,
-            )
-        else:
-            self.logger.error(
-                "%s retenido en memoria bajo clave %s (ruta original: %s)",
-                label,
-                result.key,
-                original_path,
-            )
-
-    @staticmethod
-    def _initialize_patterns() -> Dict[ComponentType, List[Dict]]:
-        """
-        Initialize comprehensive regex patterns for multilingual component detection.
-
-        Creates and compiles regex patterns for detecting baseline values, targets,
-        time horizons, numerical values, and dates in both Spanish and English text.
-
-        Returns:
-            Dict[ComponentType, List[Dict]]: Dictionary mapping component types to
-                                           lists of pattern dictionaries with regex,
-                                           confidence, and language information
-
-        Note:
-            Patterns are optimized for policy indicator analysis and include
-            confidence levels based on specificity and reliability of detection.
-
-        """
-        return {
-            ComponentType.BASELINE: [
-                {
-                    "pattern": r"(?:línea\s+base|baseline|valor\s+inicial|situación\s+inicial|estado\s+actual)",
-                    "confidence": 0.9,
-                    "language": "es/en",
-                },
-                {
-                    "pattern": r"(?:situación\s+actual)",
-                    "confidence": 0.85,
-                    "language": "es",
-                },
-                {
-                    "pattern": r"(?:punto\s+de\s+partida|referencia\s+inicial|nivel\s+base)",
-                    "confidence": 0.8,
-                    "language": "es",
-                },
-                {
-                    "pattern": r"(?:current\s+level|initial\s+value|starting\s+point)",
-                    "confidence": 0.8,
-                    "language": "en",
-                },
-            ],
-            ComponentType.TARGET: [
-                {
-                    "pattern": r"(?:meta|objetivo|target|goal)",
-                    "confidence": 0.9,
-                    "language": "es/en",
-                },
-                {
-                    "pattern": r"(?:propósito|finalidad|alcanzar|lograr|hasta)",
-                    "confidence": 0.7,
-                    "language": "es",
-                },
-                {
-                    "pattern": r"(?:achieve|reach|attain|aim|to\s)",
-                    "confidence": 0.7,
-                    "language": "en",
-                },
-            ],
-            ComponentType.TIME_HORIZON: [
-                {
-                    "pattern": r"(?:horizonte\s+temporal|plazo|período|periodo|duración)",
-                    "confidence": 0.9,
-                    "language": "es",
-                },
-                {
-                    "pattern": r"(?:time\s+horizon|timeline|timeframe|duration|period)",
-                    "confidence": 0.9,
-                    "language": "en",
-                },
-                {
-                    "pattern": r"(?:para\s+el\s+año|hasta\s+el|en\s+los\s+próximos|within|by\s+\d{4})",
-                    "confidence": 0.8,
-                    "language": "es/en",
-                },
-                {
-                    "pattern": r"by\s+(?:january|february|march|april|may|june|july|august|september|october|november|december)\s+20\d{2}",
-                    "confidence": 0.85,
-                    "language": "en",
-                },
-            ],
-            ComponentType.NUMERICAL: [
-                {
-                    "pattern": r"\d+(?:[.,]\d+)?(?:\s*%|\s*por\s*ciento|\s*percent)",
-                    "confidence": 0.95,
-                    "language": "universal",
-                },
-                {
-                    "pattern": r"\d+(?:[.,]\d+)?\s*(?:millones?|millions?|mil|thousand)",
-                    "confidence": 0.9,
-                    "language": "es/en",
-                },
-                {
-                    "pattern": r"(?:incrementar|aumentar|reducir|disminuir|increase|reduce)\s+(?:en\s+|by\s+)?\d+",
-                    "confidence": 0.85,
-                    "language": "es/en",
-                },
-            ],
-            ComponentType.DATE: [
-                {
-                    "pattern": r"\b(?:20\d{2}|19\d{2})\b",
-                    "confidence": 0.9,
-                    "language": "universal",
-                },
-                {
-                    "pattern": r"(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\s+(?:de\s+)?20\d{2}",
-                    "confidence": 0.95,
-                    "language": "es",
-                },
-                {
-                    "pattern": r"(?:january|february|march|april|may|june|july|august|september|october|november|december)\s+20\d{2}",
-                    "confidence": 0.95,
-                    "language": "en",
-                },
-                {
-                    "pattern": r"\d{1,2}[-/]\d{1,2}[-/](?:20\d{2}|\d{2})",
-                    "confidence": 0.8,
-                    "language": "universal",
-                },
-            ],
-        }
-
-    @staticmethod
-    def _normalize_text(text: str) -> str:
-        """
-        Normalize text using Unicode NFKC normalization for consistent character representation.
-
-        Args:
-            text (str): Input text to normalize
-
-        Returns:
-            str: Normalized text with consistent Unicode representation
-
-        Note:
-            Uses NFKC normalization to handle composed/decomposed characters,
-            compatibility characters, and encoding variations consistently.
-
-        """
-        return unicodedata.normalize("NFKC", text)
-
-    def detect_components(self, text: str) -> List[DetectionResult]:
-        """
-        Detect all components in the given text using comprehensive regex patterns.
-
-        Args:
-            text (str): Text to analyze for indicator components
-
-        Returns:
-            List[DetectionResult]: List of detected components with confidence scores
-                                  and position information
-
-        Note:
-            Applies Unicode normalization before pattern matching to ensure
-            consistent detection across different text encodings and formats.
-
-        """
-        results = []
-        # Apply Unicode normalization before processing
-        normalized_text = FeasibilityScorer._normalize_text(text)
-        text_lower = normalized_text.lower()
-
-        for component_type, patterns in self.detection_patterns.items():
-            for pattern_info in patterns:
-                pattern = pattern_info["pattern"]
-                confidence = pattern_info["confidence"]
-
-                matches = re.finditer(pattern, text_lower, re.IGNORECASE)
-                for match in matches:
-                    result = DetectionResult(
-                        component_type=component_type,
-                        matched_text=match.group(),
-                        confidence=confidence,
-                        position=match.start(),
-                    )
-                    results.append(result)
-
+        
         return results
-
-    def _has_quantitative_component(
-        self, text: str, component_type: ComponentType
-    ) -> bool:
+    
+    def evaluate_indicator(self, text: str) -> IndicatorScore:
         """
-        Check if a component has quantitative elements in nearby context.
-
-        Analyzes text around component mentions to determine if quantitative
-        values are associated with baseline or target components.
-
+        Evaluate an indicator text for feasibility.
+        
         Args:
-            text (str): Text to analyze
-            component_type (ComponentType): Component type to check for quantitative association
-
+            text: Indicator text to evaluate
+            
         Returns:
-            bool: True if quantitative elements are found within 30 characters of component mentions
-
-        Note:
-            Uses a 30-character context window around component mentions to identify
-            associated numerical values, percentages, or quantitative indicators.
-
+            IndicatorScore with comprehensive evaluation
         """
-        # Apply Unicode normalization before processing
-        normalized_text = FeasibilityScorer._normalize_text(text)
-        text_lower = normalized_text.lower()
-
-        component_spans: List[Tuple[int, int]] = []
-        for pattern_info in self.detection_patterns[component_type]:
-            pattern = pattern_info["pattern"]
-            for match in re.finditer(pattern, text_lower, re.IGNORECASE):
-                component_spans.append((match.start(), match.end()))
-
-        if not component_spans:
-            return False
-
-        numerical_spans: List[Tuple[int, int]] = []
-        for pattern_info in self.detection_patterns[ComponentType.NUMERICAL]:
-            pattern = pattern_info["pattern"]
-            for match in re.finditer(pattern, text_lower, re.IGNORECASE):
-                numerical_spans.append((match.start(), match.end()))
-
-        if not numerical_spans:
-            return False
-
-        window = 40
-        target_spans: List[Tuple[int, int]] = []
-        if component_type == ComponentType.BASELINE:
-            for pattern_info in self.detection_patterns[ComponentType.TARGET]:
-                pattern = pattern_info["pattern"]
-                for match in re.finditer(pattern, text_lower, re.IGNORECASE):
-                    target_spans.append((match.start(), match.end()))
-
-        for comp_start, comp_end in component_spans:
-            for num_start, num_end in numerical_spans:
-                distance_after = num_start - comp_end
-                distance_before = comp_start - num_end
-
-                if component_type == ComponentType.BASELINE:
-                    intervening_target = any(
-                        comp_end <= target_start <= num_start
-                        for target_start, _ in target_spans
-                    )
-                    if intervening_target and distance_after >= 0:
-                        continue
-                    if (0 <= distance_after <= window) or (0 <= distance_before <= window):
-                        return True
-                else:
-                    if 0 <= distance_after <= window:
-                        return True
-
-        return False
-
-    def calculate_feasibility_score(
-        self, text: str, evidencia_soporte: Optional[int] = None
-    ) -> IndicatorScore:
-        """
-        Calculate comprehensive feasibility score based on detected components and quality.
-
-        Implements sophisticated scoring algorithm with mandatory requirements and
-        bonus components for comprehensive indicator quality assessment.
-
-        Args:
-            text (str): Indicator text to evaluate
-            evidencia_soporte: Optional evidence support override (0 forces failure)
-
-        Returns:
-            IndicatorScore: Comprehensive score with detailed analysis
-
-        Scoring Requirements:
-            - Must have both baseline and target components for positive score
-            - Base contributions: 0.2 baseline + 0.2 target
-            - Component bonuses: +0.2 time horizon, +0.15 numerical evidence, +0.1 dates
-            - Quantitative bonuses: +0.05 each when numerical values appear near the baseline/target
-            - Confidence weighting: Final score multiplied by average pattern confidence
-
-        Quality Tiers:
-            - "high": ≥0.8 score
-            - "medium": ≥0.5 score
-            - "low": ≥0.2 score
-            - "poor": <0.2 score
-            - "insufficient": Missing baseline or target
-
-        Note:
-            All text processing includes Unicode normalization for consistent
-            handling of different character encodings and compositions.
-
-        """
-        # Check for zero evidence support condition first
-        if evidencia_soporte is not None and evidencia_soporte == 0:
-            self.logger.warning(
-                "Zero evidence support detected - overriding normal scoring logic"
-            )
-            self.logger.info(
-                "Risk level set to HIGH due to lack of supporting evidence"
-            )
-            self.logger.info(
-                "Final recommendation overridden to: REQUIERE MAYOR EVIDENCIA"
-            )
-
-            return IndicatorScore(
-                feasibility_score=0.0,  # High risk = low feasibility score
-                components_detected=[],
-                detailed_matches=[],
-                has_quantitative_baseline=False,
-                has_quantitative_target=False,
-                quality_tier="REQUIERE MAYOR EVIDENCIA",  # Override recommendation
-            )
-
-        # Apply Unicode normalization at entry point
-        normalized_text = FeasibilityScorer._normalize_text(text)
-        detected_components = self.detect_components(normalized_text)
-        component_types = set(
-            result.component_type for result in detected_components)
-
-        # Check mandatory requirements
-        has_baseline = ComponentType.BASELINE in component_types
-        has_target = ComponentType.TARGET in component_types
-
-        if not (has_baseline and has_target):
-            return IndicatorScore(
-                feasibility_score=0.0,
-                components_detected=list(component_types),
-                detailed_matches=detected_components,
-                has_quantitative_baseline=False,
-                has_quantitative_target=False,
-                quality_tier="insufficient",
-            )
-
-        # Calculate base score from mandatory components
-        base_score = (
-            self.weights[ComponentType.BASELINE] +
-            self.weights[ComponentType.TARGET]
+        # Detect all components
+        components_dict = self.detect_components(text)
+        
+        # Flatten components list
+        all_components = []
+        for component_list in components_dict.values():
+            all_components.extend(component_list)
+        
+        # Check for presence of key components
+        has_baseline = len(components_dict[ComponentType.BASELINE]) > 0
+        has_target = len(components_dict[ComponentType.TARGET]) > 0
+        has_timeframe = len(components_dict[ComponentType.TIME_HORIZON]) > 0 or len(components_dict[ComponentType.DATE]) > 0
+        
+        # Check for quantitative aspects
+        has_quantitative_target = False
+        for target in components_dict[ComponentType.TARGET]:
+            if target.numeric_value is not None:
+                has_quantitative_target = True
+                break
+        
+        # Check for units
+        has_unit = False
+        for component in all_components:
+            if component.unit:
+                has_unit = True
+                break
+        
+        # Check for responsible entities
+        has_responsible = len(components_dict[ComponentType.RESPONSIBLE]) > 0
+        
+        # Calculate SMART score
+        smart_score = self._calculate_smart_score(
+            has_baseline, has_target, has_timeframe, has_quantitative_target, has_unit, has_responsible
         )
-
-        # Check for quantitative components (use normalized text)
-        has_quantitative_baseline = self._has_quantitative_component(
-            normalized_text, ComponentType.BASELINE
+        
+        # Calculate overall feasibility score
+        feasibility_score = self._calculate_feasibility_score(
+            has_baseline, has_target, has_timeframe, has_quantitative_target, has_unit, has_responsible, smart_score
         )
-        has_quantitative_target = self._has_quantitative_component(
-            normalized_text, ComponentType.TARGET
-        )
-
-        # Bonus for quantitative elements
-        if has_quantitative_baseline:
-            base_score += self.quantitative_bonus
-        if has_quantitative_target:
-            base_score += self.quantitative_bonus
-
-        # Additional component bonuses
-        if ComponentType.TIME_HORIZON in component_types:
-            base_score += self.weights[ComponentType.TIME_HORIZON]
-
-        if ComponentType.NUMERICAL in component_types:
-            base_score += self.weights[ComponentType.NUMERICAL]
-
-        if ComponentType.DATE in component_types:
-            base_score += self.weights[ComponentType.DATE]
-
-        # Apply confidence weighting
-        avg_confidence = sum(result.confidence for result in detected_components) / len(
-            detected_components
-        )
-        final_score = min(1.0, base_score * avg_confidence)
-
-        # Determine quality tier - check again for zero evidence support override
-        if evidencia_soporte is not None and evidencia_soporte == 0:
-            quality_tier = "REQUIERE MAYOR EVIDENCIA"
-        elif final_score >= self.quality_thresholds["high"]:
-            quality_tier = "high"
-        elif final_score >= self.quality_thresholds["medium"]:
-            quality_tier = "medium"
-        elif final_score >= self.quality_thresholds["low"]:
-            quality_tier = "low"
-        else:
-            quality_tier = "poor"
-
+        
         return IndicatorScore(
-            feasibility_score=final_score,
-            components_detected=list(component_types),
-            detailed_matches=detected_components,
-            has_quantitative_baseline=has_quantitative_baseline,
+            text=text,
+            has_baseline=has_baseline,
+            has_target=has_target,
+            has_timeframe=has_timeframe,
             has_quantitative_target=has_quantitative_target,
-            quality_tier=quality_tier,
+            has_unit=has_unit,
+            has_responsible=has_responsible,
+            smart_score=smart_score,
+            feasibility_score=feasibility_score,
+            components=all_components
         )
-
-    def _score_single_indicator(
-        self, indicator: str, evidencia_soporte: Optional[int] = None
-    ) -> IndicatorScore:
-        """Score a single indicator - helper function for parallel processing.
-
-        Args:
-            indicator: Indicator text to score.
-
-        Returns:
-            IndicatorScore for the given indicator.
+    
+    def evaluate_indicators(self, texts: List[str]) -> List[IndicatorScore]:
         """
-        return self.calculate_feasibility_score(indicator, evidencia_soporte)
-
-    def batch_score(
-        self,
-        indicators: List[str],
-        compare_backends=False,
-        use_parallel: bool = False,
-        evidencia_soporte_list: Optional[List[Optional[int]]] = None,
-    ) -> List[IndicatorScore]:
-        """Score multiple indicators with optional parallel processing.
-
-        Processes a batch of indicators with automatic selection of sequential
-        or parallel processing based on batch size and system capabilities.
-
+        Evaluate multiple indicator texts.
+        
         Args:
-            indicators: List of indicator strings to score.
-            compare_backends: If True, compare performance between threading and loky backends.
-            use_parallel: Legacy parameter for backward compatibility.
-            evidencia_soporte_list: Optional list with per-indicator evidence overrides.
-
+            texts: List of indicator texts to evaluate
+            
         Returns:
-            List of IndicatorScore results in the same order as input indicators.
+            List of IndicatorScore objects
         """
-        if not indicators:
+        if not texts:
             return []
-
-        # Validate evidencia_soporte_list length if provided
-        if evidencia_soporte_list is not None and len(evidencia_soporte_list) != len(
-            indicators
-        ):
-            raise ValueError(
-                "evidencia_soporte_list must have the same length as indicators"
-            )
-
-        # For small batches, use sequential processing to avoid overhead
-        if len(indicators) < 10 or not self.enable_parallel or not JOBLIB_AVAILABLE:
-            return self._batch_score_sequential(indicators, evidencia_soporte_list)
-
-        if compare_backends:
-            return self._batch_score_with_comparison(indicators, evidencia_soporte_list)
-        else:
-            return self._batch_score_parallel(
-                indicators, self.backend, evidencia_soporte_list
-            )
-
-    def _batch_score_sequential(
-        self,
-        indicators: List[str],
-        evidencia_soporte_list: Optional[List[Optional[int]]] = None,
-    ) -> List[IndicatorScore]:
-        """Sequential batch scoring."""
-        start_time = time.time()
-        results = []
-        for i, indicator in enumerate(indicators):
-            evidencia_soporte = (
-                evidencia_soporte_list[i] if evidencia_soporte_list else None
-            )
-            results.append(
-                self.calculate_feasibility_score(indicator, evidencia_soporte)
-            )
-        elapsed = time.time() - start_time
-
-        self.logger.info(
-            f"Sequential processing: {len(indicators)} indicators in {elapsed:.3f}s "
-            f"({elapsed / len(indicators) * 1000:.1f}ms per indicator)"
-        )
-        return results
-
-    def _batch_score_parallel(
-        self,
-        indicators: List[str],
-        backend: str,
-        evidencia_soporte_list: Optional[List[Optional[int]]] = None,
-    ) -> List[IndicatorScore]:
-        """Parallel batch scoring using specified backend."""
-        if not JOBLIB_AVAILABLE:
-            raise RuntimeError("joblib not available for parallel processing")
-
-        start_time = time.time()
-
-        # Create a picklable instance for parallel processing
-        scorer_copy = self._create_picklable_copy()
-
-        with Parallel(n_jobs=self.n_jobs, backend=backend) as parallel:
-            results = parallel(
-                delayed(scorer_copy._score_single_indicator)(
-                    indicator,
-                    evidencia_soporte_list[i] if evidencia_soporte_list else None,
-                )
-                for i, indicator in enumerate(indicators)
-            )
-
-        elapsed = time.time() - start_time
-        self.logger.info(
-            f"Parallel processing ({backend}): {len(indicators)} indicators in {elapsed:.3f}s "
-            f"({elapsed / len(indicators) * 1000:.1f}ms per indicator, {self.n_jobs} workers)"
-        )
-        return results
-
-    def _batch_score_with_comparison(
-        self,
-        indicators: List[str],
-        evidencia_soporte_list: Optional[List[Optional[int]]] = None,
-    ) -> List[IndicatorScore]:
-        """Score batch with performance comparison between backends."""
-        if not JOBLIB_AVAILABLE:
-            self.logger.warning(
-                "joblib not available, falling back to sequential processing"
-            )
-            return self._batch_score_sequential(indicators, evidencia_soporte_list)
-
-        self.logger.info("Comparing parallel processing backends...")
-
-        # Test with threading backend
-        try:
-            threading_results = self._batch_score_parallel(
-                indicators, "threading", evidencia_soporte_list
-            )
-        except Exception as e:
-            self.logger.warning(f"Threading backend failed: {e}")
-            threading_results = None
-
-        # Test with loky backend
-        try:
-            loky_results = self._batch_score_parallel(
-                indicators, "loky", evidencia_soporte_list
-            )
-        except Exception as e:
-            self.logger.warning(f"Loky backend failed: {e}")
-            loky_results = None
-
-        # Fallback to sequential if both failed
-        if loky_results is None and threading_results is None:
-            self.logger.warning(
-                "Both parallel backends failed, falling back to sequential"
-            )
-            return self._batch_score_sequential(indicators, evidencia_soporte_list)
-
-        # Return loky results if available, otherwise threading results
-        return loky_results if loky_results is not None else threading_results
-
-    def _create_picklable_copy(self):
-        """Create a copy of the scorer that can be safely pickled for multiprocessing."""
-        # Create new instance with same configuration but fresh logger
-        new_scorer = FeasibilityScorer(
-            enable_parallel=False,  # Disable parallel in workers to avoid recursion
-            n_jobs=self.n_jobs,
-            backend=self.backend,
-        )
-
-        # Copy over the patterns and weights (these are picklable)
-        new_scorer.detection_patterns = self.detection_patterns
-        new_scorer.weights = self.weights
-        new_scorer.quality_thresholds = self.quality_thresholds
-
-        return new_scorer
-
-    def batch_score_with_monitoring(
-        self,
-        indicators: List[str],
-        evidencia_soporte_list: Optional[List[Optional[int]]] = None,
-    ) -> BatchScoreResult:
-        """Score multiple indicators with execution monitoring."""
-        start_time = time.time()
-
-        scores = []
-        for i, indicator in enumerate(indicators):
-            evidencia_soporte = (
-                evidencia_soporte_list[i] if evidencia_soporte_list else None
-            )
-            scores.append(
-                self.calculate_feasibility_score(indicator, evidencia_soporte)
-            )
-
-        end_time = time.time()
-        duracion_segundos = end_time - start_time
-
-        # Calculate processing rate (plans per minute)
-        if duracion_segundos > 0:
-            planes_por_minuto = (len(indicators) / duracion_segundos) * 60
-        else:
-            planes_por_minuto = 0.0
-
-        # Format human-readable time
-        if duracion_segundos < 1:
-            execution_time = f"{duracion_segundos * 1000:.1f}ms"
-        elif duracion_segundos < 60:
-            execution_time = f"{duracion_segundos:.2f}s"
-        else:
-            minutes = int(duracion_segundos // 60)
-            seconds = duracion_segundos % 60
-            execution_time = f"{minutes}m {seconds:.1f}s"
-
-        return BatchScoreResult(
-            scores=scores,
-            total_indicators=len(indicators),
-            execution_time=execution_time,
-            duracion_segundos=duracion_segundos,
-            planes_por_minuto=planes_por_minuto,
-        )
-
-    @staticmethod
-    def get_detection_rules_documentation() -> str:
-        """Return comprehensive documentation of detection rules."""
-        doc = """
-# Feasibility Scorer Detection Rules Documentation
-
-## Overview
-The feasibility scorer evaluates indicator quality by detecting three core components:
-1. **Baseline values** (línea base, baseline, valor inicial)
-2. **Targets/goals** (meta, objetivo, target, goal)  
-3. **Time horizons** (horizonte temporal, plazo, timeline)
-
-## Scoring Logic
-- **Minimum requirement**: Both baseline AND target components must be present for positive score
-- **Base contributions**: baseline (0.2) + target (0.2)
-- **Component bonuses**: +0.2 time horizon, +0.15 numerical evidence, +0.1 dates
-- **Quantitative bonus**: +0.05 each when numerical values appear near the baseline/target
-- **Confidence weighting**: Final score multiplied by average pattern confidence
-
-## Spanish Pattern Recognition
-
-### Baseline Patterns
-- línea base, valor inicial, situación inicial, estado actual
-- punto de partida, referencia inicial, nivel base
-
-### Target Patterns  
-- meta, objetivo, propósito, finalidad
-- alcanzar, lograr
-
-### Time Horizon Patterns
-- horizonte temporal, plazo, período, periodo, duración
-- para el año, hasta el, en los próximos
-
-### Numerical Patterns
-- Percentages: 25%, 25 por ciento
-- Quantities: 1.5 millones, 2 mil
-- Change indicators: incrementar en 10, reducir 5%
-
-### Date Patterns
-- Years: 2024, 2025
-- Spanish months: enero 2024, febrero de 2025
-- Date formats: 15/12/2024, 15-12-2024
-
-## Quality Tiers
-- **High** (≥0.8): Complete indicators with quantitative elements
-- **Medium** (≥0.45): Has baseline/target, some quantitative elements  
-- **Low** (≥0.2): Basic baseline/target, limited quantitative data
-- **Poor** (<0.2): Missing core components or very low confidence
-- **Insufficient** (0.0): Missing baseline or target components
-
-## Examples
-
-### High Quality (Score: ~0.9)
-"Incrementar la línea base de 65% de cobertura educativa a una meta de 85% para el año 2025"
-- ✓ Baseline: "línea base de 65%"  
-- ✓ Target: "meta de 85%"
-- ✓ Time horizon: "para el año 2025"
-- ✓ Quantitative baseline and target
-
-### Medium Quality (Score: ~0.6)  
-"Mejorar el objetivo de acceso al agua desde la situación actual hasta alcanzar la meta establecida"
-- ✓ Baseline: "situación actual"
-- ✓ Target: "meta establecida"  
-- ✗ No quantitative elements
-- ✗ No time horizon
-
-### Insufficient Quality (Score: 0.0)
-"Aumentar el acceso a servicios de salud en la región"
-- ✗ No baseline reference
-- ✓ Implied target: "aumentar"
-- ✗ No quantitative elements
-"""
-        return doc
-
-    def calcular_calidad_evidencia(self, fragment: str) -> float:
+        
+        # If parallel processing is enabled and there are many texts, use parallel evaluation
+        if self.enable_parallel and len(texts) > 10:
+            try:
+                import concurrent.futures
+                
+                with concurrent.futures.ThreadPoolExecutor(max_workers=min(10, len(texts))) as executor:
+                    return list(executor.map(self.evaluate_indicator, texts))
+            except ImportError:
+                logger.warning("concurrent.futures not available. Using sequential processing.")
+        
+        # Sequential processing
+        return [self.evaluate_indicator(text) for text in texts]
+    
+    def evaluate_plan_feasibility(self, text: str, extract_indicators: bool = True) -> Dict[str, Any]:
         """
-        Calculate evidence quality score for text fragments (0.0 to 1.0).
-
-        Higher scores for fragments containing:
-        - Numerical values with monetary amounts (COP, $, millones)
-        - Dates (YYYY format, quarters Q1-Q4, months)
-        - Measurement terminology (baseline, meta, periodicidad)
-
-        Penalties applied for:
-        - Indicators appearing only in titles/bullet points without values
-        - Empty or malformed content
-
+        Evaluate overall plan feasibility based on indicators and components.
+        
         Args:
-            fragment (str): Text fragment to analyze
-
+            text: Plan text to analyze
+            extract_indicators: Whether to attempt indicator extraction from text
+            
         Returns:
-            float: Quality score between 0.0 and 1.0
+            Dictionary with comprehensive feasibility evaluation
         """
-        if not fragment or not fragment.strip():
-            return 0.0
-
-        # Normalize Unicode text using NFKC
-        normalized_text = unicodedata.normalize("NFKC", fragment.strip())
-        text_lower = normalized_text.lower()
-
-        # Initialize scoring components
-        scores = {
-            "monetary": 0.0,
-            "dates": 0.0,
-            "terminology": 0.0,
-            "structure_penalty": 0.0,
-        }
-
-        # Weights for different scoring components
-        weights = {
-            "monetary": 0.3,
-            "dates": 0.3,
-            "terminology": 0.3,
-            "structure_penalty": -0.2,
-        }
-
-        # 1. Monetary amount detection
-        scores["monetary"] = self._detect_monetary_values(text_lower)
-
-        # 2. Date detection
-        scores["dates"] = self._detect_temporal_indicators(text_lower)
-
-        # 3. Measurement terminology detection
-        scores["terminology"] = self._detect_measurement_terminology(
-            text_lower)
-
-        # 4. Structure penalty for title-only indicators
-        scores["structure_penalty"] = self._calculate_structure_penalty(
-            normalized_text)
-
-        # Calculate weighted final score
-        final_score = sum(
-            scores[component] * weights[component] for component in scores.keys()
+        # Detect all components
+        components_dict = self.detect_components(text)
+        
+        # Extract and evaluate indicators if requested
+        indicator_scores = []
+        if extract_indicators:
+            # Extract indicator-like segments
+            potential_indicators = self._extract_indicator_segments(text)
+            if potential_indicators:
+                indicator_scores = self.evaluate_indicators(potential_indicators)
+        
+        # Calculate component statistics
+        component_counts = {ct.value: len(results) for ct, results in components_dict.items()}
+        
+        # Calculate baseline-target alignment
+        baseline_target_alignment = self._calculate_baseline_target_alignment(
+            components_dict[ComponentType.BASELINE],
+            components_dict[ComponentType.TARGET]
         )
-
-        # Ensure score is between 0.0 and 1.0
-        return max(0.0, min(1.0, final_score))
-
-    @staticmethod
-    def _detect_monetary_values(text: str) -> float:
-        """Detect monetary amounts and return normalized score."""
-        monetary_patterns = [
-            # Colombian pesos with COP
-            r"cop\s*[\$]?\s*[\d,.\s]+(?:millones?|mil|thousands?|millions?)?",
-            # Dollar amounts with various formats
-            r"[\$]\s*[\d,.\s]+(?:millones?|mil|thousands?|millions?)?",
-            r"[\d,.\s]+\s*(?:dollars?|dolares?|usd)",
-            # Millions/thousands indicators in Spanish/English
-            r"[\d,.\s]+\s*(?:millones?|millions?)\s*(?:de\s*)?(?:pesos?|cop|[\$])?",
-            r"[\d,.\s]+\s*mil(?:es)?\s*(?:pesos?|cop|[\$])?",
-            # Percentage with monetary context
-            r"[\d,.\s]+\s*%\s*(?:del\s*)?(?:presupuesto|budget|recursos?)",
-            # Investment/cost terminology
-            r"(?:inversion|investment|costo|cost|gasto|expense).*?[\d,.\s]+",
-            r"[\d,.\s]+.*?(?:inversion|investment|costo|cost)",
+        
+        # Calculate quantitative orientation
+        quantitative_orientation = (
+            component_counts['numerical'] + 
+            component_counts['percentage'] + 
+            component_counts['target']
+        ) / max(1, len(text) / 500)  # Normalize by text length
+        
+        # Calculate time specification
+        time_specification = (
+            component_counts['time_horizon'] + 
+            component_counts['date']
+        ) / max(1, len(text) / 1000)  # Normalize by text length
+        
+        # Calculate accountability presence
+        accountability = component_counts['responsible'] / max(1, len(text) / 1000)
+        
+        # Calculate indicator quality
+        avg_indicator_score = sum(score.feasibility_score for score in indicator_scores) / len(indicator_scores) if indicator_scores else 0
+        
+        # Calculate overall feasibility score
+        overall_feasibility = (
+            baseline_target_alignment * 0.3 +
+            min(1.0, quantitative_orientation) * 0.3 +
+            min(1.0, time_specification) * 0.2 +
+            min(1.0, accountability) * 0.1 +
+            avg_indicator_score * 0.1
+        )
+        
+        # Generate recommendations
+        recommendations = self._generate_recommendations(
+            baseline_target_alignment,
+            quantitative_orientation,
+            time_specification,
+            accountability,
+            avg_indicator_score,
+            component_counts
+        )
+        
+        # Generate results for DECALOGO questions
+        de1_q3_answer = self._evaluate_de1_q3(components_dict, indicator_scores)
+        de4_q1_answer = self._evaluate_de4_q1(components_dict, indicator_scores)
+        de4_q2_answer = self._evaluate_de4_q2(components_dict, indicator_scores)
+        
+        return {
+            "overall_feasibility": overall_feasibility,
+            "component_counts": component_counts,
+            "baseline_target_alignment": baseline_target_alignment,
+            "quantitative_orientation": min(1.0, quantitative_orientation),
+            "time_specification": min(1.0, time_specification),
+            "accountability": min(1.0, accountability),
+            "avg_indicator_score": avg_indicator_score,
+            "recommendations": recommendations,
+            "indicators": [score.to_dict() for score in indicator_scores],
+            "decalogo_answers": {
+                "DE1_Q3": de1_q3_answer,
+                "DE4_Q1": de4_q1_answer,
+                "DE4_Q2": de4_q2_answer
+            }
+        }
+    
+    def _detect_baselines(self, text: str) -> List[DetectionResult]:
+        """Detect baseline references in text."""
+        results = []
+        
+        for pattern in self.compiled_baseline_patterns:
+            for match in pattern.finditer(text):
+                # Extract the numeric value if available
+                numeric_value = None
+                unit = ""
+                
+                # Check if we have a capture group with numeric value
+                if match.lastindex and match.group(1):
+                    # Extract and clean numeric value
+                    value_text = match.group(1)
+                    
+                    # Check for percentage
+                    if "%" in value_text:
+                        unit = "%"
+                        value_text = value_text.replace("%", "").strip()
+                    
+                    # Convert to float
+                    try:
+                        numeric_value = float(value_text.replace(",", ".").strip())
+                    except ValueError:
+                        pass
+                
+                # Create detection result
+                result = DetectionResult(
+                    text=match.group(0),
+                    component_type=ComponentType.BASELINE,
+                    confidence=0.8,  # High confidence for explicit baseline patterns
+                    start_pos=match.start(),
+                    end_pos=match.end(),
+                    numeric_value=numeric_value,
+                    unit=unit
+                )
+                
+                results.append(result)
+        
+        return results
+    
+    def _detect_targets(self, text: str) -> List[DetectionResult]:
+        """Detect target references in text."""
+        results = []
+        
+        for pattern in self.compiled_target_patterns:
+            for match in pattern.finditer(text):
+                # Extract the numeric value if available
+                numeric_value = None
+                unit = ""
+                
+                # Check if we have a capture group with numeric value
+                if match.lastindex and match.group(1):
+                    # Extract and clean numeric value
+                    value_text = match.group(1)
+                    
+                    # Check for percentage
+                    if "%" in value_text:
+                        unit = "%"
+                        value_text = value_text.replace("%", "").strip()
+                    
+                    # Convert to float
+                    try:
+                        numeric_value = float(value_text.replace(",", ".").strip())
+                    except ValueError:
+                        pass
+                
+                # Confidence level depends on how explicit the target is
+                confidence = 0.8  # Base confidence
+                if "meta" in match.group(0).lower():
+                    confidence = 0.9  # Explicit mention of "meta" (goal)
+                
+                # Create detection result
+                result = DetectionResult(
+                    text=match.group(0),
+                    component_type=ComponentType.TARGET,
+                    confidence=confidence,
+                    start_pos=match.start(),
+                    end_pos=match.end(),
+                    numeric_value=numeric_value,
+                    unit=unit
+                )
+                
+                results.append(result)
+        
+        return results
+    
+    def _detect_time_horizons(self, text: str) -> List[DetectionResult]:
+        """Detect time horizon references in text."""
+        results = []
+        
+        for pattern in self.compiled_time_horizon_patterns:
+            for match in pattern.finditer(text):
+                # Extract the year if available
+                year = None
+                
+                # Check if we have a capture group with a year
+                if match.lastindex and match.group(1) and match.group(1).isdigit():
+                    year = int(match.group(1))
+                
+                # Create detection result
+                result = DetectionResult(
+                    text=match.group(0),
+                    component_type=ComponentType.TIME_HORIZON,
+                    confidence=0.8,  # Base confidence for time horizons
+                    start_pos=match.start(),
+                    end_pos=match.end(),
+                    metadata={"year": year} if year else {}
+                )
+                
+                results.append(result)
+        
+        return results
+    
+    def _detect_indicators(self, text: str) -> List[DetectionResult]:
+        """Detect indicator references in text."""
+        results = []
+        
+        for pattern in self.compiled_indicator_patterns:
+            for match in pattern.finditer(text):
+                # Extract indicator name if available
+                indicator_name = match.group(1) if match.lastindex else match.group(0)
+                
+                # Create detection result
+                result = DetectionResult(
+                    text=match.group(0),
+                    component_type=ComponentType.INDICATOR,
+                    confidence=0.7,  # Base confidence for indicators
+                    start_pos=match.start(),
+                    end_pos=match.end(),
+                    metadata={"indicator_name": indicator_name}
+                )
+                
+                results.append(result)
+        
+        return results
+    
+    def _detect_numerical_values(self, text: str) -> List[DetectionResult]:
+        """Detect general numerical values in text."""
+        results = []
+        
+        # Pattern for general numerical values
+        numerical_pattern = r'\b\d{1,3}(?:[.,]\d{3})*(?:[.,]\d+)?\b'
+        for match in re.finditer(numerical_pattern, text):
+            value_text = match.group(0)
+            
+            # Try to convert to float
+            try:
+                numeric_value = float(value_text.replace(",", ".").strip())
+                
+                # Create detection result
+                result = DetectionResult(
+                    text=match.group(0),
+                    component_type=ComponentType.NUMERICAL,
+                    confidence=0.6,  # Lower confidence for general numbers
+                    start_pos=match.start(),
+                    end_pos=match.end(),
+                    numeric_value=numeric_value
+                )
+                
+                results.append(result)
+            except ValueError:
+                pass
+        
+        return results
+    
+    def _detect_percentages(self, text: str) -> List[DetectionResult]:
+        """Detect percentage values in text."""
+        results = []
+        
+        # Pattern for percentages
+        percentage_pattern = r'\b\d{1,3}(?:[.,]\d+)?%'
+        for match in re.finditer(percentage_pattern, text):
+            value_text = match.group(0).replace("%", "").strip()
+            
+            # Convert to float
+            try:
+                numeric_value = float(value_text.replace(",", ".").strip())
+                
+                # Create detection result
+                result = DetectionResult(
+                    text=match.group(0),
+                    component_type=ComponentType.PERCENTAGE,
+                    confidence=0.8,  # High confidence for explicit percentages
+                    start_pos=match.start(),
+                    end_pos=match.end(),
+                    numeric_value=numeric_value,
+                    unit="%"
+                )
+                
+                results.append(result)
+            except ValueError:
+                pass
+        
+        return results
+    
+    def _detect_responsible_entities(self, text: str) -> List[DetectionResult]:
+        """Detect responsible entities in text."""
+        results = []
+        
+        for pattern in self.compiled_responsible_patterns:
+            for match in pattern.finditer(text):
+                # Extract entity name if available
+                entity_name = match.group(1) if match.lastindex else ""
+                
+                # Create detection result
+                result = DetectionResult(
+                    text=match.group(0),
+                    component_type=ComponentType.RESPONSIBLE,
+                    confidence=0.7,  # Base confidence for responsibility mentions
+                    start_pos=match.start(),
+                    end_pos=match.end(),
+                    metadata={"entity_name": entity_name.strip() if entity_name else ""}
+                )
+                
+                results.append(result)
+        
+        return results
+    
+    def _detect_dates(self, text: str) -> List[DetectionResult]:
+        """Detect date references in text."""
+        results = []
+        
+        # Pattern for dates (basic)
+        date_pattern = r'\b(?:(?:0?[1-9]|[12][0-9]|3[01])[/.-](?:0?[1-9]|1[0-2])[/.-](?:19|20)\d{2}|(?:19|20)\d{2}[/.-](?:0?[1-9]|1[0-2])[/.-](?:0?[1-9]|[12][0-9]|3[01]))\b'
+        for match in re.finditer(date_pattern, text):
+            # Create detection result
+            result = DetectionResult(
+                text=match.group(0),
+                component_type=ComponentType.DATE,
+                confidence=0.8,  # High confidence for explicit dates
+                start_pos=match.start(),
+                end_pos=match.end(),
+                metadata={"date_string": match.group(0)}
+            )
+            
+            results.append(result)
+            
+        # Also detect year references (e.g., "2025")
+        year_pattern = r'\b(19|20)\d{2}\b'
+        for match in re.finditer(year_pattern, text):
+            # Create detection result
+            result = DetectionResult(
+                text=match.group(0),
+                component_type=ComponentType.DATE,
+                confidence=0.7,  # Slightly lower confidence for just year
+                start_pos=match.start(),
+                end_pos=match.end(),
+                metadata={"year": int(match.group(0))}
+            )
+            
+            results.append(result)
+        
+        return results
+    
+    def _extract_indicator_segments(self, text: str) -> List[str]:
+        """
+        Extract indicator-like segments from text.
+        
+        Args:
+            text: Text to analyze
+            
+        Returns:
+            List of text segments likely containing indicators
+        """
+        indicator_segments = []
+        
+        # Look for explicit indicator sections
+        indicator_section_patterns = [
+            r'(?i)(?:indicadores|kpis|métricas)[^.]*?:(.+?)(?:\n\n|\n[A-Z]|\Z)',
+            r'(?i)(?:tabla|cuadro) de indicadores(.+?)(?:\n\n|\n[A-Z]|\Z)',
         ]
-
-        matches = []
-        for pattern in monetary_patterns:
-            matches.extend(re.finditer(pattern, text, re.IGNORECASE))
-
-        if not matches:
+        
+        for pattern in indicator_section_patterns:
+            for match in re.finditer(pattern, text, re.DOTALL):
+                if match.group(1):
+                    indicator_segments.append(match.group(1).strip())
+        
+        # Look for indicator-like sentences
+        indicator_sentence_patterns = [
+            r'(?i)(?:indicador|meta|objetivo)(?:[^.]+?)\d+(?:[.,]\d+)?%?[^.]*?\.', 
+            r'(?i)(?:línea base|valor actual)(?:[^.]+?)\d+(?:[.,]\d+)?%?[^.]*?\.',
+            r'(?i)(?:aumentar|incrementar|reducir|disminuir)(?:[^.]+?)\d+(?:[.,]\d+)?%?[^.]*?\.'
+        ]
+        
+        for pattern in indicator_sentence_patterns:
+            for match in re.finditer(pattern, text):
+                indicator_segments.append(match.group(0).strip())
+        
+        # Deduplicate
+        unique_segments = []
+        seen = set()
+        for segment in indicator_segments:
+            normalized = ' '.join(segment.lower().split())
+            if normalized not in seen and len(segment) > 10:
+                seen.add(normalized)
+                unique_segments.append(segment)
+        
+        return unique_segments
+    
+    def _calculate_smart_score(
+        self, has_baseline: bool, has_target: bool, has_timeframe: bool, 
+        has_quantitative_target: bool, has_unit: bool, has_responsible: bool
+    ) -> float:
+        """
+        Calculate SMART criteria score for an indicator.
+        
+        Args:
+            has_baseline: Whether baseline is present
+            has_target: Whether target is present
+            has_timeframe: Whether timeframe is present
+            has_quantitative_target: Whether target is quantitative
+            has_unit: Whether unit is specified
+            has_responsible: Whether responsible entity is specified
+            
+        Returns:
+            Score between 0 and 1 representing SMART criteria compliance
+        """
+        # Specific - quantitative with unit
+        specific_score = (0.7 if has_quantitative_target else 0.0) + (0.3 if has_unit else 0.0)
+        
+        # Measurable - baseline and target
+        measurable_score = (0.5 if has_baseline else 0.0) + (0.5 if has_target else 0.0)
+        
+        # Assignable - responsible entity
+        assignable_score = 1.0 if has_responsible else 0.0
+        
+        # Realistic - baseline and not extreme targets (approximated by presence of baseline)
+        realistic_score = 0.8 if has_baseline else 0.3  # Assume moderate realism even without baseline
+        
+        # Time-bound - timeframe specified
+        timebound_score = 1.0 if has_timeframe else 0.0
+        
+        # Weighted average of SMART dimensions
+        weights = {"S": 0.25, "M": 0.3, "A": 0.1, "R": 0.15, "T": 0.2}
+        smart_score = (
+            weights["S"] * specific_score + 
+            weights["M"] * measurable_score + 
+            weights["A"] * assignable_score + 
+            weights["R"] * realistic_score + 
+            weights["T"] * timebound_score
+        )
+        
+        return smart_score
+    
+    def _calculate_feasibility_score(
+        self, has_baseline: bool, has_target: bool, has_timeframe: bool, 
+        has_quantitative_target: bool, has_unit: bool, has_responsible: bool, 
+        smart_score: float
+    ) -> float:
+        """
+        Calculate overall feasibility score for an indicator.
+        
+        Args:
+            has_baseline: Whether baseline is present
+            has_target: Whether target is present
+            has_timeframe: Whether timeframe is present
+            has_quantitative_target: Whether target is quantitative
+            has_unit: Whether unit is specified
+            has_responsible: Whether responsible entity is specified
+            smart_score: SMART criteria score
+            
+        Returns:
+            Score between 0 and 1 representing overall feasibility
+        """
+        # Essential components check (baseline, target, timeframe)
+        essential_components = (
+            (1.0 if has_baseline else 0.0) * 0.4 + 
+            (1.0 if has_target else 0.0) * 0.4 + 
+            (1.0 if has_timeframe else 0.0) * 0.2
+        )
+        
+        # Quantitative components boost
+        quantitative_boost = 0.0
+        if has_quantitative_target and has_unit:
+            quantitative_boost = 0.2
+        elif has_quantitative_target:
+            quantitative_boost = 0.1
+        
+        # Responsible entity boost
+        responsible_boost = 0.1 if has_responsible else 0.0
+        
+        # Calculate feasibility score with SMART criteria
+        feasibility_score = (
+            essential_components * 0.6 + 
+            smart_score * 0.2 + 
+            quantitative_boost + 
+            responsible_boost
+        )
+        
+        return min(1.0, feasibility_score)  # Cap at 1.0
+    
+    def _calculate_baseline_target_alignment(
+        self, baselines: List[DetectionResult], targets: List[DetectionResult]
+    ) -> float:
+        """
+        Calculate alignment score between baselines and targets.
+        
+        Args:
+            baselines: List of baseline detection results
+            targets: List of target detection results
+            
+        Returns:
+            Alignment score between 0 and 1
+        """
+        if not baselines or not targets:
             return 0.0
+        
+        # Count baselines and targets with numeric values
+        numeric_baselines = sum(1 for b in baselines if b.numeric_value is not None)
+        numeric_targets = sum(1 for t in targets if t.numeric_value is not None)
+        
+        # Count matches in units
+        unit_match_count = 0
+        baseline_units = set(b.unit for b in baselines if b.unit)
+        target_units = set(t.unit for t in targets if t.unit)
+        
+        # If both have units, calculate matches
+        if baseline_units and target_units:
+            unit_match_count = len(baseline_units.intersection(target_units))
+        
+        # Calculate alignment score
+        if numeric_baselines == 0 or numeric_targets == 0:
+            return 0.2  # Low score if either has no numeric values
+        
+        # Base alignment based on presence
+        presence_score = min(1.0, (len(baselines) / len(targets)) if targets else 0)
+        
+        # Numeric alignment
+        numeric_score = min(1.0, (numeric_baselines / numeric_targets) if numeric_targets else 0)
+        
+        # Unit match score
+        unit_score = 0.0
+        if baseline_units and target_units:
+            unit_score = unit_match_count / max(len(baseline_units), len(target_units))
+        
+        # Weighted alignment score
+        alignment_score = (
+            presence_score * 0.3 + 
+            numeric_score * 0.5 + 
+            unit_score * 0.2
+        )
+        
+        return alignment_score
+    
+    def _generate_recommendations(
+        self, 
+        baseline_target_alignment: float,
+        quantitative_orientation: float,
+        time_specification: float,
+        accountability: float,
+        avg_indicator_score: float,
+        component_counts: Dict[str, int]
+    ) -> List[str]:
+        """
+        Generate recommendations based on feasibility analysis.
+        
+        Args:
+            baseline_target_alignment: Alignment score between baselines and targets
+            quantitative_orientation: Score for quantitative orientation
+            time_specification: Score for time specification
+            accountability: Score for accountability presence
+            avg_indicator_score: Average indicator quality score
+            component_counts: Counts of different component types
+            
+        Returns:
+            List of recommendation strings
+        """
+        recommendations = []
+        
+        # Baseline-target recommendations
+        if baseline_target_alignment < 0.3:
+            if component_counts["baseline"] == 0:
+                recommendations.append(
+                    "Incluir líneas base para todos los indicadores para permitir una medición adecuada del progreso."
+                )
+            if component_counts["target"] == 0:
+                recommendations.append(
+                    "Definir metas claras y cuantificables para todos los indicadores."
+                )
+            if component_counts["baseline"] > 0 and component_counts["target"] > 0:
+                recommendations.append(
+                    "Mejorar la alineación entre líneas base y metas para asegurar consistencia en la medición."
+                )
+        
+        # Quantitative orientation recommendations
+        if quantitative_orientation < 0.5:
+            recommendations.append(
+                "Aumentar el uso de medidas cuantitativas en objetivos y metas para facilitar la evaluación del progreso."
+            )
+            
+            if component_counts["numerical"] == 0 and component_counts["percentage"] == 0:
+                recommendations.append(
+                    "Incluir valores numéricos específicos (cantidades, porcentajes) en la definición de metas y resultados."
+                )
+        
+        # Time specification recommendations
+        if time_specification < 0.4:
+            recommendations.append(
+                "Especificar horizontes temporales claros para el logro de objetivos y metas."
+            )
+            
+            if component_counts["time_horizon"] == 0 and component_counts["date"] == 0:
+                recommendations.append(
+                    "Definir fechas o períodos concretos para cada meta y resultado esperado."
+                )
+        
+        # Accountability recommendations
+        if accountability < 0.3:
+            recommendations.append(
+                "Asignar claramente responsabilidades para cada objetivo, meta y acción."
+            )
+            
+            if component_counts["responsible"] == 0:
+                recommendations.append(
+                    "Especificar entidades y/o cargos responsables para la implementación y seguimiento."
+                )
+        
+        # SMART criteria recommendations
+        if avg_indicator_score < 0.5:
+            recommendations.append(
+                "Formular indicadores siguiendo criterios SMART (Específicos, Medibles, Asignables, Realistas, y con Tiempo definido)."
+            )
+        
+        # Overall recommendations
+        if len(recommendations) >= 3:
+            recommendations.insert(0, 
+                "Revisar y fortalecer el marco de seguimiento y evaluación del plan con enfoque en resultados."
+            )
+        
+        return recommendations
+    
+    def _evaluate_de1_q3(
+        self, 
+        components_dict: Dict[ComponentType, List[DetectionResult]], 
+        indicator_scores: List[IndicatorScore]
+    ) -> Dict[str, Any]:
+        """
+        Evaluate DE-1 Q3: "Do outcomes have baselines and targets?"
+        
+        Args:
+            components_dict: Dictionary of detected components
+            indicator_scores: List of evaluated indicators
+            
+        Returns:
+            Dictionary with evaluation results
+        """
+        baselines = components_dict[ComponentType.BASELINE]
+        targets = components_dict[ComponentType.TARGET]
+        
+        has_baselines = len(baselines) > 0
+        has_targets = len(targets) > 0
+        
+        # Check for outcomes with both baseline and target
+        outcomes_with_both = 0
+        total_outcomes = 0
+        
+        for indicator in indicator_scores:
+            if "resultado" in indicator.text.lower() or "outcome" in indicator.text.lower():
+                total_outcomes += 1
+                if indicator.has_baseline and indicator.has_target:
+                    outcomes_with_both += 1
+        
+        # Calculate coverage ratio
+        coverage_ratio = outcomes_with_both / total_outcomes if total_outcomes > 0 else 0.0
+        
+        # Determine answer
+        if coverage_ratio >= 0.7:
+            answer = "Sí"
+            confidence = 0.9
+        elif coverage_ratio >= 0.3:
+            answer = "Parcial"
+            confidence = 0.7
+        else:
+            answer = "No"
+            confidence = 0.8
+        
+        return {
+            "answer": answer,
+            "confidence": confidence,
+            "outcomes_with_baselines_targets": outcomes_with_both,
+            "total_outcomes": total_outcomes,
+            "coverage_ratio": coverage_ratio,
+            "has_any_baselines": has_baselines,
+            "has_any_targets": has_targets
+        }
+    
+    def _evaluate_de4_q1(
+        self, 
+        components_dict: Dict[ComponentType, List[DetectionResult]], 
+        indicator_scores: List[IndicatorScore]
+    ) -> Dict[str, Any]:
+        """
+        Evaluate DE-4 Q1: "Do products have measurable KPIs?"
+        
+        Args:
+            components_dict: Dictionary of detected components
+            indicator_scores: List of evaluated indicators
+            
+        Returns:
+            Dictionary with evaluation results
+        """
+        indicators = components_dict[ComponentType.INDICATOR]
+        
+        has_indicators = len(indicators) > 0
+        
+        # Check for product indicators with quantitative metrics
+        product_indicators = 0
+        measurable_product_indicators = 0
+        
+        for indicator in indicator_scores:
+            if "producto" in indicator.text.lower() or "product" in indicator.text.lower():
+                product_indicators += 1
+                if indicator.has_quantitative_target:
+                    measurable_product_indicators += 1
+        
+        # Calculate coverage ratio
+        coverage_ratio = measurable_product_indicators / product_indicators if product_indicators > 0 else 0.0
+        
+        # Determine answer
+        if coverage_ratio >= 0.7:
+            answer = "Sí"
+            confidence = 0.85
+        elif coverage_ratio >= 0.3:
+            answer = "Parcial"
+            confidence = 0.7
+        else:
+            answer = "No"
+            confidence = 0.8
+        
+        return {
+            "answer": answer,
+            "confidence": confidence,
+            "product_indicators": product_indicators,
+            "measurable_product_indicators": measurable_product_indicators,
+            "coverage_ratio": coverage_ratio,
+            "has_any_indicators": has_indicators
+        }
+    
+    def _evaluate_de4_q2(
+        self, 
+        components_dict: Dict[ComponentType, List[DetectionResult]], 
+        indicator_scores: List[IndicatorScore]
+    ) -> Dict[str, Any]:
+        """
+        Evaluate DE-4 Q2: "Do results have baselines?"
+        
+        Args:
+            components_dict: Dictionary of detected components
+            indicator_scores: List of evaluated indicators
+            
+        Returns:
+            Dictionary with evaluation results
+        """
+        baselines = components_dict[ComponentType.BASELINE]
+        
+        has_baselines = len(baselines) > 0
+        
+        # Check for result indicators with baselines
+        result_indicators = 0
+        result_indicators_with_baselines = 0
+        
+        for indicator in indicator_scores:
+            if "resultado" in indicator.text.lower() or "result" in indicator.text.lower():
+                result_indicators += 1
+                if indicator.has_baseline:
+                    result_indicators_with_baselines += 1
+        
+        # Calculate coverage ratio
+        coverage_ratio = result_indicators_with_baselines / result_indicators if result_indicators > 0 else 0.0
+        
+        # Determine answer
+        if coverage_ratio >= 0.7:
+            answer = "Sí"
+            confidence = 0.85
+        elif coverage_ratio >= 0.3:
+            answer = "Parcial"
+            confidence = 0.7
+        else:
+            answer = "No"
+            confidence = 0.8
+        
+        return {
+            "answer": answer,
+            "confidence": confidence,
+            "result_indicators": result_indicators,
+            "result_indicators_with_baselines": result_indicators_with_baselines,
+            "coverage_ratio": coverage_ratio,
+            "has_any_baselines": has_baselines
+        }
 
-        # Score based on number and quality of monetary references
-        base_score = min(len(matches) * 0.3, 1.0)
 
-        # Bonus for high-precision monetary values
-        precision_bonus = 0.0
-        for match in matches:
-            match_text = match.group()
-            # Look for decimal places or specific amounts
-            if re.search(r"[\d]+[.,][\d]{1,3}", match_text):
-                precision_bonus += 0.1
-            # Look for currency symbols
-            if re.search(r"[\$]|cop|usd", match_text):
-                precision_bonus += 0.1
-
-        return min(base_score + precision_bonus, 1.0)
-
-    @staticmethod
-    def _detect_temporal_indicators(text: str) -> float:
-        """Detect dates and temporal indicators."""
-        temporal_patterns = [
-            # Year patterns (YYYY)
-            r"\b(?:20[0-9]{2}|19[0-9]{2})\b",
-            # Quarter patterns (Q1-Q4)
-            r"q[1-4](?:\s+20[0-9]{2})?",
-            r"(?:trimestre|quarter)\s*[1-4]",
-            r"(?:primer|segundo|tercer|cuarto)\s*trimestre",
-            # Month patterns in Spanish
-            r"(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)(?:\s+(?:de\s+)?20[0-9]{2})?",
-            # Month patterns in English
-            r"(?:january|february|march|april|may|june|july|august|september|october|november|december)(?:\s+20[0-9]{2})?",
-            # Date formats
-            r"\b\d{1,2}[-/]\d{1,2}[-/](?:20[0-9]{2}|\d{2})\b",
-            r"\b\d{4}[-/]\d{1,2}[-/]\d{1,2}\b",
-            # Relative temporal references
-            r"(?:periodicidad|periodicity|frequency).*?(?:anual|annual|mensual|monthly|trimestral|quarterly)",
-            r"(?:cada|every)\s+(?:\d+\s+)?(?:años?|years?|meses?|months?|trimestres?|quarters?)",
-            # Time horizons
-            r"(?:para|by|hasta|until|en)\s+(?:el\s+)?(?:año\s+)?20[0-9]{2}",
-            r"(?:horizon|horizonte).*?(?:20[0-9]{2}|\d+\s+años?)",
-        ]
-
-        matches = []
-        for pattern in temporal_patterns:
-            matches.extend(re.finditer(pattern, text, re.IGNORECASE))
-
-        if not matches:
-            return 0.0
-
-        # Score based on temporal precision
-        score = 0.0
-        for match in matches:
-            match_text = match.group()
-            # Higher score for specific dates
-            if re.search(r"20[0-9]{2}", match_text):
-                score += 0.4
-            elif re.search(r"q[1-4]|trimestre|quarter", match_text):
-                score += 0.3
-            elif re.search(
-                r"enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre|january|february|march|april|may|june|july|august|september|october|november|december",
-                match_text,
-            ):
-                score += 0.25
-            elif re.search(r"periodicidad|periodicity|frecuencia|frequency|cada|every", match_text):
-                score += 0.25
-            else:
-                score += 0.15
-
-        return min(score, 1.0)
-
-    @staticmethod
-    def _detect_measurement_terminology(text: str) -> float:
-        """Detect measurement and evaluation terminology."""
-        terminology_patterns = [
-            # Baseline terminology
-            r"(?:baseline|línea\s+base|valor\s+inicial|situación\s+inicial)",
-            r"(?:punto\s+de\s+partida|referencia\s+inicial|estado\s+actual)",
-            # Target/goal terminology
-            r"(?:meta|objetivo|target|goal|propósito)",
-            r"(?:alcanzar|lograr|achieve|reach)",
-            # Measurement concepts
-            r"(?:periodicidad|periodicity|frecuencia|frequency)",
-            r"(?:indicador|indicator|métrica|metric|medición|measurement)",
-            r"(?:monitoreo|monitoring|seguimiento|tracking)",
-            # Performance terminology
-            r"(?:desempeño|performance|resultado|result|impacto|impact)",
-            r"(?:evaluación|evaluation|assessment|valoración)",
-            # Quantitative terms
-            r"(?:incremento|aumento|reducción|mejora|improvement)",
-            r"(?:incrementar|aumentar|reducir|disminuir)",
-            r"\d+\s*%",
-            r"(?:porcentaje|percentage|proporción|proportion|ratio)",
-            r"(?:beneficiarios?|beneficiaries|participantes?|participants?)",
-            r"(?:cobertura|coverage)",
-            # Comparative terms
-            r"(?:comparado\s+con|compared\s+to|respecto\s+a|versus)",
-            r"(?:mayor\s+que|menor\s+que|igual\s+a|greater\s+than|less\s+than)",
-        ]
-
-        matches = []
-        for pattern in terminology_patterns:
-            matches.extend(re.finditer(pattern, text, re.IGNORECASE))
-
-        if not matches:
-            return 0.0
-
-        # Score based on terminology richness
-        unique_matches = set(match.group().lower() for match in matches)
-        richness_score = min(len(unique_matches) * 0.25, 1.0)
-
-        # Bonus for measurement-specific terminology
-        measurement_bonus = 0.0
-        measurement_terms = [
-            "periodicidad",
-            "periodicity",
-            "indicador",
-            "indicator",
-            "monitoreo",
-            "monitoring",
-            "evaluación",
-            "evaluation",
-            "measurement",
-            "meta",
-            "objetivo",
-            "goal",
-            "target",
-            "cobertura",
-            "coverage",
-            "beneficiarios",
-            "beneficiaries",
-            "valor inicial",
-            "punto de partida",
-        ]
-
-        for term in measurement_terms:
+# Example usage when run as a script
+if __name__ == "__main__":
+    import time
+    
+    # Create feasibility scorer
+    scorer = FeasibilityScorer()
+    
+    # Example indicator text
+    example_indicator = """
+    Indicador: Porcentaje de cobertura en salud
+    Línea base: 65% (2023)
+    Meta: 85% (2027)
+    Responsable: Secretaría de Salud Municipal
+    """
+    
+    print("Evaluating indicator feasibility...")
+    start_time = time.time()
+    
+    # Evaluate indicator
+    result = scorer.evaluate_indicator(example_indicator)
+    
+    print(f"Evaluation completed in {time.time() - start_time:.3f} seconds")
+    print(f"SMART Score: {result.smart_score:.2f}")
+    print(f"Feasibility Score: {result.feasibility_score:.2f}")
+    print(f"Has baseline: {result.has_baseline}")
+    print(f"Has target: {result.has_target}")
+    print(f"Has timeframe: {result.has_timeframe}")
+    print(f"Has quantitative target: {result.has_quantitative_target}")
+    print(f"Has unit: {result.has_unit}")
+    print(f"Has responsible: {result.has_responsible}")
+    
+    # Example plan text
+    example_plan = """
+    PLAN DE DESARROLLO MUNICIPAL 2024-2027
+    
+    DIAGNÓSTICO
+    Actualmente la cobertura en educación es del 75% y en salud del 65%.
+    La tasa de desempleo ha aumentado al 12% en los últimos años.
+    
+    OBJETIVOS Y METAS
+    1. Aumentar la cobertura educativa al 95% para el año 2027.
+       Responsable: Secretaría de Educación Municipal
+    
+    2. Reducir la tasa de desempleo al 8% durante el cuatrienio.
+       Línea base: 12% (2023)
+       Meta: 8% (2027)
+    
+    3. Construir 500 viviendas de interés social.
+       Plazo: 4 años
+    
+    SEGUIMIENTO
+    Se realizará seguimiento trimestral a través de un tablero de control.
+    """
+    
+    print("\nEvaluating plan feasibility...")
+    start_time = time.time()
+    
+    # Evaluate plan
+    plan_result = scorer.evaluate_plan_feasibility(example_plan)
+    
+    print(f"Evaluation completed in {time.time() - start_time:.3f} seconds")
+    print(f"Overall feasibility score: {plan_result['overall_feasibility']:.2f}")
+    print(f"Baseline-target alignment: {plan_result['baseline_target_alignment']:.2f}")
+    print(f"Component counts: {plan_result['component_counts']}")
+    print("\nRecommendations:")
+    for rec in plan_result["recommendations"]:
+        print(f"- {rec}")
+    
+    print("\nDECALOGO answers:")
+    print(f"DE1_Q3: {plan_result['decalogo_answers']['DE1_Q3']['answer']} (confidence: {plan_result['decalogo_answers']['DE1_Q3']['confidence']:.2f})")
+    print(f"DE4_Q1: {plan_result['decalogo_answers']['DE4_Q1']['answer']} (confidence: {plan_result['decalogo_answers']['DE4_Q1']['confidence']:.2f})")
+    print(f"DE4_Q2: {plan_result['decalogo_answers']['DE4_Q2']['answer']} (confidence: {plan_result['decalogo_answers']['DE4_Q2']['confidence']:.2f})")
             if term in text:
                 measurement_bonus += 0.15
 

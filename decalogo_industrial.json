@@ -1,176 +1,176 @@
-+ [
-+  {
-+    "id": 1,
-+    "nombre": "Prevención de la violencia y protección frente al conflicto armado y GDO",
-+    "cluster": "Paz, Seguridad y Protección de Defensores",
-+    "teoria_cambio": {
-+      "supuestos_causales": [
-+        "Reducción violencia → Mejoramiento seguridad humana",
-+        "Fortalecimiento institucional → Disminución impunidad"
-+      ],
-+      "mediadores": {
-+        "institucionales": [
-+          "capacidad estatal",
-+          "coordinación interinstitucional",
-+          "presencia territorial"
-+        ],
-+        "comunitarios": [
-+          "organización social",
-+          "vigilancia ciudadana",
-+          "cultura de paz"
-+        ]
-+      },
-+      "resultados_intermedios": [
-+        "disminución homicidios",
-+        "aumento percepción seguridad",
-+        "reducción desplazamientos"
-+      ],
-+      "precondiciones": [
-+        "voluntad política",
-+        "recursos adecuados",
-+        "marco legal"
-+      ]
-+    },
-+    "eslabones": [
-+      {
-+        "id": "ins_1",
-+        "tipo": "INSUMOS",
-+        "indicadores": [
-+          "presupuesto_asignado",
-+          "personal_capacitado",
-+          "infraestructura_disponible"
-+        ],
-+        "capacidades_requeridas": [
-+          "analistas_seguridad",
-+          "gestores_conflicto",
-+          "monitores_territoriales"
-+        ],
-+        "puntos_criticos": [
-+          "disponibilidad_financiera",
-+          "cobertura_territorial",
-+          "capacitación_personal"
-+        ],
-+        "ventana_temporal": [
-+          1,
-+          3
-+        ],
-+        "kpi_ponderacion": 1.2
-+      },
-+      {
-+        "id": "proc_1",
-+        "tipo": "PROCESOS",
-+        "indicadores": [
-+          "planes_implementados",
-+          "mesas_coordinación",
-+          "protocolos_activados"
-+        ],
-+        "capacidades_requeridas": [
-+          "coordinadores_interinstitucionales",
-+          "facilitadores_comunitarios",
-+          "analistas_datos"
-+        ],
-+        "puntos_criticos": [
-+          "coordinación_interinstitucional",
-+          "participación_comunitaria",
-+          "oportunidad_respuesta"
-+        ],
-+        "ventana_temporal": [
-+          6,
-+          12
-+        ],
-+        "kpi_ponderacion": 1.0
-+      },
-+      {
-+        "id": "prod_1",
-+        "tipo": "PRODUCTOS",
-+        "indicadores": [
-+          "sistemas_alerta_temprana",
-+          "rutas_protección",
-+          "centros_atención"
-+        ],
-+        "capacidades_requeridas": [
-+          "tecnicos_sistemas",
-+          "operadores_campo",
-+          "gestores_caso"
-+        ],
-+        "puntos_criticos": [
-+          "sostenibilidad_técnica",
-+          "cobertura_poblacional",
-+          "calidad_servicio"
-+        ],
-+        "ventana_temporal": [
-+          12,
-+          24
-+        ],
-+        "kpi_ponderacion": 1.1
-+      },
-+      {
-+        "id": "res_1",
-+        "tipo": "RESULTADOS",
-+        "indicadores": [
-+          "tasa_victimización",
-+          "percepción_seguridad",
-+          "confianza_institucional"
-+        ],
-+        "capacidades_requeridas": [
-+          "evaluadores_impacto",
-+          "investigadores_campo",
-+          "analistas_políticas"
-+        ],
-+        "puntos_criticos": [
-+          "calidad_datos",
-+          "atribución_causal",
-+          "representatividad_muestral"
-+        ],
-+        "ventana_temporal": [
-+          24,
-+          36
-+        ],
-+        "kpi_ponderacion": 1.3
-+      },
-+      {
-+        "id": "imp_1",
-+        "tipo": "IMPACTOS",
-+        "indicadores": [
-+          "índice_paz_territorial",
-+          "desarrollo_humano",
-+          "cohesión_social"
-+        ],
-+        "capacidades_requeridas": [
-+          "investigadores_largo_plazo",
-+          "economistas_desarrollo",
-+          "sociólogos"
-+        ],
-+        "puntos_criticos": [
-+          "atribución_causal",
-+          "factores_exógenos",
-+          "sostenibilidad_temporal"
-+        ],
-+        "ventana_temporal": [
-+          36,
-+          60
-+        ],
-+        "kpi_ponderacion": 1.5
-+      }
-+    ]
-+  },
-+  {
-+    "id": 2,
-+    "nombre": "Equidad de género en acceso a servicios y oportunidades",
-+    "cluster": "Equidad Social e Inclusión",
-+    "teoria_cambio": {
-+      "supuestos_causales": [
-+        "Políticas con enfoque de género → Reducción brechas estructurales",
-+        "Empoderamiento económico → Autonomía de mujeres"
-+      ],
-+      "mediadores": {
-+        "institucionales": [
-+          "presupuesto_sensible_género",
-+          "mecanismos_participación",
-+          "sistemas_monitoreo"
-+        ],
-+        "sociales": [
-+          "transformación_cultural",
+{
+  "version": "1.0.0",
+  "metadata": {
+    "name": "DECALOGO_INDUSTRIAL",
+    "description": "Template for industrial-grade decalogo evaluation",
+    "created": "2024-01-01",
+    "updated": "2024-01-01"
+  },
+  "dimensions": [
+    {
+      "id": "DE-1",
+      "name": "Coherencia Estratégica",
+      "description": "Evalúa la articulación lógica entre diagnóstico, estrategias y resultados",
+      "weight": 0.30,
+      "questions": [
+        {
+          "id": "1",
+          "text": "¿El diagnóstico identifica brechas y retos?",
+          "weight": 0.15,
+          "evidence_components": ["gap_detector", "document_segmenter"],
+          "primary_component": "gap_analyzer"
+        },
+        {
+          "id": "2",
+          "text": "¿Las estrategias responden a los retos identificados?",
+          "weight": 0.20,
+          "evidence_components": ["strategy_analyzer", "gap_analyzer"],
+          "primary_component": "strategy_analyzer"
+        },
+        {
+          "id": "3",
+          "text": "¿Los resultados tienen líneas base y metas?",
+          "weight": 0.25,
+          "evidence_components": ["feasibility_scorer"],
+          "primary_component": "feasibility_scorer"
+        },
+        {
+          "id": "4",
+          "text": "¿Existe un encadenamiento lógico en la cadena de valor?",
+          "weight": 0.20,
+          "evidence_components": ["teoria_cambio", "causal_pattern_detector"],
+          "primary_component": "teoria_cambio"
+        },
+        {
+          "id": "5",
+          "text": "¿Los indicadores son relevantes y específicos?",
+          "weight": 0.10,
+          "evidence_components": ["feasibility_scorer", "indicator_analyzer"],
+          "primary_component": "indicator_analyzer"
+        },
+        {
+          "id": "6",
+          "text": "¿Existe un marco lógico completo?",
+          "weight": 0.10,
+          "evidence_components": ["teoria_cambio", "causal_pattern_detector"],
+          "primary_component": "teoria_cambio"
+        }
+      ]
+    },
+    {
+      "id": "DE-2",
+      "name": "Inclusión Temática",
+      "description": "Evalúa la incorporación de temas clave en el plan de desarrollo",
+      "weight": 0.25,
+      "questions": [
+        {
+          "id": "1",
+          "text": "¿Se articulan con Plan Nacional de Desarrollo?",
+          "weight": 0.30,
+          "evidence_components": ["document_segmenter", "policy_alignment_detector"],
+          "primary_component": "policy_alignment_detector"
+        },
+        {
+          "id": "2",
+          "text": "¿Se incorpora presupuesto para cada componente?",
+          "weight": 0.40,
+          "evidence_components": ["monetary_detector"],
+          "primary_component": "monetary_detector"
+        },
+        {
+          "id": "3",
+          "text": "¿Se incorporan los ODS en objetivos/indicadores?",
+          "weight": 0.30,
+          "evidence_components": ["document_segmenter", "ods_detector"],
+          "primary_component": "ods_detector"
+        }
+      ]
+    },
+    {
+      "id": "DE-3",
+      "name": "Proceso Participativo",
+      "description": "Evalúa la inclusión de la ciudadanía en la formulación del plan",
+      "weight": 0.20,
+      "questions": [
+        {
+          "id": "1",
+          "text": "¿Hay evidencia de participación ciudadana?",
+          "weight": 0.60,
+          "evidence_components": ["document_segmenter", "participation_analyzer"],
+          "primary_component": "participation_analyzer"
+        },
+        {
+          "id": "2",
+          "text": "¿Se identifican grupos sociales específicos?",
+          "weight": 0.40,
+          "evidence_components": ["document_segmenter", "social_group_detector"],
+          "primary_component": "social_group_detector"
+        }
+      ]
+    },
+    {
+      "id": "DE-4",
+      "name": "Orientación a Resultados",
+      "description": "Evalúa la factibilidad y medición de resultados del plan",
+      "weight": 0.25,
+      "questions": [
+        {
+          "id": "1",
+          "text": "¿Los productos tienen KPI medibles?",
+          "weight": 0.20,
+          "evidence_components": ["feasibility_scorer"],
+          "primary_component": "feasibility_scorer"
+        },
+        {
+          "id": "2",
+          "text": "¿Los resultados tienen líneas base?",
+          "weight": 0.15,
+          "evidence_components": ["feasibility_scorer"],
+          "primary_component": "feasibility_scorer"
+        },
+        {
+          "id": "3",
+          "text": "¿Existen entidades responsables por resultado?",
+          "weight": 0.15,
+          "evidence_components": ["responsibility_detector"],
+          "primary_component": "responsibility_detector"
+        },
+        {
+          "id": "4",
+          "text": "¿Los recursos son suficientes para resultados?",
+          "weight": 0.30,
+          "evidence_components": ["monetary_detector"],
+          "primary_component": "monetary_detector"
+        },
+        {
+          "id": "5",
+          "text": "¿Se articula con planes de largo plazo?",
+          "weight": 0.20,
+          "evidence_components": ["document_segmenter", "long_term_plan_detector"],
+          "primary_component": "long_term_plan_detector"
+        }
+      ]
+    }
+  ],
+  "validation_rules": {
+    "required_components": [
+      "teoria_cambio", 
+      "feasibility_scorer", 
+      "monetary_detector", 
+      "responsibility_detector"
+    ],
+    "min_evidence_components": 2,
+    "min_confidence_threshold": 0.6,
+    "aggregation_strategy": "weighted_average",
+    "contradiction_handling": "penalize_score"
+  },
+  "report_format": {
+    "include_evidence": true,
+    "include_recommendations": true,
+    "include_quantitative_scores": true,
+    "include_confidence_values": true
+  }
+}
 +          "educación_igualdad",
 +          "redes_apoyo"
 +        ]
