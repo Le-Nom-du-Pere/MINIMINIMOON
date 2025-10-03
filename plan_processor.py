@@ -120,7 +120,12 @@ class ErrorLogger:
             log_directory: Directory to store error logs
         """
         self.log_directory = Path(log_directory)
-        self.log_directory.mkdir(parents=True, exist_ok=True)
+        try:
+            self.log_directory.mkdir(parents=True, exist_ok=True)
+            self.logging_enabled = True
+        except (OSError, PermissionError):
+            # If we can't create the directory, disable logging
+            self.logging_enabled = False
 
     def log_error(self, error: PlanProcessingError) -> str:
         """
@@ -130,8 +135,11 @@ class ErrorLogger:
             error: The error to log
 
         Returns:
-            Path to the log file
+            Path to the log file, or empty string if logging disabled
         """
+        if not self.logging_enabled:
+            return ""
+
         # Create filename based on error type and timestamp
         timestamp_str = error.timestamp.strftime("%Y%m%d_%H%M%S")
         filename = f"{error.error_type.value}_{error.specific_error.value}_{timestamp_str}_error.log"
