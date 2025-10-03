@@ -1,5 +1,7 @@
 import logging
 import os
+import subprocess
+import sys
 import threading
 import time
 from collections import OrderedDict
@@ -126,25 +128,41 @@ class SpacyModelLoader:
                 logger.info(
                     f"Downloading spaCy model '{model_name}' (attempt {attempt + 1}/{self.max_retries + 1})"
                 )
-                spacy.cli.download(model_name)
-                logger.info(
-                    f"Successfully downloaded spaCy model '{model_name}'")
-                return True
+                # Use subprocess to avoid SystemExit from spacy.cli.download
+                result = subprocess.run(
+                    [sys.executable, "-m", "spacy", "download", model_name],
+                    capture_output=True,
+                    text=True,
+                    check=False,  # Do not raise CalledProcessError on non-zero exit codes
+                )
+
+                if result.returncode == 0:
+                    logger.info(f"Successfully downloaded spaCy model '{model_name}'")
+                    log_debug_with_text(logger, f"spaCy download stdout:\n{result.stdout}")
+                    return True
+                else:
+                    # Log stdout/stderr for debugging
+                    log_warning_with_text(
+                        logger,
+                        f"Download attempt {attempt + 1} failed for model '{model_name}' with exit code {result.returncode}.\n"
+                        f"stdout: {result.stdout}\n"
+                        f"stderr: {result.stderr}",
+                    )
 
             except Exception as e:
                 logger.warning(
                     f"Download attempt {attempt + 1} failed for model '{model_name}': {e}"
                 )
 
-                if attempt < self.max_retries:
-                    logger.info(f"Retrying in {self.retry_delay} seconds...")
-                    time.sleep(self.retry_delay)
-                else:
-                    logger.error(
-                        f"All download attempts failed for model '{model_name}'. "
-                        f"Possible causes: offline environment, insufficient permissions, "
-                        f"or model name not found."
-                    )
+            if attempt < self.max_retries:
+                logger.info(f"Retrying in {self.retry_delay} seconds...")
+                time.sleep(self.retry_delay)
+            else:
+                logger.error(
+                    f"All download attempts failed for model '{model_name}'. "
+                    f"Possible causes: offline environment, insufficient permissions, "
+                    f"or model name not found."
+                )
 
         return False
 
