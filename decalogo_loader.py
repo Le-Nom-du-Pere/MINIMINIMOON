@@ -263,15 +263,6 @@ if __name__ == "__main__":
     # Display dimension information
     for dim in template.get('dimensions', []):
         print(f"- {dim.get('id')}: {dim.get('name')} ({len(dim.get('questions', []))} questions)")
-        if cluster_ids and not cluster_ids.issubset(standard_clusters):
-            alignment["clusters_aligned"] = False
-            alignment["issues"].append(f"Missing clusters in DNP_STANDARDS: {cluster_ids - standard_clusters}")
-    
-    # Update overall status
-    if alignment["issues"]:
-        alignment["status"] = "issues_detected"
-    
-    return alignment
 
 
 def ensure_aligned_templates() -> Dict[str, Any]:

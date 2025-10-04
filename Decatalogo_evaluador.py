@@ -1269,7 +1269,7 @@ class IndustrialDecatalogoEvaluatorFull(_EvaluadorBase):
         if analisis.recursos > 0 or analisis.valores_monetarios:
             explicacion_partes.append(
                 f"Se identificaron {analisis.recursos} elementos de asignación presupuestal "
-                f"{'con valores monetarios específicos' if analisis.valores_monetarios
+                f"{'con valores monetarios específicos' if analisis.valores_monetarios else 'sin valores específicos'}."
             )
 
         # IDENTIFICAR BRECHAS PRINCIPALES
