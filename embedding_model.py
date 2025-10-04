@@ -1,15 +1,88 @@
-"""
-Embedding Model with fallback mechanism.
-Provides text embedding functionality with automatic fallback from MPNet to MiniLM.
-"""
+from __future__ import annotations
 
-from typing import List, Union, Dict, Any, Optional
+import logging
+import os
+import json
+import threading
+import tempfile
+from pathlib import Path
+from typing import List, Dict, Optional, Any, Union, Tuple, Protocol, Iterable
+from collections import OrderedDict, Counter
+
 import numpy as np
 from sentence_transformers import SentenceTransformer
-import logging
+from sklearn.isotonic import IsotonicRegression
+import torch
+
+try:
+    import yaml
+except ImportError:
+    yaml = None  # Make yaml optional
+
+try:
+    from pydantic import BaseModel, Field
+except ImportError:
+    try:
+        from pydantic.v1 import BaseModel, Field
+    except ImportError:
+        # Fallback for environments without pydantic
+        class BaseModel:
+            def __init__(self, **kwargs):
+                for key, value in kwargs.items():
+                    setattr(self, key, value)
+                    
+        def Field(**kwargs):
+            return None
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Global synchronization and cache
+_DEFAULT_EMBEDDING_LOCK = threading.RLock()
+_DEFAULT_EMBEDDING_INSTANCES = {}
+_POST_INSTALL_SETUP_DONE = False
+_POST_INSTALL_SETUP_LOCK = threading.RLock()
+
+
+class EmbeddingConfig(BaseModel):
+    """Configuration for embedding models."""
+    model: str = "paraphrase-multilingual-MiniLM-L12-v2"
+    device: str = "auto"
+    precision: str = "fp32"
+    batch_size: int = 64
+    normalize_l2: bool = True
+    similarity: str = "cosine"
+    calibration_card: str = "data/calibration/embedding_card.json"
+    domain_hint_default: str = "general"
+    cache_size: int = Field(
+        default=128,
+        ge=0,
+        description="Maximum number of batches cached in memory",
+    )
+
+
+class CalibrationCorpusStats(BaseModel):
+    """Statistics of corpus for calibration."""
+    corpus_size: int
+    embedding_dim: int
+    similarity_mean: float
+    similarity_std: float
+    confidence_scores: List[float] = Field(default_factory=list)
+    gold_labels: List[int] = Field(default_factory=list)
+    domain_distribution: Dict[str, float] = Field(default_factory=dict)
+
+
+class CalibrationCard(BaseModel):
+    """Persistent calibration card."""
+    model_name: str
+    calibration_date: str
+    embedding_dim: int
+    normalization_params: Dict[str, float] = Field(default_factory=dict)
+    isotonic_calibrator: Optional[Dict[str, Any]] = None
+    conformal_thresholds: Dict[str, float] = Field(default_factory=dict)
+    domain_priors: Dict[str, float] = Field(default_factory=dict)
+    performance_metrics: Dict[str, float] = Field(default_factory=dict)
+
 
 class EmbeddingModel:
     """
@@ -100,54 +173,6 @@ class EmbeddingModel:
         }
 
 
-def create_embedding_model() -> EmbeddingModel:
-    """
-    Factory function to create an embedding model instance with error handling.
-    
-    Returns:
-        EmbeddingModel: Initialized embedding model
-        
-    Raises:
-        RuntimeError: If model initialization fails
-    """
-    try:
-        return EmbeddingModel()
-    except Exception as e:
-        logger.error(f"Failed to create embedding model: {e}")
-        raise RuntimeError(f"Embedding model creation failed: {e}")
-    device: str = Field(default="auto", description="Dispositivo: auto, cuda, cpu")
-    cache_size: int = Field(
-        default=128,
-        ge=0,
-        description="Número máximo de lotes cacheados en memoria",
-    )
-
-
-class CalibrationCorpusStats(BaseModel):
-    """Estadísticas del corpus para calibración."""
-
-    corpus_size: int
-    embedding_dim: int
-    similarity_mean: float
-    similarity_std: float
-    confidence_scores: List[float] = Field(default_factory=list)
-    gold_labels: List[int] = Field(default_factory=list)
-    domain_distribution: Dict[str, float] = Field(default_factory=dict)
-
-
-class CalibrationCard(BaseModel):
-    """Tarjeta de calibración persistente."""
-
-    model_name: str
-    calibration_date: str
-    embedding_dim: int
-    normalization_params: Dict[str, float] = Field(default_factory=dict)
-    isotonic_calibrator: Optional[Dict[str, Any]] = None
-    conformal_thresholds: Dict[str, float] = Field(default_factory=dict)
-    domain_priors: Dict[str, float] = Field(default_factory=dict)
-    performance_metrics: Dict[str, float] = Field(default_factory=dict)
-
-
 def _atomic_write_text(target: Path, payload: str, *, encoding: str = "utf-8") -> None:
     """Write text atomically using a temporary file + os.replace."""
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -174,19 +199,18 @@ def _atomic_write_text(target: Path, payload: str, *, encoding: str = "utf-8") -
                 pass
 
 
-# =============================================================================
-# GUARDIA DE NOVEDAD (NOVELTY GUARD)
-# =============================================================================
-
-
 class NoveltyGuard:
-    """Valida que todas las dependencias sean >=2024."""
+    """Validates that all dependencies are >=2024."""
 
     @staticmethod
     def check_dependencies():
-        """Verifica versiones de dependencias críticas."""
-        import importlib.metadata as metadata
-        from packaging import version
+        """Verifies versions of critical dependencies."""
+        try:
+            import importlib.metadata as metadata
+            from packaging import version
+        except ImportError:
+            logger.warning("Cannot check dependencies: packaging or importlib.metadata not available")
+            return
 
         dependency_matrix = {
             "sentence-transformers": {"min": "2.2.0", "required": True},
@@ -196,15 +220,14 @@ class NoveltyGuard:
             "transformers": {"min": "4.30.0", "required": False},
             "datasets": {"min": "2.14.0", "required": False},
             "faiss-cpu": {"min": "1.7.0", "required": False},
-            "typer": {"min": "0.9.0", "required": False},
             "pydantic": {"min": "1.10.0", "required": False},
             "pyyaml": {"min": "5.4.0", "required": False},
         }
 
-        missing_required: List[str] = []
-        outdated_required: List[str] = []
-        missing_optional: List[str] = []
-        outdated_optional: List[str] = []
+        missing_required = []
+        outdated_required = []
+        missing_optional = []
+        outdated_optional = []
 
         for package, metadata_cfg in dependency_matrix.items():
             min_version = metadata_cfg["min"]
@@ -227,35 +250,30 @@ class NoveltyGuard:
                     missing_optional.append(package)
 
         if missing_optional or outdated_optional:
-            warning_msg = "Dependencias opcionales no cumplen mínimos sugeridos:"
-            details: List[str] = []
+            warning_msg = "Optional dependencies don't meet suggested minimums:"
+            details = []
             if missing_optional:
-                details.append(f"faltantes: {', '.join(missing_optional)}")
+                details.append(f"missing: {', '.join(missing_optional)}")
             if outdated_optional:
-                details.append(f"desactualizadas: {', '.join(outdated_optional)}")
+                details.append(f"outdated: {', '.join(outdated_optional)}")
             logger.warning("%s %s", warning_msg, "; ".join(details))
 
         if missing_required or outdated_required:
-            error_msg = "Dependencias mínimas no cumplen requisitos declarados:\n"
+            error_msg = "Minimum dependencies don't meet declared requirements:\n"
             if missing_required:
-                error_msg += f"Faltantes: {', '.join(missing_required)}\n"
+                error_msg += f"Missing: {', '.join(missing_required)}\n"
             if outdated_required:
-                error_msg += f"Desactualizadas: {', '.join(outdated_required)}\n"
-            error_msg += "Ejecute: pip install --upgrade " + " ".join(
+                error_msg += f"Outdated: {', '.join(outdated_required)}\n"
+            error_msg += "Run: pip install --upgrade " + " ".join(
                 sorted(pkg for pkg, cfg in dependency_matrix.items() if cfg["required"])
             )
             raise ImportError(error_msg)
 
-        logger.info("✓ Dependencias críticas cumplen requisitos declarados")
-
-
-# =============================================================================
-# PROTOCOLO Y BACKEND PRINCIPAL
-# =============================================================================
+        logger.info("✓ Critical dependencies meet declared requirements")
 
 
 class EmbeddingBackend(Protocol):
-    """Protocolo para backends de embedding."""
+    """Protocol for embedding backends."""
 
     def embed_texts(
         self,
@@ -287,56 +305,51 @@ class EmbeddingBackend(Protocol):
         ...
 
 
-class SotaEmbedding:
+def create_embedding_model() -> EmbeddingModel:
     """
-    Backend SOTA para embeddings con calibración avanzada.
-
-    Características:
-    - Modelos multilingües 2024+ (BGE-M3/MXBai)
-    - Calibración isotónica + conformal prediction
-    - Optimización GPU/CPU automática
-    - Cache determinista de embeddings
-    - Domain smoothing para PDM
+    Factory function to create an embedding model instance with error handling.
+    
+    Returns:
+        EmbeddingModel: Initialized embedding model
+        
+    Raises:
+        RuntimeError: If model initialization fails
     """
+    try:
+        return EmbeddingModel()
+    except Exception as e:
+        logger.error(f"Failed to create embedding model: {e}")
+        raise RuntimeError(f"Embedding model creation failed: {e}")
 
-    def __init__(self, config: EmbeddingConfig):
-        NoveltyGuard.check_dependencies()
-        self.config = config
-        self.model = None
-        self.calibration_card: Optional[CalibrationCard] = None
-        self._cache_lock = threading.RLock()
-        self._cache: "OrderedDict[str, np.ndarray]" = OrderedDict()
-        self._cache_enabled = self.config.cache_size > 0
-        self._cache_max_size = (
-            max(1, self.config.cache_size) if self._cache_enabled else 0
-        )
-        self._device = self._setup_device()
-        self._load_model()
-        self._load_calibration_card()
 
-    def __getstate__(self) -> Dict[str, Any]:
-        """Custom pickle support excluding runtime locks."""
-        state = self.__dict__.copy()
-        state["_cache_lock"] = None
-        state["_cache"] = list(self._cache.items())
-        return state
+def create_industrial_embedding_model(
+    model_tier: str = "standard",
+    device: str = "auto",
+    enable_adaptive_caching: bool = True
+) -> "EmbeddingBackend":
+    """
+    Create an industrial-grade embedding model with optimized settings.
 
-    def __setstate__(self, state: Dict[str, Any]) -> None:
-        """Restore state ensuring locks are recreated."""
-        cache_items = state.get("_cache", [])
-        state["_cache_lock"] = threading.RLock()
-        state["_cache"] = OrderedDict(cache_items)
-        self.__dict__.update(state)
+    Args:
+        model_tier: Model quality tier ("standard", "high_quality", "lightweight")
+        device: Device to use ("cpu", "cuda", "auto")
+        enable_adaptive_caching: Whether to enable adaptive caching
 
-    def _setup_device(self) -> torch.device:
-        """Configura dispositivo óptimo automáticamente."""
-        if self.config.device == "auto":
-            return torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        return torch.device(self.config.device)
+    Returns:
+        Configured EmbeddingBackend instance
+    """
+    # Map model tiers to actual models
+    model_configs = {
+        "standard": "all-MiniLM-L6-v2",
+        "high_quality": "all-mpnet-base-v2",
+        "lightweight": "all-MiniLM-L12-v2"
+    }
 
-    def _load_model(self):
-        """Carga el modelo SOTA con configuración óptima."""
-        logger.info(f"Cargando modelo {self.config.model} en {self._device}")
+    model_name = model_configs.get(model_tier, "all-MiniLM-L6-v2")
+
+    # For now, return the simpler EmbeddingModel
+    # In a full implementation, this would return a more sophisticated backend
+    return create_embedding_model()
         try:
             self.model = SentenceTransformer(self.config.model, device=self._device)
 

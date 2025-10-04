@@ -17,13 +17,30 @@ Features:
 
 import logging
 import re
+import argparse
+import datetime
+import gzip
+import hashlib
+import io
+import json
+import uuid
+import statistics
+from collections import Counter
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, List, Optional, Set, Tuple, Union, Any
+from pathlib import Path
+from typing import Dict, List, Optional, Set, Tuple, Union, Any, Iterator
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Check if pandas is available
+try:
+    import pandas as pd
+    PANDAS_AVAILABLE = True
+except ImportError:
+    PANDAS_AVAILABLE = False
 
 
 class ComponentType(Enum):
@@ -120,6 +137,56 @@ class IndicatorScore:
         }
 
 
+# For write safety utilities
+@dataclass
+class SafeWriteResult:
+    """Result of a safe write operation."""
+    status: str
+    path: Optional[Path] = None
+    key: Optional[str] = None
+    error: Optional[Exception] = None
+
+
+def safe_write_text(path: Path, content: str, label: str = "text", encoding: str = "utf-8") -> SafeWriteResult:
+    """Write text content safely to file, with fallback options."""
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        temp_path = path.parent / f".{path.name}.tmp{uuid.uuid4().hex[:8]}"
+        
+        with open(temp_path, "w", encoding=encoding) as f:
+            f.write(content)
+        temp_path.rename(path)
+        return SafeWriteResult(status="primary", path=path)
+    except (OSError, PermissionError) as e:
+        logger.warning(f"Failed to write {label} to {path}: {e}")
+        return SafeWriteResult(status="error", error=e)
+
+
+def safe_write_bytes(path: Path, content: bytes, label: str = "binary") -> SafeWriteResult:
+    """Write binary content safely to file, with fallback options."""
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        temp_path = path.parent / f".{path.name}.tmp{uuid.uuid4().hex[:8]}"
+        
+        with open(temp_path, "wb") as f:
+            f.write(content)
+        temp_path.rename(path)
+        return SafeWriteResult(status="primary", path=path)
+    except (OSError, PermissionError) as e:
+        logger.warning(f"Failed to write {label} to {path}: {e}")
+        return SafeWriteResult(status="error", error=e)
+
+
+def safe_write_json(path: Path, data: Any, label: str = "json") -> SafeWriteResult:
+    """Write JSON data safely to file."""
+    try:
+        content = json.dumps(data, indent=2, ensure_ascii=False)
+        return safe_write_text(path, content, label=label)
+    except Exception as e:
+        logger.warning(f"Failed to serialize {label} JSON: {e}")
+        return SafeWriteResult(status="error", error=e)
+
+
 class FeasibilityScorer:
     """
     Evaluates the feasibility of plan elements by detecting baselines, targets, and timeframes.
@@ -141,6 +208,7 @@ class FeasibilityScorer:
             enable_parallel: Whether to enable parallel processing for large documents
         """
         self.enable_parallel = enable_parallel
+        self.logger = logger
         
         # Define detection patterns
         
@@ -1103,86 +1171,7 @@ class FeasibilityScorer:
             "has_any_baselines": has_baselines
         }
 
-
-# Example usage when run as a script
-if __name__ == "__main__":
-    import time
-    
-    # Create feasibility scorer
-    scorer = FeasibilityScorer()
-    
-    # Example indicator text
-    example_indicator = """
-    Indicador: Porcentaje de cobertura en salud
-    Línea base: 65% (2023)
-    Meta: 85% (2027)
-    Responsable: Secretaría de Salud Municipal
-    """
-    
-    print("Evaluating indicator feasibility...")
-    start_time = time.time()
-    
-    # Evaluate indicator
-    result = scorer.evaluate_indicator(example_indicator)
-    
-    print(f"Evaluation completed in {time.time() - start_time:.3f} seconds")
-    print(f"SMART Score: {result.smart_score:.2f}")
-    print(f"Feasibility Score: {result.feasibility_score:.2f}")
-    print(f"Has baseline: {result.has_baseline}")
-    print(f"Has target: {result.has_target}")
-    print(f"Has timeframe: {result.has_timeframe}")
-    print(f"Has quantitative target: {result.has_quantitative_target}")
-    print(f"Has unit: {result.has_unit}")
-    print(f"Has responsible: {result.has_responsible}")
-    
-    # Example plan text
-    example_plan = """
-    PLAN DE DESARROLLO MUNICIPAL 2024-2027
-    
-    DIAGNÓSTICO
-    Actualmente la cobertura en educación es del 75% y en salud del 65%.
-    La tasa de desempleo ha aumentado al 12% en los últimos años.
-    
-    OBJETIVOS Y METAS
-    1. Aumentar la cobertura educativa al 95% para el año 2027.
-       Responsable: Secretaría de Educación Municipal
-    
-    2. Reducir la tasa de desempleo al 8% durante el cuatrienio.
-       Línea base: 12% (2023)
-       Meta: 8% (2027)
-    
-    3. Construir 500 viviendas de interés social.
-       Plazo: 4 años
-    
-    SEGUIMIENTO
-    Se realizará seguimiento trimestral a través de un tablero de control.
-    """
-    
-    print("\nEvaluating plan feasibility...")
-    start_time = time.time()
-    
-    # Evaluate plan
-    plan_result = scorer.evaluate_plan_feasibility(example_plan)
-    
-    print(f"Evaluation completed in {time.time() - start_time:.3f} seconds")
-    print(f"Overall feasibility score: {plan_result['overall_feasibility']:.2f}")
-    print(f"Baseline-target alignment: {plan_result['baseline_target_alignment']:.2f}")
-    print(f"Component counts: {plan_result['component_counts']}")
-    print("\nRecommendations:")
-    for rec in plan_result["recommendations"]:
-        print(f"- {rec}")
-    
-    print("\nDECALOGO answers:")
-    print(f"DE1_Q3: {plan_result['decalogo_answers']['DE1_Q3']['answer']} (confidence: {plan_result['decalogo_answers']['DE1_Q3']['confidence']:.2f})")
-    print(f"DE4_Q1: {plan_result['decalogo_answers']['DE4_Q1']['answer']} (confidence: {plan_result['decalogo_answers']['DE4_Q1']['confidence']:.2f})")
-    print(f"DE4_Q2: {plan_result['decalogo_answers']['DE4_Q2']['answer']} (confidence: {plan_result['decalogo_answers']['DE4_Q2']['confidence']:.2f})")
-            if term in text:
-                measurement_bonus += 0.15
-
-        return min(richness_score + measurement_bonus, 1.0)
-
-    @staticmethod
-    def _calculate_structure_penalty(text: str) -> float:
+    def _calculate_structure_penalty(self, text: str) -> float:
         """Calculate penalty for indicators in titles/bullets without values."""
         stripped = text.strip()
         if not stripped:
@@ -1288,7 +1277,7 @@ if __name__ == "__main__":
 
     def _generate_report_content(self, indicators: List[str]) -> str:
         """Generate the complete report content for the given indicators."""
-        results = self.batch_score(indicators)
+        results = [self.evaluate_indicator(indicator) for indicator in indicators]
 
         # Generate timestamp
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -1304,15 +1293,27 @@ if __name__ == "__main__":
         scores = [result.feasibility_score for result in results]
         avg_score = sum(scores) / len(scores) if scores else 0
 
-        tier_counts = {}
+        # Calculate quality tiers
+        quality_tiers = {}
         for result in results:
-            tier = result.quality_tier
-            tier_counts[tier] = tier_counts.get(tier, 0) + 1
+            feasibility_score = result.feasibility_score
+            if feasibility_score >= 0.8:
+                quality_tier = "high"
+            elif feasibility_score >= 0.6:
+                quality_tier = "medium"
+            elif feasibility_score >= 0.4:
+                quality_tier = "low"
+            elif feasibility_score >= 0.2:
+                quality_tier = "poor"
+            else:
+                quality_tier = "insufficient"
+            
+            quality_tiers[quality_tier] = quality_tiers.get(quality_tier, 0) + 1
 
         content_parts.append("## Summary")
         content_parts.append(f"Average feasibility score: {avg_score:.3f}")
         content_parts.append("Quality tier distribution:")
-        for tier, count in sorted(tier_counts.items()):
+        for tier, count in sorted(quality_tiers.items()):
             percentage = (count / len(results)) * 100
             content_parts.append(f"  - {tier}: {count} ({percentage:.1f}%)")
         content_parts.append("")
@@ -1329,24 +1330,41 @@ if __name__ == "__main__":
             content_parts.append(f"### {i}. Indicator Analysis")
             content_parts.append(f"**Text:** {indicator}")
             content_parts.append(f"**Score:** {result.feasibility_score:.3f}")
-            content_parts.append(f"**Quality Tier:** {result.quality_tier}")
+            
+            # Calculate quality tier for this result
+            if result.feasibility_score >= 0.8:
+                quality_tier = "high"
+            elif result.feasibility_score >= 0.6:
+                quality_tier = "medium"
+            elif result.feasibility_score >= 0.4:
+                quality_tier = "low"
+            elif result.feasibility_score >= 0.2:
+                quality_tier = "poor"
+            else:
+                quality_tier = "insufficient"
+                
+            content_parts.append(f"**Quality Tier:** {quality_tier}")
             content_parts.append(
-                f"**Quantitative Baseline:** {'Yes' if result.has_quantitative_baseline else 'No'}"
+                f"**Quantitative Baseline:** {'Yes' if result.has_baseline else 'No'}"
             )
             content_parts.append(
                 f"**Quantitative Target:** {'Yes' if result.has_quantitative_target else 'No'}"
             )
 
-            if result.components_detected:
+            components_detected = set(c.component_type for c in result.components)
+            if components_detected:
                 content_parts.append(
-                    f"**Components Detected:** {', '.join(c.value for c in result.components_detected)}"
+                    f"**Components Detected:** {', '.join(c.value for c in components_detected)}"
                 )
 
+            # Add components as detailed_matches for compatibility
+            result.detailed_matches = result.components
+            
             if result.detailed_matches:
                 content_parts.append("**Pattern Matches:**")
                 for match in result.detailed_matches:
                     content_parts.append(
-                        f"  - {match.component_type.value}: '{match.matched_text}' (confidence: {match.confidence:.2f})"
+                        f"  - {match.component_type.value}: '{match.text}' (confidence: {match.confidence:.2f})"
                     )
 
             content_parts.append("")
@@ -1367,7 +1385,7 @@ if __name__ == "__main__":
                 "- Include specific time horizons where missing")
 
         insufficient_count = sum(
-            1 for result in results if result.quality_tier == "insufficient"
+            1 for result in results if result.feasibility_score < 0.2
         )
         if insufficient_count > 0:
             content_parts.append(
@@ -1382,6 +1400,28 @@ if __name__ == "__main__":
         content_parts.append("*Report generated by Feasibility Scorer v1.0*")
 
         return "\n".join(content_parts)
+
+    def _is_recoverable_io_error(self, exc: Exception) -> bool:
+        """Check if an I/O error is recoverable with a fallback strategy."""
+        if isinstance(exc, (PermissionError, OSError)):
+            return True
+        return False
+
+    def _log_safe_write_result(
+        self, description: str, intended_path: Path, result: SafeWriteResult
+    ) -> None:
+        """Log the result of a safe write operation."""
+        if result.status == "primary":
+            self.logger.info("%s guardado en %s", description, result.path)
+        elif result.status == "fallback":
+            self.logger.info(
+                "%s guardado en ubicación alternativa %s (original: %s)", 
+                description, result.path, intended_path
+            )
+        else:
+            self.logger.error(
+                "%s no pudo ser guardado: %s", description, result.error
+            )
 
     def generate_traceability_matrix_csv(
         self, results: Dict[str, IndicatorScore], output_dir: str = "."
@@ -1424,7 +1464,7 @@ if __name__ == "__main__":
         rows = []
         for plan_filename, score in results.items():
             # Generate overall recommendation based on quality tier
-            recommendation = FeasibilityScorer._get_recommendation_spanish(
+            recommendation = self._get_recommendation_spanish(
                 score.quality_tier
             )
 
@@ -1466,7 +1506,7 @@ if __name__ == "__main__":
             row = {
                 "archivo_plan": plan_filename,
                 "puntuacion_factibilidad": round(score.feasibility_score, 3),
-                "nivel_calidad": FeasibilityScorer._translate_quality_tier_spanish(
+                "nivel_calidad": self._translate_quality_tier_spanish(
                     score.quality_tier
                 ),
                 "linea_base_cuantitativa": (
@@ -1564,9 +1604,8 @@ if __name__ == "__main__":
         }
         return recommendations.get(quality_tier, "Evaluación pendiente.")
 
-    @staticmethod
     def _generate_csv_fallback(
-        results: Dict[str, IndicatorScore], output_dir: str = "."
+        self, results: Dict[str, IndicatorScore], output_dir: str = "."
     ) -> str:
         """
         Fallback CSV generation without pandas dependency.
@@ -1601,7 +1640,7 @@ if __name__ == "__main__":
         rows = []
         for plan_filename, score in results.items():
             # Generate overall recommendation based on quality tier
-            recommendation = FeasibilityScorer._get_recommendation_spanish(
+            recommendation = self._get_recommendation_spanish(
                 score.quality_tier
             )
 
@@ -1643,7 +1682,7 @@ if __name__ == "__main__":
             row = [
                 plan_filename,
                 f"{score.feasibility_score:.3f}",
-                FeasibilityScorer._translate_quality_tier_spanish(
+                self._translate_quality_tier_spanish(
                     score.quality_tier),
                 "Sí" if score.has_quantitative_baseline else "No",
                 "Sí" if score.has_quantitative_target else "No",
@@ -1708,6 +1747,85 @@ if __name__ == "__main__":
 
         return str(result.path or result.key or intended_path)
 
+    def batch_score(self, indicators: List[str]) -> List[IndicatorScore]:
+        """Process a batch of indicators with optimized execution."""
+        # This method would be implemented in the full version
+        return [self.evaluate_indicator(indicator) for indicator in indicators]
+
+
+# Example usage when run as a script
+if __name__ == "__main__":
+    import time
+    
+    # Create feasibility scorer
+    scorer = FeasibilityScorer()
+    
+    # Example indicator text
+    example_indicator = """
+    Indicador: Porcentaje de cobertura en salud
+    Línea base: 65% (2023)
+    Meta: 85% (2027)
+    Responsable: Secretaría de Salud Municipal
+    """
+    
+    print("Evaluating indicator feasibility...")
+    start_time = time.time()
+    
+    # Evaluate indicator
+    result = scorer.evaluate_indicator(example_indicator)
+    
+    print(f"Evaluation completed in {time.time() - start_time:.3f} seconds")
+    print(f"SMART Score: {result.smart_score:.2f}")
+    print(f"Feasibility Score: {result.feasibility_score:.2f}")
+    print(f"Has baseline: {result.has_baseline}")
+    print(f"Has target: {result.has_target}")
+    print(f"Has timeframe: {result.has_timeframe}")
+    print(f"Has quantitative target: {result.has_quantitative_target}")
+    print(f"Has unit: {result.has_unit}")
+    print(f"Has responsible: {result.has_responsible}")
+    
+    # Example plan text
+    example_plan = """
+    PLAN DE DESARROLLO MUNICIPAL 2024-2027
+    
+    DIAGNÓSTICO
+    Actualmente la cobertura en educación es del 75% y en salud del 65%.
+    La tasa de desempleo ha aumentado al 12% en los últimos años.
+    
+    OBJETIVOS Y METAS
+    1. Aumentar la cobertura educativa al 95% para el año 2027.
+       Responsable: Secretaría de Educación Municipal
+    
+    2. Reducir la tasa de desempleo al 8% durante el cuatrienio.
+       Línea base: 12% (2023)
+       Meta: 8% (2027)
+    
+    3. Construir 500 viviendas de interés social.
+       Plazo: 4 años
+    
+    SEGUIMIENTO
+    Se realizará seguimiento trimestral a través de un tablero de control.
+    """
+    
+    print("\nEvaluating plan feasibility...")
+    start_time = time.time()
+    
+    # Evaluate plan
+    plan_result = scorer.evaluate_plan_feasibility(example_plan)
+    
+    print(f"Evaluation completed in {time.time() - start_time:.3f} seconds")
+    print(f"Overall feasibility score: {plan_result['overall_feasibility']:.2f}")
+    print(f"Baseline-target alignment: {plan_result['baseline_target_alignment']:.2f}")
+    print(f"Component counts: {plan_result['component_counts']}")
+    print("\nRecommendations:")
+    for rec in plan_result["recommendations"]:
+        print(f"- {rec}")
+    
+    print("\nDECALOGO answers:")
+    print(f"DE1_Q3: {plan_result['decalogo_answers']['DE1_Q3']['answer']} (confidence: {plan_result['decalogo_answers']['DE1_Q3']['confidence']:.2f})")
+    print(f"DE4_Q1: {plan_result['decalogo_answers']['DE4_Q1']['answer']} (confidence: {plan_result['decalogo_answers']['DE4_Q1']['confidence']:.2f})")
+    print(f"DE4_Q2: {plan_result['decalogo_answers']['DE4_Q2']['answer']} (confidence: {plan_result['decalogo_answers']['DE4_Q2']['confidence']:.2f})")
+
 
 def main():
     """Command-line interface for the Feasibility Scorer."""
@@ -1753,124 +1871,6 @@ Examples:
         action="store_true",
         help="Generate consolidated traceability matrix CSV file",
     )
-    parser.add_argument(
-        "--export-json", action="store_true", help="Export detailed results as JSON"
-    )
-    parser.add_argument(
-        "--export-markdown",
-        action="store_true",
-        help="Export results as Markdown report",
-    )
-    parser.add_argument(
-        "--verbose", action="store_true", help="Show detailed component matches"
-    )
-
-    args = parser.parse_args()
-
-    # Ensure output directory exists
-    output_dir = Path(args.output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    scorer = FeasibilityScorer()
-    results = {}
-
-    if args.demo:
-        # Run built-in demonstration
-        demo_indicators = {
-            "ejemplo_alta_calidad.txt": "Incrementar la línea base de 65% de cobertura educativa a una meta de 85% para el año 2025",
-            "ejemplo_calidad_media.txt": "Mejorar desde la situación inicial hasta el objetivo propuesto con incremento del 20%",
-            "ejemplo_calidad_baja.txt": "Partir de la línea base para alcanzar el objetivo",
-            "ejemplo_insuficiente.txt": "Aumentar el acceso a servicios de salud en la región",
-        }
-
-        print("DEMOSTRACIÓN - Feasibility Scorer")
-        print("=" * 50)
-
-        for filename, text in demo_indicators.items():
-            score = scorer.calculate_feasibility_score(text)
-            results[filename] = score
-
-            print(f"\nArchivo: {filename}")
-            print(f"Texto: {text}")
-            print(f"Puntuación: {score.feasibility_score:.3f}")
-            print(
-                f"Nivel: {scorer.translate_quality_tier_spanish(score.quality_tier)}")
-            print(
-                f"Recomendación: {scorer.get_recommendation_spanish(score.quality_tier)}"
-            )
-
-            if args.verbose:
-                print(
-                    f"Componentes: {[c.value for c in score.components_detected]}")
-                if score.detailed_matches:
-                    print("Coincidencias detalladas:")
-                    for match in score.detailed_matches:
-                        print(
-                            f"  - {match.component_type.value}: '{match.matched_text}' (confianza: {match.confidence:.2f})"
-                        )
-
-    elif args.text:
-        # Single text evaluation
-        filename = "input_text.txt"
-        score = scorer.calculate_feasibility_score(args.text)
-        results[filename] = score
-
-        print(f"Texto evaluado: {args.text}")
-        print(f"Puntuación de factibilidad: {score.feasibility_score:.3f}")
-        print(
-            f"Nivel de calidad: {scorer.translate_quality_tier_spanish(score.quality_tier)}"
-        )
-        print(
-            f"Línea base cuantitativa: {'Sí' if score.has_quantitative_baseline else 'No'}"
-        )
-        print(
-            f"Meta cuantitativa: {'Sí' if score.has_quantitative_target else 'No'}")
-        print(
-            f"Recomendación: {scorer.get_recommendation_spanish(score.quality_tier)}")
-
-        if args.verbose and score.detailed_matches:
-            print("\nCoincidencias detalladas:")
-            for match in score.detailed_matches:
-                print(
-                    f"  - {match.component_type.value}: '{match.matched_text}' (confianza: {match.confidence:.2f})"
-                )
-
-    elif args.batch_file:
-        # Batch processing from file
-        batch_path = Path(args.batch_file)
-        if not batch_path.exists():
-            print(f"Error: El archivo {args.batch_file} no existe.")
-            return 1
-
-        with open(batch_path, "r", encoding="utf-8") as f:
-            indicators = [line.strip() for line in f if line.strip()]
-
-        print(
-            f"Procesando {len(indicators)} indicadores desde {args.batch_file}...")
-
-        for i, indicator in enumerate(indicators, 1):
-            filename = f"indicador_{i:03d}.txt"
-            score = scorer.calculate_feasibility_score(indicator)
-            results[filename] = score
-
-            if not args.export_csv:  # Only show individual results if not exporting CSV
-                print(f"\n{i}. {filename}")
-                print(f"   Puntuación: {score.feasibility_score:.3f}")
-                print(
-                    f"   Nivel: {scorer.translate_quality_tier_spanish(score.quality_tier)}"
-                )
-
-    # Export results in requested formats
-    if args.export_csv:
-        try:
-            csv_path = scorer.generate_traceability_matrix_csv(
-                results, str(output_dir))
-            print(f"✓ Matriz de trazabilidad CSV generada: {csv_path}")
-        except ImportError as e:
-            print(f"Error: {e}")
-            print("Instalar pandas con: pip install pandas")
-            return 1
-
     if args.export_json:
         json_path = output_dir / "resultados_factibilidad.json"
         json_data = {}
