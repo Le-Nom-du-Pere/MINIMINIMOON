@@ -280,7 +280,7 @@ class QuestionnaireEngine:
             BaseQuestion(
                 id=f"D6-Q{26+i}", dimension="D6", question_no=26+i,
                 template=f"¿La teoría de cambio de {{PUNTO_TEMATICO}} está explícita (diagrama causal) con causas, mediadores, moderadores y supuestos verificables?" if i==0 else
-                        f"¿Los enlaces causales en {{PUNTO_TEMATICO}} son proporcionales y sin saltos no realistas (no hay "milagros" de implementación)?" if i==1 else
+                        f"¿Los enlaces causales en {{PUNTO_TEMATICO}} son proporcionales y sin saltos no realistas (no hay 'milagros' de implementación)?" if i==1 else
                         f"¿Se identifican inconsistencias en la cadena causal de {{PUNTO_TEMATICO}} y se proponen validaciones (pilotos, pruebas de mecanismo)?" if i==2 else
                         f"¿Se monitorean patrones de fallo (drift, layering, conversión) en {{PUNTO_TEMATICO}} con mecanismos de corrección y aprendizaje continuo?" if i==3 else
                         f"¿La lógica causal de {{PUNTO_TEMATICO}} reconoce grupos afectados y restricciones contextuales (territoriales, culturales, regulatorias)?",
