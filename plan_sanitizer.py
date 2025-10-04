@@ -336,68 +336,6 @@ if __name__ == "__main__":
     print("\nSanitization statistics:")
     for key, value in stats.items():
         print(f"  {key}: {value}")
-                new_key = PlanSanitizer.standardize_json_key(key)
-
-                # Preserve original key with tildes for display purposes if requested
-                if (
-                    preserve_display_keys
-                    and new_key != key
-                    and any(char in key for char in "áéíóúñüÁÉÍÓÚÑÜ")
-                ):
-                    standardized[f"{new_key}_display"] = key
-
-                # Recursively standardize the value
-                standardized[new_key] = PlanSanitizer.standardize_json_object(
-                    value, preserve_display_keys
-                )
-
-            return standardized
-        elif isinstance(obj, list):
-            return [
-                PlanSanitizer.standardize_json_object(
-                    item, preserve_display_keys)
-                for item in obj
-            ]
-        else:
-            return obj
-
-    @staticmethod
-    def get_markdown_display_key(
-        standardized_key: str, json_obj: Dict[str, Any]
-    ) -> str:
-        """
-        Get the tilded Spanish version for Markdown display from a standardized key.
-
-        Args:
-            standardized_key: The underscore key without tildes
-            json_obj: The JSON object that may contain display versions
-
-        Returns:
-            Display version with tildes if available, otherwise the standardized key
-        """
-        display_key = f"{standardized_key}_display"
-        if display_key in json_obj:
-            return json_obj[display_key]
-
-        # Fallback: reverse lookup common patterns
-        display_mappings = {
-            "linea_base": "línea base",
-            "numero_pagina": "número página",
-            "evaluacion": "evaluación",
-            "implementacion": "implementación",
-            "identificacion": "identificación",
-            "descripcion": "descripción",
-            "situacion": "situación",
-            "poblacion": "población",
-            "duracion": "duración",
-            "version": "versión",
-            "creacion": "creación",
-            "modificacion": "modificación",
-        }
-
-        return display_mappings.get(
-            standardized_key, standardized_key.replace("_", " ")
-        )
 
 
 # Convenience functions for common use cases
