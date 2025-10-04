@@ -1,3 +1,4 @@
+# coding=utf-8
 """
 MINIMINIMOON Immutability Contract
 ==================================
@@ -5,19 +6,17 @@ MINIMINIMOON Immutability Contract
 Provides mechanisms to freeze and verify the integrity of the MINIMINIMOON integration.
 This module ensures that critical components are not tampered with and results are reproducible.
 """
-import os
-import sys
-import hashlib
-import json
-import time
-import logging
-import inspect
-from typing import Dict, List, Any, Optional, Set, Callable
-import importlib
-from pathlib import Path
-import hmac
 import base64
+import hashlib
+import hmac
+import importlib
+import inspect
+import json
+import logging
 import pickle
+import time
+from pathlib import Path
+from typing import Dict, Any
 
 # Configure logging
 logging.basicConfig(
