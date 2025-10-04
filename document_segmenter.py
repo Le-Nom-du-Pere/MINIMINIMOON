@@ -903,12 +903,6 @@ if __name__ == "__main__":
         print(f"Segment {i+1} - Type: {segment.section_type.name}, DECALOGO: {segment.decalogo_dimensions}")
         print(f"  {segment.text[:60]}...")
         print()
-        return {
-            "text": text,
-            "metrics": metrics,
-            "sentences": sentences,
-            "type": segment_type,
-        }
 
     def _post_process_segments(
         self, segments: List[Dict[str, Any]]
