@@ -336,30 +336,6 @@ if __name__ == "__main__":
     print("\nSanitization statistics:")
     for key, value in stats.items():
         print(f"  {key}: {value}")
-                new_key = PlanSanitizer.standardize_json_key(key)
-
-                # Preserve original key with tildes for display purposes if requested
-                if (
-                    preserve_display_keys
-                    and new_key != key
-                    and any(char in key for char in "áéíóúñüÁÉÍÓÚÑÜ")
-                ):
-                    standardized[f"{new_key}_display"] = key
-
-                # Recursively standardize the value
-                standardized[new_key] = PlanSanitizer.standardize_json_object(
-                    value, preserve_display_keys
-                )
-
-            return standardized
-        elif isinstance(obj, list):
-            return [
-                PlanSanitizer.standardize_json_object(
-                    item, preserve_display_keys)
-                for item in obj
-            ]
-        else:
-            return obj
 
     @staticmethod
     def get_markdown_display_key(

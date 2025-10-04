@@ -350,6 +350,13 @@ def create_industrial_embedding_model(
     # For now, return the simpler EmbeddingModel
     # In a full implementation, this would return a more sophisticated backend
     return create_embedding_model()
+
+
+class IndustrialEmbeddingModel:
+    """Industrial-grade embedding model implementation (incomplete)."""
+    
+    def _load_model(self):
+        """Load the sentence transformer model."""
         try:
             self.model = SentenceTransformer(self.config.model, device=self._device)
 
