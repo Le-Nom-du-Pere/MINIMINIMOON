@@ -34,7 +34,7 @@ from Decatalogo_principal import (  # Clases adicionales necesarias
     ResultadoDimensionIndustrial,
     SistemaEvaluacionIndustrial,
     obtener_decalogo_contexto,
-)
+)   
 
 # Importaciones de detectores especializados (VERIFICADOS)
 from feasibility_scorer import (
