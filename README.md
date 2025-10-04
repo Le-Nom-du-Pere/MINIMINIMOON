@@ -1,3 +1,77 @@
+# MINIMINIMOON
+
+Sistema de Evaluación Causal de Planes de Desarrollo Municipal (PDM)
+
+## Descripción
+
+Este proyecto implementa un sistema automatizado para evaluar la solidez del diseño causal de Planes de Desarrollo Municipal aplicando un cuestionario estandarizado de 30 preguntas a 10 puntos temáticos.
+
+## Componentes principales
+
+### Evaluador PDM
+Implementación del sistema de evaluación automatizada de Planes de Desarrollo Municipal.
+
+- Archivo principal: `pdm_evaluator.py`
+- Contiene la clase `PDMEvaluator` con métodos para evaluar cada dimensión del cuestionario
+- Incluye el cuestionario base completo con 30 preguntas organizadas en 6 dimensiones
+
+## Estructura del cuestionario
+
+El cuestionario está organizado en 6 dimensiones:
+
+1. **D1: Diagnóstico y Recursos** (Q1-Q5)
+2. **D2: Diseño de Intervención** (Q6-Q10)
+3. **D3: Eje Transversal** (Q11-Q15)
+4. **D4: Implementación** (Q16-Q20)
+5. **D5: Resultados** (Q21-Q25)
+6. **D6: Sostenibilidad** (Q26-Q30)
+
+## Modo de ejecución
+
+Para cada punto temático (P1 a P10):
+- Aplicar las 30 preguntas (Q1 a Q30) agrupadas en 6 dimensiones (D1 a D6)
+- Evaluar la presencia objetiva de elementos específicos en el documento
+- Generar resultados estructurados con scores, evidencia y metadata
+
+## Principios de evaluación
+
+1. **Objetividad**: Verificar presencia/ausencia de elementos, NO interpretar calidad subjetiva
+2. **Evidencia obligatoria**: Cada score debe acompañarse de cita textual del PDM
+3. **Contextualización**: Las búsquedas deben filtrarse por las secciones y programas relevantes de cada punto temático
+4. **Manejo de ausencias**: Si un elemento no se encuentra, score = 0 (no asumir presencia implícita)
+5. **N/A explícito**: Si un punto temático no aplica al municipio, marcar como N/A y excluir del cálculo global
+
+## Uso
+
+Para utilizar el sistema de evaluación:
+
+```python
+from pdm_evaluator import PDMEvaluator
+
+# Crear instancia del evaluador
+evaluator = PDMEvaluator("ruta/al/pdm.pdf")
+
+# Definir puntos temáticos
+thematic_points = [
+    {
+        "id": "P1",
+        "nombre": "Derechos de las mujeres e igualdad de género",
+        "programas_relevantes": ["Por las Mujeres", "Equidad de Género"],
+        "keywords": ["mujer", "género", "violencia de género", "autonomía económica", "participación"],
+        "seccion_pdm": ["páginas 45-52", "tablas 8-10"]
+    }
+    # ... más puntos temáticos
+]
+
+# Ejecutar evaluación
+results = evaluator.run_evaluation(thematic_points)
+
+# Guardar resultados
+import json
+with open('resultados.json', 'w', encoding='utf-8') as f:
+    json.dump(results, f, ensure_ascii=False, indent=2)
+```
+
 # Multi-Component Python Suite
 
 Esta suite reúne módulos para análisis documental, detección de contradicciones, embeddings, validación de grafos y detección de responsabilidades en textos en español. El objetivo es ofrecer cimientos reutilizables para proyectos de planeación territorial y analítica de políticas públicas.
