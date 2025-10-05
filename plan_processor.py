@@ -787,4 +787,3 @@ class PlanProcessor:
                 "total_indicators": total_indicators
             }
         }
-```

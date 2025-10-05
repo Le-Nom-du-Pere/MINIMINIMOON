@@ -583,7 +583,7 @@ class TeoriaCambio:
         
         return recommendations
     
-    def _calcular_coherencia(self, G: nx.DiGraph, elementos: List<CausalElement]) -> float:
+    def _calcular_coherencia(self, G: nx.DiGraph, elementos: List[CausalElement]) -> float:
         """Calculate coherence score of the logical framework."""
         if not elementos:
             return 0.0

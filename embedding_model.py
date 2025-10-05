@@ -350,28 +350,6 @@ def create_industrial_embedding_model(
     # For now, return the simpler EmbeddingModel
     # In a full implementation, this would return a more sophisticated backend
     return create_embedding_model()
-        try:
-            self.model = SentenceTransformer(self.config.model, device=self._device)
-
-            # Configurar precisión
-            if self.config.precision == "fp16" and self._device.type == "cuda":
-                self.model = self.model.half()
-            elif self.config.precision == "int8":
-                if hasattr(torch, "quantization"):
-                    self.model = torch.quantization.quantize_dynamic(
-                        self.model, {torch.nn.Linear}, dtype=torch.qint8
-                    )
-
-            # Compilar con torch si está disponible
-            if hasattr(torch, "compile") and self._device.type == "cuda":
-                self.model.encode = torch.compile(
-                    self.model.encode, mode="reduce-overhead", fullgraph=True
-                )
-
-            logger.info(f"✓ Modelo {self.config.model} cargado exitosamente")
-        except Exception as e:
-            logger.error(f"Error cargando modelo {self.config.model}: {e}")
-            raise
 
     def _load_calibration_card(self):
         """Carga o crea tarjeta de calibración por defecto."""

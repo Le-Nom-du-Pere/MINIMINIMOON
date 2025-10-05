@@ -147,15 +147,3 @@ class TestResponsibilityDetector(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-        for text, should_detect in test_cases:
-            entities = detector.detect_entities(text)
-            if should_detect:
-                assert len(
-                    entities) > 0, f"Failed to detect entities in: {text}"
-                assert any(e.confidence > 0.5 for e in entities), (
-                    f"Low confidence for: {text}"
-                )
-
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
