@@ -16,7 +16,7 @@ Features:
 import logging
 import re
 import warnings
-from typing import Dict, List, Optional, Set, Tuple, Union, Any
+from typing import Dict, List, Optional, Set, Tuple, Union, Any, Pattern, Match
 
 import numpy as np
 import pandas as pd
@@ -271,7 +271,7 @@ class CausalPatternDetector:
         sentences = re.split(r'(?<=[.!?])\s+', text)
         return [s.strip() for s in sentences if s.strip()]
     
-    def _find_pattern_matches(self, text: str, patterns: List[re.Pattern]) -> List[re.Match]:
+    def _find_pattern_matches(self, text: str, patterns: List[Pattern[str]]) -> List[Match[str]]:
         """Find all matches for a set of patterns in text."""
         matches = []
         for pattern in patterns:
@@ -279,7 +279,7 @@ class CausalPatternDetector:
                 matches.append(match)
         return matches
     
-    def _extract_cause_effect(self, sentence: str, match: re.Match) -> Tuple[Optional[str], Optional[str]]:
+    def _extract_cause_effect(self, sentence: str, match: Match[str]) -> Tuple[Optional[str], Optional[str]]:
         """
         Extract cause and effect parts from a sentence based on causal marker.
         
@@ -306,7 +306,7 @@ class CausalPatternDetector:
             # Cause before marker, effect after: "X causa Y"
             return before_marker, after_marker
     
-    def _determine_relation_type(self, sentence: str, match: re.Match) -> str:
+    def _determine_relation_type(self, sentence: str, match: Match[str]) -> str:
         """Determine the type of causal relation."""
         for rel_type, patterns in self.compiled_relation_patterns.items():
             for pattern in patterns:
@@ -316,7 +316,7 @@ class CausalPatternDetector:
         # Default to direct causation if no specific type is identified
         return CausalRelationType.DIRECT
     
-    def _calculate_confidence(self, sentence: str, match: re.Match, has_temporal: bool) -> float:
+    def _calculate_confidence(self, sentence: str, match: Match[str], has_temporal: bool) -> float:
         """
         Calculate confidence score for a causal pattern.
         
@@ -364,7 +364,7 @@ class IndustrialCausalPatternDetector(CausalPatternDetector):
     when dependencies are not available.
     """
     
-    def __init__(self, config=None):
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
         """
         Initialize the industrial causal pattern detector.
         
@@ -374,13 +374,11 @@ class IndustrialCausalPatternDetector(CausalPatternDetector):
         super().__init__()
         self.config = config or {}
         self.advanced_mode = HAS_DEPENDENCIES
-        
-        # Initialize advanced components if dependencies are available
         if self.advanced_mode:
             self.causal_graph = nx.DiGraph()
-            self.models = {}
-            self.scalers = {}
-            self.results = {}
+            self.models: Dict[str, Any] = {}
+            self.scalers: Dict[str, Any] = {}
+            self.results: Dict[str, Any] = {}
         else:
             logger.warning("Operating in fallback mode with simplified causal detection")
     
@@ -473,73 +471,39 @@ class IndustrialCausalPatternDetector(CausalPatternDetector):
         if not patterns:
             return {'nodes': [], 'edges': [], 'metrics': {}}
         
-        # Create causal network
         G = nx.DiGraph()
+        nodes: Set[str] = set()
+        edges: List[Dict[str, Any]] = []
         
-        # Track nodes and edges
-        nodes = set()
-        edges = []
-        
-        # Add nodes and edges
         for pattern in patterns:
             if pattern['cause'] and pattern['effect']:
-                # Clean and shorten text for node labels
                 cause_text = self._clean_for_node_label(pattern['cause'])
                 effect_text = self._clean_for_node_label(pattern['effect'])
-                
-                # Add to nodes and edges
                 nodes.add(cause_text)
                 nodes.add(effect_text)
-                edges.append({
-                    'from': cause_text,
-                    'to': effect_text,
-                    'type': pattern['relation_type'],
-                    'confidence': pattern['confidence']
-                })
-                
-                # Add to networkx graph
+                edges.append({'from': cause_text, 'to': effect_text, 'type': pattern['relation_type'], 'confidence': pattern['confidence']})
                 G.add_node(cause_text)
                 G.add_node(effect_text)
-                G.add_edge(cause_text, effect_text, 
-                          type=pattern['relation_type'], 
-                          confidence=pattern['confidence'])
+                G.add_edge(cause_text, effect_text, type=pattern['relation_type'], confidence=pattern['confidence'])
         
-        # Calculate network metrics
-        metrics = {}
-        
+        metrics: Dict[str, Any] = {}
         try:
             metrics['node_count'] = G.number_of_nodes()
             metrics['edge_count'] = G.number_of_edges()
             metrics['density'] = nx.density(G)
-            
-            # Check for cycles
             try:
                 metrics['has_cycles'] = not nx.is_directed_acyclic_graph(G)
-            except:
+            except Exception:
                 metrics['has_cycles'] = False
-            
-            # Calculate centrality metrics if there are enough nodes
             if G.number_of_nodes() > 2:
-                # Identify key nodes by centrality
                 metrics['key_causes'] = list(dict(sorted(
-                    nx.out_degree_centrality(G).items(), 
-                    key=lambda x: x[1], 
-                    reverse=True
-                )[:3]).keys())
-                
+                    nx.out_degree_centrality(G).items(), key=lambda x: x[1], reverse=True)[:3]).keys())
                 metrics['key_effects'] = list(dict(sorted(
-                    nx.in_degree_centrality(G).items(), 
-                    key=lambda x: x[1], 
-                    reverse=True
-                )[:3]).keys())
+                    nx.in_degree_centrality(G).items(), key=lambda x: x[1], reverse=True)[:3]).keys())
         except Exception as e:
             logger.warning(f"Error calculating network metrics: {e}")
         
-        return {
-            'nodes': list(nodes),
-            'edges': edges,
-            'metrics': metrics
-        }
+        return {'nodes': list(nodes), 'edges': edges, 'metrics': metrics}
     
     def _enhance_patterns_with_nlp(self, text: str, patterns: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Enhance detected patterns with advanced NLP techniques."""
