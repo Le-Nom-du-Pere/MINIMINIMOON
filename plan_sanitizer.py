@@ -337,6 +337,44 @@ if __name__ == "__main__":
     for key, value in stats.items():
         print(f"  {key}: {value}")
 
+    @staticmethod
+    def get_markdown_display_key(
+        standardized_key: str, json_obj: Dict[str, Any]
+    ) -> str:
+        """
+        Get the tilded Spanish version for Markdown display from a standardized key.
+
+        Args:
+            standardized_key: The underscore key without tildes
+            json_obj: The JSON object that may contain display versions
+
+        Returns:
+            Display version with tildes if available, otherwise the standardized key
+        """
+        display_key = f"{standardized_key}_display"
+        if display_key in json_obj:
+            return json_obj[display_key]
+
+        # Fallback: reverse lookup common patterns
+        display_mappings = {
+            "linea_base": "línea base",
+            "numero_pagina": "número página",
+            "evaluacion": "evaluación",
+            "implementacion": "implementación",
+            "identificacion": "identificación",
+            "descripcion": "descripción",
+            "situacion": "situación",
+            "poblacion": "población",
+            "duracion": "duración",
+            "version": "versión",
+            "creacion": "creación",
+            "modificacion": "modificación",
+        }
+
+        return display_mappings.get(
+            standardized_key, standardized_key.replace("_", " ")
+        )
+
 
 # Convenience functions for common use cases
 def sanitize_plan_name(plan_name: str, max_length: int = 255) -> str:
