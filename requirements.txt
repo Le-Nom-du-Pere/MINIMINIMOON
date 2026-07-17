@@ -13,14 +13,14 @@ networkx>=2.7.0
 pygam>=0.8.0
 
 # Deep learning (optional)
-torch>=1.13.1
+torch>=2.13.0
 transformers>=4.26.0
 
 # Statistical components
 dcor>=0.5.0
 
 # Testing
-pytest>=7.0.0
+pytest>=9.0.3
 
 # Causal inference components 
 econml>=0.14.1
